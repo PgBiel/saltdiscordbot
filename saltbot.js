@@ -508,22 +508,7 @@ bot.on("guildMemberRemove", (member) => {
 });
 bot.on("messageDelete", message => {
     const chanel = message.channel;
-    if (message.guild.id == "233644998460047365" && chanel.id == "234128579405807628") {
-        const msgdate = new Date(message.createdTimestamp);
-        const msgstamp = `${msgdate.getDate()}/${msgdate.getMonth() + 1}/${msgdate.getFullYear()}, ${msgdate.getHours()}:${msgdate.getMinutes()}:${msgdate.getSeconds()}`;
-        const datenow = new Date();
-        const datestamp = `${datenow.getDate()}/${datenow.getMonth() + 1}/${datenow.getFullYear()}, ${datenow.getHours()}:${datenow.getMinutes()}:${datenow.getSeconds()}`;
-        bot.guilds.get("193903425640071168").channels.get("249949042115608576").sendMessage(`${message.author}'s message sent at ${msgstamp} was deleted at ${datestamp}, that said the following:
-            ${message.content}`);
-        if (message.attachments) {
-            Array.from(message.attachments).map(v=>{
-                const vv = v[1].url;
-                if (vv !== "" && vv !== null) {
-                    bot.guilds.get("193903425640071168").channels.find("name", "pgs-resid").sendFile(vv);
-                }
-            });
-        }
-    }
+	// Here used to live some code that I made to log messages at my test channel
 });
 bot.on("messageUpdate", (oldmessage, message) => {
     /* jshint sub:true */
@@ -3375,19 +3360,7 @@ bot.on("message", message => {
         }
     }
     try {
-    if (message.guild.id == "233644998460047365" && chanel.id == "234128579405807628") {
-        const msgdate = new Date(message.createdTimestamp);
-        bot.guilds.get("193903425640071168").channels.get("249949042115608576").sendMessage(`${message.author} at ${msgdate.getDate()}/${msgdate.getMonth() + 1}/${msgdate.getFullYear()}, ${msgdate.getHours()}:${msgdate.getMinutes()}:${msgdate.getSeconds()};
-            ${message.content}`);
-        if (message.attachments) {
-            Array.from(message.attachments).map(v=>{
-                const vv = v[1].url;
-                if (vv !== "" && vv !== null) {
-                    bot.guilds.get("193903425640071168").channels.find("name", "pgs-resid").sendFile(vv);
-                }
-            });
-        }
-    }
+    // Here used to live some code that I made to log messages at my test channel
     } catch (err) {
         console.log(err.message);
     }
