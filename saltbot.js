@@ -1594,9 +1594,9 @@ bot.on("message", message => {
         chanel.sendMessage("\u200B" + servercmds[gueldid][instructioncase]);
     }
     if (/^help(\s{1,4}.+)?$/i.test(instruction)) {
-        if (!(instruction.match(/^help\s{1,4}(.+)$/i))) return chanel.sendMessage("```"+prefix+"help -> Sends help to PMs.\n\nAvailable options:\n- All\n- Moderation\n- Administration\n- Fun\n- Utility\n- Automation\n- Salt-Related```");
+        if (!(instruction.match(/^help\s{1,4}(.+)$/i))) return chanel.sendMessage("```"+prefix+"help -> Sends help to PMs.\n\nAvailable options:\n- "+prefix+"help all\n- "+prefix+"help moderation\n- "+prefix+"help administration\n- "+prefix+"help fun\n- "+prefix+"help utility\n- "+prefix+"help automation\n- "+prefix+"help salt-related```");
         let h = instruction.match(/^help\s{1,4}(.+)$/i)[1];
-        if (!(help.helps[h.toLowerCase().replace(/salt-related/i, "saltrelated")]) && h.toLowerCase() !== "all") return chanel.sendMessage("```"+prefix+"help -> Sends help to PMs.\n\nAvailable options:\n- All\n- Moderation\n- Administration\n- Fun\n- Utility\n- Automation\n- Salt-Related```");
+        if (!(help.helps[h.toLowerCase().replace(/salt-related/i, "saltrelated")]) && h.toLowerCase() !== "all") return chanel.sendMessage("```"+prefix+"help -> Sends help to PMs.\n\nAvailable options:\n- "+prefix+"help all\n- "+prefix+"help moderation\n- "+prefix+"help administration\n- "+prefix+"help fun\n- "+prefix+"help utility\n- "+prefix+"help automation\n- "+prefix+"help salt-related```");
         h = h.toLowerCase();
         console.log(h);
         if (h == "all") {
