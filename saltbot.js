@@ -650,24 +650,6 @@ bot.on("message", message => {
             message.channel.sendFile(message.author.avatarURL ? message.author.avatarURL : "http://a5.mzstatic.com/us/r30/Purple71/v4/5c/ed/29/5ced295c-4f7c-1cf6-57db-e4e07e0194fc/icon175x175.jpeg");
         }
     }
-    if (/^eval\s([^]+)$/i.test(instruction)) {
-    	if (message.author.id == ownerID) {
-    		var functionToEval = instruction.match(/^eval\s([^]+)$/i)[1];
-            if (/(fs)|(token)|(readFile)|(filter|constructor)|(sendFile)|(?:\\u)|((?:"|`)\s?\+\s?(?:"|`)(.+?)(?:"|`)(?:\]|\)))|(\$\{)|(writeFile)|(writeatJSON)|(saltbot(.js)?)|(dir)|(destroy)|(message.author.id)|(eval)/ig.test(functionToEval) && message.author.id !== ownerID) {
-                message.reply("I like trains. *train passes on high-speed and kills you*");
-            } else {
-            console.log(functionToEval);
-			try {
-                /* jshint ignore:start */
-				chanel.sendMessage("```js\nInput:\n" + functionToEval + "\n\nOutput:\n" + eval(functionToEval) + "```");
-                /* jshint ignore:end */
-			} catch(err) {
-				chanel.sendMessage("```js\nInput:\n" + functionToEval + "\n\nError:\n" + err.message + "```");
-				console.log("Error while doing eval:\n" + err.message);
-			}
-            }
-    	}
-    }
     try {
     if (/^manage\s(.+?)(\s(.+))?$/i.test(instruction)) {
     	if (message.author.id == ownerID) {
@@ -3399,6 +3381,24 @@ bot.on("message", message => {
                 });
             }
         }
+    }
+    if (/^\+eval\s([^]+)$/i.test(input)) {
+    	if (message.author.id == ownerID) {
+    		var functionToEval = input.match(/^eval\s([^]+)$/i)[1];
+            if (/(fs)|(token)|(readFile)|(filter|constructor)|(sendFile)|(?:\\u)|((?:"|`)\s?\+\s?(?:"|`)(.+?)(?:"|`)(?:\]|\)))|(\$\{)|(writeFile)|(writeatJSON)|(saltbot(.js)?)|(dir)|(destroy)|(message.author.id)|(eval)/ig.test(functionToEval) && message.author.id !== ownerID) {
+                message.reply("I like trains. *train passes on high-speed and kills you*");
+            } else {
+            console.log(functionToEval);
+			try {
+                /* jshint ignore:start */
+				chanel.sendMessage("```js\nInput:\n" + functionToEval + "\n\nOutput:\n" + eval(functionToEval) + "```");
+                /* jshint ignore:end */
+			} catch(err) {
+				chanel.sendMessage("```js\nInput:\n" + functionToEval + "\n\nError:\n" + err.message + "```");
+				console.log("Error while doing eval:\n" + err.message);
+			}
+            }
+    	}
     }
     try {
     // Here used to live some code that I made to log messages at my test channel
