@@ -18,6 +18,7 @@ const ownerID = "180813971853410305";
 const antitrigger = {};
 const Jimp = require("jimp");
 const request = require("request");
+let twemoji = require("./testemoji.js").twemojib;
 const fullencrypt = require("./Wrappers/fullencrypt.js");
 const help = require("./help.js");
 const mee6 = require("./Wrappers/mee6rank.js");
@@ -3316,6 +3317,46 @@ bot.on("message", message => {
             message.reply("Error found! ;-;");
             console.log(`Error while trying to do c:\n${err.message}`);
         } 
+    }
+    if (/^emoji/.test(instruction)) {
+        try {
+            if (!(instruction.match(/^emoji\s{1,4}(.+)$/i))) return message.reply("You must put an emoji after `"+prefix+"emoji`!");
+            console.log(twemoji.parse(instruction));
+            if (!(/<img class=[^]+>\s*$/.test(twemoji.parse(instruction))) && !(instruction.match(/^emoji\s{1,4}(<:.*?:.*?>)$/i))) return message.reply("You must put an emoji (AND ONLY ONE!) after `"+prefix+"emoji`!");
+            let emoji;
+            let emojitest = {iscustom: false};
+            if (instruction.match(/^emoji\s{1,4}(<:.*?:.*?>)$/i)) {
+                emoji = instruction.match(/^emoji\s{1,4}<:.*?:(.*?)>$/i)[1];
+                emojitest.iscustom = true;
+            }
+            else 
+                emoji = instruction.match(/^emoji\s{1,4}([^]+)$/i)[1];
+            if (emojitest.iscustom) {
+                chanel.sendFile(`https://cdn.discordapp.com/emojis/${emoji}.png`).then().catch(err=>{
+                    if (err == "Error: Not Found") {
+                        message.reply("Custom emoji not found :/");
+                    } else if (err == "Forbidden") {
+                        message.reply("I can't send attachments :/");
+                    }
+                });
+            } else {
+                let emojiparse = twemoji.parse(emoji);
+                console.log(emojiparse);
+                console.log("AM ALIVE!!");
+                if (emojiparse.match(/[^]*<img class="emoji" draggable=".+" alt=".*" src="(.+)">[^]*/)) {
+                    chanel.sendFile(emojiparse.match(/[^]*<img class="emoji" draggable=".+" alt=".*" src="(.+)">[^]*/)[1]).then().catch(err=>{
+                        if (err == "Error: Forbidden") {
+                            message.reply("I can't send attachments :/");
+                        }
+                    });
+                } else {
+                    message.reply("Uhhh... Stuffs happened... Please tell the bot developers about this, thanks.");
+                }
+            }
+        } catch (err) {
+            message.reply("Oh! An error has been spotted... Oh jeez...");
+            console.log(`Error while doing emoji:\n${err.message}`);
+        }    
     }
     } // End of the whole prefix checking If
     if (/^\+prefix(\s(?:.+))?$/i.test(input)) {
