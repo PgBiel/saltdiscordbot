@@ -195,7 +195,7 @@ function search(type, arg, guild) {
         throw new Error("Error: "+err.message);
     }
 }
-function toDate(datestring) {
+function toDate(datestring, mills = false) {
     try {
         if (/^(?:\d+w)?\s{0,4}(?:\d+d)?\s{0,4}(?:\d+h)?\s{0,4}(?:\d+m)?\s{0,4}(?:\d+s)?$/i.test(datestring)) {
             if (datestring.match(/^(?:\d+w)?\s{0,4}(?:\d+d)?\s{0,4}(?:\d+h)?\s{0,4}(?:\d+m)?\s{0,4}(?:\d+s)?$/i)[1] !== "") {
@@ -225,7 +225,7 @@ function toDate(datestring) {
                 datetoadd.days = datetoadd.days * 86400000;
                 datetoadd.weeks = datetoadd.weeks * 604800000;
                 let thedate = now + datetoadd.seconds + datetoadd.minutes + datetoadd.hours + datetoadd.days + datetoadd.weeks;
-                return thedate;
+                return mills ? datetoadd.seconds + datetoadd.minutes + datetoadd.hours + datetoadd.days + datetoadd.weeks : thedate;
             } else {
                 return "Invalid Date String";
             }
@@ -1843,27 +1843,45 @@ bot.on("message", message => {
             }
         }
     }
-    if (/^mute\s{1,4}<@!?\d+>(?:\s{1,4}\d+(?:\s{1,4}.+)?)?$/i.test(instruction)) {
+    if (/^mute\s{1,4}<@!?\d+>(?:\s{1,4}(?:\d+|"(?:\w+|[\w\s]+)")(?:\s{1,4}.+)?)?$/i.test(instruction)) {
         /* jshint sub:true */
         try {
         var notimespec = false;
         //var argbase = instruction.match(/^mute\s+(.+)$/i)[1];
-        let argname = instruction.match(/^mute\s{1,4}<@!?(\d+)>(?:\s{1,4}\d+(?:\s{1,4}.+)?)?$/i)[1]; // argbase.match(/^(.+?)\s(?:.+)$/i)[1];
+        let argname = instruction.match(/^mute\s{1,4}<@!?(\d+)>(?:\s{1,4}(?:\d+|"(?:\w+|[\w\s]+)")(?:\s{1,4}.+)?)?$/i)[1]; // argbase.match(/^(.+?)\s(?:.+)$/i)[1];
         console.log(argname);
         argname = bot.users.get(argname.toString());
         console.log(argname);
+        let isdated = false;
         if (!argname) return message.reply("User not found!");
-        if (instruction.match(/^mute\s+<@!?\d+>\s+?(\d+)?(?:\s{1,4}.+)?$/i)) {
-            argtime = instruction.match(/^mute\s+<@!?\d+>\s+?(\d+)?(?:\s{1,4}.+)?$/i)[1];
+        if (instruction.match(/^mute\s+<@!?\d+>\s+?(\d+|"(?:\w+|[\w\s]+)")?(?:\s{1,4}.+)?$/i)) {
+            argtime = instruction.match(/^mute\s+<@!?\d+>\s+?(\d+|"(?:\w+|[\w\s]+)")?(?:\s{1,4}.+)?$/i)[1];
+            if (instruction.match(/^mute\s+<@!?\d+>\s+?(?:\d+|("(?:\w+|[\w\s]+)"))?(?:\s{1,4}.+)?$/i)) {
+                isdated = true;
+            }
         } else {
             argtime = "";
         }
         const muteobj = {};
-        muteobj.reason = instruction.match(/^mute\s{1,4}<@!?\d+>(?:\s{1,4}\d+(\s{1,4}.+))?$/i) ? instruction.match(/^mute\s{1,4}<@!?\d+>(?:\s{1,4}\d+(\s{1,4}.+))?$/i)[1] : "None";
+        muteobj.reason = instruction.match(/^mute\s{1,4}<@!?\d+>(?:\s{1,4}(?:\d+|"(?:\w+|[\w\s]+)")(\s{1,4}.+))?$/i) ? instruction.match(/^mute\s{1,4}<@!?\d+>(?:\s{1,4}(?:\d+|"(?:\w+|[\w\s]+)")(\s{1,4}.+))?$/i)[1] : "None";
         var botmember = message.guild.members.get(bot.user.id);
         if (argtime === null || argtime === undefined || argtime === "") {
             argtime = 10;
             var notimespec = true;
+        }
+        let dated;
+        if (isdated === true) {
+            if (/^"\d+"$/.test(argtime)) {
+                argtime = argtime.replace(/"/g, "");
+                isdated = false;
+            } else {
+                dated = toDate(argtime.replace(/"/g, ""), true);
+                if (dated == "Invalid Date String") return message.reply("Invalid date string (text between the \"\"s)! Format: `?w ?d ?h ?m ?s`.\nExample: `"+prefix+"mute @guy#0000 \"5h 1m 2s\" spam`");
+                if (dated == "All zeros") {
+                    isdated = false;
+                    argtime = 0;
+                }
+            }
         }
         if (message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS") || message.author.id == ownerID || checkmodrole(message.member) === true) {
             if (botmember.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) {
@@ -1877,7 +1895,10 @@ bot.on("message", message => {
                             } else {
                                 servermutes[gueldid]["mutes"][argname.id] = {};
                                 servermutes[gueldid]["mutes"][argname.id]["id"] = argname.id;
-                                servermutes[gueldid]["mutes"][argname.id]["expire"] = new Date().getTime()+60000*argtime;
+                                if (isdated === true)
+                                    servermutes[gueldid]["mutes"][argname.id]["expire"] = new Date().getTime()+dated;
+                                else
+                                    servermutes[gueldid]["mutes"][argname.id]["expire"] = new Date().getTime()+60000*argtime;
                                 servermutes[gueldid].mutes[argname.id].permanent = false;
                                 writeMutes();
                                 message.guild.members.get(argname.id).addRole(message.guild.roles.get(servermutes[gueldid]["muteRoleID"]));
@@ -1890,14 +1911,18 @@ bot.on("message", message => {
                                 if (notimespec === true) {
                                     message.reply("User muted successfully! Since no time was specified, they were muted for **10 minutes** (default time)!");
                                 } else {
-                                    if (argtime == "1" || argtime == 1) 
-                                        message.reply(`User muted successfully for **1 minute**!`);
-                                    else
-                                        message.reply(`User muted successfully for **${argtime} minutes**!`);
+                                    if (isdated === true) {
+                                        message.reply(`User muted successfully for **${argtime.replace(/"/g, "")}**!`);
+                                    } else {
+                                        if (argtime == "1" || argtime == 1) 
+                                            message.reply(`User muted successfully for **1 minute**!`);
+                                        else
+                                            message.reply(`User muted successfully for **${argtime} minutes**!`);
+                                    }
                                 }
                                 const timer = `${diffsecos === 0 ? `${diffmins} minutes` : diffsecos % 60 === 0 ? `${Math.floor(diffmins)+(diffsecos/60)} minute(s)` : `${Math.floor(diffmins)} minutes and ${diffsecos} seconds`}`;
                                 if (servermods[gueldid].logs !== "") {
-                                    const a = actionLogs(0, chanel.id, gueldid, "muted", message.author.toString(), argname.toString(), true, timer, muteobj.reason);
+                                    const a = actionLogs(0, chanel.id, gueldid, "muted", message.author.toString(), argname.toString(), true, isdated ? argtime.replace(/"/g, "") : timer, muteobj.reason, isdated);
                                     if (message.guild.channels.get(servermods[gueldid].logs)) {
                                         message.guild.channels.get(servermods[gueldid].logs).sendMessage("", {embed: a[0]});
                                     }
@@ -1928,7 +1953,10 @@ bot.on("message", message => {
                                 } else {
                                     servermutes[gueldid]["mutes"][argname.id] = {};
                                     servermutes[gueldid]["mutes"][argname.id]["id"] = argname.id;
-                                    servermutes[gueldid]["mutes"][argname.id]["expire"] = new Date().getTime()+60000*argtime;
+                                    if (isdated === true)
+                                        servermutes[gueldid]["mutes"][argname.id]["expire"] = new Date().getTime()+dated;
+                                    else
+                                        servermutes[gueldid]["mutes"][argname.id]["expire"] = new Date().getTime()+60000*argtime;
                                     servermutes[gueldid].mutes[argname.id].permanent = false;
                                     writeMutes();
                                     let diffmins = (-1 * (new Date().getTime() - servermutes[gueldid]["mutes"][argname.id]["expire"])) / 60000;
@@ -1941,14 +1969,18 @@ bot.on("message", message => {
                                     if (notimespec === true) {
                                         message.reply("User muted successfully! Since no time was specified, they were muted for **10 minutes** (default time)!");
                                     } else {
-                                        if (argtime == "1" || argtime == 1) 
-                                            message.reply(`User muted successfully for **1 minute**!`);
-                                        else
-                                            message.reply(`User muted successfully for **${argtime} minutes**!`);
+                                        if (isdated === true) {
+                                            message.reply(`User muted successfully for **${argtime.replace(/"/g, "")}**!`);
+                                        } else {
+                                            if (argtime == "1" || argtime == 1) 
+                                                message.reply(`User muted successfully for **1 minute**!`);
+                                            else
+                                                message.reply(`User muted successfully for **${argtime} minutes**!`);
+                                        }
                                     }
                                     const timer = `${diffsecos === 0 ? `${diffmins} minutes` : diffsecos % 60 === 0 ? `${Math.floor(diffmins)+(diffsecos/60)} minute(s)` : `${Math.floor(diffmins)} minutes and ${diffsecos} seconds`}`;
                                     if (servermods[gueldid].logs !== "") {
-                                        const a = actionLogs(0, chanel.id, gueldid, "muted", message.author, argname, true, timer, muteobj.reason);
+                                        const a = actionLogs(0, chanel.id, gueldid, "muted", message.author, argname, true, isdated ? argtime.replace(/"/g, "") : timer, muteobj.reason, isdated);
                                         if (message.guild.channels.get(servermods[gueldid].logs)) {
                                             message.guild.channels.get(servermods[gueldid].logs).sendMessage("", {embed: a[0]});
                                         }
@@ -1979,6 +2011,9 @@ bot.on("message", message => {
             message.reply("An error was found! (Did you make sure you wrote a valid amount of minutes?)");
             console.log("Error while trying to mute:\n" + err.message);
         }
+    }
+    if (/^mute$/i.test(instruction)) {
+        message.reply("```"+prefix+"mute @person#0000 time reason\n\n!! Time and reason are optional.\n!! Valid options for time:\n1. Number: Mutes the user for the amount of minutes specified as number.\n2. Date string: WARNING: Must be put between \"\". Date string is ?w ?d ?h ?m ?s.\nExample: "+prefix+"mute @guy#0001 \"4h 2m 1s\" NO --> Mutes guy for 4 hours, 2 minutes and 1 second with reason of \"NO\".```");
     }
     if (/^p?unmute\s{1,4}<@!?\d+>(?:\s{1,4}.+)?$/i.test(instruction)) {
         try {
@@ -2333,10 +2368,10 @@ bot.on("message", message => {
             console.log(`Error while doing deltrigger: ${err.message}`);
         }
     }
-    if (/^setrole\s(?:.+?)\s(?:.+)$/i.test(instruction)) {
+    if (/^saltrole\s(?:.+?)\s(?:.+)$/i.test(instruction)) {
         try {
-        const roletype = instruction.match(/^setrole\s(.+?)\s(?:.+)$/i)[1];
-        const rolematched = instruction.match(/^setrole\s(?:.+?)\s(.+)$/i)[1];
+        const roletype = instruction.match(/^saltrole\s(.+?)\s(?:.+)$/i)[1];
+        const rolematched = instruction.match(/^saltrole\s(?:.+?)\s(.+)$/i)[1];
         if (rolematched && roletype) {
             if (message.member.hasPermission("MANAGE_GUILD") || message.author.id == ownerID) {
                  /* jshint -W080 */
@@ -2364,12 +2399,12 @@ bot.on("message", message => {
         }
         } catch (err) {
             message.reply("Uh oh! I'm sorry, but an error happened!");
-            console.log(`Error while doing setrole:\n${err.message}`);
+            console.log(`Error while doing saltrole:\n${err.message}`);
         }
     }
-    if (/^delsetrole\s(?:.+)$/i.test(instruction)) {
+    if (/^delsaltrole\s(?:.+)$/i.test(instruction)) {
         try {
-            const roletyped = instruction.match(/^delsetrole\s(.+)$/i)[1];
+            const roletyped = instruction.match(/^delsaltrole\s(.+)$/i)[1];
             if (message.member.hasPermission("MANAGE_GUILD") || message.author.id == ownerID) {
                 if (/^Moderator$/i.test(roletyped)) {
                     if (servermods[gueldid].moderator !== "") {
@@ -2388,15 +2423,15 @@ bot.on("message", message => {
             }
         } catch (e) {
             message.reply("Uh-oh! I'm sorry, but an error happened!");
-            console.log(`Error while doing delsetrole:\n${e.message}`);
+            console.log(`Error while doing delsaltrole:\n${e.message}`);
         }
     }
-    if (/^setlogs\s{1,4}(?:.+?)(?:\s{1,4}<#\d+>)?$/i.test(instruction)) {
+    if (/^actionlogs\s{1,4}(?:.+?)(?:\s{1,4}<#\d+>)?$/i.test(instruction)) {
         try {
-        const option = instruction.match(/^setlogs\s{1,4}(.+?)(\s{1,4}<#\d+>)?$/i)[1];
+        const option = instruction.match(/^actionlogs\s{1,4}(.+?)(\s{1,4}<#\d+>)?$/i)[1];
         const cchannel = {};
-        if (instruction.match(/^setlogs\s{1,4}(?:.+?)(?:\s{1,4}(<#\d+>))?$/i)[1]) {
-            cchannel.channel = instruction.match(/^setlogs\s{1,4}(?:.+?)(?:\s{1,4}(<#\d+>))?$/i)[1];
+        if (instruction.match(/^actionlogs\s{1,4}(?:.+?)(?:\s{1,4}(<#\d+>))?$/i)[1]) {
+            cchannel.channel = instruction.match(/^actionlogs\s{1,4}(?:.+?)(?:\s{1,4}(<#\d+>))?$/i)[1];
         }
         if (message.member.hasPermission("MANAGE_GUILD") || message.author.id == ownerID) {
             if (cchannel.channel) {
