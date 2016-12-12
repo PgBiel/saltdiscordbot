@@ -246,7 +246,7 @@ const claimresponsabilityfunc = function(number, obj, messageid, channelid, serv
     servermods[serverid].duelogs[`${number}`].object = obj;
     writeMods();
 };
-const actionLogs = function(messageid, channelid, serverid, action = "Unknown", authort = "Unknown", sufferet = "Unknown", usestime = false, time = null, reason = null) {
+const actionLogs = function(messageid, channelid, serverid, action = "Unknown", authort = "Unknown", sufferet = "Unknown", usestime = false, time = null, reason = null, isdated = false) {
     try {
     if (!(servermods[serverid].duelogs.latestNumber)) {
         servermods[serverid].duelogs.latestNumber = 1;
@@ -281,7 +281,7 @@ const actionLogs = function(messageid, channelid, serverid, action = "Unknown", 
             inline: true
         }, {
             name: "Muted For",
-            value: `${time.toString().replace(/-0\.\d+/g, "0")}`,
+            value: `${isdated ? time : time.toString().replace(/-0\.\d+/g, "0")}`,
             inline: true
         }, {
             name: "Reason",
