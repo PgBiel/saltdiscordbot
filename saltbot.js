@@ -1856,7 +1856,7 @@ bot.on("message", message => {
         if (!argname) return message.reply("User not found!");
         if (instruction.match(/^mute\s+<@!?\d+>\s+?(\d+|"(?:\w+|[\w\s]+)")?(?:\s{1,4}.+)?$/i)) {
             argtime = instruction.match(/^mute\s+<@!?\d+>\s+?(\d+|"(?:\w+|[\w\s]+)")?(?:\s{1,4}.+)?$/i)[1];
-            if (instruction.match(/^mute\s+<@!?\d+>\s+?(?:\d+|("(?:\w+|[\w\s]+)"))?(?:\s{1,4}.+)?$/i)) {
+            if (instruction.match(/^mute\s+<@!?\d+>\s+?(?:\d+|"(\w+|[\w\s]+)")?(?:\s{1,4}.+)?$/i)) {
                 isdated = true;
             }
         } else {
@@ -1871,7 +1871,7 @@ bot.on("message", message => {
         }
         let dated;
         if (isdated === true) {
-            if (/^"\d+"$/.test(argtime)) {
+            if (/^(?:"\d+"|\d+)$/.test(argtime)) {
                 argtime = argtime.replace(/"/g, "");
                 isdated = false;
             } else {
