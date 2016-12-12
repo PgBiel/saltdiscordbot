@@ -9,11 +9,16 @@
             \\↪ Permissions required:
                 \\↪ Bot: _Kick Members_
                 \\↪ User: _Kick Members_\n
-            • **(prefix)mute** {mention: user to mute} [time in minutes to mute (Default: 10 mins)] [reason] -> Mutes an user for the time specified, in minutes.
+            • **(prefix)mute** {mention: user to mute} [time in minutes to mute (Default: 10 mins) OR date String (See below)] [reason] -> Mutes an user for the time specified, in minutes.
             \\↪ Permissions required:
                 \\↪ Bot: _Manage Roles and Manage Channels_
                 \\↪ User: _Manage Roles_ **OR** _Moderator Role_ (see \`setrole\`)\n
-            • **(prefix)unmute** {mention: user to unmute} -> Unmutes a muted user.
+            \\↪ About date strings: You must write them between " "! And they are like this: \`?w ?d ?h ?m ?s\`.
+            \\↪ Example 1, assuming the server's prefix is **+**:
+                \\↪ \`+mute @guy#0001 "4h 2m 5s" Spamming\` -> This will mute the user \`guy\` for 4 hours, 2 minutes and 5 seconds, with reason of "Spamming".
+            \\↪ Example 2, also assuming the prefix is **+**:
+                \\↪ \`+mute @guy#0001 5 Spamming\` -> This will mute the user \`guy\` for 5 minutes, with reason of "Spamming".
+            • **(prefix)unmute** {mention: user to unmute} [reason] -> Unmutes a muted user.
             \\↪ Permissions required:
                 \\↪ Bot: _Manage Roles_
                 \\↪ User: _Manage Roles_ **OR** _Moderator Role_ (see \`setrole\`)\n
@@ -23,7 +28,15 @@
             \\↪ Permissions required:
                 \\↪ Bot: _Manage Roles and Manage Channels_
                 \\↪ User: _Manage Roles_ **OR** _Moderator Role_ (see \`setrole\`)
-            \\↪ Additional Notes: The user can still be unmuted (using \`unmute\`).\n`;
+            \\↪ Additional Notes: The user can still be unmuted (using \`unmute\`).\n
+            • **(prefix)warn** {mention: user to warn} [reason (optional, but recommended!)] -> Warns an user.
+            \\↪ Permissions required:
+                \\↪ User: _Moderator Role_
+            \\↪ Additional Notes: See **(prefix)setwarns** at Administration for how to setup warn limit and punishment.
+            • **(prefix)clearwarns** {mention: user to clear warns} -> Clears an user's warns.
+            \\↪ Permissions required:
+                \\↪ User: _Moderator Role_
+            \\↪ Important Note: This requires warn limit to be enabled (if it isn't, then warns aren't stored). See **(prefix)setwarns** at Administration.`;
         const fun = `_ _
             -===**_Fun_**===-
             • **(prefix)coinflip** -> Flips a coin.
@@ -43,7 +56,9 @@
             • **(prefix)setkey** {key} -> Sets your PRIVATE key.
             \\↪ Notes: PRIVATE key is to decrypt messages that were encrypted using the _associated_ PUBLIC key.\n
             • **(prefix)getkey** {user (mention)} -> Gets PUBLIC key of an user.
-            \\↪ Notes: PUBLIC key is to encrypt, and is always associated to a PRIVATE key, which can be used to decrypt.`;
+            \\↪ Notes: PUBLIC key is to encrypt, and is always associated to a PRIVATE key, which can be used to decrypt.
+            • **(prefix)emoji** {emoji/custom emoji} -> Returns a bigger version of the emoji you're providing.
+            \\↪ Notes: None`;
         const utility = `_ _
             -===**Utility**===--
             • **(prefix)selfrole** {role} -> Give or take away a role marked as selfrole to/from yourself.
@@ -61,23 +76,27 @@
             \\↪ Alias: **(prefix)delreminder**`;
         const administration = `_ _
             -===**Administration**===--
-            • **(prefix)setrole** {role type} {role name} -> Sets a role as a role type for me (e.g. Moderator role).
+            • **(prefix)logs** {option} [arg (only for setting log channel)] -> Sets logging for the server.
+            \\↪ Permissions required:
+                \\↪ User: _Manage Server_
+            \\↪ Please write **(prefix)logs** for more info!
+            • **(prefix)saltrrole** {role type} {role name} -> Sets a role as a role type for me (e.g. Moderator role).
             \\↪ Permissions required:
                 \\↪ User: _Manage Server_ **OR** _Administrator Role_ (that is set here).
             \\↪ Avaible role types:
                 \\↪ Moderator: Enables most Moderation commands.
                 \\↪ Administrator: Enables most Administration commands.
             \\↪ Example - Setting Moderator Role, assuming that the prefix for your server is **+**:
-                \\↪ \`+setrole Moderator Mod\` -> This sets Salt's \`MODERATOR\` role to a role named "Mod".\n
-            • **(prefix)delsetrole** {role type} -> Makes a role that is set as a role type be no longer said role type (e.g. Moderator role).
+                \\↪ \`+saltrole Moderator Mod\` -> This sets Salt's \`MODERATOR\` role to a role named "Mod".\n
+            • **(prefix)delsaltrole** {role type} -> Makes a role that is set as a role type be no longer said role type (e.g. Moderator role).
             \\↪ Permissions required:
                 \\↪ User: _Manage Server_ **OR** _Administrator Role_
             \\↪ Avaible role types:
                 \\↪ Moderator: Enables most Moderation commands.
                 \\↪ Administrator: Enables most Administration commands. 
             \\↪ Example - Deleting a set Moderator Role, assuming that the prefix is **+** and that "Mod" is the Moderator Role:
-                \\↪ \`+delsetrole Moderator Mod\` -> Now, the role named "Mod" is no longer the \`MODERATOR\` role for Salt.\n   
-            • **(prefix)setlogs** {(true/set/add) for yes, (false/remove) for no} [#channel (if yes)] -> Enables (with specified channel) / Disables action logs for the server.
+                \\↪ \`+delsaltrole Moderator Mod\` -> Now, the role named "Mod" is no longer the \`MODERATOR\` role for Salt.\n   
+            • **(prefix)actionlogs** {(true/set/add) for yes, (false/remove) for no} [#channel (if yes)] -> Enables (with specified channel) / Disables action logs for the server.
             \\↪ Permissions required:
                 \\↪ User: _Manage Server_ **OR** _Administrator Role_
             \\↪ Additional Notes: When writing "false" or "remove" as option, this will disable logs for the server.
