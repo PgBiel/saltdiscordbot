@@ -80,7 +80,7 @@
             \\↪ Permissions required:
                 \\↪ User: _Manage Server_
             \\↪ Please write **(prefix)logs** for more info!
-            • **(prefix)saltrrole** {role type} {role name} -> Sets a role as a role type for me (e.g. Moderator role).
+            • **(prefix)saltrole** {role type} {role name} -> Sets a role as a role type for me (e.g. Moderator role).
             \\↪ Permissions required:
                 \\↪ User: _Manage Server_ **OR** _Administrator Role_ (that is set here).
             \\↪ Avaible role types:
