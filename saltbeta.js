@@ -625,6 +625,7 @@ bot.on("message", message => {
 	var chanel = message.channel;
     var gueldid = message.guild.id;
     let mentionfix;
+    const disabledreply = function(pt) {message.reply(":lock: That command has been disabled for this "+pt+"!");};
     prefix = serverthings[(gueldid)];
     if (/^<@!?244533925408538624>\s?/i.test(prefix))
         mentionfix = prefix;
@@ -995,7 +996,10 @@ bot.on("message", message => {
     if (/^info\s(.+)$/i.test(instruction)) {
         try {
         var ireq = instruction.match(/^info\s(.+)$/i)[1];
+        let p = checkperm("global.info.channels");
+        if (p[2] && !(/^(?:bot|stats)$/i.test(ireq))) return disabledreply(p[2]);
         if (/^channels$/i.test(ireq)) {
+            if (!p[0]) return message.reply("Missing permission node `global.info.channels`!");
             if (ireq !== null && ireq !== undefined && ireq !== "") {
                 message.reply("Information has been sent by PM!");
                 var chanelstosend = message.guild.channels.filter(v => v.type === "text").map(v=>"#"+v.name).join` | `;
@@ -1003,6 +1007,8 @@ bot.on("message", message => {
             }
         }
         if (/^roles$/i.test(ireq)) {
+            let p = checkperm("global.info.roles");
+            if (!p[0]) return message.reply("Missing permission node `global.info.roles`!");
             if (ireq !== null && ireq !== undefined && ireq !== "") {
                 message.reply("Information has been sent by PM!");
                 var rolestosend = Array.from(message.guild.roles).map(v=>v[1]).sort((a,b)=>b.position-a.position).map(v=>v.name).join`, `;
@@ -1010,11 +1016,15 @@ bot.on("message", message => {
             }
         }
         if (/^(?:usersamount|members)$/i.test(ireq)) {
+            let p = checkperm("global.info.members");
+            if (!p[0]) return message.reply("Missing permission node `global.info.members`!");
             if (ireq !== null && ireq !== undefined && ireq !== "") {
                 message.reply("The current amount of users in this server is **" + message.guild.memberCount + "**!");
             }
         }
         if (/^(generalinfo|server)$/i.test(ireq)) {
+            let p = checkperm("global.info.server");
+            if (!p[0]) return message.reply("Missing permission node `global.info.server`!");
             if (ireq !== null && ireq !== undefined && ireq !== "") {
                 // message.reply("Information has been sent by PM!");
                 var somechannelamountthings = Array.from(message.guild.channels.filter(v => v.type === "text")).length;
@@ -1065,6 +1075,8 @@ bot.on("message", message => {
         }
         if (/^(?:amountusersonrole|amur)\s{1,4}(.+)$/i.test(ireq)) {
             try {
+            let p = checkperm("global.info.amountusersonrole");
+            if (!p[0]) return message.reply("Missing permission node `global.info.amountusersonrole`!");
             var roletomatch = ireq.match(/^(?:amountusersonrole|amur)\s{1,4}(.+)$/i)[1];
             if (roletomatch == "{everyone}") roletomatch = "@everyone";
             if (ireq !== "") {
@@ -1095,6 +1107,8 @@ bot.on("message", message => {
         }
         if (/^user(?:\s{1,4}.+)?$/i.test(ireq)) {
             try {
+                let p = checkperm("global.info.user");
+                if (!p[0]) return message.reply("Missing permission node `global.info.user`!");
                 chanel.sendMessage("Fetching data, please wait...").then(msg => {
                     const embedz = function(user, member, stuffs = null){
                         const avatarURL = user.avatarURL ? user.avatarURL : "http://a5.mzstatic.com/us/r30/Purple71/v4/5c/ed/29/5ced295c-4f7c-1cf6-57db-e4e07e0194fc/icon175x175.jpeg";
@@ -1240,6 +1254,8 @@ bot.on("message", message => {
             }
         }
         if (/^amountusersonhighrole\s{1,4}(.+)$/i.test(ireq)) {
+            let p = checkperm("global.info.amush");
+            if (!p[0]) return message.reply("Missing permission node `global.info.amush`!");
             var matchhighrole = ireq.match(/^amountusersonhighrole\s(.+)$/i)[1];
             if (matchhighrole == "{everyone}") matchhighrole = "@everyone";
             for (var iteratorr = message.guild.roles.entries(), vall = iteratorr.next(), roleMatch; vall.done === false; vall = iteratorr.next()) {
@@ -1278,6 +1294,8 @@ bot.on("message", message => {
             }
         }
         if (/^amush\s{1,4}(.+)$/i.test(ireq)) {
+            let p = checkperm("global.info.amush");
+            if (!p[0]) return message.reply("Missing permission node `global.info.amush`!");
             var matchhighrolee = ireq.match(/^amush\s(.+)$/i)[1];
             if (matchhighrolee == "{everyone}") matchhighrolee = "@everyone";
             for (var iteratorrr = message.guild.roles.entries(), valll = iteratorrr.next(), roleMatcht; valll.done === false; valll = iteratorrr.next()) { 
@@ -1316,6 +1334,8 @@ bot.on("message", message => {
         }
         if (/^role\s{1,4}.+$/i.test(ireq)) {
             try {
+                let p = checkperm("global.info.role");
+            if (!p[0]) return message.reply("Missing permission node `global.info.role`!");
                 stillbeingmatched = ireq.match(/^role\s{1,4}(.+)$/i)[1];
                 let stuffs = false;
                 if (stillbeingmatched == "{everyone}") stillbeingmatched = "@everyone";
@@ -1381,6 +1401,8 @@ bot.on("message", message => {
         }
         if (/^channel(?:\s{1,4}.+)?$/i.test(ireq)) {
             try {
+                let p = checkperm("global.info.channel");
+            if (!p[0]) return message.reply("Missing permission node `global.info.channel`!");
                 let channel;
                 if (ireq.match(/^channel(\s{1,4}.+)$/i)) {
                     if (ireq.match(/^channel\s{1,4}<#(\d+)>$/i)) channel = ireq.match(/^channel\s{1,4}<#(\d+)>$/i)[1];
@@ -1596,11 +1618,13 @@ bot.on("message", message => {
             }
         }
         if (/^(?:bot|stats)$/i.test(ireq)) {
+            let p = checkperm("global.info.bot");
+            //if (!p[0]) return message.reply("Missing permission node `global.info.bot`!");
             let uptime = Math.floor(bot.uptime / 1000);
             let uptimemins = uptime / 60 >= 1 ? Math.floor(uptime / 60) : 0;
             let uptimehours = uptimemins / 60 >= 1 ? Math.floor(uptimemins / 60) : 0;
             let uptimedays = uptimehours / 24 >= 1 ? Math.floor(uptimehours / 60) : 0;
-            chanel.sendMessage("", {embed: {
+            let daembed = {
                 title: "",
                 url: "",
                 thumbnail: {
@@ -1647,18 +1671,25 @@ bot.on("message", message => {
                 footer: {
                     text: `ID: ${bot.user.id} | Happy to be alive! ^-^`
                 }
-            }});
-        }
+            };
+            if (!p[0] || p[2]) {
+                bot.rest.methods.sendMessage(message.author, "", {embed: daembed}).then(()=>message.reply("Sent bot info on DMs!")).catch(err=>message.reply("Could not send DM about bot info (Check if you blocked me)!"));
+            } else
+                chanel.sendMessage("", {embed: daembed});
+            }
         } catch(err) {
-            message.reply("I like trains.");
-            console.log(err.message);
+            message.reply("An error was found! Sorry.");
+            console.error("Error at info bot:\n"+err.message);
         }
     }
     if (/^info$/i.test(instruction)) {
         message.reply("This is a command that can show you information. Available commands are:\n`" + prefix + "info channels`\n`" + prefix + "info roles`\n`" + prefix + "info members`\n`" + prefix + "info server`\n`" + prefix + "info amountusersonrole <role name>`\n`" + prefix + "info user [user to get info (not required)]`\n`" + prefix + "info amountusersonhighrole(or amush) <role name to check users in it that it is their highest>`\n`"+prefix+"info role rolename`\n`"+prefix+"info channel #channel` <- TIP: Use &channel to look for voice channels!\n`"+prefix+"info bot`");
     }
     if (/^command\s(.+?)\s[^]+$/i.test(instruction)) {
-    if (message.member.hasPermission("MANAGE_GUILD") || message.author.id === ownerID) {
+    let p = checkperm("global.command");
+    if (!p[0] && !p[1]) return message.reply("Missing permission node `global.command`!");
+    if (p[2]) return disabledreply(p[2]);
+    if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.command`! Could also use this command by having the permission `Manage Server`.");
         try {
             var cmdtrigger = instructioncase.match(/^command\s(.+?)\s[^]+$/i)[1];
             var cmdtext = instruction.match(/^command\s(?:.+?)\s([^]+)$/i)[1];
@@ -1690,14 +1721,17 @@ bot.on("message", message => {
             message.reply("Uh oh, an error occurred!");
             console.log("Error while adding a command at a server:\n" + err.message);
         }
-    } else {
-        message.reply("I'm sorry, but you don't have the permission `Manage Server`!");
-    } // End of the "else"
+    //} else {
+        //message.reply("I'm sorry, but you don't have the permission `Manage Server`!");
+    //} // End of the "else"
     } // End of the command "command"
     if (/^command$/i.test(instruction)) {
         message.reply("This command allows you to set custom commands for your server! They can only send text, but you can simulate arguments by adding underscores into the command name! Once you do an underscore, it is replaced by a space! Cool, isn't it?\nHowever, you need the permission `Manage Server` to edit commands!\n\nP.S: To delete commands write `" + prefix + "delcommand <command name>`! And, if the command name has spaces, to delete it write spaces, and not underscores!");
     }
     if (instructioncase in servercmds[gueldid]) {
+        let p = checkperm(`custom.${instructioncase.replace(/\s/g, "_")}`);
+        if (!p[0] && !p[1]) return message.reply("Missing permission node `custom."+instructioncase.replace(/\s/g, "_")+"`!");
+        if (p[2]) return disabledreply(p[2]);
         chanel.sendMessage("\u200B" + servercmds[gueldid][instructioncase]);
     }
     if (/^help(\s{1,4}.+)?$/i.test(instruction)) {
@@ -1729,8 +1763,11 @@ bot.on("message", message => {
         message.reply("Help has been sent to your Private Messages!");
     }
     if (/^delcommand\s(.+)$/i.test(instruction)) {
+        let p = checkperm("global.delcommand");
+        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.delcommand`!");
+        if (p[2]) return disabledreply(p[2]);
         var cmdtodelete = instructioncase.match(/^delcommand\s(.+)$/i)[1];
-        if (message.member.hasPermission("MANAGE_GUILD") || message.author.id == ownerID) {
+        if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.delcommand`! Could also use this command by having the permission `Manage Server`."); 
             if (cmdtodelete in servercmds[gueldid]) {
                 delete servercmds[gueldid][cmdtodelete];
                 writeCmd();
@@ -1738,12 +1775,15 @@ bot.on("message", message => {
             } else {
                 message.reply("That is not a custom command of this server!");
             }
-        } else {
-            message.reply("I'm sorry, but you don't have the `Manage Server` permission!");
-        }
+        //} else {
+            //message.reply("I'm sorry, but you don't have the `Manage Server` permission!");
+        //}
     }
     if (/^ban\s+<@!?\d+>(?:\s+[^]+)?$/i.test(instruction)) {
         try {
+        let p = checkperm("global.ban");
+        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.ban`!");
+        if (p[2]) return disabledreply(p[2]);
         var fetchclientban = message.guild.members.get(bot.user.id);
         const binfo = {};
         if (instruction.match(/^ban\s+<@!?\d+>\s+([^]+)$/i))
@@ -1751,7 +1791,7 @@ bot.on("message", message => {
         else
             binfo.reason = "None";
         if (fetchclientban.hasPermission("BAN_MEMBERS")) {
-            if (message.member.hasPermission("BAN_MEMBERS") || message.author.id == ownerID) {
+            if (!(message.member.hasPermission("BAN_MEMBERS")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.ban`! Could also use this command by having the permission `Ban Members`.");
                 if (instruction.match(/^ban\s+(<@!?\d+>)(?:\s+[^]+)?$/i)) {
                     var usertoban = instruction.match(/^ban\s+<@!?(\d+)>(?:\s+[^]+)?$/i)[1];
                     usertoban = bot.users.get(usertoban.toString());
@@ -1784,9 +1824,9 @@ bot.on("message", message => {
                 } else {
                     message.reply("Nobody is mentioned! You need to mention who to ban!");
                 }
-            } else {
-                message.reply("You do not have the permission `Ban Members`!");
-            }
+            //} else {
+                //message.reply("You do not have the permission `Ban Members`!");
+            //}
         } else {
             if (message.member.hasPermission("BAN_MEMBERS") || message.author.id == ownerID) {
                 message.reply("Uh oh! I do not have the permission `Ban Members`!");
@@ -1821,12 +1861,18 @@ bot.on("message", message => {
         }
     } */
     if (/^listcommands/i.test(instruction)) {
+        let p = checkperm("global.listcommands");
+        if (!p[0]) return message.reply("Missing permission `global.listcommands`!");
+        if (p[2]) return disabledreply(p[2]);
         var commandlistthings = Object.keys(servercmds[gueldid]).join("\n• ").toLowerCase();
         message.reply("The list of custom commands has been sent to your Private Messages!");
         message.author.sendMessage("***Custom commands for guild \"" + message.guild.name + "\":***\n• " + commandlistthings + "\n\n**===========================================**");
     }
     if (/^kick\s+<@!?\d+>(?:\s+[^]+)?$/i.test(instruction)) {
         try {
+        let p = checkperm("global.kick");
+        if (!p[0] && !p[1]) return message.reply("Missing permission `global.kick`!");
+        if (p[2]) return disabledreply(p[2]);
         var fetchclientkick = message.guild.members.get(bot.user.id);
         const kinfo = {};
         if (instruction.match(/^kick\s+<@!?\d+>\s+([^]+)$/i))
@@ -1834,7 +1880,7 @@ bot.on("message", message => {
         else
             kinfo.reason = "None";
         if (fetchclientkick.hasPermission("KICK_MEMBERS")) {
-            if (message.member.hasPermission("KICK_MEMBERS") || message.author.id == ownerID) {
+            if (!(message.member.hasPermission("KICK_MEMBERS")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission `global.kick`! Could also use this command by having the permission `Kick Members`.");
                 if (instruction.match(/^kick\s+(<@!?\d+>)(?:\s+[^]+)?$/i)) {
                     var usertokick = instruction.match(/^kick\s+<@!?(\d+)>(?:\s+[^]+)?$/i)[1];
                     usertokick = bot.users.get(usertokick.toString());
@@ -1867,9 +1913,9 @@ bot.on("message", message => {
                 } else {
                     message.reply("Nobody is mentioned! You need to mention who to kick!");
                 }
-            } else {
-                message.reply("You do not have the permission `Kick Members`!");
-            }
+            //} else {
+                //message.reply("You do not have the permission `Kick Members`!");
+            //}
         } else {
             if (message.member.hasPermission("KICK_MEMBERS") || message.author.id == ownerID) {
                 message.reply("Uh oh! I do not have the permission `Kick Members`!");
@@ -1885,15 +1931,39 @@ bot.on("message", message => {
     if (/^welcfarew\s(?:.+?)\s(?:.+)$/i.test(instruction)) {
         /* jshint sub:true */
         try {
-            if (message.member.hasPermission("MANAGE_GUILD") || message.author.id == ownerID) {
-                var welcommand = instruction.match(/^welcfarew\s(.+?)\s(?:.+)$/i)[1];
-                var welmessage = instruction.match(/^welcfarew\s(?:.+?)\s(.+)$/i)[1];
-                if (/^welcome$/i.test(welcommand)) {
+            //if (message.member.hasPermission("MANAGE_GUILD") || message.author.id == ownerID) {
+                let p = checkperm("global.welcfarew.welcome.message");
+                if (p[2]) return disabledreply(p[2]);
+                var welcommand = instruction.match(/^welcfarew\s(.+?)(?:\s(?:.+))?$/i)[1];
+                var welmessage = instruction.match(/^welcfarew\s(?:.+?)\s(.+)$/i)||null;
+                if (welmessage)welmessage=welmessage[1];
+                if (/^(?:disablewelcome|disablewelc)$/i.test(welcommand)){
+                    let p = checkperm("global.welcfarew.welcome.disable");
+                    if (!p[0] && !p[1]) return message.reply("Missing permission node `global.welcfarew.welcome.disable`!");
+                    if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.welcfarew.welcome.disable`! Could also use this command by having the permission `Manage Server`.");
+                    if (!(servermsgs[gueldid]["welcome"]["message"])) return message.reply("Welcome message is not enabled!");
+                    servermsgs[gueldid]["welcome"]["message"] = "";
+                    writeMsg();
+                    message.reply("Welcome message disabled successfully!");
+                } else if (/^(?:disablefarewell|disablefarew)$/i.test(welcommand)) {
+                    let p = checkperm("global.welcfarew.farewell.disable");
+                    if (!p[0] && !p[1]) return message.reply("Missing permission node `global.welcfarew.farewell.disable`!");
+                    if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.welcfarew.farewell.disable`! Could also use this command by having the permission `Manage Server`.");
+                    if (!(servermsgs[gueldid]["goodbye"]["message"])) return message.reply("Farewell message is not enabled!");
+                    servermsgs[gueldid]["goodbye"]["message"] = "";
+                    writeMsg();
+                    message.reply("Farewell message disabled successfully!");
+                } else if (/^welcome$/i.test(welcommand)) {
                     if (/^<#([0-9])+>$/i.test(welmessage) && message.guild.channels.get(welmessage.replace(/[<#>]/ig, ""))) {
+                        let p = checkperm("global.welcfarew.welcome.channel");
+                        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.welcfarew.welcome.channel`!");
+                        if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.welcfarew.welcome.channel`! Could also use this command by having the permission `Manage Server`.");
                         servermsgs[gueldid]["welcome"]["channel"] = message.guild.channels.get(welmessage.replace(/[<#>]/ig, "")).id;
                         writeMsg();
                         message.reply("Welcome message channel set to " + welmessage + "!");
                     } else {
+                        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.welcfarew.welcome.message`!");
+                        if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.welcfarew.welcome.message`! Could also use this command by having the permission `Manage Server`.");
                         servermsgs[gueldid]["welcome"]["message"] = welmessage;
                         writeMsg();
                         message.reply("Welcome message set!");
@@ -1901,27 +1971,36 @@ bot.on("message", message => {
                     }
                 } else if (/^farewell$/i.test(welcommand) || (/^goodbye$/i.test(welcommand))) {
                     if (/^<#([0-9])+>$/i.test(welmessage) && message.guild.channels.get(welmessage.replace(/[<#>]/ig, ""))) {
+                        let p = checkperm("global.welcfarew.farewell.channel");
+                        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.welcfarew.farewell.channel`!");
+                        if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.welcfarew.farewell.channel`! Could also use this command by having the permission `Manage Server`.");
                         servermsgs[gueldid]["goodbye"]["channel"] = message.guild.channels.get(welmessage.replace(/[<#>]/ig, "")).id;
                         writeMsg();
                         message.reply("Farewell message channel set to " + welmessage + "!");
                     } else {
+                        let p = checkperm("global.welcfarew.farewell.message");
+                        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.welcfarew.farewell.message`!");
+                        if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.welcfarew.farewell.message`! Could also use this command by having the permission `Manage Server`.");
                         servermsgs[gueldid]["goodbye"]["message"] = welmessage;
                         writeMsg();
                         message.reply("Farewell message set!");
                     }
                 }
-            } else {
-                message.reply("You need the permission `Manage Server` to do this command!");
-            }
+            //} else {
+                //message.reply("You need the permission `Manage Server` to do this command!");
+            //}
         } catch (err) {
             message.reply("An error happened!");
             console.log("Error while doing welcome/farewell:\n" + err.message);
         }
     }
     if (/^welcfarew$/i.test(instruction)) {
-        message.reply("`" + prefix + "welcfarew {welcome/farewell} {message (or channel to set the channel where the message is sent)}`\n\nSets the message for members joining or leaving. {member} is replaced with the user mention.\n**Note:** If a channel is written in the message spot, it sets the channel of where the message is sent.\n**REQUIRES `Manage Server` PERMISSION**");
+        message.reply("`" + prefix + "welcfarew {welcome/farewell/disablewelcome/disablefarewell} {if option was welcome or farewell, message (or channel to set the channel where the message is sent)}`\n\nSets the message for members joining or leaving. {member} is replaced with the user mention.\n**Note:** If a channel is written in the message spot, it sets the channel of where the message is sent.\n**REQUIRES `Manage Server` PERMISSION**");
     }
     if (/^autorole\s(.+)$/i.test(instruction)) {
+        let p = checkperm("global.autorole");
+        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.autorole`!");
+        if (p[2]) return disabledreply(p[2]);
         autoroletomatch = instruction.match(/^autorole\s(.+)$/i)[1];
         if (autoroletomatch !== undefined) {
             /* jshint -W080 */
@@ -1933,7 +2012,7 @@ bot.on("message", message => {
             /* jshint +W080 */
             if (autorolematch !== null && autorolematch !== undefined) {
                 if (message.guild.members.get(bot.user.id).hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) {
-                    if (message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS") || message.author.id == ownerID) {
+                    if (!(message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.autorole`! Could also use this command by having `Manage Roles` permission.");
                         if (message.guild.roles.get(autorolematch.id)) {
                             serverroles[gueldid] = autorolematch.id;
                             writeRoles();
@@ -1941,21 +2020,24 @@ bot.on("message", message => {
                         } else {
                             message.reply("That role doesn't exist!");
                         }
-                    } else {
-                        message.reply("You do not have the permission `Manage Roles`!");
-                    }
+                    //} else {
+                        //message.reply("You do not have the permission `Manage Roles`!");
+                    //}
                 } else {
-                    if (message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS") || message.author.id == ownerID) {
+                    //if (message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS") || message.author.id == ownerID) {
                         message.reply("I do not have the permission `Manage Roles`!");
-                    } else {
-                        message.reply("Neither of us has the permission `Manage Roles`!");
-                    }
+                    //} else {
+                        //message.reply("Neither of us has the permission `Manage Roles`!");
+                    //}
                 }
             }
         }    
     }
     if (/^delautorole$/i.test(instruction)) {
-        if (message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS") || message.author.id == ownerID) {
+        let p = checkperm("global.delautorole");
+        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.delautorole`!");
+        if (p[2]) return disabledreply(p[2]);
+        if (!(message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.delautorole`! Could also use this command by having the permission `Manage Roles`.");
             if (serverroles[gueldid] === "") {
                 message.reply("This server doesn't have an autorole!");
             } else {
@@ -1963,13 +2045,13 @@ bot.on("message", message => {
                 writeRoles();
                 message.reply("Autorole deleted successfully!");
             }
-        } else {
-            if (serverroles[gueldid] === "") {
-                message.reply("This server doesn't have an autorole nor do you have the permission `Manage Roles`!");
-            } else {
-                message.reply("You do not have the permission `Manage Roles`!");
-            }
-        }
+       // } else {
+           // if (serverroles[gueldid] === "") {
+              //  message.reply("This server doesn't have an autorole nor do you have the permission `Manage Roles`!");
+            //}else {
+              //  message.reply("You do not have the permission `Manage Roles`!");
+            //}
+        //}
     }
     if (/^mute\s{1,4}<@!?\d+>(?:\s{1,4}(?:\d+|"(?:\w+|[\w\s]+)")(?:\s{1,4}.+)?)?$/i.test(instruction)) {
         /* jshint sub:true */
@@ -2150,6 +2232,9 @@ bot.on("message", message => {
     }
     if (/^p?unmute\s{1,4}<@!?\d+>(?:\s{1,4}.+)?$/i.test(instruction)) {
         try {
+        let p = checkperm("global.unmute");
+        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.unmute`!");
+        if (p[2]) return disabledreply(p[2]);
         var argbase = instruction.match(/^p?unmute\s(.+)(?:\s{1.4}.+)?/i)[1];
         let argname = instruction.match(/^p?unmute\s{1,4}<@!?(\d+)>(?:\s{1,4}.+)?$/i)[1];
         argname = bot.users.get(argname.toString());
@@ -2158,7 +2243,7 @@ bot.on("message", message => {
         let botmember = message.guild.members.get(bot.user.id);
         let argreason = instruction.match(/^p?unmute\s{1,4}<@!?\d+>(\s{1,4}.+)$/i) ? instruction.match(/^p?unmute\s{1,4}<@!?\d+>\s{1,4}(.+)?$/i)[1] : "None";
         if (botmember.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) {
-            if (message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS") || message.author.id == ownerID || checkmodrole(message.member) === true) {
+            if (!(message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) && message.author.id !== ownerID && !(checkmodrole(message.member)) && p[1]) return message.reply("Missing permission node `global.unmute`! Could also use this command by having permission `Manage Roles` OR have the `Moderator Role` (for Salt).");
                 if (argname.id in servermutes[gueldid]["mutes"]) {
                     delete servermutes[gueldid]["mutes"][argname.id];
                     writeMutes();
@@ -2175,15 +2260,15 @@ bot.on("message", message => {
                 } else {
                     message.reply("That user is not muted!");
                 }
-            } else {
-                message.reply("You do not have the permission `Manage Roles`!");
-            }
+            //} else {
+                //message.reply("You do not have the permission `Manage Roles`!");
+            //}
         } else {
-            if (message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS") || message.author.id == ownerID) {
+            //if (message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS") || message.author.id == ownerID) {
                 message.reply("I do not have the permission `Manage Roles`!");
-            } else {
-                message.reply("Neither of us have the permission `Manage Roles`!");
-            }
+            //} else {
+               // message.reply("Neither of us have the permission `Manage Roles`!");
+            //}
         }
         } catch (err) {
             message.reply("Uh-oh! An error happened! :(");
@@ -2191,6 +2276,9 @@ bot.on("message", message => {
         }
     }
     if (/^mutetime(?:\s<@!?\d+>)?$/i.test(instruction)) {
+        let p = checkperm("global.mutetime");
+        if (!p[0]) return message.reply("Missing permission node `global.mutetime`!");
+        if (p[2]) return disabledreply(p[2]);
         var iself = instruction.match(/^mutetime(\s<@!?\d+>)$/i);
         let argname;
         let argmember;
@@ -2254,6 +2342,9 @@ bot.on("message", message => {
         }
     }
     if (/^coinflip(?:.+)?$/i.test(instruction)) {
+        let p = checkperm("global.coinflip");
+        if (!p[0]) return message.reply("Missing permission node `global.coinflip`!");
+        if (p[2]) return disabledreply(p[2]);
         if (Math.floor((Math.random() * 2) + 1) == 1) {
             message.reply("Tails!");
         } else {
@@ -2261,6 +2352,9 @@ bot.on("message", message => {
         }
     }
     if (/^random\s\d+(?:(?:\.|,)\d+)?\s\d+(?:(?:\.|,)\d+)?$/i.test(instruction)) {
+        let p = checkperm("global.random");
+        if (!p[0]) return message.reply("Missing permission node `global.random`!");
+        if (p[2]) return disabledreply(p[2]);
         var max = instruction.match(/^random\s(\d+(?:(?:\.|,)\d+)?)\s\d+(?:(?:\.|,)\d+)?$/i)[1];
         var min = instruction.match(/^random\s\d+(?:(?:\.|,)\d+)?\s(\d+(?:(?:\.|,)\d+)?)$/i)[1];
         if (max < min)
@@ -2276,7 +2370,10 @@ bot.on("message", message => {
                 message.reply(maths);
             }
     }
-    if (/^feedme$/i.test(instruction))
+    if (/^feedme$/i.test(instruction)) {
+        let p = checkperm("global.feedme");
+        if (!p[0]) return message.reply("Missing permission node `global.feedme` :cry:");
+        if (p[2]) return disabledreply(p[2]);
         if (message.author.id == ownerID)
             message.reply("Take a 🐟 for being my super handsome owner!");
         else
@@ -2291,25 +2388,30 @@ bot.on("message", message => {
                     message.reply("Good riddance.").then(message.member.kick());
                 else
                     message.reply("No.");
+    }
     if (/^toggleinvites$/i.test(instruction)) {
         try {
+            let p = checkperm("global.toggleinvites");
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.toggleinvites`!");
+            if (p[2]) return disabledreply(p[2]);
             const botmember = message.guild.members.get(bot.user.id);
             if (botmember.hasPermission("MANAGE_MESSAGES")) {
-                if (message.member.hasPermission("MANAGE_MESSAGES") || message.author.id == ownerID) {
+                //if (message.member.hasPermission("MANAGE_MESSAGES") || message.author.id == ownerID) {
+                if (!(message.member.hasPermission("MANAGE_MESSAGES")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.toggleinvites`! Could also use this command if you had the permission `Manage Messages`.");
                     if (gueldid in serverdetects && serverdetects[gueldid]["invite"]) {
                         if (serverdetects[gueldid]["invite"] == "true") {
                             serverdetects[gueldid]["invite"] = "false";
                             writeDetects();
-                            message.reply("Invite links in messages have been enabled!");
+                            message.reply("Invite link filter disabled!");
                         } else {
                             serverdetects[gueldid]["invite"] = "true";
                             writeDetects();
-                            message.reply("Invite links in messages have been disabled!");
+                            message.reply("Invite link filter enabled!");
                         }
                     }
-                } else {
-                    message.reply("You do not have the permission `Manage Messages`!");
-                }
+                //} else {
+                    //message.reply("You do not have the permission `Manage Messages`!");
+                //}
             } else {
                 if (message.member.hasPermission("MANAGE_MESSAGES") || message.author.id == ownerID) 
                     message.reply("I do not have the permission `Manage Messages`!");
@@ -2322,6 +2424,9 @@ bot.on("message", message => {
         }
     }
     if (/^clear\s(?:\d+)$/i.test(instruction)) {
+        let p = checkperm("global.clear.normal");
+        if (!p[0]) return message.reply("Missing permission node `global.clear.normal`!");
+        if (p[2]) return disabledreply(p[2]);
         const botmember = message.guild.members.get(bot.user.id);
         const clear = instruction.match(/^clear\s(\d+)$/i)[1];
         const clearnum = Number(clear);
@@ -2433,6 +2538,9 @@ bot.on("message", message => {
     }
     if (/^hooktalk\s\[(?:.+?)\]\s\((?:.+?)\)\s{(?:.+?)}\s[^]+$/i.test(instruction)) {
         try {
+            let p = checkperm("global.hooktalk");
+            if (!p[0]) return message.reply("Missing permission node `global.hooktalk`!");
+            if (p[2]) return disabledreply(p[2]);
             let hookname = instruction.match(/^hooktalk\s\[(.+?)\]\s\((?:.+?)\)\s{(?:.+?)}\s[^]+$/i)[1];
             let hookurl = instruction.match(/^hooktalk\s\[(?:.+?)\]\s\((.+?)\)\s{(?:.+?)}\s[^]+$/i)[1];
             let hookcontent = instruction.match(/^hooktalk\s\[(?:.+?)\]\s\((?:.+?)\)\s{(?:.+?)}\s([^]+)$/i)[1];
@@ -2457,12 +2565,19 @@ bot.on("message", message => {
         message.reply(`${prefix}hooktalk [hook name] (hook url) {hook avatar url} text\nThe []s, ()s and {}s MUST be written in order for it to work.`);
     }
     if (/^(ping|pong)(?:\s+)?$/i.test(instruction)) {
-        message.reply(`Pong! The ping is ${Date.now() - message.createdAt.getTime()} milliseconds.`);
+        let p = checkperm("global.ping");
+        if (!p[0] || p[2]) {
+            bot.rest.methods.sendMessage(message.author, `Pong! The ping is ${Date.now() - message.createdAt.getTime()} milliseconds.`, {}).then(()=>message.reply("Sent ping to DMs!")).catch(err=>message.reply("Could not send DM about ping (Check if you blocked me)!"));
+        } else
+            message.reply(`Pong! The ping is ${Date.now() - message.createdAt.getTime()} milliseconds.`);
     }
     if (/^trigger(?:\s.+?\s[^]+)?$/i.test(instruction)) {
         try {
+            let p = checkperm("global.trigger");
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.trigger`!");
+            if (p[2]) return disabledreply(p[2]);
             if (instruction.match(/^trigger(\s.+?\s.+)$/i)) {
-                if (message.member.hasPermission("MANAGE_GUILD") || message.member.hasPermission("MANAGE_MESSAGES") || message.author.id == ownerID) {
+                if (!(message.member.hasPermission("MANAGE_GUILD")) && !(message.member.hasPermission("MANAGE_MESSAGES")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.trigger`! Could also use this command by having the permission `Manage Server` OR `Manage Messages`.");
                     const trigger1 = instruction.match(/^trigger\s(.+?)\s.+$/i)[1];
                     const trigger2 = instruction.match(/^trigger\s.+?\s(.+)$/i)[1];
                     message.reply(`Trigger **${trigger1}** added!`);  
@@ -2470,9 +2585,9 @@ bot.on("message", message => {
                     serverdetects[gueldid].triggers[trigger1.toLowerCase()] = trigger2;
                     writeDetects();
                     antitrigger[message.id+chanel.id+trigger1] = true;
-                } else {
-                    message.reply("You do not have the permission `Manage Messages` (Although `Manage Server` also works)!");
-                }
+                //} else {
+                    //message.reply("You do not have the permission `Manage Messages` (Although `Manage Server` also works)!");
+                //}
             } else {
                 message.reply("Please see `"+prefix+"triggers` for a list of triggers.");
             }
@@ -2482,6 +2597,9 @@ bot.on("message", message => {
         }
     }
     if (/^triggers$/i.test(instruction)) {
+        let p = checkperm("global.triggers");
+        if (!p[0]) return message.reply("Missing permission node `global.triggers`!");
+        if (p[2]) return disabledreply(p[2]);
         if (Object.keys(serverdetects[gueldid].triggers).length <= 0) {
             message.reply("This server doesn't have any trigger!");
         } else {
@@ -2491,8 +2609,11 @@ bot.on("message", message => {
     }
     if (/^deltrigger\s(?:.+)$/i.test(instruction)) {
         try {
+            let p = checkperm("global.deltrigger");
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.deltrigger`!");
+            if (p[2]) return disabledreply(p[2]);
             const deltrigger = instruction.match(/^deltrigger\s(.+)$/i)[1];
-            if (message.member.hasPermission("MANAGE_GUILD") || message.member.hasPermission("MANAGE_MESSAGES") || message.author.id == ownerID) {
+            if (!(message.member.hasPermission("MANAGE_GUILD")) && !(message.member.hasPermission("MANAGE_MESSAGES")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.deltrigger`! Could also use this command by having the permission `Manage Server` OR `Manage Messages`.");
                 if (deltrigger.toLowerCase() in serverdetects[gueldid].triggers) {
                     delete serverdetects[gueldid].triggers[deltrigger.toLowerCase()];
                     writeDetects();
@@ -2500,9 +2621,9 @@ bot.on("message", message => {
                 } else {
                     message.reply("That is not a trigger in this guild!");
                 }
-            } else {
-                message.reply("You do not have the permission `Manage Messages` (Although `Manage Server` also works)!");
-            }
+            //} else {
+                //message.reply("You do not have the permission `Manage Messages` (Although `Manage Server` also works)!");
+            //}
         } catch (err) {
             message.reply("RIP. Something happened!");
             console.log(`Error while doing deltrigger: ${err.message}`);
@@ -2510,10 +2631,13 @@ bot.on("message", message => {
     }
     if (/^saltrole\s(?:.+?)\s(?:.+)$/i.test(instruction)) {
         try {
+        let p = checkperm("global.saltrole");
+        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.saltrole`!");
+        if (p[2]) return disabledreply(p[2]);
         const roletype = instruction.match(/^saltrole\s(.+?)\s(?:.+)$/i)[1];
         const rolematched = instruction.match(/^saltrole\s(?:.+?)\s(.+)$/i)[1];
         if (rolematched && roletype) {
-            if (message.member.hasPermission("MANAGE_GUILD") || message.author.id == ownerID) {
+            if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.saltrole`! Could also use this command by having the permission `Manage Server`.");
                  /* jshint -W080 */
                 for(var iterator = message.guild.roles.entries(),val = iterator.next(),rolematk = undefined; val.done === false; val = iterator.next()) {//eslint-disable-line no-redeclare
                     if(rolematched.toUpperCase() === val.value[1].name.toUpperCase()) {
@@ -2533,9 +2657,9 @@ bot.on("message", message => {
                 } else {
                     message.reply("Role not found!");
                 }
-            } else {
-                message.reply("You don't have the permission `Manage Server`!");
-            }
+            //} else {
+                //message.reply("You don't have the permission `Manage Server`!");
+            //}
         }
         } catch (err) {
             message.reply("Uh oh! I'm sorry, but an error happened!");
@@ -2544,8 +2668,11 @@ bot.on("message", message => {
     }
     if (/^delsaltrole\s(?:.+)$/i.test(instruction)) {
         try {
+            let p = checkperm("global.delsaltrole");
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.delsaltrole`!");
+            if (p[2]) return disabledreply(p[2]);
             const roletyped = instruction.match(/^delsaltrole\s(.+)$/i)[1];
-            if (message.member.hasPermission("MANAGE_GUILD") || message.author.id == ownerID) {
+            if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.delsaltrole`! Could also use this command by having the permission `Manage Server`."); 
                 if (/^Moderator$/i.test(roletyped)) {
                     if (servermods[gueldid].moderator !== "") {
                         const oldrole = message.guild.roles.get(servermods[gueldid].moderator);
@@ -2558,9 +2685,9 @@ bot.on("message", message => {
                 } else {
                     message.reply("Current available options of role to delete is: `Moderator`!");
                 }
-            } else {
-                message.reply("You do not have the permission `Manage Server`!");
-            }
+            //} else {
+               // message.reply("You do not have the permission `Manage Server`!");
+            //}
         } catch (e) {
             message.reply("Uh-oh! I'm sorry, but an error happened!");
             console.log(`Error while doing delsaltrole:\n${e.message}`);
@@ -2568,14 +2695,18 @@ bot.on("message", message => {
     }
     if (/^actionlogs\s{1,4}(?:.+?)(?:\s{1,4}<#\d+>)?$/i.test(instruction)) {
         try {
+        let p = checkperm("global.actionlogs.set");
+        if (p[2]) return disabledreply(p[2]);
         const option = instruction.match(/^actionlogs\s{1,4}(.+?)(\s{1,4}<#\d+>)?$/i)[1];
         const cchannel = {};
         if (instruction.match(/^actionlogs\s{1,4}(?:.+?)(?:\s{1,4}(<#\d+>))?$/i)[1]) {
             cchannel.channel = instruction.match(/^actionlogs\s{1,4}(?:.+?)(?:\s{1,4}(<#\d+>))?$/i)[1];
         }
-        if (message.member.hasPermission("MANAGE_GUILD") || message.author.id == ownerID) {
+        //if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) 
             if (cchannel.channel) {
                 if (/^true$/i.test(option) || /^set$/i.test(option) || /^add$/i.test(option)) {
+                    if (!p[0] && !p[1]) return message.reply("Missing permission node `global.actionlogs.set`!");
+                    if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.actionlogs.set`! Could also use this command by having the permission `Manage Server`.");
                     const channelobject = message.guild.channels.get(cchannel.channel.replace(/[<#>]/ig, ""));
                     if (channelobject) {
                         servermods[gueldid].logs = channelobject.id;
@@ -2586,6 +2717,9 @@ bot.on("message", message => {
                     }
                 } else {
                     if (/^false$/i.test(option) || /^remove$/i.test(option)) {
+                        let p = checkperm("global.actionlogs.disable");
+                        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.actionlogs.disable`!");
+                        if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.actionlogs.disable`! Could also use this command by having the permission `Manage Server`.");
                         if (servermods[gueldid].logs === "") {
                             message.reply("Logs aren't set in this server!");
                         } else {
@@ -2602,6 +2736,9 @@ bot.on("message", message => {
                     message.reply("You need to specify a channel to be the logs!");
                 } else {
                     if (/^false$/i.test(option) || /^remove$/i.test(option)) {
+                        let p = checkperm("global.actionlogs.disable");
+                        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.actionlogs.disable`!");
+                        if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.actionlogs.disable`! Could also use this command by having the permission `Manage Server`.");
                         if (servermods[gueldid].logs === "") {
                             message.reply("Logs aren't set in this server!");
                         } else {
@@ -2614,9 +2751,9 @@ bot.on("message", message => {
                     }
                 }
             }
-        } else {
-            message.reply("You do not have the permission `Manage Server`!");
-        }
+        //} else {
+          //  message.reply("You do not have the permission `Manage Server`!");
+        //}
         } catch (err) {
             message.reply("Eh? An error happened... Sorry!");
             console.log(`Error while doing setlogs: ${err.message}`);
@@ -2624,6 +2761,9 @@ bot.on("message", message => {
     }
     if (/^clear\s+<@!?\d+>(?:\s+\d+)?$/i.test(instruction)){
         try {
+            let p = checkperm("global.clear.user");
+            if (!p[0]) return message.reply("Missing permission node `global.clear.user`!");
+            if (p[2]) return disabledreply(p[2]);
             const clearargs = {};
             clearargs.mention = instruction.match(/^clear(\s+<@!?\d+>)(?:\s+\d+)?$/i) ? instruction.match(/^clear\s+<@!?(\d+)>(?:\s+\d+)?$/i)[1] : null;
             if (clearargs.mention) {
@@ -2673,6 +2813,9 @@ bot.on("message", message => {
     }
     if (/^rip\s+[^]+$/i.test(instruction)) {
         try {
+            let p = checkperm("global.rip");
+            if (!p[0]) return message.reply("Missing permission node `global.rip`!");
+            if (p[2]) return disabledreply(p[2]);
             const argz = {};
             argz.content = instruction.match(/^rip\s+([^]+)$/i)[1];
             if (!argz) return message.reply("Uhh..You didn't say anything valid!...");
@@ -2689,6 +2832,8 @@ bot.on("message", message => {
     }
     if (/^image\s+(?:.+?)(?:\s[^]+)?$/i.test(instruction)) {
         try {
+            let p = checkperm("global.image.rotate");
+            if (p[2]) return disabledreply(p[2]);
             const imgdata = {};
             imgdata.command = instruction.match(/^image\s+(.+?)(?:\s+[^]+)?$/i)[1];
             imgdata.notpassed = false;
@@ -2704,6 +2849,7 @@ bot.on("message", message => {
             });
             if (imgdata.notpassed) return;
             if (/^rotate$/i.test(imgdata.command)) {
+                if (!p[0]) return message.reply("Missing permission node `image.rotate`!");
                 if (!(imgdata.arg)) return message.reply("You need to specify the degrees to rotate!");
                 if (!(/^\d+$/i.test(imgdata.arg))) return message.reply("The amount of degrees must be a full number!");
                 Jimp.read(imgdata.img).then(function(img) {
@@ -2714,6 +2860,8 @@ bot.on("message", message => {
                     });
                 });
             } else if (/^grayscale$/i.test(imgdata.command)) {
+                let p = checkperm("global.image.grayscale");
+                if (!p[0]) return message.reply("Missing permission node `image.grayscale`!");
                 Jimp.read(imgdata.img).then(function(img) {
                     if (img.bitmap.width > 2012 || img.bitmap.height > 2012) return message.reply("Image too big!");
                     img.grayscale()
@@ -2731,6 +2879,8 @@ bot.on("message", message => {
     }
     if (/^warn\s+<@!?\d+>(?:\s+.+)?$/i.test(instruction)) {
         try {
+        let p = checkperm("global.warn");
+        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.warn`!");
         const warning = {};
         warning.mention = instruction.match(/^warn(\s+<@!?\d+>)(?:\s+.+)?$/i) ? instruction.match(/^warn\s+<@!?(\d+)>(?:\s+.+)?$/i)[1] : null;
         if (warning.mention) {
@@ -2740,8 +2890,9 @@ bot.on("message", message => {
         warning.reason = instruction.match(/^warn\s+<@!?\d+>\s+(.+)$/i) ? instruction.match(/^warn\s+<@!?\d+>\s+(.+)$/i)[1] : "None";
         if (!(warning.mention)) return message.reply("You must mention an user!");
         if (message.author.id == "206561428432355328") return message.reply("**NO**");
-        if (servermods[gueldid].moderator !== "") {
-            if (!(checkmodrole(message.member)) && message.author.id !== ownerID) return message.reply("You do not have this server's moderator role!");
+        //if (servermods[gueldid].moderator !== "") {
+            if (servermods[gueldid].moderator === "" && p[1]) return message.reply(`This server does not have a Moderator role, which is required for this action (except if you have permission \`global.warn\`)! Someone with \`Manage Servers\` must write: \`${prefix}saltrole Moderator rolename\`, where rolename is the role's name.`, {split: true});
+            if (!(checkmodrole(message.member)) && message.author.id !== ownerID && p[1]) return message.reply("You do not have this server's moderator role (But you could use this command anyway with permission \`global.warn\`!)");
             if (serverwarns[gueldid].setup.limit < 1) {
                 message.reply(`Warned ${warning.mention} successfully!`);
                 const t = {
@@ -2885,9 +3036,9 @@ bot.on("message", message => {
                     }
                 }
             }
-        } else {
-            message.reply(`This server does not have a Moderator role, which is required for this action! Someone with \`Manage Servers\` must write: \`${prefix}saltrole Moderator rolename\`, where rolename is the role's name.`, {split: true});
-        }
+        //} else {
+            //message.reply(`This server does not have a Moderator role, which is required for this action! Someone with \`Manage Servers\` must write: \`${prefix}saltrole Moderator rolename\`, where rolename is the role's name.`, {split: true});
+        //}
         } catch (err) {
             message.reply("oh noe! An error happened!");
             console.log(`Error while trying to do warn: ${err.message}`);
@@ -2895,19 +3046,26 @@ bot.on("message", message => {
     }//*/
     if (/^setwarns\s+.+?\s+.+$/i.test(instruction)) {
         try {
+        let p = checkperm("global.setwarns.limit.set");
+        if (p[2]) return disabledreply(p[2]);
         const setw = {};
         setw.cmd = instruction.match(/^setwarns\s+(.+?)(?:\s+.+)$/i)[1];
         setw.arg = instruction.match(/^setwarns\s+.+?(\s+.+)$/i) ? instruction.match(/^setwarns\s+.+?\s+(.+)$/i)[1] : null;
         const botmember = message.guild.member(bot.user);
-        if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID) return message.reply("You do not have the permission `Manage Server`!");
+        //if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID) return message.reply("You do not have the permission `Manage Server`!");
         if (!(setw.arg)) return message.reply("You need to provide an argument!");
         console.log(setw.arg+" and "+setw.cmd);
         if (/^limit$/i.test(setw.cmd)) {
             if (/^(?:false|remove)$/i.test(setw.arg)) {
+                let p = checkperm("global.setwarns.limit.disable");
+                if (!p[0] && !p[1]) return message.reply("Missing permission node `global.setwarns.limit.disable`!");
+                if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.setwarns.limit.disable`! Could also use this command by having the permission `Manage Server`.");
                 serverwarns[gueldid].setup.limit = 0;
                 writeWarns();
                 message.reply(`Warn limit removed successfully!`);
             } else if (/^\d+$/i.test(setw.arg)) {
+                if (!p[0] && !p[1]) return message.reply("Missing permission node `global.setwarns.limit.set`!");
+                if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.setwarns.limit.set`! Could also use this command by having the permission `Manage Server`.");
                 if (Number(setw.arg) > 95) return message.reply("The ***limit*** of warn ***limit*** is 95!");
                 serverwarns[gueldid].setup.limit = Number(setw.arg);
                 writeWarns();
@@ -2917,16 +3075,25 @@ bot.on("message", message => {
             }
         } else if (/^punishment$/i.test(setw.cmd)) {
             if (/^kick$/i.test(setw.arg)) {
+                let p = checkperm("global.setwarns.punishment.kick");
+                if (!p[0] && !p[1]) return message.reply("Missing permission node `global.setwarns.punishment.kick`!");
+                if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.setwarns.punishment.kick`! Could also use this command by having the permission `Manage Server`.");
                 if (!(botmember.hasPermission("KICK_MEMBERS"))) return message.reply("I do not have the permission `Kick Members`! :(");
                 serverwarns[gueldid].setup.punishment = "kick";
                 writeWarns();
                 message.reply(`Warn limit punishment set to \`kick\` successfully!`);
             } else if (/^ban$/i.test(setw.arg)) {
+                let p = checkperm("global.setwarns.punishment.ban");
+                if (!p[0] && !p[1]) return message.reply("Missing permission node `global.setwarns.punishment.ban`!");
+                if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.setwarns.punishment.ban`! Could also use this command by having the permission `Manage Server`.");
                 if (!(botmember.hasPermission("BAN_MEMBERS"))) return message.reply("I do not have the permission `Ban Members`! :(");
                 serverwarns[gueldid].setup.punishment = "ban";
                 writeWarns();
                 message.reply(`Warn limit punishment set to \`ban\` successfully!`);
             } else if (/^mute(.+)$/i.test(setw.arg)) {
+                let p = checkperm("global.setwarns.punishment.mute");
+                if (!p[0] && !p[1]) return message.reply("Missing permission node `global.setwarns.punishment.mute`!");
+                if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.setwarns.punishment.mute`! Could also use this command by having the permission `Manage Server`.");
                 if (!(botmember.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) || !(botmember.hasPermission("MANAGE_CHANNELS"))) return message.reply("I need both `Manage Roles` and `Manage Channels` permissions to mute, and I apparently don't have one of them (or both)! :(");
                 const splitting = setw.arg.match(/^mute\s(\d+)$/i) ? setw.arg.match(/^mute\s(\d+)$/i)[1] : null;
                 if (!(splitting)) return message.reply("You must input a full number for the mute minute amount! (It must also not be empty)");
@@ -2949,8 +3116,11 @@ bot.on("message", message => {
     }
     if (/^clearwarns\s+<@!?\d+>$/i.test(instruction)) {
         try {
-            if (servermods[gueldid].moderator === "") return message.reply("This server does not have a Moderator role! Ask someone with `Manage Server` permissions to do **`"+prefix+"saltrole Moderator rolename`**, where rolename is the Moderator role!");
-            if (!(checkmodrole(message.member)) && message.author.id !== ownerID) return message.reply("You do not have the Moderator role!");
+            let p = checkperm("global.clearwarns");
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.clearwarns`!");
+            if (p[2]) return disabledreply(p[2]);
+            if (servermods[gueldid].moderator === "" && p[1]) return message.reply("This server does not have a Moderator role (although you can still use this command if you get the permission `global.clearwarns`)! Ask someone with `Manage Server` permissions to do **`"+prefix+"saltrole Moderator rolename`**, where rolename is the Moderator role!");
+            if (!(checkmodrole(message.member)) && message.author.id !== ownerID && p[1]) return message.reply("You do not have the Moderator role!");
             const cwarns = {};
             cwarns.user = instruction.match(/^clearwarns(\s+<@!?\d+>)$/i) ? instruction.match(/^clearwarns\s+<@!?(\d+)>$/i)[1] : null;
             if (cwarns.user) {
@@ -2970,6 +3140,10 @@ bot.on("message", message => {
         }
     }
     if (/^pmute\s{1,4}<@!?\d+>(?:\s{1,4}.+)?$/i.test(instruction)) {
+        const p = checkperm("global.pmute");
+        if (!(message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) && message.author.id !== ownerID && !(checkmodrole(message.member)) && p[1]) return message.reply("Missing permission node `global.pmute`! Could also use this command by having permission `Manage Roles` or the _Moderator Role_ (for Salt).");
+        if (!(p[0]) && !(p[1])) return message.reply("Missing permission node `global.pmute`!");
+        if (p[2]) return disabledreply(p[2]);
         let argname = instruction.match(/^pmute\s{1,4}<@!?(\d+)>(?:\s{1,4}.+)?$/i)[1];
         argname = bot.users.get(argname);
         if (!argname) return message.reply("User not found!");
@@ -3043,6 +3217,9 @@ bot.on("message", message => {
     }
     if (/^numupper\s{1,4}[\d, \s]+$/i.test(instruction)) {
         try {
+            let p = checkperm("global.numupper");
+            if (!p[0]) return message.reply("Missing permission node `global.numupper`!");
+            if (p[2]) return disabledreply(p[2]);
             const num = instruction.match(/^numupper\s{1,4}([\d, \s]+)$/i)[1];
             const arrup = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"];
             return message.reply(num.replace(/\d/g, m=>arrup[Number(m)]));
@@ -3053,8 +3230,11 @@ bot.on("message", message => {
     }
     if (/^autoname(?:\s{1,4}.+)?$/i.test(instruction)) {
         try {
+            let p = checkperm("global.autoname");
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.autoname`!");
+            if (p[2]) return disabledreply(p[2]);
             if (!(instruction.match(/^autoname(\s{1,4}.+)$/i))) return message.reply(`\`${prefix}autoname name\`\n\nThis command allows you to set what all members' nickname will be on join. You can write \`{name}\` as a placeholder for the actual name, such as, if you write \`{name} Hello\`, and the member's name is "Discord", their nickname will become \`Discord Hello\` on join.\n:warning: \`Manage Server\` permission required!`);
-            if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID) return message.reply("You need the `Manage Server` permission to use this command!");
+            if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.autoname`! Could also use this command by having the permission `Manage Server`.");
             const name = instruction.match(/^autoname\s{1,4}(.+)$/i)[1];
             servermsgs[gueldid].welcome.name = "";
             writeMsg();
@@ -3068,7 +3248,10 @@ bot.on("message", message => {
     }
     if (/^delautoname(?:\s{1,4})?$/i.test(instruction)) {
         try {
-            if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID) return message.reply("You need the `Manage Server` permission to use this command!");
+            let p = checkperm("global.delautoname");
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.delautoname`!");
+            if (p[2]) return disabledreply(p[2]);
+            if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.delautoname`! Could also use this command by having the permission `Manage Server`.");
             if (!(servermsgs[gueldid].welcome.name)) return message.reply("This server doesn't have an autoname!");
             servermsgs[gueldid].welcome.name = "";
             writeMsg();
@@ -3079,9 +3262,16 @@ bot.on("message", message => {
         }
     }
     if (/^invite(?:\s{1,4})?$/i.test(instruction)) {
-        message.reply("Invite Salt to your server: https://discordapp.com/oauth2/authorize?client_id=244533925408538624&scope=bot&permissions=2136472639\n\nOfficial Salt server: https://discord.gg/amQP9m3");
+        let p = checkperm("global.invite");
+        if (!p[0] || p[2]) {
+            bot.rest.methods.sendMessage(message.author, "Invite Salt to your server: https://discordapp.com/oauth2/authorize?client_id=244533925408538624&scope=bot&permissions=2136472639\n\nOfficial Salt server: https://discord.gg/amQP9m3", {}).then(()=>message.reply("Sent invite info on DMs!")).catch(err=>message.reply("Could not send DM about invite info (Check if you blocked me)!"));
+        } else
+            message.reply("Invite Salt to your server: https://discordapp.com/oauth2/authorize?client_id=244533925408538624&scope=bot&permissions=2136472639\n\nOfficial Salt server: https://discord.gg/amQP9m3");
     }
     if (/^calc\s{1,2}/i.test(instruction)) {
+        let p = checkperm("global.calc");
+        if (!p[0]) return message.reply("Missing permission node `global.calc`!");
+        if (p[2]) return disabledreply(p[2]);
         let apprefix = prefix.replace(/[-.\\\[\]|^$()+*{}]/g,m=>"\\"+m);
         let regexstuff = new RegExp(`${apprefix}calc `, "i");
         var txt = instruction.replace(regexstuff, "");
@@ -3116,7 +3306,8 @@ bot.on("message", message => {
         });
     }
     if (/^role\s{1,4}.+?\s{1,4}(?:<@!?\d+>\s{1,4}.+|.+\s{1,4}<@!?\d+>)$/i.test(instruction)) {
-        if (!(message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) && message.author.id !== ownerID) return message.reply("You don't have the permission `Manage Roles`!");
+        let p = checkperm("global.role.add");
+        if (p[2]) return disabledreply(p[2]);
         const botmember = message.guild.members.get(bot.user.id);
         if (!(botmember.hasPermission("MANAGE_ROLES_OR_PERMISSIONS"))) return message.reply("I don't have the permission `Manage Roles`!");
         const cmd = instruction.match(/^role\s{1,4}(.+?)\s{1,4}(?:<@!?\d+>\s{1,4}.+|.+\s{1,4}<@!?\d+>)$/i)[1];
@@ -3139,15 +3330,23 @@ bot.on("message", message => {
         if (role.position == botmember.highestRole.position) return message.reply("Said role is the same as my highest role!");
         if (role.position >= message.member.highestRole.position) return message.reply("Said role is higher or equal than your highest role's position!");
         if (/add|give/i.test(cmd)) {
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.role.add`!");
+            if (!(message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.role.add`! Could also use this command by having the permission `Manage Roles`.");
             if (usermember.roles.get(role.id)) return message.reply(`Said member already has the role **${role.name}**!`);
             usermember.addRole(role).then(roole=>message.reply(`Role **${role.name}** given to ${user} successfully!`));
         } else if (/remove|take/i.test(cmd)) {
+            let p = checkperm("global.role.remove");
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.role.remove`!");
+            if (!(message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.role.remove`! Could also use this command by having the permission `Manage Roles`.");
             if (!(usermember.roles.get(role.id))) return message.reply(`Said member doesn't have the role **${role.name}**!`);
             usermember.removeRole(role).then(roole=>message.reply(`Role **${role.name}** taken from ${user} successfully!`));
         }
     }
     if (/^addrole\s{1,4}(?:<@!?\d+>\s{1,4}.+|.+\s{1,4}<@!?\d+>)$/i.test(instruction)) {
-        if (!(message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) && message.author.id !== ownerID) return message.reply("You don't have the permission `Manage Roles`!");
+        let p = checkperm("global.role.add");
+        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.role.add`!");
+        if (p[2]) return disabledreply(p[2]);
+        if (!(message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.role.add`! Could also use this command by having the permission `Manage Roles`.");
         const botmember = message.guild.members.get(bot.user.id);
         if (!(botmember.hasPermission("MANAGE_ROLES_OR_PERMISSIONS"))) return message.reply("I don't have the permission `Manage Roles`!");
         if (!(instruction.match(/^addrole\s{1,4}(?:<@!?(\d+)>\s{1,4}.+|.+\s{1,4}<@!?(\d+)>)$/i))) return message.reply("You must mention an user!");
@@ -3171,7 +3370,10 @@ bot.on("message", message => {
         usermember.addRole(role).then(roole=>message.reply(`Role **${role.name}** given to ${user} successfully!`));
     }
     if (/^removerole\s{1,4}(?:<@!?\d+>\s{1,4}.+|.+\s{1,4}<@!?\d+>)$/i.test(instruction)) {
-        if (!(message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) && message.author.id !== ownerID) return message.reply("You don't have the permission `Manage Roles`!");
+        let p = checkperm("global.role.remove");
+        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.role.remove`!");
+        if (p[2]) return disabledreply(p[2]);
+        if (!(message.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.role.remove`! Could also use this command by having the permission `Manage Roles`.");
         const botmember = message.guild.members.get(bot.user.id);
         if (!(botmember.hasPermission("MANAGE_ROLES_OR_PERMISSIONS"))) return message.reply("I don't have the permission `Manage Roles`!");
         if (!(instruction.match(/^removerole\s{1,4}(?:<@!?(\d+)>\s{1,4}.+|.+\s{1,4}<@!?(\d+)>)$/i))) return message.reply("You must mention an user!");
@@ -3196,6 +3398,9 @@ bot.on("message", message => {
     }
     if (/^encrypt\s{1,4}\[(?:.+)?\]\s{1,4}\((?:.+)?\)\s{1,4}\{(?:[^]+)?\}$/i.test(instruction)) {
         try {
+            let p = checkperm("global.encrypt");
+            if (!p[0]) return message.reply("Missing permission node `global.encrypt`!");
+            if (p[2]) return disabledreply(p[2]);
             if (!(publickeys[message.author.id]) && !(instruction.match(/^encrypt\s{1,4}\[(?:.+)?\]\s{1,4}\((.+)\)\s{1,4}\{(?:[^]+)?\}$/i))) return message.reply("You do not have a key! (use `"+prefix+"setkey` to set a PRIVATE key, this uses your PUBLIC key which is a conversion of your PRIVATE.) You can also put a PUBLIC key in the parenthesis.");
             let flag;
             if (instruction.match(/^encrypt\s{1,4}\[(.+)\]\s{1,4}\((?:.+)?\)\s{1,4}\{(?:[^]+)?\}/i)) flag = instruction.match(/^encrypt\s{1,4}\[(.+)\]\s{1,4}\((?:.+)?\)\s{1,4}\{(?:[^]+)?\}/i)[1];
@@ -3231,6 +3436,8 @@ bot.on("message", message => {
     }
     if (/^decrypt\s{1,4}\[(?:.+)?\]\s{1,4}\{(?:[^]+)?\}$/i.test(instruction)) {
         try {
+            let p = checkperm("global.decrypt");
+            if (!p[0]) return message.reply("Missing permission node `global.decrypt`!");
             if (!(instruction.match(/^decrypt\s{1,4}\[(.+)\]\s{1,4}\{(?:[^]+)\}$/i))) return message.reply("You must provide a key! (PRIVATE key, not PUBLIC key! If the key is wrong, it will not decrypt correctly!)");
                 if (!(instruction.match(/^decrypt\s{1,4}\[(?:.+)\]\s{1,4}\{([^]+)\}$/i))) return message.reply("You must provide text to decrypt!");
                 const key = instruction.match(/^decrypt\s{1,4}\[(.+)\]\s{1,4}\{(?:[^]+)\}$/i)[1];
@@ -3250,6 +3457,9 @@ bot.on("message", message => {
 
     }
     if (/^setkey\s{1,4}.+$/i.test(instruction)) {
+        let p = checkperm("global.setkey");
+        if (!p[0]) return message.reply("Missing permission node `global.setkey`!");
+        if (p[2]) return disabledreply(p[2]);
         const key = instruction.match(/^setkey\s{1,4}(.+)$/i)[1];
         if (!(publickeys[message.author.id])) {
             publickeys[message.author.id] = "";
@@ -3268,6 +3478,9 @@ bot.on("message", message => {
         });
     }
     if (/^getkey\s{1,4}<@!?\d+>$/i.test(instruction)) {
+        let p = checkperm("global.getkey");
+        if (!p[0]) return message.reply("Missing permission node `global.getkey`!");
+        if (p[2]) return disabledreply(p[2]);
         if (!(/^<@!?\d+>$/i.test(instruction.match(/^getkey\s{1,4}(.+)$/i)[1]))) return message.reply("You must mention an user!");
         if (!(instruction.match(/^getkey\s{1,4}(<@!?\d+>)$/i))) return message.reply("You must mention an user!");
         let user = instruction.match(/^getkey\s{1,4}<@!?(\d+)>$/i)[1];
@@ -3277,7 +3490,9 @@ bot.on("message", message => {
         message.reply(`${user}'s public key: ${publickeys[user.id]}`);
     }
     if (/^manageselfrole\s{1,4}.+?\s{1,4}.+$/i.test(instruction)) {
-        if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID) return message.reply("You do not have the permission `Manage Server`!");
+        let p = checkperm("global.manageselfrole.add");
+        if (p[2]) return disabledreply(p[2]);
+        //abcdefg
         const botmember = message.guild.member(bot.user);
         if (!(botmember.hasPermission("MANAGE_ROLES_OR_PERMISSIONS"))) return message.reply("I do not have the permission `Manage Roles`!");
         const cmd = instruction.match(/^manageselfrole\s{1,4}(.+?)\s{1,4}.+$/i)[1];
@@ -3290,12 +3505,17 @@ bot.on("message", message => {
         });
         if (!role) return message.reply("Role not found!");
         if (/^add$/i.test(cmd)) {
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.manageselfrole.add`!");
+            if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.manageselfrole.add`! Could also use this command by having permission `Manage Server`.");
             if (serverself[gueldid][role.id]) return message.reply("That is already a selfrole!");
             serverself[gueldid][role.id] = {};
             serverself[gueldid][role.id].id = role.id;
             writeSelfRoles();
             message.reply(`Role **${role.name}** is now a selfrole!`);
         } else if (/^remove$/i.test(cmd)) {
+            let p = checkperm("global.manageselfrole.remove");
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.manageselfrole.remove`!");
+            if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.manageselfrole.remove`! Could also use this command by having permission `Manage Server`.");
             if (!(serverself[gueldid][role.id])) return message.reply("Said role is not a selfrole!");
             delete serverself[gueldid][role.id];
             writeSelfRoles();
@@ -3303,6 +3523,9 @@ bot.on("message", message => {
         }
     }
     if (/^selfrole\s{1,4}.+$/i.test(instruction)) {
+        let p = checkperm("global.selfrole");
+        if (!p[0]) return message.reply("Missing permission node `global.selfrole`!");
+        if (p[2]) return disabledreply(p[2]);
         const botmember = message.guild.member(bot.user);
         if (!(botmember.hasPermission("MANAGE_ROLES_OR_PERMISSIONS"))) return message.reply("Uh oh... I do not have the permission `Manage Roles`!");
         const arg = instruction.match(/^selfrole\s{1,4}(.+)$/i)[1];
@@ -3478,6 +3701,9 @@ bot.on("message", message => {
     }
     if (/^emoji(?:\s{1,4}[^]*)?$/i.test(instruction)) {
         try {
+            let p = checkperm("global.emoji");
+            if (!(p[0])) return message.reply("Missing permission node `global.emoji`!");
+            if (p[2]) return message.reply(`:lock: That command has been locked for this ${p[2]}!`);
             if (!(instruction.match(/^emoji\s{1,4}(.+)$/i))) return message.reply("You must put an emoji after `"+prefix+"emoji`!");
             if (!(/<img class=[^]+>\s*$/.test(twemoji.parse(instruction))) && !(instruction.match(/^emoji\s{1,4}(<:.*?:.*?>)$/i))) return message.reply("You must put an emoji (AND ONLY ONE!) after `"+prefix+"emoji`!");
             let emoji;
@@ -3519,9 +3745,9 @@ bot.on("message", message => {
             let findperm = function(permnode){
                 return permclass.findPerm(permnode, servercmds, gueldid);
             };
-            if (!(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list)\s{1,4}.+\s{1,4}.+$/i.test(instruction)) && !(/^p\s{1,4}list[^]*$/i.test(instruction))) return message.reply('```+p action arg subarg\n\n!! subarg is only applicable if using disable/enable and give/take, see below.\nAvailable options for "action":\n-> giveuser\n-> giverole\n-> takeuser\n-> takerole\n-> enable\n-> disable\n-> list\n\nAvailable options for "arg":\n-> give and take: Permission node (See +p list)\n!! Write - behind the permission node to negate it.\n-> list: Nothing\n-> Enable and disable: Write either "server" or "channel" (To disable/enable for the whole server or just for this channel)\n\nAvailable options for "subarg":\n-> give and take: Two valid options: Either mention (user to give/take) or role name (role to give/take)\n-> list: NOTHING!!\n-> Enable and disable: command name to disable/enable\n\nExample: +p giveuser global.avatar @​Aplet123#9551 -> Gives permission "global.avatar" to Aplet123.\nExample 2: +p giveuser -global.mute @​Salt#8489 -> Negates permission "global.mute" to Salt.\nExample 3: +p giverole * Developers -> Gives permission "*" (all) to Developers.```', {split: {prepend:"```",append:"```"}});
-            let selected = instruction.match(/^p\s{1,4}(giveuser|giverole|takeuser|takerole|disable|enable|list)(?:\s{1,4})?[^]*/i)[1].toLowerCase();
-            let semiselected = /^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list)\s{1,4}.+\s{1,4}.+$/i.test(instruction) ? [instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list)\s{1,4}(.+)\s{1,4}.+$/i)[1], instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list)\s{1,4}.+\s{1,4}(.+)$/i)[1]] : null;
+            if (!(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+\s{1,4}.+$/i.test(instruction)) && !(/^p\s{1,4}list[^]*$/i.test(instruction)) && !(/^p\s{1,4}clone/i.test(instruction))) return message.reply('```+p action arg subarg\n\n!! subarg is only applicable if using disable/enable and give/take, see below.\nAvailable options for "action":\n-> giveuser\n-> giverole\n-> takeuser\n-> takerole\n-> enable\n-> disable\n-> list\n-> clone\n\nAvailable options for "arg":\n-> give and take: Permission node (See +p list)\n!! Write - behind the permission node to negate it.\n-> list: Nothing\n-> Enable and disable: Write either "server" or "channel" (To disable/enable for the whole server or just for this channel)\n-> clone: #channel to clone disables from\n\nAvailable options for "subarg":\n-> give and take: Two valid options: Either mention (user to give/take) or role name (role to give/take)\n-> list: NOTHING!!\n->clone: NOTHING TOO!\n-> Enable and disable: command name to disable/enable\n\nExample: +p giveuser global.avatar @​Aplet123#9551 -> Gives permission "global.avatar" to Aplet123.\nExample 2: +p giveuser -global.mute @​Salt#8489 -> Negates permission "global.mute" to Salt.\nExample 3: +p giverole * Developers -> Gives permission "*" (all) to Developers.```', {split: {prepend:"```",append:"```"}});
+            let selected = instruction.match(/^p\s{1,4}(giveuser|giverole|takeuser|takerole|disable|enable|list|clone)(?:\s{1,4})?[^]*/i)[1].toLowerCase();
+            let semiselected = /^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+\s{1,4}.+$/i.test(instruction) ? [instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}(.+)\s{1,4}.+$/i)[1], instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+\s{1,4}(.+)$/i)[1]] : null;
             let findrole = function(name) {
                 let found;
                 message.guild.roles.map(r=>{
@@ -3702,14 +3928,14 @@ bot.on("message", message => {
                         if (checkvalidity)
                             perms[gueldid].disabled.server.push("custom."+checkvalidity);
                         else
-                            perms[gueldid].disabled.server.push("global."+cmdtodis);
+                            perms[gueldid].disabled.server.push("global."+cmdtodis.replace(/^(?:addrole|removerole)$/, "role"));
                     } else if (type == "channel") {
                         if (!(perms[gueldid].disabled.channels[chanel.id])) perms[gueldid].disabled.channels[chanel.id] = [];
                         if (perms[gueldid].disabled.channels[chanel.id].includes("custom."+cmdtodis)||perms[gueldid].disabled.channels[chanel.id].includes("global."+cmdtodis)) return message.reply(`The command \`${cmdtodis}\` is already disabled for this channel!`);
                         if (checkvalidity)
                             perms[gueldid].disabled.channels[chanel.id].push("custom."+checkvalidity);
                         else
-                            perms[gueldid].disabled.channels[chanel.id].push("global."+cmdtodis);
+                            perms[gueldid].disabled.channels[chanel.id].push("global."+cmdtodis.replace(/^(?:addrole|removerole)$/, "role"));
                     }
                     writePerms();
                     message.reply("Command `"+cmdtodis+"` disabled for this "+type+" successfully! :lock:");
@@ -3741,19 +3967,19 @@ bot.on("message", message => {
                     //if (["p", "invite", "help", "contact"].includes(cmdtodis)) return message.reply("You cannot disable the command `"+cmdtodis+"`!");
                     type = type.toLowerCase();
                     if (type == "server") {
-                        if (!(perms[gueldid].disabled.server.includes("custom."+cmdtodis))&&!(perms[gueldid].disabled.server.includes("global."+cmdtodis))) return message.reply("That command is not disabled for the server!");
+                        if (!(perms[gueldid].disabled.server.includes("custom."+cmdtodis))&&!(perms[gueldid].disabled.server.includes("global."+cmdtodis.replace(/^(?:addrole|removerole)$/, "role")))) return message.reply("That command is not disabled for the server!");
                         let newserverarr = [];
                         for (let disabledcmd of perms[gueldid].disabled.server) {
-                            if (disabledcmd !== "global."+cmdtodis && disabledcmd !== "custom."+cmdtodis)
+                            if (disabledcmd !== "global."+cmdtodis.replace(/^(?:addrole|removerole)$/, "role") && disabledcmd !== "custom."+cmdtodis)
                                 newserverarr.push(disabledcmd);
                         }
                         perms[gueldid].disabled.server = newserverarr;
                     } else if (type == "channel") {
                         if (!(perms[gueldid].disabled.channels[chanel.id])) return message.reply("That command is not disabled for this channel!");
-                        if (!(perms[gueldid].disabled.channels[chanel.id].includes("custom."+cmdtodis))&&!(perms[gueldid].disabled.channels[chanel.id].includes("global."+cmdtodis))) return message.reply("That command is not disabled for this channel!");
+                        if (!(perms[gueldid].disabled.channels[chanel.id].includes("custom."+cmdtodis))&&!(perms[gueldid].disabled.channels[chanel.id].includes("global."+cmdtodis.replace(/^(?:addrole|removerole)$/, "role")))) return message.reply("That command is not disabled for this channel!");
                         let newchannelarr = [];
                         for (let disabledcmd of perms[gueldid].disabled.channels[chanel.id]) {
-                            if (disabledcmd !== "global."+cmdtodis && disabledcmd !== "custom."+cmdtodis)
+                            if (disabledcmd !== "global."+cmdtodis.replace(/^(?:addrole|removerole)$/, "role") && disabledcmd !== "custom."+cmdtodis)
                                 newchannelarr.push(disabledcmd);
                         }
                         if (newchannelarr.length == 0) delete perms[gueldid].disabled.channels[chanel.id];
@@ -3761,6 +3987,30 @@ bot.on("message", message => {
                     }
                     writePerms();
                     message.reply("Command `"+cmdtodis+"` enabled for this "+type+" successfully! :unlock:");
+                }
+            } else if (selected == "clone") {
+                let p = checkperm("global.p.disable", true);
+                if (p[1]) {
+                    if (!(message.member.hasPermission("ADMINISTRATOR")) && !(message.member.hasPermission("MANAGE_GUILD"))) return message.reply("Missing permission node `global.p.disable`. Could use this by having administrator or manage server perms.");
+                } 
+                if (!(p[0]) && !(p[1])) {
+                    return message.reply("Missing permission node `global.p.disable`!");
+                } else if (p[2]) {
+                    return message.reply(":lock: That command was disabled for this "+decapitalize(p[2])+"!");
+                } else if (typeof p[0] == "boolean") {
+                    if (!(semiselected)) return message.reply("Please write the #channel to clone command disables from!");
+                    if (!(/^<#\d+>$/.test(semiselected))) return message.reply("Please write the #channel to clone command disables from!");
+                    let channel = semiselected.match(/^<#(\d+)>$/)[1];
+                    channel = message.guild.channels.get(channel);
+                    if (!channel) return message.reply("Channel not found!");
+                    if (!(perms[gueldid].channels[channel.id])) return message.reply("That channel has no disables set!");
+                    if (perms[gueldid].channels[channel.id].keysize < 1) return message.reply("That channel has no disables set!");
+                    if (!(perms[gueldid].channels[chanel.id])) perms[gueldid].channels[chanel.id] = [];
+                    for (let disabledcmd of perms[gueldid].channels[chanel.id]) {
+                        perms[gueldid].channels[channel.id].push(disabledcmd);
+                    }
+                    writePerms();
+                    message.reply("Disabled Commands from channel <#"+channel.id+"> cloned to this channel successfully! ;)");
                 }
             }
         } catch (err) {
