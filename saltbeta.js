@@ -4173,9 +4173,9 @@ bot.on("message", message => {
             if (p[2]) return disabledreply(p[2]);
             if (!(/^bam\s{1,4}.+$/i.test(instruction))) return chanel.sendMessage("**SWOOP** <@"+message.author.id+"> threw their hammer on the air because they almost threw it at the wall without knowing what they were doing! (Tip: Specify an user)");
             let usertobefound = instruction.match(/^bam\s{1,4}(.+)$/i)[1];
-            if (/^<#\d+>$/i.test(usertobefound)) {
-                usertobefound = usertobefound.match(/^<#(\d+)$/i)[1];
-                usertobefound = message.guild.members.map(m=>m.user).get(usertobefound);
+            if (/^<@!?\d+>$/i.test(usertobefound)) {
+                usertobefound = usertobefound.match(/^<@!?(\d+)>$/i)[1];
+                usertobefound = message.guild.members.get(usertobefound);
                 if (!usertobefound) return chanel.sendMessage("**BANGG** <@"+message.author.id+"> threw their hammer on the wall. They were trying to target an user, but it was not found! 💥💥");
                 chanel.sendMessage("**BAM** <@"+message.author.id+"> hit "+(usertobefound.id == message.author.id ? "themselves" : "<@"+usertobefound.id+">")+" with their hammer! 💥");
             } else {
