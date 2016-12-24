@@ -170,7 +170,7 @@ function sendPw() {
     request.post({
         uri: "https://bots.discord.pw/api/bots/244533925408538624/stats",
         headers: {
-            "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiIxODA4MTM5NzE4NTM0MTAzMDUiLCJyYW5kIjo4MDUsImlhdCI6MTQ4MjAzNzEzNX0.1IGVMYFR9_MiptDMvjVFsnYDnFAuVTVJxRtmYvD_klo"
+            "Authorization": config.authorization
         },
         json: {
             "server_count": String(bot.guilds.size)
