@@ -4176,12 +4176,12 @@ bot.on("message", message => {
             if (/^<#\d+>$/i.test(usertobefound)) {
                 usertobefound = usertobefound.match(/^<#(\d+)$/i)[1];
                 usertobefound = message.guild.members.map(m=>m.user).get(usertobefound);
-                if (!usertobefound) return chanel.sendMessage("**BANGG** <@"+message.author.id+"> threw their hammer on the wall. They were trying to target an user, but it was not found!");
-                chanel.sendMessage("**BAM** <@"+message.author.id+"> hit <@"+usertobefound.id+"> with their hammer! :bang:");
+                if (!usertobefound) return chanel.sendMessage("**BANGG** <@"+message.author.id+"> threw their hammer on the wall. They were trying to target an user, but it was not found! 💥💥");
+                chanel.sendMessage("**BAM** <@"+message.author.id+"> hit "+(usertobefound.id == message.author.id ? "themselves" : "<@"+usertobefound.id+">")+" with their hammer! 💥");
             } else {
                 usertobefound = search("user", usertobefound, message.guild);
-                if (!usertobefound[1]) return chanel.sendMessage("**BANGG** <@"+message.author.id+"> threw their hammer on the wall. They were trying to target an user, but it was not found!");
-                chanel.sendMessage((usertobefound[1] > 1 ? "("+usertobefound[1]+" users found, using first find.)\n" : "")+"**BAM** <@"+message.author.id+"> hit <@"+usertobefound[0][0].id+"> with their hammer! :bang:");
+                if (!usertobefound[1]) return chanel.sendMessage("**BANGG** <@"+message.author.id+"> threw their hammer on the wall. They were trying to target an user, but it was not found! 💥💥");
+                chanel.sendMessage((usertobefound[1] > 1 ? "("+usertobefound[1]+" users found, using first find.)\n" : "")+"**BAM** <@"+message.author.id+"> hit "+(usertobefound[0][0].id == message.author.id ? "themselves" : "<@"+usertobefound[0][0].id+">")+" with their hammer! 💥");
             }
         } catch (err) {
             console.error([message.reply("Sorry, but an error happened! The devs will know though :)"), `Error while doing bam:\n${err.message}`][1]);
