@@ -1928,7 +1928,7 @@ bot.on("message", message => {
             console.log("Error while kicking:" + err.message);
         }
     }
-    if (/^welcfarew\s(?:.+?)\s(?:.+)$/i.test(instruction)) {
+    if (/^welcfarew\s(?:.+?)(?:\s(?:.+))?$/i.test(instruction)) {
         /* jshint sub:true */
         try {
             //if (message.member.hasPermission("MANAGE_GUILD") || message.author.id == ownerID) {
@@ -1954,6 +1954,7 @@ bot.on("message", message => {
                     writeMsg();
                     message.reply("Farewell message disabled successfully!");
                 } else if (/^welcome$/i.test(welcommand)) {
+                    if (!welmessage) return message.reply("You must put something to be the message (or #channel)!");
                     if (/^<#([0-9])+>$/i.test(welmessage) && message.guild.channels.get(welmessage.replace(/[<#>]/ig, ""))) {
                         let p = checkperm("global.welcfarew.welcome.channel");
                         if (!p[0] && !p[1]) return message.reply("Missing permission node `global.welcfarew.welcome.channel`!");
@@ -1970,6 +1971,7 @@ bot.on("message", message => {
                         console.log(welmessage);
                     }
                 } else if (/^farewell$/i.test(welcommand) || (/^goodbye$/i.test(welcommand))) {
+                    if (!welmessage) return message.reply("You must put something to be the message (or #channel)!");
                     if (/^<#([0-9])+>$/i.test(welmessage) && message.guild.channels.get(welmessage.replace(/[<#>]/ig, ""))) {
                         let p = checkperm("global.welcfarew.farewell.channel");
                         if (!p[0] && !p[1]) return message.reply("Missing permission node `global.welcfarew.farewell.channel`!");
