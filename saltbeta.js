@@ -1944,7 +1944,7 @@ bot.on("message", message => {
                     if (!(servermsgs[gueldid]["welcome"]["message"])) return message.reply("Welcome message is not enabled!");
                     servermsgs[gueldid]["welcome"]["message"] = "";
                     writeMsg();
-                    message.reply("Welcome message disabled successfully!");
+                    message.reply("Welcome message disabled successfully! To re-enable, just set a new welcome message!");
                 } else if (/^(?:disablefarewell|disablefarew)$/i.test(welcommand)) {
                     let p = checkperm("global.welcfarew.farewell.disable");
                     if (!p[0] && !p[1]) return message.reply("Missing permission node `global.welcfarew.farewell.disable`!");
@@ -1952,7 +1952,7 @@ bot.on("message", message => {
                     if (!(servermsgs[gueldid]["goodbye"]["message"])) return message.reply("Farewell message is not enabled!");
                     servermsgs[gueldid]["goodbye"]["message"] = "";
                     writeMsg();
-                    message.reply("Farewell message disabled successfully!");
+                    message.reply("Farewell message disabled successfully! To re-enable, just set a new farewell message!");
                 } else if (/^welcome$/i.test(welcommand)) {
                     if (!welmessage) return message.reply("You must put something to be the message (or #channel)!");
                     if (/^<#([0-9])+>$/i.test(welmessage) && message.guild.channels.get(welmessage.replace(/[<#>]/ig, ""))) {
