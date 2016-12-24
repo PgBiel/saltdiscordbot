@@ -1,4 +1,5 @@
 # Salt Discord Bot
+!! Indev branch is always tested with Salt Beta, join Salt's server to see him ;)
 ## About
 This is a multi-feature bot combining many ideas and suggestions. It can really help you with multiple things, such as warning and muting people.
 ## Inviting
