@@ -3923,7 +3923,7 @@ bot.on("message", message => {
                         }
                     }
                     cmdtodis = cmdtodis.toLowerCase().replace(/\s/g, "_");
-                    if ((!(permclass.cmdList.includes(cmdtodis)) && !checkvalidity) || (["manage", "say", "admin"].includes(cmdtodis))) return message.reply("Command not found!");
+                    if ((!(permclass.cmdList.includes(cmdtodis)) && !checkvalidity) || (["manage", "say", "admin", "eval", "broadcast", "restart", "c"].includes(cmdtodis))) return message.reply("Command not found!");
                     if (["p", "invite", "help", "contact"].includes(cmdtodis)) return message.reply("You cannot disable the command `"+cmdtodis+"`!");
                     type = type.toLowerCase();
                     if (type == "server") {
@@ -3931,14 +3931,14 @@ bot.on("message", message => {
                         if (checkvalidity)
                             perms[gueldid].disabled.server.push("custom."+checkvalidity);
                         else
-                            perms[gueldid].disabled.server.push("global."+cmdtodis.replace(/^(?:addrole|removerole)$/, "role"));
+                            perms[gueldid].disabled.server.push("global."+cmdtodis.replace(/^(?:addrole|removerole)$/, "role").replace(/^punmute$/, "unmute").replace(/^delreminder$/i, "delremind").replace(/^pong$/i, "ping"));
                     } else if (type == "channel") {
                         if (!(perms[gueldid].disabled.channels[chanel.id])) perms[gueldid].disabled.channels[chanel.id] = [];
                         if (perms[gueldid].disabled.channels[chanel.id].includes("custom."+cmdtodis)||perms[gueldid].disabled.channels[chanel.id].includes("global."+cmdtodis)) return message.reply(`The command \`${cmdtodis}\` is already disabled for this channel!`);
                         if (checkvalidity)
                             perms[gueldid].disabled.channels[chanel.id].push("custom."+checkvalidity);
                         else
-                            perms[gueldid].disabled.channels[chanel.id].push("global."+cmdtodis.replace(/^(?:addrole|removerole)$/, "role"));
+                            perms[gueldid].disabled.channels[chanel.id].push("global."+cmdtodis.replace(/^(?:addrole|removerole)$/, "role").replace(/^punmute$/, "unmute").replace(/^delreminder$/i, "delremind").replace(/^pong$/i, "ping"));
                     }
                     writePerms();
                     message.reply("Command `"+cmdtodis+"` disabled for this "+type+" successfully! :lock:");
@@ -4164,6 +4164,27 @@ bot.on("message", message => {
         }
         } catch (err) {
             message.reply([console.error("Error while doing listdisables: "+err.message), "Sorry, an error happened! The devs will know ;)"][1]);
+        }
+    }
+    if (/^bam(?:\s{1,4}[^]*)?$/i.test(instruction)) {
+        try {
+            let p = checkperm("global.bam");
+            if (!p[0]) return message.reply("Missing permission `global.bam`!");
+            if (p[2]) return disabledreply(p[2]);
+            if (!(/^bam\s{1,4}.+$/i.test(instruction))) return chanel.sendMessage("**SWOOP** <@"+message.author.id+"> threw their hammer on the air because they almost threw it at the wall without knowing what they were doing! (Tip: Specify an user)");
+            let usertobefound = instruction.match(/^bam\s{1,4}(.+)$/i)[1];
+            if (/^<#\d+>$/i.test(usertobefound)) {
+                usertobefound = usertobefound.match(/^<#(\d+)$/i)[1];
+                usertobefound = message.guild.members.map(m=>m.user).get(usertobefound);
+                if (!usertobefound) return chanel.sendMessage("**BANGG** <@"+message.author.id+"> threw their hammer on the wall. They were trying to target an user, but it was not found!");
+                chanel.sendMessage("**BAM** <@"+message.author.id+"> hit <@"+usertobefound.id+"> with their hammer! :bang:");
+            } else {
+                usertobefound = search("user", usertobefound, message.guild);
+                if (!usertobefound[1]) return chanel.sendMessage("**BANGG** <@"+message.author.id+"> threw their hammer on the wall. They were trying to target an user, but it was not found!");
+                chanel.sendMessage((usertobefound[1] > 1 ? "("+usertobefound[1]+" users found, using first find.)\n" : "")+"**BAM** <@"+message.author.id+"> hit <@"+usertobefound[0][0].id+"> with their hammer! :bang:");
+            }
+        } catch (err) {
+            console.error([message.reply("Sorry, but an error happened! The devs will know though :)"), `Error while doing bam:\n${err.message}`][1]);
         }
     }
     } // End of the whole prefix checking If
