@@ -1742,7 +1742,7 @@ bot.on("message", message => {
         message.reply("This command allows you to set custom commands for your server! They can only send text, but you can simulate arguments by adding underscores into the command name! Once you do an underscore, it is replaced by a space! Cool, isn't it?\nHowever, you need the permission `Manage Server` to edit commands!\n\nP.S: To delete commands write `" + prefix + "delcommand <command name>`! And, if the command name has spaces, to delete it write spaces, and not underscores!");
     }
     if (instructioncase in servercmds[gueldid]) {
-        let p = checkperm(`custom.${instructioncase.replace(/\s/g, "_")}`);
+        let p = checkperm(`custom.${instructioncase.toLowerCase().freplace(/\s/g, "_")}`);
         if (!p[0] && !p[1]) return message.reply("Missing permission node `custom."+instructioncase.replace(/\s/g, "_")+"`!");
         if (p[2]) return disabledreply(p[2]);
         chanel.sendMessage("\u200B" + servercmds[gueldid][instructioncase]);
@@ -2777,7 +2777,7 @@ bot.on("message", message => {
     if (/^clear\s+<@!?\d+>(?:\s+\d+)?$/i.test(instruction)){
         try {
             let p = checkperm("global.clear.user");
-            if (!p[0]) return message.reply("Missing permission node `global.clear.user`!");
+            if (!p[0] && !p[1]) return message.reply("Missing permission node `global.clear.user`!");
             if (p[2]) return disabledreply(p[2]);
             const clearargs = {};
             clearargs.mention = instruction.match(/^clear(\s+<@!?\d+>)(?:\s+\d+)?$/i) ? instruction.match(/^clear\s+<@!?(\d+)>(?:\s+\d+)?$/i)[1] : null;
@@ -2788,7 +2788,7 @@ bot.on("message", message => {
             clearargs.number = instruction.match(/^clear\s<@!?\d+>(?:\s(\d+))?$/i) ? instruction.match(/^clear\s<@!?\d+>(?:\s(\d+))?$/i)[1] : null;
             const botmember = message.guild.members.get(bot.user.id);
             if (!(clearargs.mention)) return message.reply("The user that is mentioned doesn't exist!");
-            if (message.member.hasPermission("MANAGE_MESSAGES") || message.author.id == ownerID) {
+            if (!(message.member.hasPermission("MANAGE_MESSAGES")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.clear.user`! Could also use this command by having the permission `Manage Messages`."); 
                 if (botmember.hasPermission("MANAGE_MESSAGES")) {
                     if (!(clearargs.number)) clearargs.number = 50;
                     if (clearargs.number > 100) return message.reply("The limit of ***user messages*** being cleared is 100!");
@@ -2814,12 +2814,12 @@ bot.on("message", message => {
                 } else {
                     message.reply("I do not have the permission `Manage Messages`!");
                 }
-            } else {
-                if (botmember.hasPermission("MANAGE_MESSAGES"))
-                    message.reply("You do not have the permission `Manage Messages`!");
-                else
-                    message.reply("Neither of us has the permission `Manage Messages`!");
-            }
+            //} else {
+                //if (botmember.hasPermission("MANAGE_MESSAGES"))
+                    //message.reply("You do not have the permission `Manage Messages`!");
+                //else
+                    //message.reply("Neither of us has the permission `Manage Messages`!");
+            //}
 
         } catch (err) {
             message.reply("Hmm.. Sorry! But something happened..!");
