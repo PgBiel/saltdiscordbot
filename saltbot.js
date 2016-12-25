@@ -3760,9 +3760,13 @@ bot.on("message", message => {
                 return permclass.findPerm(permnode, servercmds, gueldid);
             };
             if (!(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+\s{1,4}.+$/i.test(instruction)) && !(/^p\s{1,4}list[^]*$/i.test(instruction)) && !(/^p\s{1,4}clone/i.test(instruction))) return message.reply('```+p action arg subarg\n\n!! subarg is only applicable if using disable/enable and give/take, see below.\nAvailable options for "action":\n-> giveuser\n-> giverole\n-> takeuser\n-> takerole\n-> enable\n-> disable\n-> list\n-> clone\n\nAvailable options for "arg":\n-> give and take: Permission node (See +p list)\n!! Write - behind the permission node to negate it.\n-> list: Nothing\n-> Enable and disable: Write either "server" or "channel" (To disable/enable for the whole server or just for this channel)\n-> clone: #channel to clone disables from\n\nAvailable options for "subarg":\n-> give and take: Two valid options: Either mention (user to give/take) or role name (role to give/take)\n-> list: NOTHING!!\n->clone: NOTHING TOO!\n-> Enable and disable: command name to disable/enable\n\nExample: +p giveuser global.avatar @​Aplet123#9551 -> Gives permission "global.avatar" to Aplet123.\nExample 2: +p giveuser -global.mute @​Salt#8489 -> Negates permission "global.mute" to Salt.\nExample 3: +p giverole * Developers -> Gives permission "*" (all) to Developers.```', {split: {prepend:"```",append:"```"}});
-            let selected = instruction.match(/^p\s{1,4}(giveuser|giverole|takeuser|takerole|disable|enable|list|clone)(?:\s{1,4})?[^]*/i)[1].toLowerCase();
-            let semiselected = /^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+(?:\s{1,4}.+)?$/i.test(instruction) ? [instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}(.+)(?:\s{1,4}.+)?$/i)[1], instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+\s{1,4}(.+)$/i)||null] : null;
-            if (semiselected[1]) semiselected[1] = semiselected[1][1];
+            let selected = instruction.match(/^p\s{1,4}(giveuser|giverole|takeuser|takerole|disable|enable|list|clone)[^]*/i)[1].toLowerCase();
+            //console.log("Debug 0700: "+instruction);
+            let semiselected = /^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+(?:\s{1,4}.+)?$/i.test(instruction) ? [instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}(.+)(?:\s{1,4}.+)?$/i)||null, instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+\s{1,4}(.+)$/i)||null] : null;
+            if (semiselected){
+                if (semiselected[0]) semiselected[0] = semiselected[0][1];
+                if (semiselected[1]) semiselected[1] = semiselected[1][1];
+            }
             let findrole = function(name) {
                 let found;
                 message.guild.roles.map(r=>{
