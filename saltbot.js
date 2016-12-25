@@ -1742,7 +1742,7 @@ bot.on("message", message => {
         message.reply("This command allows you to set custom commands for your server! They can only send text, but you can simulate arguments by adding underscores into the command name! Once you do an underscore, it is replaced by a space! Cool, isn't it?\nHowever, you need the permission `Manage Server` to edit commands!\n\nP.S: To delete commands write `" + prefix + "delcommand <command name>`! And, if the command name has spaces, to delete it write spaces, and not underscores!");
     }
     if (instructioncase in servercmds[gueldid]) {
-        let p = checkperm(`custom.${instructioncase.toLowerCase().freplace(/\s/g, "_")}`);
+        let p = checkperm(`custom.${instructioncase.toLowerCase().replace(/\s/g, "_")}`);
         if (!p[0] && !p[1]) return message.reply("Missing permission node `custom."+instructioncase.replace(/\s/g, "_")+"`!");
         if (p[2]) return disabledreply(p[2]);
         chanel.sendMessage("\u200B" + servercmds[gueldid][instructioncase]);
