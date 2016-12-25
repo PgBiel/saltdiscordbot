@@ -3755,7 +3755,7 @@ bot.on("message", message => {
     }
     if (/^p(?:\s{1,4}[^]*)?$/i.test(instruction)) {
         try {
-            if (message.author.id !== ownerID && message.author.id !== "201765854990434304" && message.author.id !== "195344901506859009") return;
+            //if (message.author.id !== ownerID && message.author.id !== "201765854990434304" && message.author.id !== "195344901506859009") return;
             let findperm = function(permnode){
                 return permclass.findPerm(permnode, servercmds, gueldid);
             };
@@ -4037,7 +4037,7 @@ bot.on("message", message => {
         }
     }
     if (/^listperms(?:\s{1,4}[^]*)?$/.test(instruction)) {
-        if (message.author.id !== ownerID && message.author.id !== "201765854990434304") return;
+        //if (message.author.id !== ownerID && message.author.id !== "201765854990434304") return;
         try {
             if (!(/^listperms\s{1,4}(?:user|role)\s{1,4}.+?(?:\s{1,4}\d+)?$/i.test(instruction)) && !(/^listperms\s{1,4}user(?:\s{1,4}\d+)?$/i.test(instruction))) return chanel.sendMessage("```"+prefix+"listperms option arg page(optional, defaults to 1)\nList permissions of an user.\n\nValid options (for \"option\"):\n-> user\n-> role\n\nValid options for arg:\n-> If user was option, mention, or nothing to view of yourself (if viewing of yourself, consider this \"page\"). If not, role name.\n\nPage is the page (max of 10 permissions per page).```");
             let option = instruction.match(/^listperms\s{1,4}(user|role)(?:\s{1,4}.+(?:\s{1,4}\d+)?)?$/i)[1];
@@ -4126,7 +4126,7 @@ bot.on("message", message => {
     }
     if (/^listdisables(?:\s{1,4}[^]*)?$/.test(instruction)) {
         try {
-        if (message.author.id !== ownerID && message.author.id !== "201765854990434304") return;
+        //if (message.author.id !== ownerID && message.author.id !== "201765854990434304") return;
         let p = checkperm("global.listdisables");
         if (!p[0]) return message.reply("Missing permission node `global.listdisables`!");
         if (p[2]) return message.reply(`:lock: That command has been disabled for this ${p[2]}!`);
