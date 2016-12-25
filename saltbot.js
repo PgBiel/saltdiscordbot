@@ -12,6 +12,7 @@ String.prototype.getPage = function(pageNumber, count, regex, joinChar = ",") {
 var fs = require("fs");
 process.chdir("./Documents/Bot Stuff/Salt");
 const config = require("./Game/config.json");
+const pastebin = require("./Wrappers/aplet-pastebin.js");
 var saltandsugar = config.token;
 admins = JSON.parse(fs.readFileSync("./Info/admins.json", "utf8"));
 var servsr = JSON.parse(fs.readFileSync("./Info/serverthings.json", "utf8"));
@@ -3762,10 +3763,11 @@ bot.on("message", message => {
             if (!(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+\s{1,4}.+$/i.test(instruction)) && !(/^p\s{1,4}list[^]*$/i.test(instruction)) && !(/^p\s{1,4}clone/i.test(instruction))) return message.reply('```+p action arg subarg\n\n!! subarg is only applicable if using disable/enable and give/take, see below.\nAvailable options for "action":\n-> giveuser\n-> giverole\n-> takeuser\n-> takerole\n-> enable\n-> disable\n-> list\n-> clone\n\nAvailable options for "arg":\n-> give and take: Permission node (See +p list)\n!! Write - behind the permission node to negate it.\n-> list: Nothing\n-> Enable and disable: Write either "server" or "channel" (To disable/enable for the whole server or just for this channel)\n-> clone: #channel to clone disables from\n\nAvailable options for "subarg":\n-> give and take: Two valid options: Either mention (user to give/take) or role name (role to give/take)\n-> list: NOTHING!!\n->clone: NOTHING TOO!\n-> Enable and disable: command name to disable/enable\n\nExample: +p giveuser global.avatar @​Aplet123#9551 -> Gives permission "global.avatar" to Aplet123.\nExample 2: +p giveuser -global.mute @​Salt#8489 -> Negates permission "global.mute" to Salt.\nExample 3: +p giverole * Developers -> Gives permission "*" (all) to Developers.```', {split: {prepend:"```",append:"```"}});
             let selected = instruction.match(/^p\s{1,4}(giveuser|giverole|takeuser|takerole|disable|enable|list|clone)[^]*/i)[1].toLowerCase();
             //console.log("Debug 0700: "+instruction);
-            let semiselected = /^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+(?:\s{1,4}.+)?$/i.test(instruction) ? [instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}(.+)(?:\s{1,4}.+)?$/i)||null, instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+\s{1,4}(.+)$/i)||null] : null;
+            let semiselected = /^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+(?:\s{1,4}.+)?$/i.test(instruction) ? [instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}(.+?)(?:\s{1,4}.+)?$/i)||null, instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+?\s{1,4}(.+)$/i)||null] : null;
             if (semiselected){
                 if (semiselected[0]) semiselected[0] = semiselected[0][1];
                 if (semiselected[1]) semiselected[1] = semiselected[1][1];
+                if (semiselected[0] && !semiselected[1]) semiselected[0] = instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}(.+)(?:\s{1,4}.+)?$/i)[1];
             }
             let findrole = function(name) {
                 let found;
@@ -3804,7 +3806,7 @@ bot.on("message", message => {
                     let oldmentionplace = oldmention == semiselected[0] ? 1 : 0;
                     mention = bot.users.get(mention.match(/^<@!?(\d+)>$/)[1]);
                     if (!mention) return message.reply("User not found!");
-                    let permnode = oldmention == semiselected[0] ? findperm(semiselected[1].toLowerCase().replace(/^-/, "")) : findperm(semiselected[0].toLowerCase().replace(/^-/, ""));
+                    let permnode = oldmention == semiselected[0] ? findperm(semiselected[1].toLowerCase().replace(/^-/, "").replace(new RegExp("^"+semiselected[1]+"\\s{1,4}"), "")) : findperm(semiselected[0].toLowerCase().replace(/^-/, "").replace(new RegExp("\\s{1,4}"+semiselected[1]+"$"), ""));
                     if (!permnode) return message.reply(`Permission node \`${semiselected[oldmentionplace]}\` is not valid!`);
                     if (message.author.id != message.guild.owner.id && permnode == "*") return message.reply("You must be the server owner to manage the permission *!");
                     if (!(message.member.hasPermission("ADMINISTRATOR")) && /^(?:global|custom)\.\*$/i.test(permnode)) return message.reply("You must have the Administrator permission to manage the permissions global.* and custom.*!");
@@ -3821,7 +3823,7 @@ bot.on("message", message => {
                         writePerms();
                     }
                     
-                    return message.reply("Permission `"+semiselected[oldmentionplace].toLowerCase().replace(/^-/, "")+"` given"+(/^-/.test(semiselected[oldmentionplace])?" (negated) ":"")+" to user "+mention+" successfully!");
+                    return message.reply("Permission `"+semiselected[oldmentionplace].toLowerCase().replace(/^-/, "").replace(new RegExp("\\s{1,4}"+semiselected[1]+"$"), "")+"` given"+(/^-/.test(semiselected[oldmentionplace])?" (negated) ":"")+" to user "+mention+" successfully!");
                 } else {
                     console.log(p);
                 }
@@ -3853,14 +3855,14 @@ bot.on("message", message => {
                     }
                     role = findrole(semiselected[subspot]);
                     if (!role) return message.reply("Role not found! (Please make sure to put role name on the second argument spot)");
-                    let permnode = findperm(semiselected[0].toLowerCase().replace(/^-/, ""));
+                    let permnode = findperm(semiselected[0].toLowerCase().replace(/^-/, "").replace(new RegExp("\\s{1,4}"+semiselected[1]+"$"), ""));
                     if (!permnode) return message.reply(`Permission node \`${semiselected[0]}\` is not valid!`);
                     if (message.author.id != message.guild.owner.id && permnode == "*") return message.reply("You must be the server owner to manage the permission *!");
                     if (!(message.member.hasPermission("ADMINISTRATOR")) && /^(?:global|custom)\.\*$/i.test(permnode)) return message.reply("You must have the Administrator permission to manage the permissions global.* and custom.*!");
                     if (!(perms[gueldid].roles[role.id])) perms[gueldid].roles[role.id] = {};
                     perms[gueldid].roles[role.id][permnode] = /^-/.test(semiselected[0]) ? false : true;
                     writePerms();
-                    return message.reply("Permission `"+semiselected[0].toLowerCase().replace(/^-/, "")+"` given"+(/^-/.test(semiselected[0])?" (negated) ":"")+" to role "+role.name+" successfully!");
+                    return message.reply("Permission `"+semiselected[0].toLowerCase().replace(/^-/, "").replace(new RegExp("\\s{1,4}"+semiselected[1]+"$"), "")+"` given"+(/^-/.test(semiselected[0])?" (negated) ":"")+" to role "+role.name+" successfully!");
                 }
             } else if (selected == "takeuser") {
                 let p = checkperm("global.p.remove", true);
@@ -3883,6 +3885,10 @@ bot.on("message", message => {
                     mention = bot.users.get(mention.match(/^<@!?(\d+)>$/)[1]);
                     if (!mention) return message.reply("User not found!");
                     let permnode = semiselected[oldmentionplace];
+                    if (oldmentionplace == 0)
+                        permnode = permnode.replace(new RegExp("\\s{1,4}"+semiselected[1]+"$"), "");
+                    else
+                        permnode = permnode.replace(new RegExp("^"+semiselected[0]+"\\s{1,4}"), "");
                     //if (!permnode) return message.reply(`Permission node \`${semiselected[oldmentionplace]}\` is not valid!`);
                     if (message.author.id != message.guild.owner.id && permnode == "*") return message.reply("You must be the server owner to manage the permission *!");
                     if (!(message.member.hasPermission("ADMINISTRATOR")) && /^(?:global|custom)\.\*$/i.test(permnode)) return message.reply("You must have the Administrator permission to manage the permissions global.* and custom.*!");
@@ -3890,7 +3896,7 @@ bot.on("message", message => {
                     if (!(perms[gueldid].users[mention.id][permnode]) && perms[gueldid].users[mention.id][permnode] !== false) return message.reply("That user doesn't have the permission `"+permnode+"`!");
                     delete perms[gueldid].users[mention.id][permnode];
                     writePerms();
-                    return message.reply("Permission `"+semiselected[oldmentionplace].toLowerCase().replace(/^-/, "")+"` taken away from user "+mention+" successfully!");
+                    return message.reply("Permission `"+permnode.replace(/^-/, "")+"` taken away from user "+mention+" successfully!");
                 }
             } else if (selected == "takerole") {
                 let p = checkperm("global.p.remove", true);
@@ -3907,7 +3913,7 @@ bot.on("message", message => {
                     let oldrole = semiselected[1];
                     role = findrole(semiselected[1]);
                     if (!role) return message.reply("Role not found!");
-                    let permnode = semiselected[0];
+                    let permnode = semiselected[0].replace(new RegExp("\\s{1,4}"+semiselected[1]+"$"), "");
                     //if (!permnode) return message.reply(`Permission node \`${semiselected[0]}\` is not valid!`);
                     if (message.author.id != message.guild.owner.id && permnode == "*") return message.reply("You must be the server owner to manage the permission *!");
                     if (!(message.member.hasPermission("ADMINISTRATOR")) && /^(?:global|custom)\.\*$/i.test(permnode)) return message.reply("You must have the Administrator permission to manage the permissions global.* and custom.*!");
