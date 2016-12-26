@@ -1706,7 +1706,7 @@ bot.on("message", message => {
         try {
             var cmdtrigger = instructioncase.match(/^command\s(.+?)\s[^]+$/i)[1];
             var cmdtext = instruction.match(/^command\s(?:.+?)\s([^]+)$/i)[1];
-            let superregexp = new RegExp(`(${permclass.cmdList.join("|")})(_|$)`, "i");
+            let superregexp = new RegExp(`^(${permclass.cmdList.join("|")})(_|$)`, "i");
             if (superregexp.test(cmdtrigger)) {
                 message.reply("\"" + cmdtrigger + "\" is already a command (not custom) used by the bot!");
             } else {
