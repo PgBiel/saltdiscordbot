@@ -370,32 +370,41 @@ bot.on("ready", () => {
         bot.user.setGame(gamejs["game"]);
     }
     Array.from(bot.guilds).map(v=>{
-        if (!(servermods[v[1].id])) {
-            servermods[v[1].id] = {};
-            servermods[v[1].id].moderator = "";
-            servermods[v[1].id].administrator = "";
-            servermods[v[1].id].logs = "";
-            servermods[v[1].id].duelogs = {};
+        let guild = v[1];
+        if (!(servermods[guild.id])) {
+            servermods[guild.id] = {};
+            servermods[guild.id].moderator = "";
+            servermods[guild.id].administrator = "";
+            servermods[guild.id].logs = "";
+            servermods[guild.id].duelogs = {};
             writeMods();
         }
-        if (servermods[v[1].id].logs !== "") {
+        if (servermods[guild.id].logs !== "") {
             if (!(v[1].channels.get(servermods[v[1].id].logs))) {
                 servermods[v[1].id].logs = "";
                 writeMods();
             }
         }
-        if (v[1].id in perms) {
-            let gueldid = v[1].id;
-            if (v[1].owner.id !== perms[gueldid].owner) {
+        if (guild.id in perms) {
+            let gueldid = guild.id;
+            if (guild.owner.id !== perms[gueldid].owner) {
                 if (perms[gueldid].users[perms[gueldid].owner]) {
                     /*jshint ignore:start*/
                     delete perms[gueldid].users[perms[gueldid].owner]["*"] || undefined;
                     /*jshint ignore:end*/
-                    perms[gueldid].owner = v[1].owner.id;
+                    perms[gueldid].owner = guild.owner.id;
                     //perms[gueldid].users[perms[gueldid].owner]["*"] = true;
                     writePerms();
                 }
             }
+        }
+        if (guild.id in serverself) {
+            for (let selfrole in serverself[guild]) {
+                if (!(guild.roles.has(selfrole))) {
+                    delete serverself[guild][selfrole];
+                }
+            }
+            writeSelfRoles();
         }
     });
     setInterval(function(){
@@ -443,7 +452,7 @@ bot.on("ready", () => {
         }
     }, 10000);
     } catch (e) {
-        console.log(e);
+        console.error("Error at somewhere between Ready(): "+e.message+(e.lineNumber?`\n(Line number: ${e.lineNumber})`:""));
     }
 });
 bot.on("guildUpdate", (oldguild, newguild)=>{
@@ -4353,6 +4362,14 @@ bot.on("disconnect", ()=>{
 bot.on("reconnect", ()=>{
     process.exit(1);
 });
+bot.on("roleDelete", role=>{
+    if (role.guild.id in serverself) {
+        if (role.id in serverself[role.guild.id]) {
+            delete serverself[role.guild.id][role.id];
+            writeSelfRoles();
+        }
+    }
+})
 
 bot.login(saltandsugar);
 //Object.defineProperty(Object.prototype, "keysize", {
