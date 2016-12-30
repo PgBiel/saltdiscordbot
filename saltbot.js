@@ -29,6 +29,7 @@ const ownerID = "180813971853410305";
 const antitrigger = {};
 const Jimp = require("jimp");
 const request = require("request");
+const requestp = require("request-promise");
 const proto = require("./proto.js");
 proto.load();
 let twemoji = require("./testemoji.js").twemojib;
@@ -50,6 +51,7 @@ serverdetects = require("./Info/serverdetects.json");
 servermods = require ("./Info/servermods.json");
 serverwarns = require("./Info/serverwarns.json");
 publickeys = require("./Game/publickeys.json");
+quotes = require("./Game/quotes.json");
 gamejs = require("./Game/game.json");
 serverself = require("./Info/serverselfroles.json");
 contacts = require("./Game/contact.json");
@@ -163,6 +165,10 @@ function writePerms() {
 function writeStats() {
     fs.writeFileSync("./stats.json", JSON.stringify(stats));
     stats = require("./stats.json");
+}
+function writeQuotes() {
+    fs.writeFileSync("./Game/quotes.json", JSON.stringify(quotes));
+    quotes = require("./Game/quotes.json");
 }
 function muteGet(item, index) {
     foundmuted = item;
@@ -399,9 +405,9 @@ bot.on("ready", () => {
             }
         }
         if (guild.id in serverself) {
-            for (let selfrole in serverself[guild]) {
+            for (let selfrole in serverself[guild.id]) {
                 if (!(guild.roles.has(selfrole))) {
-                    delete serverself[guild][selfrole];
+                    delete serverself[guild.id][selfrole];
                 }
             }
             writeSelfRoles();
@@ -423,7 +429,7 @@ bot.on("ready", () => {
                         delete servermutes[x]["mutes"][y];
                         writeMutes();
                     } else {
-                        if (!(mutedmember.roles.get(servermutes[x]["muteRoleID"]))) {
+                        if (!(mutedmember.roles.get(servermutes[x]["muteRoleID"])) && mutedmember.guild.roles.has(servermutes[x].muteRoleID)) {
                             if (mutedmember.guild.roles.get(servermutes[x].muteRoleID).editable)
                                 mutedmember.addRole(servermutes[x]["muteRoleID"]);
                         }
@@ -439,7 +445,7 @@ bot.on("ready", () => {
         }
         for (var p in userreminders) {
             if (Date.now() >= userreminders[p].expire) {
-                bot.users.get(p).sendMessage(`<@${p}> BEEP! BEEP! You've asked me to remind you this:\n\`${userreminders[p].remind}\`!`);
+                if (bot.users.get(p)) bot.users.get(p).sendMessage(`<@${p}> BEEP! BEEP! You've asked me to remind you this:\n\`${userreminders[p].remind}\`!`);
                 delete userreminders[p];
                 writeReminders();
             }
@@ -642,7 +648,7 @@ bot.on("messageUpdate", (oldmessage, message) => {
 });
 bot.on("message", message => {
     if(message.channel.type==="text" && !(message.author.bot)) {
-	var input = message.content;
+    var input = message.content;
     var upparcaso = message.content.toUpperCase();
     var chanel = message.channel;
     var gueldid = message.guild.id;
@@ -797,10 +803,10 @@ bot.on("message", message => {
         }
     }
     try {
-    if (/^manage\s(.+?)(\s(.+))?$/i.test(instruction)) {
-        if (message.author.id == ownerID) {
-            var command = instruction.match(/^manage\s(.+?)(\s(?:.+))?$/i)[1];
-            var argument = instruction.match(/^manage\s.+?\s((.+)?)?$/i) ? (instruction.match(/^manage\s.+?\s((.+)?)?$/i)[1]).replace(/^ +$/, "") : null;
+    if (/^manage\s(.+?)(\s[^]+)?$/i.test(instruction)) {
+        if (message.author.id == ownerID||(message.author.id == "201765854990434304")) {
+            var command = instruction.match(/^manage\s(.+?)(\s(?:[^]+))?$/i)[1];
+            var argument = instruction.match(/^manage\s.+?\s(([^]+)?)?$/i) ? (instruction.match(/^manage\s.+?\s(([^]+)?)?$/i)[1]).replace(/^ +$/, "") : null;
             if (/^log$/i.test(command)) {
                 if (argument !== null && argument !== undefined && argument !== "") {
                     console.log(argument);
@@ -868,16 +874,55 @@ bot.on("message", message => {
                 }
             }
             if (/^sendat$/i.test(command)) {
-                if (argument === null | argument === undefined | argument === "") {
+                if (argument === null && argument === undefined && argument === "") {
                     message.reply("trains");
                 } else {
-                    var argchannel = argument.match(/^(.+?)\s(?:.+)$/i)[1];
-                    var argmessage = argument.match(/^(?:.+?)\s(.+)$/i)[1];
+                    var argchannel = argument.match(/^(.+?)\s(?:[^]+)$/i)[1];
+                    var argmessage = argument.match(/^(?:.+?)\s(.+)[^]*$/i)[1];
                     if (bot.channels.get(argchannel)) {
                         var channelfound = bot.channels.get(argchannel);
                         channelfound.sendMessage(argmessage);
                         message.reply("Message sent at the channel #" + channelfound.name + "!");
                     }
+                }
+            }
+            if (/^addquote$/i.test(command)) {
+                if (!argument) return message.reply("Apparently you forgot the argument. Wew.");
+                if (!(/^"[^]+"\s{1,4}(?:\d+|<@!?\d+>)[^]*$/i.test(argument)) && !(/^\d+(?:\s{1,4}\d+)?/i.test(argument)) && !(/^"[^]+"\s{1,4}.+#\d+/i.test(argument))) return message.reply("Wrong usage! Syntax: \n1. Set quote: `\"quote goes here\" <author>` - Replace <author> by either their ID or name#discrim.\n2. From message: `<Msg Id> <Channel Id (optional)>`");
+                let addquote = function(quote, author) {
+                    if (!quote || !author) throw new SyntaxError("Missing quote or author. (addquote manage)");
+                    if (typeof quote !== "string") throw new TypeError("Quote must be a string. (addquote manage)");
+                    if (typeof author !== "object") throw new TypeError("Author must be an object (and user!!). (addquote manage)");
+                    if (!(author instanceof Discord.User) && !(author instanceof Discord.GuildMember)) throw new TypeError("Author must be an User object (or GuildMember). (addquote manage)");
+                    quotes.push({quote, author: {id: author.id, name: author.username, discriminator: author.discriminator}});
+                    writeQuotes();
+                    return "Success!";
+                };
+                if (/^\d+(?:\s{1,4}\d+)?$/.test(argument)) {
+                    let msgid = argument.match(/^(\d+)(?:\s{1,4}\d+)?$/)[1];
+                    let channelid = argument.match(/^\d+\s{1,4}(\d+)?$/)||undefined;
+                    if (channelid) channelid = channelid[1];
+                    if (channelid) {
+                        if (!(bot.channels.has(channelid))) return message.reply("Channel not found!");
+                        let channel = bot.channels.get(channelid);
+                        let msg;
+                        chanel.fetchMessage(msgid).then(m=>{
+                            msg = m;
+                            if (!msg) return message.reply("Message not found!");
+                            addquote(msg.content, msg.author);
+                            message.reply("Success!");
+                        }).catch(err=>message.reply("Message not found!"));
+                    }
+                } else if (/^"[^]+"\s{1,4}(?:\d+|<@!?\d+>)$/i.test(argument)) {
+                    let daid = argument.match(/^"[^]+"\s{1,4}(\d+|<@!?\d+>)$/i)[1];
+                    if (/^<@!?\d+>$/i.test(daid)) daid = daid.match(/^<@!?(\d+)>$/)[1];
+                    let user = bot.users.get(daid);
+                    if (!user) return message.reply("User not found!");
+                    let quote = argument.match(/^"([^]+)"/i)[1];
+                    addquote(quote, user);
+                    message.reply("Success!");
+                } else {
+                    message.reply("uh no use ids you lazy boi");
                 }
             }
             if (/^regenmute$/i.test(command)) {
@@ -2449,7 +2494,7 @@ bot.on("message", message => {
     }
     if (/^clear\s(?:\d+)$/i.test(instruction)) {
         let p = checkperm("global.clear.normal");
-        if (!p[0]) return message.reply("Missing permission node `global.clear.normal`!");
+        if (!p[0] && !p[1]) return message.reply("Missing permission node `global.clear.normal`!");
         if (p[2]) return disabledreply(p[2]);
         const botmember = message.guild.members.get(bot.user.id);
         const clear = instruction.match(/^clear\s(\d+)$/i)[1];
@@ -2462,7 +2507,7 @@ bot.on("message", message => {
             });
         };
         if (botmember.hasPermission("MANAGE_MESSAGES")) {
-            if (message.member.hasPermission("MANAGE_MESSAGES") || message.author.id == ownerID) {
+            if (!(message.member.hasPermission("MANAGE_MESSAGES")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.clear.normal`! Could also use this command by having the permission _Manage Messages_.");
                 if (Number(clear) > 1000) {
                     message.reply("The limit of messages being cleared is 1000!");
                 } else {
@@ -2550,9 +2595,9 @@ bot.on("message", message => {
                         }
                     }
                 }
-            } else {
-                message.reply("You do not have the permission `Manage Messages`!");
-            }
+            //} else {
+                //message.reply("You do not have the permission `Manage Messages`!");
+            //}
         } else {
             if (message.member.hasPermission("MANAGE_MESSAGES"))
                 message.reply("I do not have the permission `Manage Messages`!");
@@ -3769,7 +3814,7 @@ bot.on("message", message => {
             let findperm = function(permnode){
                 return permclass.findPerm(permnode, servercmds, gueldid);
             };
-            if (!(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+\s{1,4}.+$/i.test(instruction)) && !(/^p\s{1,4}list[^]*$/i.test(instruction)) && !(/^p\s{1,4}clone/i.test(instruction))) return message.reply('```+p action arg subarg\n\n!! subarg is only applicable if using disable/enable and give/take, see below.\nAvailable options for "action":\n-> giveuser\n-> giverole\n-> takeuser\n-> takerole\n-> enable\n-> disable\n-> list\n-> clone\n\nAvailable options for "arg":\n-> give and take: Permission node (See +p list)\n!! Write - behind the permission node to negate it.\n-> list: Nothing\n-> Enable and disable: Write either "server" or "channel" (To disable/enable for the whole server or just for this channel)\n-> clone: #channel to clone disables from\n\nAvailable options for "subarg":\n-> give and take: Two valid options: Either mention (user to give/take) or role name (role to give/take)\n-> list: NOTHING!!\n->clone: NOTHING TOO!\n-> Enable and disable: command name to disable/enable\n\nExample: +p giveuser global.avatar @​Aplet123#9551 -> Gives permission "global.avatar" to Aplet123.\nExample 2: +p giveuser -global.mute @​Salt#8489 -> Negates permission "global.mute" to Salt.\nExample 3: +p giverole * Developers -> Gives permission "*" (all) to Developers.```', {split: {prepend:"```",append:"```"}});
+            if (!(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+\s{1,4}.+$/i.test(instruction)) && !(/^p\s{1,4}list[^]*$/i.test(instruction)) && !(/^p\s{1,4}clone/i.test(instruction))) return message.reply('```+p action arg subarg\n\n!! subarg is only applicable if using disable/enable and give/take, see below.\nAvailable options for "action":\n-> giveuser\n-> giverole\n-> takeuser\n-> takerole\n-> enable\n-> disable\n-> list\n-> clone\n\nAvailable options for "arg":\n-> give and take: Permission node (See +p list)\n!! Write - behind the permission node to negate it.\n-> list: Nothing\n-> Enable and disable: Write either "server" or "channel" (To disable/enable for the whole server or just for this channel)\n-> clone: #channel to clone disables from\n\nAvailable options for "subarg":\n-> give and take: Two valid options: Either mention (user to give/take) or role name (role to give/take)\n-> list: NOTHING!!\n-> clone: NOTHING TOO!\n-> Enable and disable: command name to disable/enable\n\nExample: +p giveuser global.avatar @​Aplet123#9551 -> Gives permission "global.avatar" to Aplet123.\nExample 2: +p giveuser -global.mute @​Salt#8489 -> Negates permission "global.mute" to Salt.\nExample 3: +p giverole * Developers -> Gives permission "*" (all) to Developers.```', {split: {prepend:"```",append:"```"}});
             let selected = instruction.match(/^p\s{1,4}(giveuser|giverole|takeuser|takerole|disable|enable|list|clone)[^]*/i)[1].toLowerCase();
             //console.log("Debug 0700: "+instruction);
             let semiselected = /^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+(?:\s{1,4}.+)?$/i.test(instruction) ? [instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}(.+?)(?:\s{1,4}.+)?$/i)||null, instruction.match(/^p\s{1,4}(?:giveuser|giverole|takeuser|takerole|disable|enable|list|clone)\s{1,4}.+?\s{1,4}(.+)$/i)||null] : null;
@@ -4218,6 +4263,101 @@ bot.on("message", message => {
             console.error([message.reply("Sorry, but an error happened! The devs will know though :)"), `Error while doing bam:\n${err.message}`][1]);
         }
     }
+    if (/^quote(?:\s{1,4}[^]*)?$/i.test(instruction)) {
+        try {
+            let option = /^quote\s{1,4}[^]+$/i.test(instruction)?instruction.match(/^quote\s{1,4}([^]+)$/i)[1]:"discord";
+            if (!(["any", "options", "famous", "discord"].testprop(option))) return message.reply("Invalid option! Valid options are: `any` (Any kind of quote), `discord` (Quotes from discord), `options` (Shows this message) and `famous` (Famous quotes). If no option is specified, `discord` is used.");
+            let promiseoptions = {
+                    method: 'POST',
+                    uri: "https://andruxnet-random-famous-quotes.p.mashape.com/?cat=famous",
+                    headers: JSON.parse(`{"X-Mashape-Key": "${config.apiape}"}`),
+                    json: true
+            };
+            if (["options"].testprop(option)) return message.reply("Options: `any` (Any kind of quote), `discord` (Quotes from discord), `options` (Shows this message) and `famous` (Famous quotes). If no option is specified, `discord` is used.");
+            else if (["discord"].testprop(option)) {
+                let embed = new Discord.RichEmbed();
+                let quote = quotes.random;
+                let user = bot.users.get(quote.author.id);
+                let nouser = false;
+                if (!user) nouser = [user = `${quote.author.name}#${quote.author.discriminator}`, true][1];
+                embed.setAuthor(nouser?quote.author.name+"#"+quote.author.discriminator:`${user.username}#${user.discriminator}`+` said...${nouser?"":` (ID: ${user.id})`}`, nouser?undefined:(user.avatarURL||user.defaultAvatarURL), "http://google.com")
+                    .setColor(0x009881)
+                    .setDescription(quote.quote)
+                    .setFooter(`See "${prefix}quote options" for more options`);
+                let didtheembedsend = true;
+                chanel.sendEmbed(embed).then(wut=>{
+                    if (wut === undefined) didtheembedsend = false;
+                });
+                if (!didtheembedsend) return message.reply("Could not send embed, please make sure I have the permission `Embed Links`!");
+            } else if (["famous"].testprop(option)) {
+                let embed = new Discord.RichEmbed();
+                let quotedata = {};
+                let errored = false;
+                requestp.post(promiseoptions).then(body=>{
+                        quotedata = body;
+                        let quote = quotedata.quote;
+                        let user = quotedata.author;
+                        embed.setAuthor(`${user} said...`, undefined, "http://google.com")
+                            .setColor(0x009881)
+                            .setDescription(quote)
+                            .setFooter(`See "${prefix}quote options" for more options`);
+                        let didtheembedsend = true;
+                        chanel.sendEmbed(embed).then(wut=>{
+                            if (wut === undefined) didtheembedsend = false;
+                        });
+                        if (!didtheembedsend) return message.reply("Could not send embed, please make sure I have the permission `Embed Links`!");
+                }).catch(err=>{
+                        console.error("Error at requesting famous quote:\n"+err);
+                        message.reply("Sorry, but an error happened at grabbing a famous quote! The devs shall know though. ;)");
+                });
+                //if (errored) return message.reply("Sorry, but an error happened at grabbing a famous quote! The devs shall know though. ;)");
+            } else if (["any"].testprop(option)) {
+                let famousordiscord = Math.floor(Math.random() * (3 - 1)) + 1;
+                if (famousordiscord == 1) {
+                    let embed = new Discord.RichEmbed();
+                    let quote = quotes.random;
+                    let user = bot.users.get(quote.author.id);
+                    let nouser = false;
+                    if (!user) nouser = [user = `${quote.author.name}#${quote.author.discriminator}`, true][1];
+                    embed.setAuthor(nouser?quote.author.name+"#"+quote.author.discriminator:`${user.username}#${user.discriminator}`+` said...${nouser?"":` (ID: ${user.id})`}`, nouser?undefined:(user.avatarURL||user.defaultAvatarURL), "http://google.com")
+                        .setColor(0x009881)
+                        .setDescription(quote.quote)
+                        .setFooter(`See "${prefix}quote options" for more options`);
+                    let didtheembedsend = true;
+                    chanel.sendEmbed(embed).then(wut=>{
+                        if (wut === undefined) didtheembedsend = false;
+                    });
+                    if (!didtheembedsend) return message.reply("Could not send embed, please make sure I have the permission `Embed Links`!");
+                } else {
+                    let embed = new Discord.RichEmbed();
+                    let quotedata = {};
+                    let errored = false;
+                    requestp.post(promiseoptions).then(body=>{
+                        quotedata = body;
+                        let quote = quotedata.quote;
+                        let user = quotedata.author;
+                        embed.setAuthor(`${user} said...`, undefined, "http://google.com")
+                            .setColor(0x009881)
+                            .setDescription(quote)
+                            .setFooter(`See "${prefix}quote options" for more options`);
+                        let didtheembedsend = true;
+                        chanel.sendEmbed(embed).then(wut=>{
+                            if (wut === undefined) didtheembedsend = false;
+                        });
+                        if (!didtheembedsend) return message.reply("Could not send embed, please make sure I have the permission `Embed Links`!");
+                    }).catch(err=>{
+                            console.error("Error at requesting famous quote:\n"+err);
+                            message.reply("Sorry, but an error happened at grabbing a famous quote! The devs shall know though. ;)");
+                    });
+                }
+            } else {
+                message.reply("Invalid option! Valid options are: `any` (Any kind of quote), `discord` (Quotes from discord), `options` (Shows this message) and `famous` (Famous quotes). If no option is specified, `discord` is used.");
+            }
+        } catch (err) {
+            message.reply("Sorry, but an error happened! The devs shall know though. ;)");
+            console.error("Error while doing quote:\n"+err.message);
+        }
+    }
     } // End of the whole prefix checking If
     /*if (!(/^[\w\s\+\-$#@!%ˆ&\*\(\)\[\]{}!:;"'`.,><\?/\\\|=\n~]+$/i.test(input)) && message.author.id == "249047754943365121" && message.guild.id == "245744417619705859") {
         message.delete().catch(err=>console.error(err.message));
@@ -4369,7 +4509,15 @@ bot.on("roleDelete", role=>{
             writeSelfRoles();
         }
     }
-})
+});
+process.on("unhandledRejection", (rej, p)=>{
+    console.error("Unhandled Rejection at Promise"+p+":\n"+rej);
+    if (rej instanceof Error) {
+        if (/Error: Something took too long to do./i.test(rej.message)) {
+            process.exit(1);
+        }
+    }
+});
 
 bot.login(saltandsugar);
 //Object.defineProperty(Object.prototype, "keysize", {
