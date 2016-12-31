@@ -786,7 +786,7 @@ bot.on("message", message => {
     if (/^<@!?244533925408538624>\s?/i.test(upparcaso))
         instruction = instruction.replace(/^<@!?244533925408538624>\s?/i, "");
     var instructioncase = instruction.toUpperCase();
-    if (/^avatar/i.test(instruction)) {
+    if (/^avatar(?:\s{1,4}[^]*)?$/i.test(instruction)) {
         let p = checkperm("global.avatar");
         //console.log(p);LO
         if (!p[0]) return message.reply("Missing permission node: `global.avatar`");
@@ -797,9 +797,28 @@ bot.on("message", message => {
             user = instruction.match(/^avatar\s{1,4}<@!?(\d+)>$/i)[1];
             if (!bot.users.get(user)) return message.reply("User not found!");
             user = bot.users.get(user.toString());
-            message.channel.sendFile(user.avatarURL ? user.avatarURL : "http://a5.mzstatic.com/us/r30/Purple71/v4/5c/ed/29/5ced295c-4f7c-1cf6-57db-e4e07e0194fc/icon175x175.jpeg");
+            let embed = new Discord.RichEmbed();
+            let avatar = /^(?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpg|png)\?size=\d+$/.test(user.avatarURL||"hi")?(user.avatarURL.match(/^((?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpg|png))\?size=\d+$/)[1]):(user.avatarURL||user.defaultAvatarURL);
+            embed.setAuthor(`${user.username}#${user.discriminator}'s Avatar`, undefined, avatar)
+                .setImage(avatar)
+                .setFooter(`ID: ${user.id}`);
+            chanel.sendEmbed(embed).then(m=>{
+                if (!m) message.reply("I cannot send embeds here :(");
+            });
+            //message.channel.sendFile(user.avatarURL ? user.avatarURL : "http://a5.mzstatic.com/us/r30/Purple71/v4/5c/ed/29/5ced295c-4f7c-1cf6-57db-e4e07e0194fc/icon175x175.jpeg", "avatar.jpg");
+        //} else if (/^avatar\s{1,4}[^]+$/i.test(instruction)) {
+
         } else {
-            message.channel.sendFile(message.author.avatarURL ? message.author.avatarURL : "http://a5.mzstatic.com/us/r30/Purple71/v4/5c/ed/29/5ced295c-4f7c-1cf6-57db-e4e07e0194fc/icon175x175.jpeg");
+            let embed = new Discord.RichEmbed();
+            let user = message.author;
+            let avatar = /^(?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpg|png)\?size=\d+$/.test(user.avatarURL||"hi")?(user.avatarURL.match(/^((?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpg|png))\?size=\d+$/)[1]):(user.avatarURL||user.defaultAvatarURL);
+            embed.setAuthor(`${user.username}#${user.discriminator}'s Avatar`, undefined, avatar)
+                .setImage(avatar)
+                .setFooter(`ID: ${user.id}`);
+            chanel.sendEmbed(embed).then(m=>{
+                if (!m) message.reply("I cannot send embeds here :(");
+            });
+            //message.channel.sendFile(message.author.avatarURL ? message.author.avatarURL : "http://a5.mzstatic.com/us/r30/Purple71/v4/5c/ed/29/5ced295c-4f7c-1cf6-57db-e4e07e0194fc/icon175x175.jpeg", "avatar.jpg");
         }
     }
     try {
@@ -3915,6 +3934,21 @@ bot.on("message", message => {
                     if (!(message.member.hasPermission("ADMINISTRATOR")) && /^(?:global|custom)\.\*$/i.test(permnode)) return message.reply("You must have the Administrator permission to manage the permissions global.* and custom.*!");
                     if (!(perms[gueldid].roles[role.id])) perms[gueldid].roles[role.id] = {};
                     perms[gueldid].roles[role.id][permnode] = /^-/.test(semiselected[0]) ? false : true;
+                    let newrolesarr = [];
+                    for (let rule of message.guild.roles.array().sort((a,b)=>{return a.position-b.position;}).reverse()) {
+                        if (rule.id in perms[gueldid].roles) {
+                            let zeobj = {};
+                            zeobj[rule.id] = perms[gueldid].roles[rule.id];
+                            newrolesarr.push(zeobj);
+                        }
+                    }
+                    let newrolesobj = {};
+                    for (let rule of newrolesarr) {
+                        for (let prop in rule) {
+                            newrolesobj[prop] = rule[prop];
+                        }
+                    }
+                    perms[gueldid].roles = newrolesobj;
                     writePerms();
                     return message.reply("Permission `"+semiselected[0].toLowerCase().replace(/^-/, "").replace(new RegExp("\\s{1,4}"+semiselected[1]+"$"), "")+"` given"+(/^-/.test(semiselected[0])?" (negated) ":"")+" to role "+role.name+" successfully!");
                 }
@@ -3974,6 +4008,22 @@ bot.on("message", message => {
                     if (!(perms[gueldid].roles[role.id])) return message.reply("That role doesn't have the permission `"+permnode+"`!");
                     if (!(perms[gueldid].roles[role.id][permnode])) return message.reply("That role doesn't have the permission `"+permnode+"`!");
                     delete perms[gueldid].roles[role.id][permnode];
+                    let newrolesarr = [];
+                    for (let rule of message.guild.roles.array().sort((a,b)=>{return a.position-b.position;}).reverse()) {
+                        if (rule.id in perms[gueldid].roles) {
+                            let zeobj = {};
+                            zeobj[rule.id] = perms[gueldid].roles[rule.id];
+                            newrolesarr.push(zeobj);
+                        }
+                    }
+                    let newrolesobj = {};
+                    for (let rule of newrolesarr) {
+                        for (let prop in rule) {
+                            newrolesobj[prop] = rule[prop];
+                        }
+                    }
+                    perms[gueldid].roles = newrolesobj;
+                    if (perms[gueldid].roles[role.id].keysize < 1) delete perms[gueldid].roles[role.id];
                     writePerms();
                     return message.reply("Permission `"+semiselected[0].toLowerCase().replace(/^-/, "")+"` taken from role "+role.name+" successfully!");
                 }
