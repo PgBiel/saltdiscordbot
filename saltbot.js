@@ -1,5 +1,6 @@
 //jshint esversion: 6
-'esversion:6'; 
+'esversion:6';
+let powernumber = 0;
 var Discord = require("discord.js");
 var bot = new Discord.Client({
     disableEveryone: true,
@@ -13,6 +14,13 @@ var fs = require("fs");
 process.chdir("./Documents/Bot Stuff/Salt");
 const config = require("./Game/config.json");
 const pastebin = require("./Wrappers/aplet-pastebin.js");
+const io = require("socket.io")(4004);
+const dperms = require("jsdiscordperms");
+const socket = require("socket.io-client")("http://localhost:4005");
+socket.on("receivedsocket", data=>{
+    console.log(data);
+});
+const crypto = require("crypto");
 var saltandsugar = config.token;
 admins = JSON.parse(fs.readFileSync("./Info/admins.json", "utf8"));
 var servsr = JSON.parse(fs.readFileSync("./Info/serverthings.json", "utf8"));
@@ -62,6 +70,12 @@ let commandlist = permclass.cmdList;
 var adminfilefordeletion = require("./Info/admins.json");
 bot.on("debug", console.log);
 bot.on("warn", console.log);
+function sendencrypteddata(eventname, data) {
+    let cipher = crypto.createCipher(config.crytype, config.cry);
+    let encrypted = cipher.update(data, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    io.emit(eventname, encrypted);
+}
 function capitalize(string, splite = false) {
     return splite ? string.charAt(0).toUpperCase() + string.slice(1).toLowerCase() : string.charAt(0).toUpperCase() + string.slice(1);
 }
@@ -109,10 +123,12 @@ function cleanup(object) {
 function writeServer() {
     fs.writeFileSync("./Info/serverthings.json", JSON.stringify(serverthings));
     serverthings = require("./Info/serverthings.json");
+    sendencrypteddata("prefixupdate", JSON.stringify(serverthings));
 }
 function writeCmd() {
     fs.writeFileSync("./Info/servercommands.json", JSON.stringify(servercmds));
     servercmds = require("./Info/servercommands.json");
+    sendencrypteddata("cmdupdate", JSON.stringify(servercmds));
 }
 function writeMsg() {
     fs.writeFileSync("./Info/servermessages.json", JSON.stringify(servermsgs));
@@ -161,6 +177,7 @@ function writeContacts() {
 function writePerms() {
     fs.writeFileSync("./Info/servperms.json", JSON.stringify(perms));
     perms = require("./Info/servperms.json");
+    sendencrypteddata("permupdate", JSON.stringify(perms));
 }
 function writeStats() {
     fs.writeFileSync("./stats.json", JSON.stringify(stats));
@@ -367,6 +384,12 @@ const actionLogs = function(messageid, channelid, serverid, action = "Unknown", 
 bot.on("ready", () => {
     /* jshint sub:true */
     try {
+        if (powernumber === 0) {
+            ++powernumber;
+            writeCmd();
+            writePerms();
+            writeServer();
+        }
         if (Number(bot.guilds.size) != stats.server_count) {
             stats.server_count = String(bot.guilds.size);
             writeStats();
@@ -1197,7 +1220,7 @@ bot.on("message", message => {
                 if (!p[0]) return message.reply("Missing permission node `global.info.user`!");
                 chanel.sendMessage("Fetching data, please wait...").then(msg => {
                     const embedz = function(user, member, stuffs = null){
-                        const avatarURL = user.avatarURL ? user.avatarURL : "http://a5.mzstatic.com/us/r30/Purple71/v4/5c/ed/29/5ced295c-4f7c-1cf6-57db-e4e07e0194fc/icon175x175.jpeg";
+                        const avatarURL = user.avatarURL || user.defaultAvatarURL;
                         memberjoin = {
                             date: member.joinedAt,
                         };
@@ -1827,20 +1850,20 @@ bot.on("message", message => {
         h = h.toLowerCase();
         console.log(h);
         if (h == "all") {
-            message.author.sendMessage(`***Here are my commands:***`);
-            message.author.sendMessage(help.helps.moderation.replace(/↪/g, "\↪"), help.functions.splitter).then(v=>{
-                message.author.sendMessage(help.helps.administration.replace(/↪/g, "\↪"), help.functions.splitter).then(b=>{
-                    message.author.sendMessage(help.helps.fun.replace(/↪/g, "\↪"), help.functions.splitter).then(c=>{
-                        message.author.sendMessage(help.helps.utility.replace(/↪/g, "\↪"), help.functions.splitter).then(a=>{
-                            message.author.sendMessage(help.helps.automation.replace(/↪/g, "\↪"), help.functions.splitter).then(n=>{
-                                message.author.sendMessage(help.helps.saltrelated.replace(/↪/g, "\↪"), help.functions.splitter).then(()=>{
+            return message.reply("Sorry but there is a bug with +help all, do all categories instead :( Will be fixed soon.");
+            /*message.author.sendMessage(help.helps.moderation.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(v=>{
+                message.author.sendMessage(help.helps.administration.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(b=>{
+                    message.author.sendMessage(help.helps.fun.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(c=>{
+                        message.author.sendMessage(help.helps.utility.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(a=>{
+                            message.author.sendMessage(help.helps.automation.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(n=>{
+                                message.author.sendMessage(help.helps.saltrelated.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(()=>{
                                     message.author.sendMessage("\nCurrent prefix for the server you sent help from: `"+prefix+"`\n**============================**");
-                                });
-                            });
-                        });
-                    });
-                });
-            });
+                                //});
+                            //);
+                        //});
+                    //});
+                //});
+            //});*/
         } else {
             message.author.sendMessage(help.helps[h.replace(/salt-related/i, "saltrelated")], help.functions.splitter).then(()=>{
                 message.author.sendMessage("\nCurrent prefix for the server you sent help from: `"+prefix+"`\n**============================**");
@@ -3682,6 +3705,9 @@ bot.on("message", message => {
         if (message.author.id in contacts.blacklist.users && message.author.id !== ownerID) return message.reply(`You can't use this command anymore :( Reason: \`${contacts.blacklist.users[message.author.id]}\`. ${gueldid == "245744417619705859" ? "" : `(Go to Salt's official server if you think it's unfair!)`}`);
         if (chanel.id in contacts.blacklist.channels && message.author.id !== ownerID) return message.reply(`The channel you're in is disabled from using this command! Reason: \`${contacts.blacklist.channels[chanel.id]}\` ${gueldid == "245744417619705859" ? "" : `(Go to Salt's official server if you think it's unfair!)`}`);
         if (gueldid in contacts.blacklist.servers && message.author.id !== ownerID) return message.reply(`The server you're in is disabled from using this command! Reason: \`${contacts.blacklist.servers[gueldid]}\` ${gueldid == "245744417619705859" ? "" : `(Go to Salt's official server if you think it's unfair!)`}`);
+        const contactstuff = instruction.match(/^contact\s{1,4}(.+)$/i)[1];
+        if (/^h[ea]lp(?:\s*me)?!*$/i.test(contactstuff)) return message.reply("Be more specific.......or do "+prefix+"help.");
+        if (/^Do you love me[?!]*$/i.test(contactstuff)) return message.reply("No I don't. And don't use `contact` for that.");
         contacts.contacting[`${contacts.contacting.latestnumber}`] = {};
         contacts.contacting[`${contacts.contacting.latestnumber}`].guild = gueldid;
         contacts.contacting[`${contacts.contacting.latestnumber}`].channel = chanel.id;
@@ -3689,7 +3715,6 @@ bot.on("message", message => {
         contacts.cooldowns[message.author.id] = 30000 + Date.now();
         contacts.contacting.latestnumber++;
         writeContacts();
-        const contactstuff = instruction.match(/^contact\s{1,4}(.+)$/i)[1];
         bot.channels.get("253430675053477888").sendMessage(`**${contacts.contacting.latestnumber - 1}**: **${message.author.username}**, at #${chanel.name} of server "${message.guild.name}" says:\n\n${contactstuff}\n\n(IDs: User: ${message.author.id}; Channel: ${chanel.id}; Server: ${gueldid}.)`);
         message.reply("Contacted successfully! You are now in a cooldown of 30 seconds unless you get an answer (Which resets your cooldown)! (Also please be patient! If nobody is online then we'll see it once we go on!)");
         } catch (err) {
@@ -4406,6 +4431,102 @@ bot.on("message", message => {
         } catch (err) {
             message.reply("Sorry, but an error happened! The devs shall know though. ;)");
             console.error("Error while doing quote:\n"+err.message);
+        }
+    }
+    if (/^perms(?:\s{1,4}[^]*)?$/i.test(instruction)) {
+        try {
+        let p = checkperm("global.perms");
+        if (!p[0]) return message.reply("Missing permission node `global.perms`!");
+        if (p[2]) return disabledreply(p[2]);
+        if (!(/^perms\s{1,4}.+$/i.test(instruction))) return chanel.sendMessage("```"+prefix+"perms arg --flag(optional)\nLists permissions of a role, user or permission number.\nNote: It will always search for a role unless an user is mentioned, the --user flag is used, or the --number flag is used.\n\nValid flags: --user (Searches for user), --role (Searches for role, not necessary unless name has \"--role\" in it) and --number (for permission numbers)\n\nExample 1: "+prefix+"perms Developer -> Lists permissions for role Developer.\nExample 2: "+prefix+"perms 🔥PgSuper🔥 --user -> Lists permissions for user PgSuper.```");
+        let cmdusage = instruction.match(/^perms\s{1,4}(.+)$/i)[1];
+        let flag = null;
+        if (/(?:--user|--role|--number)$/i.test(cmdusage)) flag = cmdusage.match(/(--user|--role|--number)$/i)[1].match(/^--(.+)$/i)[1];
+        let nameforsearch = flag ? cmdusage.match(/^(.+)\s{1,4}--(?:user|role|number)$/i)[1] : cmdusage;
+        if (!nameforsearch || /^\s+$/.test(nameforsearch)) flag = "role";
+        if ((!flag && !(/^<@!?\d+>$/.test(nameforsearch))) || flag == "role" || /^<@&\d+>$/.test(nameforsearch)) {
+            let role;
+            if (!(/^<@&\d+>$/.test(nameforsearch)))
+                message.guild.roles.map(r=>{
+                    if (r.name.toUpperCase() == nameforsearch.toUpperCase()) {
+                        role = r;
+                    }
+                });
+            else {
+                let actualid = nameforsearch.match(/^<@&(\d+)>$/)[1];
+                if (!(message.guild.roles.has(actualid))) return message.reply("Role not found!");
+                role = message.guild.roles.get(actualid);
+            }
+            let found;
+            if (!role) {
+                found = search("role", nameforsearch, message.guild);
+                if (!found[1]) return message.reply("Role not found!");
+                role = found[0][0];
+            }
+            let perms = dperms.convertperms(role.permissions, true);
+            let permlist = "```diff\n";
+            for (let perm in perms) {
+                permlist += (`${perms[perm]?"+":"-"} ${perm}\n`);
+                if (perm == "Administrator" && perms[perm]) {
+                    permlist = "```diff\n+ All (has Administrator perm)";
+                    break;
+                }
+            }
+            permlist += "\n```";
+            console.log("kek");
+            chanel.sendMessage(`${found?(found[1] > 1?`(${found[1]} roles found on search, using first find.)\n`:""):""}Permissions for role **${role.name.replace(/\\_*~`/g, md=>md.replace("\\", "")).replace(/_*~`/g, md=>`\\${md}`)}**:\n${permlist}`);
+        } else if (flag == "user" || /^<@!?\d+>$/.test(nameforsearch)) {
+            let user;
+            if (/^<@!?\d+>$/.test(nameforsearch)) {
+                let actualid = nameforsearch.match(/^<@!?(\d+)>$/)[1];
+                if (!(message.guild.members.has(actualid))) return message.reply("User not found!");
+                user = message.guild.members.get(actualid);
+            } else {
+                console.log(nameforsearch + "\n" + cmdusage);
+                message.guild.members.map(m=>{
+                    if (m.user.username.toLowerCase() == nameforsearch.toLowerCase()) {
+                        user = m;
+                    }
+                });
+            }
+            let found;
+            if (!user) {
+                found = search("user", nameforsearch, message.guild);
+                if (!found[1]) return message.reply("User not found!");
+                user = message.guild.member(found[0][0]);
+                if (!user) return message.reply("User not found!");
+            }
+            let perms = dperms.convertperms(user.permissions.raw, true);
+            let permlist = "```diff\n";
+            for (let perm in perms) {
+                permlist += (`${perms[perm]?"+":"-"} ${perm}\n`);
+                if (perm == "Administrator" && perms[perm]) {
+                    permlist = "```diff\n+ All (has Administrator perm)";
+                    break;
+                }
+            }
+            permlist += "\n```";
+            chanel.sendMessage(`${found?(found[1] > 1?`(${found[1]} users found on search, using first find.)\n`:""):""}Permissions for user **${user.user.username.replace(/\\_*~`/g, md=>md.replace("\\", "")).replace(/_*~`/g, md=>`\\${md}`)}**_#${user.user.discriminator}_:\n${permlist}`);
+        } else if (flag == "number") {
+            if (isNaN(Number(nameforsearch))) return message.reply("That's not a number! (Also make sure it's a **permissions** number)");
+            let perms = dperms.convertperms(nameforsearch, true);
+            let permlist = "```diff\n";
+            for (let perm in perms) {
+                permlist += (`${perms[perm]?"+":"-"} ${perm}\n`);
+                if (perm == "Administrator" && perms[perm]) {
+                    permlist = "```diff\n+ All (has Administrator perm)";
+                    break;
+                }
+            }
+            permlist += "\n```";
+            message.reply("Permissions stored at number **"+nameforsearch+"**:\n"+permlist);
+        } else {
+            message.reply("Uh");
+            console.log(flag);
+        }
+        } catch (err) {
+            message.reply("Sorry but an error happened :frowning:. The devs shall be aware, though.");
+            console.error(`Error at perms command:\n${err.message}`);
         }
     }
     } // End of the whole prefix checking If
