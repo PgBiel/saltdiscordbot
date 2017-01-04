@@ -830,7 +830,26 @@ bot.on("message", message => {
             });
             //message.channel.sendFile(user.avatarURL ? user.avatarURL : "http://a5.mzstatic.com/us/r30/Purple71/v4/5c/ed/29/5ced295c-4f7c-1cf6-57db-e4e07e0194fc/icon175x175.jpeg", "avatar.jpg");
         //} else if (/^avatar\s{1,4}[^]+$/i.test(instruction)) {
-
+        } else if (/^avatar\s{1,4}[^]+$/i.test(instruction)) {
+            let user;
+            let usersearch = instruction.match(/^avatar\s{1,4}([^]+)$/i)[1];
+            message.guild.members.map(m=>{
+                if (m.user.username == usersearch) user = m.user;
+            });
+            let found;
+            if (!user) {
+                found = search("user", usersearch, message.guild);
+                if (!found[1]) return message.reply("User not found!");
+                user = found[0][0];
+            }
+            let embed = new Discord.RichEmbed();
+            let avatar = /^(?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpg|png)\?size=\d+$/.test(user.avatarURL||"hi")?(user.avatarURL.match(/^((?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpg|png))\?size=\d+$/)[1]):(user.avatarURL||user.defaultAvatarURL);
+            embed.setAuthor(`${user.username}#${user.discriminator}'s Avatar`, undefined, avatar)
+                .setImage(avatar)
+                .setFooter(`ID: ${user.id}`);
+            chanel.sendEmbed(embed, found?(found[1]>1?`${found[1]} users found on search, using first find.`:undefined):undefined).then(m=>{
+                if (!m) message.reply("I cannot send embeds here :(");
+            });
         } else {
             let embed = new Discord.RichEmbed();
             let user = message.author;
