@@ -84,7 +84,7 @@ function decapitalize(string) {
 }
 String.prototype.mdclean = function(){
     return this.replace(/_*`~/g, "");
-}
+};
 function formatDate(date, fulldate = false) {
     var d = new Date(date);
     var hh = d.getHours();
@@ -2528,7 +2528,7 @@ bot.on("message", message => {
                 else if (message.author.id == "222369396214071297" && message.guild.id == "245744417619705859")
                     message.reply("Good riddance.").then(message.member.kick());
                 else
-                    message.reply("No.");
+                    message.reply("Take some 🍕. \;)");
     }
     if (/^toggleinvites$/i.test(instruction)) {
         try {
@@ -3738,15 +3738,24 @@ bot.on("message", message => {
         const contactstuff = instruction.match(/^contact\s{1,4}(.+)$/i)[1];
         if (/^h[ea]lp(?:\s*me)?!*$/i.test(contactstuff)) return message.reply("Be more specific.......or do "+prefix+"help.");
         if (/^Do you love me[?!]*$/i.test(contactstuff)) return message.reply("No I don't. And don't use `contact` for that.");
+        let disabled = false;
+        let p = checkperm("global.contact");
+        if (!p[0] || p[2]) disabled = true;
         contacts.contacting[`${contacts.contacting.latestnumber}`] = {};
         contacts.contacting[`${contacts.contacting.latestnumber}`].guild = gueldid;
-        contacts.contacting[`${contacts.contacting.latestnumber}`].channel = chanel.id;
+        contacts.contacting[`${contacts.contacting.latestnumber}`].channel = disabled?message.author.dmChannel.id:chanel.id;
         contacts.contacting[`${contacts.contacting.latestnumber}`].author = message.author.id;
         contacts.cooldowns[message.author.id] = 30000 + Date.now();
         contacts.contacting.latestnumber++;
         writeContacts();
         bot.channels.get("253430675053477888").sendMessage(`**${contacts.contacting.latestnumber - 1}**: **${message.author.username}**, at #${chanel.name} of server "${message.guild.name}" says:\n\n${contactstuff}\n\n(IDs: User: ${message.author.id}; Channel: ${chanel.id}; Server: ${gueldid}.)`);
-        message.reply("Contacted successfully! You are now in a cooldown of 30 seconds unless you get an answer (Which resets your cooldown)! (Also please be patient! If nobody is online then we'll see it once we go on!)");
+        if (!disabled) message.reply("Contacted successfully! You are now in a cooldown of 30 seconds unless you get an answer (Which resets your cooldown)! (Also please be patient! If nobody is online then we'll see it once we go on!)");
+        else {
+            message.author.sendMessage("Contacted successfully! You are now in a cooldown of 30 seconds unless you get an answer (Which resets your cooldown)! (Also please be patient! If nobody is online then we'll see it once we go on!)").then(m=>{
+                if (!m) return message.reply("Could not send DM, but yeah, you contacted.");
+                message.reply("Check your DMs.");
+            });
+        }
         } catch (err) {
             message.reply("Error found! Make sure to..uh...Tell the bot devs about it!");
             console.log(err.message);
