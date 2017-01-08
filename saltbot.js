@@ -82,6 +82,9 @@ function capitalize(string, splite = false) {
 function decapitalize(string) {
     return string.charAt(0).toLowerCase() + string.slice(1);
 }
+String.prototype.mdclean = function(){
+    return this.replace(/_*`~/g, "");
+}
 function formatDate(date, fulldate = false) {
     var d = new Date(date);
     var hh = d.getHours();
@@ -1482,7 +1485,7 @@ bot.on("message", message => {
                 }
                 if (!role) return message.reply("Role not found!");
                 let arr = [];
-                if (Number(role.members.size) < 25 && Number(role.members.size) !== 0) Array.from(role.members).map(v=>{
+                if (Number(role.members.size) < 51 && Number(role.members.size) !== 0) Array.from(role.members).map(v=>{
                     arr.push(v[1].toString());
                 });
                 else
@@ -1514,8 +1517,8 @@ bot.on("message", message => {
                         value: role.managed ? "Yes" : "No",
                         inline: true
                     }, {
-                        name: Number(role.members.size) > 24 ? "Member Amount" : `Members (${role.members.size})`,
-                        value: Number(role.members.size) > 24 ? (role.members.size == message.guild.memberCount ? "Everyone" : role.members.size) : (arr ? arr.join(", ") : "Nobody"),
+                        name: Number(role.members.size) > 50 ? "Member Amount" : `Members (${role.members.size})`,
+                        value: Number(role.members.size) > 50 ? (role.members.size == message.guild.memberCount ? "Everyone" : role.members.size) : (arr ? arr.join(", ") : "Nobody"),
                         inline: false
                     }],
                     footer: {
@@ -1942,7 +1945,15 @@ bot.on("message", message => {
                             } else if (usertoban.id == message.guild.ownerid) {
                                 message.reply("You cannot ban the server owner!");
                             } else {
-                                usertoban.ban(1);
+                                let reasonembed = new Discord.RichEmbed();
+                                reasonembed.setDescription(binfo.reason||"None");
+                                let timeoutz = setTimeout(()=>usertoban.ban(1), 2600);
+                                usertoban.user.send("You were banned at the server **"+message.guild.name.mdclean()+"** with the reason of:", {embed: reasonembed}).then(()=>{
+                                    if (!timeoutz._called) {
+                                        usertoban.ban(1);
+                                        clearTimeout(timeoutz);
+                                    }
+                                });
                                 message.reply("User banned successfully!");
                                 if (servermods[gueldid].logs !== "")
                                     message.guild.channels.get(servermods[gueldid].logs).sendMessage("", {embed: actionLogs(0, 1, gueldid, "banned", message.author, usertoban.user, false, 1, binfo.reason)[0]});
@@ -4701,9 +4712,9 @@ bot.on("roleDelete", role=>{
     }
 });
 process.on("unhandledRejection", (rej, p)=>{
-    console.error("Unhandled Rejection at Promise"+p+":\n"+rej);
+    console.error("Unhandled Rejection:\n"+rej);
     if (rej instanceof Error) {
-        if (/Error: Something took too long to do./i.test(rej.message)) {
+        if (/Error: Something took too long to do.|read ECONNRESET/i.test(rej.message)) {
             process.exit(1);
         }
     }
