@@ -1496,7 +1496,7 @@ bot.on("message", message => {
                 }
                 if (!role) return message.reply("Role not found!");
                 let arr = [];
-                if (Number(role.members.size) < 51 && Number(role.members.size) !== 0) Array.from(role.members).map(v=>{
+                if (Number(role.members.size) < 49 && Number(role.members.size) !== 0) Array.from(role.members).map(v=>{
                     arr.push(v[1].toString());
                 });
                 else
@@ -1528,8 +1528,8 @@ bot.on("message", message => {
                         value: role.managed ? "Yes" : "No",
                         inline: true
                     }, {
-                        name: Number(role.members.size) > 50 ? "Member Amount" : `Members (${role.members.size})`,
-                        value: Number(role.members.size) > 50 ? (role.members.size == message.guild.memberCount ? "Everyone" : role.members.size) : (arr ? arr.join(", ") : "Nobody"),
+                        name: Number(role.members.size) > 48 ? "Member Amount" : `Members (${role.members.size})`,
+                        value: Number(role.members.size) > 48 ? (role.members.size == message.guild.memberCount ? "Everyone" : role.members.size) : (arr ? arr.join(", ") : "Nobody"),
                         inline: false
                     }],
                     footer: {
@@ -1883,13 +1883,40 @@ bot.on("message", message => {
         h = h.toLowerCase();
         console.log(h);
         if (h == "all") {
-            return message.reply("Sorry but there is a bug with +help all, do all categories instead :( Will be fixed soon.");
-            /*message.author.sendMessage(help.helps.moderation.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(v=>{
-                message.author.sendMessage(help.helps.administration.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(b=>{
-                    message.author.sendMessage(help.helps.fun.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(c=>{
-                        message.author.sendMessage(help.helps.utility.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(a=>{
-                            message.author.sendMessage(help.helps.automation.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(n=>{
-                                message.author.sendMessage(help.helps.saltrelated.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}});//.then(()=>{
+            //if (message.author.id !== ownerID) return message.reply("Sorry but there is a bug with +help all, do all categories instead :( Will be fixed soon.");
+            let allhelps = async function(){
+                let messagesarr = [];
+                let split = function spt(text){
+                    if (text.length >= 2000) {
+                        let partone = text.slice(0, 1980);
+                        let parttwo = text.slice(1980, text.length);
+                        messagesarr.push(partone);
+                        spt("_ _\n"+parttwo);
+                    } else {
+                        messagesarr.push(text);
+                        return "Flummery";
+                    }
+                };
+                for (let helpz in help.helps) {
+                    messagesarr = [];
+                    let content = help.helps[helpz].replace(/↪/g, "\↪");
+                    split(content);
+                    for (let messg of messagesarr) {
+                        let msgsent = await message.author.send(messg);
+                    }
+                }
+                messagesarr = [];
+                split("\nCurrent prefix for the server you sent help from: `"+prefix+"`\n**============================**");
+                message.author.send(messagesarr);
+                return "Flummery";            
+            };
+            allhelps();
+            /*message.author.sendMessage(help.helps.moderation.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}}).then(v=>{
+                message.author.sendMessage(help.helps.administration.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}}).then(b=>{
+                    message.author.sendMessage(help.helps.fun.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}}).then(c=>{
+                        message.author.sendMessage(help.helps.utility.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}}).then(a=>{
+                            message.author.sendMessage(help.helps.automation.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}}).then(n=>{
+                                message.author.sendMessage(help.helps.saltrelated.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}}).then(()=>{
                                     message.author.sendMessage("\nCurrent prefix for the server you sent help from: `"+prefix+"`\n**============================**");
                                 //});
                             //);
