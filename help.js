@@ -58,7 +58,11 @@
             • **(prefix)getkey** {user (mention)} -> Gets PUBLIC key of an user.
             \\↪ Notes: PUBLIC key is to encrypt, and is always associated to a PRIVATE key, which can be used to decrypt.
             • **(prefix)emoji** {emoji/custom emoji} -> Returns a bigger version of the emoji you're providing.
-            \\↪ Notes: None`;
+            \\↪ Notes: None
+            • **(prefix)bam** [user (optional)] -> BAM!!!!! Strikes a hammer on the user specified.
+            \\↪ Notes: Search can be used here too! You can mention the user to strike hammer, but you can also write text to search for users with that name (if none, then it searches for nickname)!
+            • **(prefix)quote** [option (optional)] -> Gets a random quote.
+            \\↪ Notes: If no option is specified, \`discord\` is used as option. Use \`options\` as option to see a list of them.`;
         const utility = `_ _
             -===**Utility**===--
             • **(prefix)selfrole** {role} -> Give or take away a role marked as selfrole to/from yourself.
@@ -73,7 +77,13 @@
             \\↪ Notes: Do (prefix)remind on information of how to use this command.\n
             • **(prefix)delremind** -> Deletes your active reminder.
             \\↪ Notes: This only works if you have an active reminder (obviously).
-            \\↪ Alias: **(prefix)delreminder**`;
+            \\↪ Alias: **(prefix)delreminder**\n
+            • **(prefix)listperms** {user/role} {user mention or role name} [page (optional, defaults to 1] -> View permission list of a role or user.
+            \\↪ Notes: None\n
+            • **(prefix)listdisables** {server/channel} -> Lists the disabled commands for the actual server or the actual channel.
+            \\↪ Notes: None\n
+            • **(prefix)perms** {name/number} [flag (optional, can be: --user, --role or --number. Default is --role.)] -> View the permission of an user or role. Or view permissions packed in a permission number.
+            \\↪ Notes: None`;
         const administration = `_ _
             -===**Administration**===--
             • **(prefix)logs** {option} [arg (only for setting log channel)] -> Sets logging for the server.
@@ -124,6 +134,9 @@
                 \\↪ User: _Manage Server_ **OR** _Administrator Role_
             \\↪ Example, assuming that the prefix is **+**:
                 \\↪ \`+manageselfrole add Event Notify\` -> This makes the role named "Event Notify" a selfrole (see \`selfrole\` command).\n
+            • **(prefix)p** -> Please do (prefix)p for more information.
+            \\↪ Permissions required:
+                \\↪ User: _Manage Server_\n
             • **+prefix** -> Changes or views the actual prefix of the server.
             \\↪ Important Note: Has always the prefix **\`+\`**.
             \\↪ Has two forms:
