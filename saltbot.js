@@ -5,6 +5,7 @@ var Discord = require("discord.js");
 var bot = new Discord.Client({
     disableEveryone: true,
     disabledEvents: ["TYPING_START", "TYPING_STOP"],
+    fetchAllMembers: true
 });
 String.prototype.getPage = function(pageNumber, count, regex, joinChar = ",") {
     var matched = this.match(regex);
