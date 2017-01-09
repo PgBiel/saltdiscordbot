@@ -1,6 +1,6 @@
 # Salt Discord Bot
 ## About
-This is a multi-feature bot combining many ideas and suggestions. It can really help you with multiple things, such as warning and muting people.
+This is a multi-feature bot combining many ideas and suggestions, coded in [discord.js](https://github.com/hydrabolt/discord.js). It can really help you with multiple things, such as warning and muting people.
 ## Inviting
 Invite Salt to your server: [Click here](https://discordapp.com/oauth2/authorize?client_id=244533925408538624&scope=bot&permissions=2136472639)
 
