@@ -40,6 +40,13 @@ const request = require("request");
 const requestp = require("request-promise");
 const proto = require("./proto.js");
 proto.load();
+const kcc = require("./kcc.js");
+const loadEmbed = embed=>{
+    if (!(embed instanceof Discord.MessageEmbed)) throw new TypeError("'embed' argument must be embed.");
+    let embedtoresult = kcc(embed);
+    delete embedtoresult.message;
+    return embedtoresult;
+};
 let twemoji = require("./testemoji.js").twemojib;
 const fullencrypt = require("./Wrappers/fullencrypt.js");
 const needle = require("needle");
@@ -777,24 +784,27 @@ bot.on("message", message => {
         console.log(`Automatically registered guild "${message.guild.name}" in selfroles json!`);
     }
     if (!(gueldid in perms)) {
-        perms[gueldid] = {};
-        perms[gueldid].users = {};
-        perms[gueldid].roles = {};
-        perms[gueldid].owner = message.guild.owner.id;
-        perms[gueldid].disabled = {
-            server: [],
-            channels: {}
-        };
-        writePerms();
-        console.log(`Automatically registered guild "${message.guild.name}" in perms json!`);
-    }
-    if (message.author.id == message.guild.owner.id) {
-        if (perms[gueldid].users){
-            if (!perms[gueldid].users[message.author.id]) {
-                perms[gueldid].users[message.author.id] = {};
-                writePerms();
-            }
+        if (message.guild.owner){
+            perms[gueldid] = {};
+            perms[gueldid].users = {};
+            perms[gueldid].roles = {};
+            perms[gueldid].owner = message.guild.owner.id;
+            perms[gueldid].disabled = {
+                server: [],
+                channels: {}
+            };
+            writePerms();
+            console.log(`Automatically registered guild "${message.guild.name}" in perms json!`);
         }
+    }
+    if (message.guild.owner) {
+        if (message.author.id == message.guild.owner.id)
+            if (perms[gueldid].users){
+                if (!perms[gueldid].users[message.author.id]) {
+                    perms[gueldid].users[message.author.id] = {};
+                    writePerms();
+                }
+            }
     }
     if (message.guild.owner.id !== perms[gueldid].owner) {
         perms[gueldid].owner = message.guild.owner.id;
@@ -2572,12 +2582,12 @@ bot.on("message", message => {
         const clear = instruction.match(/^clear\s(\d+)$/i)[1];
         const clearnum = Number(clear);
         const potat = {};
-        potat.numbar = Number(clear) + 1;
-        const replysuccess = function(){
+        potat.numbar = Number(clear);
+        /*const replysuccess = function(){
             message.reply(`${potat.numbar - 1} message(s) deleted successfully!`).then(msg => {
                 msg.delete(5000);
             });
-        };
+        };*/
         if (botmember.hasPermission("MANAGE_MESSAGES")) {
             if (!(message.member.hasPermission("MANAGE_MESSAGES")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.clear.normal`! Could also use this command by having the permission _Manage Messages_.");
                 if (Number(clear) > 1000) {
@@ -2591,80 +2601,59 @@ bot.on("message", message => {
                         });
                     } else {
                         const definitiveclear = potat.numbar;
-                        if (definitiveclear > 100) {
-                            message.channel.bulkDelete(100).then(nothing => {
-                                if (definitiveclear > 200) {
-                                    message.channel.bulkDelete(100).then(alsonothing => {
-                                        if (definitiveclear > 300) {
-                                            message.channel.bulkDelete(100).then(noothing => {
-                                                if (definitiveclear > 400) {
-                                                    message.channel.bulkDelete(100).then(nootnoot => {
-                                                        if (definitiveclear > 500) {
-                                                            message.channel.bulkDelete(100).then(trainsarecool => {
-                                                                if (definitiveclear > 600) {
-                                                                    message.channel.bulkDelete(100).then(haveyouheard => {
-                                                                        if (definitiveclear > 700) {
-                                                                            message.channel.bulkDelete(100).then(thatIliketrains => {
-                                                                                if (definitiveclear > 800) {
-                                                                                    message.channel.bulkDelete(100).then(andstuff => {
-                                                                                        if (definitiveclear > 900) {
-                                                                                            message.channel.bulkDelete(100).then(lol => {
-                                                                                                if (definitiveclear == 1000) {
-                                                                                                    message.channel.bulkDelete(100).then(msgs => {
-                                                                                                        replysuccess();
-                                                                                                    });
-                                                                                                } else {
-                                                                                                    message.channel.bulkDelete(definitiveclear - 900);
-                                                                                                    replysuccess();
-                                                                                                }
-                                                                                            });
-                                                                                        } else {
-                                                                                            message.channel.bulkDelete(definitiveclear - 800);
-                                                                                            replysuccess();
-                                                                                        }
-                                                                                    });
-                                                                                } else {
-                                                                                    message.channel.bulkDelete(definitiveclear - 700);
-                                                                                    replysuccess();
-                                                                                }
-                                                                            });
-                                                                        } else {
-                                                                            message.channel.bulkDelete(definitiveclear - 600);
-                                                                            replysuccess();
-                                                                        }
-                                                                    });
-                                                                } else {
-                                                                    message.channel.bulkDelete(definitiveclear - 500);
-                                                                    replysuccess();
-                                                                }
-                                                            });
-                                                        } else {
-                                                            message.channel.bulkDelete(definitiveclear - 400);
-                                                            replysuccess();
-                                                        }
-                                                    });
-                                                } else {
-                                                    message.channel.bulkDelete(definitiveclear - 300);
-                                                    replysuccess();
-                                                }
-                                            });
-                                        } else {
-                                            message.channel.bulkDelete(definitiveclear - 200);
-                                            replysuccess();
-                                        }
-                                    });
+                        let messagestodelete = [];
+                        let fetchall = function f(number){
+                            let amount = [];
+                            let remainnumber = number>1000?1000:(number<0?0:number);
+                            let forhundred = function fh(numbar){
+                                if (numbar % 100 !== 0 && numbar % 100 > 0) {
+                                    remainnumber -= numbar % 100;
+                                    amount.push(numbar % 100);
+                                    fh(remainnumber);
                                 } else {
-                                    message.channel.bulkDelete(definitiveclear - 100);
-                                    replysuccess();
+                                    if (numbar <= 0) {
+                                        return true;
+                                    } else if (numbar % 100 === 0) {
+                                        remainnumber -= 100;
+                                        amount.push(100);
+                                        fh(remainnumber);
+                                    }
                                 }
-                            });
-                        } else {
+                            };
+                            forhundred(remainnumber);
+                            //console.log("")
+                            if (amount.length !== 0) {
+                                let fetchmessagez = async function(){
+                                    let lastmessagecleared = null;
+                                    for (let num of amount) {
+                                        let zeobj = {limit: num<100?num+1:num};
+                                        if (lastmessagecleared) zeobj.before = lastmessagecleared;
+                                        let msgs = await chanel.fetchMessages(zeobj);
+                                        if (msgs.last()) lastmessagecleared = msgs.last().id||lastmessagecleared;
+                                        msgs.map(m=>messagestodelete.push(m));
+                                    }
+                                    return "Flummery";
+                                };
+                                fetchmessagez().then(()=>{
+                                    //console.log("partayyyy");
+                                    chanel.bulkDelete(messagestodelete).then(()=>{
+                                        message.reply(`${Number(messagestodelete.length)-1} message(s) deleted successfully!`).then(msg=>msg.delete(5000));
+                                    });
+                                });
+                            } else {
+                                message.delete().then(()=>{
+                                    message.reply("0 messages deleted successfully! (Lol)");
+                                });
+                            }
+                        };
+                        fetchall(definitiveclear);
+                        /*} else {
                             message.channel.bulkDelete(Number(clear) + 1).then(messages => {
                                 message.reply(`${clear} message(s) deleted successfully!`).then(msg => {
                                     msg.delete(5000);
                                 });
                             });
-                        }
+                        }*/
                     }
                 }
             //} else {
@@ -4723,7 +4712,7 @@ bot.on("roleDelete", role=>{
 process.on("unhandledRejection", (rej, p)=>{
     console.error("Unhandled Rejection:\n"+rej);
     if (rej instanceof Error) {
-        if (/Error: Something took too long to do.|read ECONNRESET/i.test(rej.message)) {
+        if (/Error: Something took too long to do.|read ECONNRESET|EAI_AGAIN/i.test(rej.message)) {
             process.exit(1);
         }
     }
