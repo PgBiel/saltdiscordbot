@@ -111,14 +111,14 @@ function formatDate(date, fulldate = false) {
 
     s = s<10?"0"+s:s;
 
-    
+
     h = h<10?"0"+h:h;
 
     var pattern = new RegExp("0?"+hh+":"+m+":"+s);
 
     var replacement = h+":"+m;
     replacement += ":"+s;
-    replacement += " "+dd;    
+    replacement += " "+dd;
 
     return fulldate ? date.toString().replace(pattern,replacement) : replacement;
 }
@@ -215,6 +215,19 @@ function sendPw() {
             console.log("Successfully sent data of "+bot.guilds.size+" servers to bots.discord.pw.");
         } else {
             console.error(`Error while sending data to bots.discord.pw of ${bot.guilds.size} servers: ${body.error || err}`);
+        }
+    });
+    request.post({
+        uri: "https://bots.discordlist.net/api.php",
+        form: {
+            "token": config.auth2,
+            "servers": String(bot.guilds.size)
+        }
+    }, (err, resp, body)=>{
+        if (!err && resp.statusCode == 200) {
+            console.log(`Successfully sent data of ${bot.guilds.size} servers to bots.discordlist.net.`);
+        } else {
+            console.error(`Error while sending data to bots.discordlist.net of ${bot.guilds.size} servers: ${body.error || err}`);
         }
     });
 }
@@ -320,13 +333,13 @@ function toDate(datestring, mills = false) {
           console.log(err.message);
     }
 }
-const claimresponsabilityfunc = function(number, obj, messageid, channelid, serverid) {
+/*const claimresponsabilityfunc = function(number, obj, messageid, channelid, serverid) {
     servermods[serverid].duelogs[`${number}`] = {};
     servermods[serverid].duelogs[`${number}`].channel = channelid;
     servermods[serverid].duelogs[`${number}`].message = messageid;
     servermods[serverid].duelogs[`${number}`].object = obj;
     writeMods();
-};
+};*/
 const actionLogs = function(messageid, channelid, serverid, action = "Unknown", authort = "Unknown", sufferet = "Unknown", usestime = false, time = null, reason = null, isdated = false) {
     try {
     if (!(servermods[serverid].duelogs.latestNumber)) {
@@ -344,8 +357,8 @@ const actionLogs = function(messageid, channelid, serverid, action = "Unknown", 
             value: action == "Unknown" ? "Unknown" : sufferer == "Unknown" || !(sufferer) ? `An unknown person was ${action.toLowerCase()}` : `${sufferer} was ${action.toLowerCase()}`,
             inline: false
         }, {
-            name: "Author",
-            value: author == "Unknown" ? [`Unknown (Claim responsability by doing **+claimrespon ${this.lognumber} [reason (Optional)]**)`, this.claim = true][0] : author,
+            name: author == "Unknown" ? "Author (Unknown)" : "Author",
+            value: author == "Unknown" ? [`Unknown (Claim responsability by doing **+case ${this.lognumber} reason**)`, this.claim = true][0] : author,
             inline: true
         }, {
             name: "Reason",
@@ -357,8 +370,8 @@ const actionLogs = function(messageid, channelid, serverid, action = "Unknown", 
             value: action == "Unknown" ? "Unknown" : sufferer == "Unknown" || !(sufferer) ? `An unknown person was ${action.toLowerCase()}` : `${sufferer} was ${action.toLowerCase()}`,
             inline: false
         }, {
-            name: "Author",
-            value: author == "Unknown" ? [`Unknown (Claim responsability by doing **+claimrespon ${this.lognumber} [reason (Optional)]**)`, this.claim = true][0] : author,
+            name: author == "Unknown" ? "Author (Unknown)" : "Author",
+            value: author == "Unknown" ? [`Unknown (Claim responsability by doing **+case ${this.lognumber} reason**)`, this.claim = true][0] : author,
             inline: true
         }, {
             name: "Muted For",
@@ -514,17 +527,14 @@ bot.on("guildUpdate", (oldguild, newguild)=>{
 bot.on("channelDelete", (channel) => {
     try {
         if (channel.type=="text" && channel.id) {
-            let guild;
-            Array.from(bot.guilds).map(v=>{
-                if (v[1].channels.get(channel.id)) {
-                    guild = v[0];
-                }
-            });
-            if (servermods[guild].logs !== "")
-                if (servermods[guild].logs == channel.id) {
-                    servermods[guild].logs = "";
-                    writeMods();
-                }
+            let guild = channel.guild||null;
+            if (guild)
+                if (servermods[guild.id])
+                    if (servermods[guild.id].logs !== "")
+                        if (servermods[guild.id].logs == channel.id) {
+                            servermods[guild.id].logs = "";
+                            writeMods();
+                        }
         }
     } catch (err) {
         console.log(`So I was checking the channel stuff and...\n${err.message}`);
@@ -729,7 +739,7 @@ bot.on("message", message => {
         servermsgs[gueldid]["goodbye"]["message"] = "";
         writeMsg();
         console.log("Automatically registered guild \"" + message.guild.name + "\" in messages json!");
-    } 
+    }
     if (!(message.guild.id in serverroles)) {
         serverroles[gueldid] = "";
         writeRoles();
@@ -1078,7 +1088,7 @@ bot.on("message", message => {
                 } else {
                     message.reply("You must input an ID or mention!");
                 }
-                
+
             }
         }
         if (/^remove$/i.test(acommand)) {
@@ -1092,7 +1102,7 @@ bot.on("message", message => {
                     canproceedremoveadmin = 0;
                 }
                 if (canproceedremoveadmin == 1) {
-                    if (aargument in adminfile) {    
+                    if (aargument in adminfile) {
                         /* jshint ignore:start */
                         let beforealllife = ("true");
                         let key = JSON.parse(beforealllife);
@@ -1111,7 +1121,7 @@ bot.on("message", message => {
                     message.reply("You must input an ID or mention!");
                 }
             }
-        }   
+        }
         if (/^test$/i.test(acommand)) {
             if (aargument !== null && aargument !== undefined && aargument !== "") {
                 if (message.mentions.users.first()) {
@@ -1128,8 +1138,8 @@ bot.on("message", message => {
                     }
                     message.reply("No, " + aargument + " isn't an admin!");
                 }
-            }    
-        }     
+            }
+        }
     }
     } catch(err) {
         message.reply("I like trains.");
@@ -1161,7 +1171,7 @@ bot.on("message", message => {
             let p = checkperm("global.info.members");
             if (!p[0]) return message.reply("Missing permission node `global.info.members`!");
             if (ireq !== null && ireq !== undefined && ireq !== "") {
-                message.reply("The current amount of users in this server is **" + message.guild.memberCount + "**!");
+                message.reply("The current amount of users in this server is **" + message.guild.members.size + "**!");
             }
         }
         if (/^(generalinfo|server)$/i.test(ireq)) {
@@ -1190,7 +1200,7 @@ bot.on("message", message => {
                         inline: true
                     }, {
                         name: "Member Amount",
-                        value: message.guild.memberCount,
+                        value: message.guild.members.size,
                         inline: true
                     }, {
                         name: "Channel Amount",
@@ -1210,7 +1220,7 @@ bot.on("message", message => {
                     },
 
                 }});
-               /* message.author.sendMessage("**General information about the guild *" + message.guild.name + "*:**\n• Name: `" + message.guild.name + "`\n• Owner: `" + message.guild.owner.user.username + "` (ID: " + message.guild.ownerID + ")\n• Guild ID: `" + message.guild.id + "`\n• Creation date: `" + message.guild.createdAt + "`\n• Default Channel: `#" + message.guild.defaultChannel.name + "`\n• Has **" + message.guild.memberCount + "** members, **" + somechannelamountthings + "** channels, and is hosted on **" + message.guild.region + "**.\n• Icon:");
+               /* message.author.sendMessage("**General information about the guild *" + message.guild.name + "*:**\n• Name: `" + message.guild.name + "`\n• Owner: `" + message.guild.owner.user.username + "` (ID: " + message.guild.ownerID + ")\n• Guild ID: `" + message.guild.id + "`\n• Creation date: `" + message.guild.createdAt + "`\n• Default Channel: `#" + message.guild.defaultChannel.name + "`\n• Has **" + message.guild.members.size + "** members, **" + somechannelamountthings + "** channels, and is hosted on **" + message.guild.region + "**.\n• Icon:");
                 message.author.sendFile((message.guild.iconURL || "No icon"));
                 message.author.sendMessage("\n\n**===========================================**");*/
             }
@@ -1229,7 +1239,7 @@ bot.on("message", message => {
                             rolematch = val.value[1];
                         }
                     }
-                    /* jshint +W080 */ 
+                    /* jshint +W080 */
                     if (rolematch !== undefined && rolematch !== null && rolematch !== "") {
                         if (Array.from(rolematch.members).length == 1) {
                             thething = "is **1** user";
@@ -1304,7 +1314,7 @@ bot.on("message", message => {
                             if (!(message.guild.members.get("159985870458322944"))) return resolve({exists: false});
                             const preobj = {};
                             preobj.exists = false;
-                            mee6.getRank(gueldid, user.id).then(v=>{ 
+                            mee6.getRank(gueldid, user.id).then(v=>{
                                 try {
                                     preobj.hasrank = true;
                                     preobj.level = v.level;
@@ -1411,7 +1421,7 @@ bot.on("message", message => {
             /*jshint shadow:true */
             for (var iteratorr = message.guild.members.entries(), vall = iteratorr.next(), highrolecount = 0; vall.done === false; vall = iteratorr.next()) { //eslint-disable-line no-redeclare
                 /* jshint eqnull:true*/
-                /* jshint -W041 */ 
+                /* jshint -W041 */
                 if (!(vall.value[1].highestRole == null && vall.value[1].highestRole == undefined)) {
                     if (matchhighrole.toUpperCase() === vall.value[1].highestRole.name.toUpperCase()) {
                         highrolecount++;
@@ -1440,7 +1450,7 @@ bot.on("message", message => {
             if (!p[0]) return message.reply("Missing permission node `global.info.amush`!");
             var matchhighrolee = ireq.match(/^amush\s(.+)$/i)[1];
             if (matchhighrolee == "{everyone}") matchhighrolee = "@everyone";
-            for (var iteratorrr = message.guild.roles.entries(), valll = iteratorrr.next(), roleMatcht; valll.done === false; valll = iteratorrr.next()) { 
+            for (var iteratorrr = message.guild.roles.entries(), valll = iteratorrr.next(), roleMatcht; valll.done === false; valll = iteratorrr.next()) {
                 if (valll.value[1].name.toUpperCase() === matchhighrolee.toUpperCase()) {
                     roleMatcht = valll.value[1];
                 }
@@ -1496,7 +1506,7 @@ bot.on("message", message => {
                 }
                 if (!role) return message.reply("Role not found!");
                 let arr = [];
-                if (Number(role.members.size) < 49 && Number(role.members.size) !== 0) Array.from(role.members).map(v=>{
+                if (Number(role.members.size) < 43 && Number(role.members.size) !== 0) Array.from(role.members).map(v=>{
                     arr.push(v[1].toString());
                 });
                 else
@@ -1528,8 +1538,8 @@ bot.on("message", message => {
                         value: role.managed ? "Yes" : "No",
                         inline: true
                     }, {
-                        name: Number(role.members.size) > 48 ? "Member Amount" : `Members (${role.members.size})`,
-                        value: Number(role.members.size) > 48 ? (role.members.size == message.guild.memberCount ? "Everyone" : role.members.size) : (arr ? arr.join(", ") : "Nobody"),
+                        name: Number(role.members.size) > 42 ? "Member Amount" : `Members (${role.members.size})`,
+                        value: Number(role.members.size) > 42 ? (role.members.size == message.guild.members.size ? "Everyone" : role.members.size) : (arr ? arr.join(", ") : "Nobody"),
                         inline: false
                     }],
                     footer: {
@@ -1599,7 +1609,7 @@ bot.on("message", message => {
                         channel = message.guild.channels.get(channel);
                 }
                 if (!channel) return message.reply("Channel not found! (Tip: Use & behind the channel name to look for a voice channel!)");
-                let channelsize = {}; 
+                let channelsize = {};
                 channelsize.text = 0;
                 channelsize.voice = 0;
                 message.guild.channels.map(v=>{
@@ -1657,9 +1667,9 @@ bot.on("message", message => {
                                 value: channel.position === 0 ? "Top" : (channel.position == channelsize.text ? "Bottom" : channel.position),
                                 inline: true
                             },{
-                                name: (channel.members.size < 24 || channel.members.size == message.guild.memberCount || Number(channel.members.size) === 0) ? "Members that can see the channel ("+channel.members.size+")" : "Amount of members that can see the channel",
-                                value: Number(channel.members.size) == message.guild.memberCount ? "Everyone" : (Number(channel.members.size) === 0 ? "Nobody" : (channel.members.size < 24 ? (arr ? arr : "(Could not retrieve members)") : channel.members.size)),
-                                inline: false                                
+                                name: (channel.members.size < 24 || channel.members.size == message.guild.members.size || Number(channel.members.size) === 0) ? "Members that can see the channel ("+channel.members.size+")" : "Amount of members that can see the channel",
+                                value: Number(channel.members.size) == message.guild.members.size ? "Everyone" : (Number(channel.members.size) === 0 ? "Nobody" : (channel.members.size < 24 ? (arr ? arr : "(Could not retrieve members)") : channel.members.size)),
+                                inline: false
                             }],
                             footer: {
                                 text: `Channel ID: ${channel.id}`
@@ -1704,9 +1714,9 @@ bot.on("message", message => {
                                 value: channel.position === 0 ? (channel.position == channelsize.text ? "Unique" : "Top") : (channel.position == channelsize.text ? "Bottom" : channel.position),
                                 inline: true
                             },{
-                                name: (channel.members.size < 24 || channel.members.size == message.guild.memberCount || Number(channel.members.size) === 0) ? "Members that can see the channel ("+channel.members.size+")" : "Amount of members that can see the channel",
-                                value: Number(channel.members.size) == message.guild.memberCount ? "Everyone" : (Number(channel.members.size) === 0 ? "Nobody" : (channel.members.size < 24 ? (arr ? arr : "(Could not retrieve members)") : channel.members.size)),
-                                inline: false                                
+                                name: (channel.members.size < 24 || channel.members.size == message.guild.members.size || Number(channel.members.size) === 0) ? "Members that can see the channel ("+channel.members.size+")" : "Amount of members that can see the channel",
+                                value: Number(channel.members.size) == message.guild.members.size ? "Everyone" : (Number(channel.members.size) === 0 ? "Nobody" : (channel.members.size < 24 ? (arr ? arr : "(Could not retrieve members)") : channel.members.size)),
+                                inline: false
                             }],
                             footer: {
                                 text: `Channel ID: ${channel.id}`
@@ -1746,7 +1756,7 @@ bot.on("message", message => {
                             inline: true
                         }, {
                             name: `Members Connected ${channel.members.size < 24 ? `(${channel.members.size})` : ""}`,
-                            value: channel.members.size == message.guild.memberCount ? "Everyone" : (channel.members.size === 0 ? "Nobody" : (channel.members.size < 24 ? arrvoice : channel.members.size)),
+                            value: channel.members.size == message.guild.members.size ? "Everyone" : (channel.members.size === 0 ? "Nobody" : (channel.members.size < 24 ? arrvoice : channel.members.size)),
                             inline: false
                         }],
                         footer: {
@@ -1908,7 +1918,7 @@ bot.on("message", message => {
                 messagesarr = [];
                 split("\nCurrent prefix for the server you sent help from: `"+prefix+"`\n**============================**");
                 message.author.send(messagesarr);
-                return "Flummery";            
+                return "Flummery";
             };
             allhelps();
             /*message.author.sendMessage(help.helps.moderation.replace(/↪/g, "\↪"), {split: {prepend: "_ _\n"}}).then(v=>{
@@ -1936,7 +1946,7 @@ bot.on("message", message => {
         if (!p[0] && !p[1]) return message.reply("Missing permission node `global.delcommand`!");
         if (p[2]) return disabledreply(p[2]);
         var cmdtodelete = instructioncase.match(/^delcommand\s(.+)$/i)[1];
-        if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.delcommand`! Could also use this command by having the permission `Manage Server`."); 
+        if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.delcommand`! Could also use this command by having the permission `Manage Server`.");
             if (cmdtodelete in servercmds[gueldid]) {
                 delete servercmds[gueldid][cmdtodelete];
                 writeCmd();
@@ -2210,7 +2220,7 @@ bot.on("message", message => {
                     //}
                 }
             }
-        }    
+        }
     }
     if (/^delautorole$/i.test(instruction)) {
         let p = checkperm("global.delautorole");
@@ -2308,7 +2318,7 @@ bot.on("message", message => {
                                     if (isdated === true) {
                                         message.reply(`User muted successfully for **${String(argtime).replace(/"/g, "")}**!`);
                                     } else {
-                                        if (argtime == "1" || argtime == 1) 
+                                        if (argtime == "1" || argtime == 1)
                                             message.reply(`User muted successfully for **1 minute**!`);
                                         else
                                             message.reply(`User muted successfully for **${argtime} minutes**!`);
@@ -2366,7 +2376,7 @@ bot.on("message", message => {
                                         if (isdated === true) {
                                             message.reply(`User muted successfully for **${argtime.replace(/"/g, "")}**!`);
                                         } else {
-                                            if (argtime == "1" || argtime == 1) 
+                                            if (argtime == "1" || argtime == 1)
                                                 message.reply(`User muted successfully for **1 minute**!`);
                                             else
                                                 message.reply(`User muted successfully for **${argtime} minutes**!`);
@@ -2383,7 +2393,7 @@ bot.on("message", message => {
                             }
                         })
                         .catch();
-                    }     
+                    }
                 /*} else {
                     message.reply("I do not have the permission `Manage Channels`!");
                 }*/
@@ -2592,7 +2602,7 @@ bot.on("message", message => {
                     //message.reply("You do not have the permission `Manage Messages`!");
                 //}
             } else {
-                if (message.member.hasPermission("MANAGE_MESSAGES") || message.author.id == ownerID) 
+                if (message.member.hasPermission("MANAGE_MESSAGES") || message.author.id == ownerID)
                     message.reply("I do not have the permission `Manage Messages`!");
                 else
                     message.reply("Neither of us has the permission `Manage Messages`!");
@@ -2653,17 +2663,18 @@ bot.on("message", message => {
                             if (amount.length !== 0) {
                                 let fetchmessagez = async function(){
                                     let lastmessagecleared = null;
-                                    for (let num of amount) {
+                                    for (let num of amount.reverse()) {
                                         let zeobj = {limit: num<100?num+1:num};
                                         if (lastmessagecleared) zeobj.before = lastmessagecleared;
                                         let msgs = await chanel.fetchMessages(zeobj);
-                                        if (msgs.last()) lastmessagecleared = msgs.last().id||lastmessagecleared;
+                                        if (msgs.first()) lastmessagecleared = msgs.first().id||lastmessagecleared;
                                         msgs.map(m=>messagestodelete.push(m));
                                     }
                                     return "Flummery";
                                 };
                                 fetchmessagez().then(()=>{
                                     //console.log("partayyyy");
+                                    console.log(messagestodelete.map(c=>c.content));
                                     chanel.bulkDelete(messagestodelete).then(()=>{
                                         message.reply(`${Number(messagestodelete.length)-1} message(s) deleted successfully!`).then(msg=>msg.delete(5000));
                                     });
@@ -2712,7 +2723,7 @@ bot.on("message", message => {
                 });
                 console.log(`Offworlder ${message.guild}!`);
                 console.log(`Also, ${hookname}, ${hookurl}, ${hookcontent}, ${hookavatar}.`);
-            });  
+            });
             chanel.sendMessage("I think it worked");
         } catch (err) {
             message.reply("Erm, oops?");
@@ -2738,8 +2749,8 @@ bot.on("message", message => {
                 if (!(message.member.hasPermission("MANAGE_GUILD")) && !(message.member.hasPermission("MANAGE_MESSAGES")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.trigger`! Could also use this command by having the permission `Manage Server` OR `Manage Messages`.");
                     const trigger1 = instruction.match(/^trigger\s(.+?)\s.+$/i)[1];
                     const trigger2 = instruction.match(/^trigger\s.+?\s(.+)$/i)[1];
-                    message.reply(`Trigger **${trigger1}** added!`);  
-                    if ((/^ +$/i).test(trigger1) || trigger1 === "") return;              
+                    message.reply(`Trigger **${trigger1}** added!`);
+                    if ((/^ +$/i).test(trigger1) || trigger1 === "") return;
                     serverdetects[gueldid].triggers[trigger1.toLowerCase()] = trigger2;
                     writeDetects();
                     antitrigger[message.id+chanel.id+trigger1] = true;
@@ -2802,7 +2813,7 @@ bot.on("message", message => {
                         rolematk = val.value[1];
                     }
                 }
-                /* jshint +W080 */ 
+                /* jshint +W080 */
                 if (rolematk) {
                     if (/^Moderator$/i.test(roletype)) {
                         console.log("ohnoe");
@@ -2830,7 +2841,7 @@ bot.on("message", message => {
             if (!p[0] && !p[1]) return message.reply("Missing permission node `global.delsaltrole`!");
             if (p[2]) return disabledreply(p[2]);
             const roletyped = instruction.match(/^delsaltrole\s(.+)$/i)[1];
-            if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.delsaltrole`! Could also use this command by having the permission `Manage Server`."); 
+            if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.delsaltrole`! Could also use this command by having the permission `Manage Server`.");
                 if (/^Moderator$/i.test(roletyped)) {
                     if (servermods[gueldid].moderator !== "") {
                         const oldrole = message.guild.roles.get(servermods[gueldid].moderator);
@@ -2860,7 +2871,7 @@ bot.on("message", message => {
         if (instruction.match(/^actionlogs\s{1,4}(?:.+?)(?:\s{1,4}(<#\d+>))?$/i)[1]) {
             cchannel.channel = instruction.match(/^actionlogs\s{1,4}(?:.+?)(?:\s{1,4}(<#\d+>))?$/i)[1];
         }
-        //if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1]) 
+        //if (!(message.member.hasPermission("MANAGE_GUILD")) && message.author.id !== ownerID && p[1])
             if (cchannel.channel) {
                 if (/^true$/i.test(option) || /^set$/i.test(option) || /^add$/i.test(option)) {
                     if (!p[0] && !p[1]) return message.reply("Missing permission node `global.actionlogs.set`!");
@@ -2931,7 +2942,7 @@ bot.on("message", message => {
             clearargs.number = instruction.match(/^clear\s<@!?\d+>(?:\s(\d+))?$/i) ? instruction.match(/^clear\s<@!?\d+>(?:\s(\d+))?$/i)[1] : null;
             const botmember = message.guild.members.get(bot.user.id);
             if (!(clearargs.mention)) return message.reply("The user that is mentioned doesn't exist!");
-            if (!(message.member.hasPermission("MANAGE_MESSAGES")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.clear.user`! Could also use this command by having the permission `Manage Messages`."); 
+            if (!(message.member.hasPermission("MANAGE_MESSAGES")) && message.author.id !== ownerID && p[1]) return message.reply("Missing permission node `global.clear.user`! Could also use this command by having the permission `Manage Messages`.");
                 if (botmember.hasPermission("MANAGE_MESSAGES")) {
                     if (!(clearargs.number)) clearargs.number = 50;
                     if (clearargs.number > 100) return message.reply("The limit of ***user messages*** being cleared is 100!");
@@ -2941,7 +2952,7 @@ bot.on("message", message => {
                             if (v[1].author.id == clearargs.mention.id)
                                 arr.push(v[1]);
                         });
-                        if (arr.length == 1) 
+                        if (arr.length == 1)
                             arr[0].delete().then(abc => {
                                 message.reply(`In the limit of ${clearargs.number} message(s), ${arr.length} message by ${clearargs.mention.username} was cleared! ;)`).then(msg => {
                                     msg.delete(5000);
@@ -3116,7 +3127,7 @@ bot.on("message", message => {
                                     if (argname.id == "244533925408538624") {
                                         message.reply("User muted successfully! Since no time was specified, they were muted for **10 minutes** (default time)!");
                                     } else {
-                                        if (argtime == "1" || argtime == 1) 
+                                        if (argtime == "1" || argtime == 1)
                                             chanel.sendMessage(`The user ${argname} has been **muted** (${argtime} minute) for reaching the limit of warnings, as says the server's current setup!`);
                                         else
                                             chanel.sendMessage(`The user ${argname} has been **muted** (${argtime} minutes) for reaching the limit of warnings, as says the server's current setup!`);
@@ -3139,9 +3150,9 @@ bot.on("message", message => {
                                 // Array.from(message.guild.channels).map(v=>overwritePermissions(message.guild.roles.get(servermutes[gueldid]["muteRoleID"]),{SEND_MESSAGES:false}));
                                 Array.from(message.guild.channels).forEach(function(item, index) {
                                     var Ilike = item[0];
-                                    
+
                                     var trainz = message.guild.channels.get(Ilike);
-                                    
+
                                     //console.log(message.guild.roles.get(servermutes[gueldid]["muteRoleID"]));
                                     trainz.overwritePermissions(message.guild.roles.get(servermutes[gueldid]["muteRoleID"]),{SEND_MESSAGES:false});
                                 });
@@ -3167,7 +3178,7 @@ bot.on("message", message => {
                                     //if (false === 1) {
                                         //message.reply("User muted successfully! Since no time was specified, they were muted for **10 minutes** (default time)!");
                                     //} else {
-                                        if (argtime == "1" || argtime == 1) 
+                                        if (argtime == "1" || argtime == 1)
                                             chanel.sendMessage(`The user ${argname} has been **muted** (${argtime} minute) for reaching the limit of warnings, as says the server's current setup!`);
                                         else
                                             chanel.sendMessage(`The user ${argname} has been **muted** (${argtime} minutes) for reaching the limit of warnings, as says the server's current setup!`);
@@ -3182,7 +3193,7 @@ bot.on("message", message => {
                                 }
                             }
                         });
-                        }     
+                        }
                         delete serverwarns[gueldid].warnedusers[warning.mention.id];
                         writeWarns();
                     }
@@ -3866,7 +3877,7 @@ bot.on("message", message => {
         } catch (err) {
             message.reply("Error found! ;-;");
             console.log(`Error while trying to do c:\n${err.message}`);
-        } 
+        }
     }
     if (/^emoji(?:\s{1,4}[^]*)?$/i.test(instruction)) {
         try {
@@ -3881,7 +3892,7 @@ bot.on("message", message => {
                 emoji = instruction.match(/^emoji\s{1,4}<:.*?:(.*?)>$/i)[1];
                 emojitest.iscustom = true;
             }
-            else 
+            else
                 emoji = instruction.match(/^emoji\s{1,4}([^]+)$/i)[1];
             if (emojitest.iscustom) {
                 chanel.sendFile(`https://cdn.discordapp.com/emojis/${emoji}.png`).then().catch(err=>{
@@ -3906,7 +3917,7 @@ bot.on("message", message => {
         } catch (err) {
             message.reply("Oh! An error has been spotted... Oh jeez...");
             console.log(`Error while doing emoji:\n${err.message}`);
-        }    
+        }
     }
     if (/^p(?:\s{1,4}[^]*)?$/i.test(instruction)) {
         try {
@@ -3954,7 +3965,7 @@ bot.on("message", message => {
                     console.log(semiselected[0] + " are bro with " + semiselected[1]);
                     if (/^<@!?\d+>$/.test(semiselected[0])) mention = semiselected[0];
                     else if (/^<@!?\d+>$/.test(semiselected[1])) mention = semiselected[1];
-                    else 
+                    else
                         return message.reply("No user was mentioned!");
                     let oldmention = mention;
                     let oldmentionplace = oldmention == semiselected[0] ? 1 : 0;
@@ -3976,7 +3987,7 @@ bot.on("message", message => {
                         console.log("Debug 405433: "+require("util").inspect(perms[gueldid].users[mention.id]));
                         writePerms();
                     }
-                    
+
                     return message.reply("Permission `"+semiselected[oldmentionplace].toLowerCase().replace(/^-/, "").replace(new RegExp("\\s{1,4}"+semiselected[1]+"$"), "")+"` given"+(/^-/.test(semiselected[oldmentionplace])?" (negated) ":"")+" to user "+mention+" successfully!");
                 } else {
                     console.log(p);
@@ -4037,7 +4048,7 @@ bot.on("message", message => {
                 let p = checkperm("global.p.remove", true);
                 if (p[1]) {
                     if (!(message.member.hasPermission("ADMINISTRATOR")) && !(message.member.hasPermission("MANAGE_GUILD"))) return message.reply("Missing permission node `global.p.remove`. Could use this by having administrator or manage server perms.");
-                } 
+                }
                 if (!(p[0]) && !(p[1])) {
                     return message.reply("Missing permission node `global.p.remove`!");
                 } else if (p[2]) {
@@ -4047,7 +4058,7 @@ bot.on("message", message => {
                     let mention;
                     if (/^<@!?\d+>$/.test(semiselected[0])) mention = semiselected[0];
                     else if (/^<@!?\d+>$/.test(semiselected[1])) mention = semiselected[1];
-                    else 
+                    else
                         return message.reply("No user was mentioned!");
                     let oldmention = mention;
                     let oldmentionplace = oldmention == semiselected[0] ? 1 : 0;
@@ -4112,7 +4123,7 @@ bot.on("message", message => {
                 let p = checkperm("global.p.disable", true);
                 if (p[1]) {
                     if (!(message.member.hasPermission("ADMINISTRATOR")) && !(message.member.hasPermission("MANAGE_GUILD"))) return message.reply("Missing permission node `global.p.disable`. Could use this by having administrator or manage server perms.");
-                } 
+                }
                 if (!(p[0]) && !(p[1])) {
                     return message.reply("Missing permission node `global.p.disable`!");
                 } else if (p[2]) {
@@ -4154,7 +4165,7 @@ bot.on("message", message => {
                 let p = checkperm("global.p.enable", true);
                 if (p[1]) {
                     if (!(message.member.hasPermission("ADMINISTRATOR")) && !(message.member.hasPermission("MANAGE_GUILD"))) return message.reply("Missing permission node `global.p.enable`. Could use this by having administrator or manage server perms.");
-                } 
+                }
                 if (!(p[0]) && !(p[1])) {
                     return message.reply("Missing permission node `global.p.enable`!");
                 } else if (p[2]) {
@@ -4202,7 +4213,7 @@ bot.on("message", message => {
                 let p = checkperm("global.p.disable", true);
                 if (p[1]) {
                     if (!(message.member.hasPermission("ADMINISTRATOR")) && !(message.member.hasPermission("MANAGE_GUILD"))) return message.reply("Missing permission node `global.p.disable`. Could use this by having administrator or manage server perms.");
-                } 
+                }
                 if (!(p[0]) && !(p[1])) {
                     return message.reply("Missing permission node `global.p.disable`!");
                 } else if (p[2]) {
@@ -4585,6 +4596,16 @@ bot.on("message", message => {
             console.error(`Error at perms command:\n${err.message}`);
         }
     }
+    /*if (/^case(?:\s{1,4}[^]*)?$/i.test(instruction)) {
+        if (!(/^case\s{1,4}\d+\s{1,4}[^]+$/i.test(instruction))) return chanel.sendMessage("```"+prefix+"case number reason\n\nEdits an action log (+actionlogs) case, if it is yours. If it is an unclaimed case, you will claim it.");
+        let casenumber = instruction.match(/^case\s{1,4}(\d+)\s{1,4}[^]+$/i)[1];
+        let casereason = instruction.match(/^case\s{1,4}\d+\s{1,4}([^]+)$/i)[1];
+        let thecasecommand = async function(){
+            let searchargs = {content: `Action Log #${casenumber}`, channel: chanel, has: "embed", author: bot.user.id, embedType: "rich", contextSize: 1, sortBy: "relevant"};
+            let result = chanel.search(searchargs);
+        };
+    }
+    UGH DISCORD Y U NO BOT SEARCH ;-;*/
     } // End of the whole prefix checking If
     /*if (!(/^[\w\s\+\-$#@!%ˆ&\*\(\)\[\]{}!:;"'`.,><\?/\\\|=\n~]+$/i.test(input)) && message.author.id == "249047754943365121" && message.guild.id == "245744417619705859") {
         message.delete().catch(err=>console.error(err.message));
@@ -4705,6 +4726,14 @@ bot.on("message", message => {
                 message.reply(err.message);
             }
         }*/
+        let dmchannl = bot.channels.get("270135284757168128");
+        let embed = new Discord.RichEmbed();
+        embed.setAuthor(`${message.author.id===bot.user.id?"Me":`${message.author.username}#${message.author.discriminator}`} -> ${message.author.id===bot.user.id?`${message.channel.recipient.username}#${message.channel.recipient.discriminator}`:"Me"}`, message.author.avatarURL||message.author.defaultAvatarURL, "https://google.com")
+          .setDescription(message.content)
+          .setFooter(`ID of Recipient: ${message.author.id===bot.user.id?message.channel.recipient.id:message.author.id} | Message ID: ${message.id}`)
+          .setTimestamp()
+          .setColor("AQUA");
+        dmchannl.sendEmbed(embed);
         if (/^\+setkey\s{1,4}.+$/i.test(input)) {
             const key = input.match(/^\+setkey\s{1,4}(.+)$/i)[1];
             if (!(publickeys[message.author.id])) {
@@ -4746,7 +4775,10 @@ process.on("unhandledRejection", (rej, p)=>{
     }
 });
 
-bot.login(saltandsugar);
+bot.login(saltandsugar).catch(err=>{
+  console.error(`Error at logging in: ${err.toString().replace(/^Error:\s?/i, "")}`);
+  process.exit(1);
+});
 //Object.defineProperty(Object.prototype, "keysize", {
   //  get: function(){return Object.keys(this).length;}
-//}); 
+//});
