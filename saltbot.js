@@ -91,7 +91,7 @@ function decapitalize(string) {
     return string.charAt(0).toLowerCase() + string.slice(1);
 }
 String.prototype.mdclean = function(){
-    return this.replace(/_*`~/g, "");
+    return this.replace(/_*`~/g, l=>"\\"+l);
 };
 function formatDate(date, fulldate = false) {
     var d = new Date(date);
@@ -2662,22 +2662,29 @@ bot.on("message", message => {
                             //console.log("")
                             if (amount.length !== 0) {
                                 let fetchmessagez = async function(){
-                                    let lastmessagecleared = null;
+                                    //let lastmessagecleared = null;
+                                    let messagesdel = [];
+                                    let reachedpoint = false;
                                     for (let num of amount.reverse()) {
-                                        let zeobj = {limit: num<100?num+1:num};
+                                        /*let zeobj = {limit: num<100?num+1:num};
                                         if (lastmessagecleared) zeobj.before = lastmessagecleared;
                                         let msgs = await chanel.fetchMessages(zeobj);
+                                        if (msgs.size < 1) break;
                                         if (msgs.first()) lastmessagecleared = msgs.first().id||lastmessagecleared;
-                                        msgs.map(m=>messagestodelete.push(m));
+                                        msgs.map(m=>messagestodelete.push(m));*/
+                                        if (!reachedpoint) {
+                                          let deleteds = await chanel.bulkDelete(num<100?num+1:num, true);
+                                          if (Number(deleteds.size) < 1) reachedpoint = true;
+                                          deleteds.map(m=>messagesdel.push(m));
+                                        }
                                     }
-                                    return "Flummery";
+                                    return messagesdel;
                                 };
-                                fetchmessagez().then(()=>{
+                                fetchmessagez().then(deletedmsgs=>{
                                     //console.log("partayyyy");
-                                    console.log(messagestodelete.map(c=>c.content));
-                                    chanel.bulkDelete(messagestodelete).then(()=>{
-                                        message.reply(`${Number(messagestodelete.length)-1} message(s) deleted successfully!`).then(msg=>msg.delete(5000));
-                                    });
+                                    //chanel.bulkDelete(messagestodelete, true).then(deletedmsgs=>{
+                                        message.reply(`${Number(deletedmsgs.length)-1} message(s) deleted successfully!`).then(msg=>msg.delete(5000));
+                                    //});
                                 });
                             } else {
                                 message.delete().then(()=>{
@@ -4606,6 +4613,37 @@ bot.on("message", message => {
         };
     }
     UGH DISCORD Y U NO BOT SEARCH ;-;*/
+    if (/^selfroles\s*$/i.test(instruction)) {
+      let p = checkperm("global.selfroles");
+      if (!p[0]) return message.reply("Missing permission node `globa.selfroles`!");
+      if (p[2]) return disabledreply(p[2]);
+      if (serverself[gueldid].keysize < 1) return message.reply("This server has no selfroles!");
+      let selfrolesarr = [];
+      let deletedroles = 0;
+      for (let selfrole in serverself[gueldid]) {
+        if (!(message.guild.roles.has(selfrole))) delete serverself[gueldid][[selfrole, ++deletedroles][0]];
+        else selfrolesarr.push(`${message.guild.roles.get(selfrole).name.mdclean()}`)
+      }
+      if (selfrolesarr.length < 1) return message.reply("This server has no selfroles!");
+      let messagesarr = [];
+      let split = function spt(text){
+          if (text.length >= 2000) {
+              let partone = text.slice(0, 1980);
+              let parttwo = text.slice(1980, text.length);
+              messagesarr.push(partone);
+              spt("_ _\n"+parttwo);
+          } else {
+              messagesarr.push(text);
+              return "Flummery";
+          }
+      };
+      split(selfrolesarr.join("\n•"));
+      messagesarr = messagesarr.map(l=>l.mdclean());
+      messagesarr[0] = `**List of selfroles for server *${message.guild.name.mdclean()}***:\n•${messagesarr[0]}`;
+      messagesarr.map(text=>message.author.send(text));
+      message.reply("Check your DMs!");
+      if (deletedroles > 0) writeSelfRoles();
+    }
     } // End of the whole prefix checking If
     /*if (!(/^[\w\s\+\-$#@!%ˆ&\*\(\)\[\]{}!:;"'`.,><\?/\\\|=\n~]+$/i.test(input)) && message.author.id == "249047754943365121" && message.guild.id == "245744417619705859") {
         message.delete().catch(err=>console.error(err.message));
@@ -4673,7 +4711,7 @@ bot.on("message", message => {
     const triggers = serverdetects[gueldid].triggers;
     if (triggers !== {} && message.author.bot === false)
         for (let x in triggers) {
-            const triggerfind = x.replace(/[-.\\\[\]|^$()+*{}]/g,m=>"\\"+m);
+            const triggerfind = x.replace(/[-.\\\[\]|^$()?+*{}]/g,m=>"\\"+m);
             const trigregexp = new RegExp(triggerfind, "ig");
             if (trigregexp.test(input)) {
                 if (antitrigger[message.id+chanel.id+x] === true)
