@@ -4,6 +4,3 @@ const sqlz = exports.sql = {
 // const colors = exports.colors = {
   
 // };
-
-
-exports.dir = "/Users/PgBiel/Bot Stuff/Beta Salt/";

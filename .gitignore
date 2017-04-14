@@ -58,6 +58,7 @@ typings/
 
 # Misc
 decodeT.js
+data.toml
 secrets/
 *.secret.*
 *.secret
