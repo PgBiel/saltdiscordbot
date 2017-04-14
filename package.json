@@ -1,0 +1,24 @@
+{
+  "name": "saltdiscordbot",
+  "version": "0.0.1",
+  "description": "A discord bot",
+  "main": "saltbot.js",
+  "private": true,
+  "scripts": {
+    "test": "echo \"I exist!\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PgBiel/saltdiscordbot.git"
+  },
+  "keywords": [
+    "discord",
+    "bot"
+  ],
+  "author": "PgSuper",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/PgBiel/saltdiscordbot/issues"
+  },
+  "homepage": "https://github.com/PgBiel/saltdiscordbot#readme"
+}

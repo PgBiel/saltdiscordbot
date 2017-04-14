@@ -37,4 +37,4 @@ const Messager = class Messager extends EventEmitter {
     });
   }
 };
-module.exports = Messager;
+module.exports = new Messager;

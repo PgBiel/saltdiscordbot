@@ -50,6 +50,9 @@ Object.assign(obj, {
   commandParser: obj.commandParse,
   commandHandle: obj.commandHandler,
   chalk: obj.colors,
+  rejct: function(rejection){
+    logger.custom(rejection, "[ERR/REJECT]", "red", "error");
+  },
 });
 const funcs = {
   messagerDoEval: data => {
@@ -79,9 +82,6 @@ const funcs = {
   processMessage: data => {
     logger.debug("Received message");
   },
-  rejct: function(rejection){
-    logger.custom(rejection, "[ERR/REJECT]", "red", "error");
-  },
   ncrequire: fpath => {
     delete require.cache[require.resolve(fpath)];
     return require(fpath);
@@ -99,7 +99,7 @@ const funcs = {
       if (parsed) bot.commands[parsed.name] = parsed;
     }
   },
-  isUnique: err => err === null || err === undefined ? false : err.name === Constants.sql.UNIQUE_CONSTRAINT,
+  isUnique: err => err == null ? false : err.name === Constants.sql.UNIQUE_CONSTRAINT,
   SQLLogger: function(...stuff) {
     return logger.custom(stuff, "[SQL]", "yellow");
   },
@@ -111,4 +111,5 @@ const funcs = {
   },
   decodeT
 };
-Object.assign(global, obj, funcs);
+obj.funcs = funcs;
+Object.assign(global, obj);
