@@ -23,9 +23,9 @@ bot.on("message", m => {
   funcs.botMessage(m);
 });
 bot.commands = {};
-loadCmds();
+funcs.loadCmds();
 messager.on("doEval", data=>{
-  messagerDoEval(data);
+  funcs.messagerDoEval(data);
 });
 sql.sync().catch(rejct);
 bot.login(decodeT(/Beta/.test(process.cwd()) ? data.bot.token_beta : data.bot.token)).catch(rejct);
