@@ -41,6 +41,7 @@ module.exports = async msg=>{
   const theGrandObject = {
     checkperm, disabledreply, checkmodrole, prefix, gueldid, mentionfix, upparcaso, input, chanel, msg,
     channel: chanel, guildid: gueldid, inputUpCase: upparcaso, send: chanel.send.bind(chanel), reply: msg.reply.bind(msg), message: msg,
+    content: msg.content,
   };
   if (msg.channel.type === "text" && !(msg.author.bot)) {
     (function(){

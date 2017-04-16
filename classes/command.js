@@ -1,7 +1,14 @@
 const Command = class Command {
-  constructor(data) {
-    Object.entries(data).map(([ k, v ]) => {
-      this[k] = v;
+  constructor({ name, func, description = "", example = "", args = null, category = "Uncategorized", devonly = false }) {
+    assert(!!name, "No name given.");
+    assert(!!func, "No function given for " + name + ".");
+    Object.assign(this, {
+      name,
+      description,
+      example,
+      args,
+      category,
+      private: !!devonly
     });
   }
 
@@ -18,7 +25,7 @@ const Command = class Command {
     return `\`\`\`
 ${p}${this.name}${this.private ? " (Dev-only)" : ""}
 ${this.description}
-Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${_.trim(this.example)}` : ``}
+Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${_.trim(this.example).replace("{p}", p)}` : ``}
 \`\`\``;
   }
 };

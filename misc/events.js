@@ -3,8 +3,8 @@ bot.on("ready", _=>{
   console.log(colors.green(`Shard ${bot.shard.id} initialized!`));
 });
 bot.on("debug", info=>{
-  djsDebug(info);
+  funcs.djsDebug(info);
 });
 bot.on("warn", info=>{
-  djsWarn(info);
+  funcs.djsWarn(info);
 });
