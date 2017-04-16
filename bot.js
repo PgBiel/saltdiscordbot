@@ -1,4 +1,3 @@
-
 console.oldLog = console.log;
 console.log = function() {
   const args = Array.from(arguments);
@@ -11,6 +10,7 @@ console.error = function() {
   args.unshift(colors.bgYellow.bold(`[S${bot.shard.id === 0 ? "0" : bot.shard.id || "?"}]`) + " ");
   return console.oldError.apply({}, args);
 };
+require("./misc/globals.js");
 global.messager = require("./misc/messager.js");
 Object.assign(global, require("./sequelize/sequelize.js"));
 const data = toml.parse(fs.readFileSync("./data.toml", "utf8"));

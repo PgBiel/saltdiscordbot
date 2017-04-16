@@ -16,6 +16,14 @@ class Permz {
     return arr;
   }
 
+  /**
+   * Check permissions
+   * @param {GuildMember} member Member to check
+   * @param {string} guildid Guild to check
+   * @param {string} perm The permission node to check (e.g. command.subcommand)
+   * @param {boolean} [isDefault=false] If it is a default permission
+   * @returns {boolean}
+   */
   async checkPerm(member, gueldid, perm, isDefault = false) {
     const [cmdname, extra] = _.toPath(perm);
     const whereobj = { serverid: gueldid, type: "user", thingid: member.id };
@@ -54,6 +62,13 @@ class Permz {
     return hasPerm;
   }
 
+  /**
+   * Check if a command is disabled
+   * @param {string} guildid The id of the guild
+   * @param {string} channelid The id of the channel
+   * @param {string} name The command name
+   * @returns {boolean}
+   */
   async isDisabled(gueldid, channelid, name) {
     const thingy = await disabledcmds.findOne({ where: { serverid: gueldid, command: name } });
     if (!thingy) return false;
