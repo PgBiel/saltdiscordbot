@@ -12,7 +12,7 @@ const Command = class Command {
     });
   }
 
-  help(p) {
+  help(p, useEmbed = false) {
     assert(!!p, "No prefix given.");
     let usedargs = "";
     if (this.args) Object.entries([this.args, usedargs += " "][0]).map(([a, v]) => {
@@ -22,11 +22,18 @@ const Command = class Command {
             usedargs += (usedargs.endsWith(" ") ? `{${a}}` : ` {${a}}`);
           }
         });
-    return `\`\`\`
+    if (!useEmbed) return `\`\`\`
 ${p}${this.name}${this.private ? " (Dev-only)" : ""}
 ${this.description}
 Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${_.trim(this.example).replace("{p}", p)}` : ``}
 \`\`\``;
+    const embed = new Discord.RichEmbed();
+    embed
+      .setTitle(`\`${p}${this.name}\` ${this.private ? " (Dev-only)" : ""}`)
+      .setDescription(this.description || "\u200B")
+      .addField("Usage", "${p}${this.name}${usedargs}");
+    if (this.example) embed.addField("Example", _.trim(this.example).replace("{p}", p));
+    return embed;
   }
 };
 
