@@ -81,7 +81,13 @@ export default class Command {
     this.private = Boolean(options.devonly);
   }
 
-  public help(p, useEmbed = false) {
+  /**
+   * Get the help embed or string.
+   * @param {string} p The prefix to use
+   * @param {boolean} [useEmbed=false] If it should use embed or not
+   * @returns {boolean|RichEmbed} The result
+   */
+  public help(p: string, useEmbed = false) {
     if (!p) {
       throw new TypeError("No prefix given.");
     }
