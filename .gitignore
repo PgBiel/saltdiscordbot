@@ -57,7 +57,7 @@ typings/
 .env
 
 # Misc
-decodeT.js
+decodeT.*
 data.toml
 secrets/
 *.secret.*
