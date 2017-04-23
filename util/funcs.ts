@@ -1,6 +1,6 @@
 import { bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager } from "./deps";
 
-interface IMessagerEvalData {
+export interface IMessagerEvalData {
   content: string;
   vars: {[prop: string]: any};
   id: number;

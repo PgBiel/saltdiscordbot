@@ -1,8 +1,20 @@
 import { Message, RichEmbed } from "discord.js";
 import * as _ from "lodash";
 
-interface Argument {
+import { assert } from "../util/deps";
+
+interface IArgument {
   optional: boolean;
+}
+
+interface ICommandOptions {
+  name: string;
+  func: (message: Message, context: {[prop: string]: any}) => any;
+  description?: string;
+  example?: string;
+  args?: {[prop: string]: boolean | IArgument};
+  category?: string;
+  devonly: boolean;
 }
 
 export default class Command {
@@ -10,25 +22,69 @@ export default class Command {
   public func: (message: Message, context: {[prop: string]: any}) => any;
   public description?: string;
   public example?: string;
-  public args?: {[prop: string]: boolean | Argument};
+  public args?: {[prop: string]: boolean | IArgument};
   public category?: string;
   public private?: boolean;
-  constructor(
-    { name, func, description = "", example = "", args = null, category = "Uncategorized", devonly = false }) {
-    assert(!!name, "No name given.");
-    assert(!!func, "No function given for " + name + ".");
-    Object.assign(this, {
-      name,
-      description,
-      example,
-      args,
-      category,
-      private: !!devonly,
-    });
+  constructor(options: ICommandOptions) {
+    if (!options.name) {
+      throw new Error("No name given.");
+    }
+    if (!options.func) {
+      throw new Error(`No function given for ${options.name}.`);
+    }
+    /**
+     * Name of the command.
+     * @type {string}
+     */
+    this.name = options.name;
+
+    /**
+     * The command function.
+     * @type {Function}
+     */
+    this.func = options.func;
+
+    /**
+     * The description of the command.
+     * @type {?string}
+     */
+    this.description = options.description || "";
+
+    /**
+     * An example of usage of the command.
+     * @type {?string}
+     */
+    this.example = options.example || "";
+
+    /**
+     * An argument.
+     * @typedef {Object} CommandArgument
+     * @property {boolean} optional If this argument is optional or not
+     */
+
+    /**
+     * Arguments on the command.
+     * @type {?Object<string, boolean | CommandArgument>}
+     */
+    this.args = options.args || null;
+
+     /**
+      * The category this command fits in.
+      * @type {?string}
+      */
+    this.category = options.category || "";
+
+    /**
+     * If this command may only by devs or not.
+     * @type {boolean}
+     */
+    this.private = Boolean(options.devonly);
   }
 
   public help(p, useEmbed = false) {
-    assert(!!p, "No prefix given.");
+    if (!p) {
+      throw new TypeError("No prefix given.");
+    }
     let usedargs = "";
     if (this.args) {
       Object.entries([this.args, usedargs += " "][0]).map(([a, v]) => {

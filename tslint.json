@@ -7,6 +7,9 @@
     "rules": {
       "object-literal-sort-keys": {
         "severity": "off"
+      },
+      "no-console": {
+        "severity": "off"
       }
     },
     "rulesDirectory": []
