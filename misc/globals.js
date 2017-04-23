@@ -3,7 +3,6 @@ const Constants = require("./constants");
 const fs = require("fs");
 const toml = require("toml");
 const Discord = require("discord.js");
-const Sequelize = require("sequelize");
 const commandParse = require("../commandParse");
 const commandHandler = require("../commandHandler");
 const logger = require("../classes/logger");
@@ -13,6 +12,7 @@ const Command = require("../classes/command");
 const assert = require("assert");
 const perms = require("../classes/permissions");
 const decodeT = require("./decodeT");
+const r = require("rethinkdb");
 
 const obj = {
   ownerID: "180813971853410305",
