@@ -75,7 +75,7 @@ export default class Command {
     this.category = options.category || "";
 
     /**
-     * If this command may only by devs or not.
+     * If this command may only be used by devs or not.
      * @type {boolean}
      */
     this.private = Boolean(options.devonly);
