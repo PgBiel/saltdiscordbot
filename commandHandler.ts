@@ -1,4 +1,5 @@
 import { Collection, GuildMember, Message, User } from "discord.js";
+import { logger } from "../util/deps";
 
 export default async (msg: Message) => {
   const input = msg.content;

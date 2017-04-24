@@ -14,7 +14,7 @@ interface ICommandOptions {
   example?: string;
   args?: {[prop: string]: boolean | IArgument};
   category?: string;
-  devonly: boolean;
+  devonly?: boolean;
 }
 
 export default class Command {

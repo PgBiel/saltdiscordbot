@@ -11,19 +11,23 @@ class Messager extends EventEmitter {
    * @param {number} [timeLimit=null] Max time limit otherwise rejection
    * @returns {Promise<*>}
    */
-  awaitFor(event: any, timeLimit: number = null): Promise<any> {
+  public awaitFor(event: any, timeLimit: number = null): Promise<any> {
     return new Promise((res, rej) => {
       let successfull = false;
-      const funcToThing = stuff=>{
+      const funcToThing = (stuff: any) => {
         successfull = true;
         res(stuff);
       };
       this.once(event, funcToThing);
-      if (!(isNaN(timeLimit)) && timeLimit > 0) setTimeout(()=>{
-        if (successfull) return;
+      if (!(isNaN(timeLimit)) && timeLimit > 0) {
+        setTimeout(() => {
+        if (successfull) {
+          return;
+        }
         this.removeListener(event, funcToThing);
         rej(null);
-      }, timeLimit);
+        }, timeLimit);
+      }
     });
   }
 
@@ -35,22 +39,26 @@ class Messager extends EventEmitter {
    * @param {number} [timeLimit=null] Max time limit otherwise rejection
    * @returns {Promise<*>}
    */
-  awaitForThenEmit(emev: any, emdata: any, event: any, timeLimit: number = null): Promise<any> {
+  public awaitForThenEmit(emev: any, emdata: any, event: any, timeLimit: number = null): Promise<any> {
     return new Promise((res, rej) => {
       let successfull = false;
-      const funcToThing = stuff=>{
+      const funcToThing = (stuff: any) => {
         successfull = true;
         res(stuff);
       };
       this.once(event, funcToThing);
       this.emit(emev, emdata);
-      if (!(isNaN(timeLimit)) && timeLimit > 0) setTimeout(()=>{
-        if (successfull) return;
-        this.removeListener(event, funcToThing);
-        rej(null);
-      }, timeLimit);
+      if (!(isNaN(timeLimit)) && timeLimit > 0) {
+        setTimeout(() => {
+          if (successfull) {
+            return;
+          }
+          this.removeListener(event, funcToThing);
+          rej(null);
+        }, timeLimit);
+      }
     });
   }
-};
+}
 
-export default new Messager;
+export default new Messager();
