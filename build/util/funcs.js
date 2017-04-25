@@ -30,7 +30,7 @@ exports.messagerDoEval = (evaler) => {
      * @returns {void}
      */
     return (data) => {
-        const { message, gueldid, input, chanel } = data.vars;
+        const { bot, message, gueldid, input, chanel, deps, funcs } = data.vars;
         try {
             deps_1.messager.emit(`${data.id}eval`, {
                 success: true,

@@ -37,7 +37,7 @@ export const messagerDoEval = (evaler: any) => {
    * @returns {void}
    */
   return (data: IMessagerEvalData) => {
-    const { message, gueldid, input, chanel } = data.vars;
+    const { bot, message, gueldid, input, chanel, deps, funcs } = data.vars;
     try {
       messager.emit(`${data.id}eval`, {
         success: true,
