@@ -102,9 +102,9 @@ export default class Command {
    * Get the help embed or string.
    * @param {string} p The prefix to use
    * @param {boolean} [useEmbed=false] If it should use embed or not
-   * @returns {boolean|RichEmbed} The result
+   * @returns {string|RichEmbed} The result
    */
-  public help(p: string, useEmbed = false) {
+  public help(p: string, useEmbed = false): string | RichEmbed {
     if (!p) {
       throw new TypeError("No prefix given.");
     }

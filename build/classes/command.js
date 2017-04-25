@@ -65,7 +65,7 @@ class Command {
      * Get the help embed or string.
      * @param {string} p The prefix to use
      * @param {boolean} [useEmbed=false] If it should use embed or not
-     * @returns {boolean|RichEmbed} The result
+     * @returns {string|RichEmbed} The result
      */
     help(p, useEmbed = false) {
         if (!p) {
