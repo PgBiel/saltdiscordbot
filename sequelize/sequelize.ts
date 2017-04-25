@@ -9,10 +9,12 @@ fs.readdirSync("./models").forEach((model: any) => {
   }
 });
 module.exports = data; */
+export * from "./models/coins";
 export * from "./models/customcommands";
 export * from "./models/detects";
 export * from "./models/moderation";
 export * from "./models/mutes";
+export * from "./models/levels";
 export * from "./models/perms";
 export * from "./models/prefix";
 export * from "./models/punishments";

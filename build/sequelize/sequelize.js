@@ -14,10 +14,12 @@ fs.readdirSync("./models").forEach((model: any) => {
   }
 });
 module.exports = data; */
+__export(require("./models/coins"));
 __export(require("./models/customcommands"));
 __export(require("./models/detects"));
 __export(require("./models/moderation"));
 __export(require("./models/mutes"));
+__export(require("./models/levels"));
 __export(require("./models/perms"));
 __export(require("./models/prefix"));
 __export(require("./models/punishments"));
