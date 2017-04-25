@@ -1,7 +1,6 @@
 import { Message, RichEmbed } from "discord.js";
-import * as _ from "lodash";
 
-import { assert } from "../util/deps";
+import { _, assert } from "../util/deps";
 
 interface IArgument {
   optional: boolean;
