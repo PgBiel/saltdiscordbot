@@ -6,24 +6,26 @@ const deps_1 = require("./deps");
  * @param {*} rejection The rejection to handle
  * @returns {void}
  */
-exports.rejct = (rejection) => {
+function rejct(rejection) {
     deps_1.logger.custom(rejection, "[ERR/REJECT]", "red", "error");
-};
+}
+exports.rejct = rejct;
 /**
  * Require without being on cache
  * @param {string} fpath The path to require
  * @returns {*} The required value
  */
-exports.ncrequire = (fpath) => {
+function ncrequire(fpath) {
     delete require.cache[require.resolve(fpath)];
     return require(fpath);
-};
+}
+exports.ncrequire = ncrequire;
 /**
  * Factory function for event function for doEval on messager
  * @param {*} evaler The eval function
  * @returns {function} The generated function
  */
-exports.messagerDoEval = (evaler) => {
+function messagerDoEval(evaler) {
     /**
      * Event function for doEval on messager
      * @param {*} data Data
@@ -44,7 +46,8 @@ exports.messagerDoEval = (evaler) => {
             });
         }
     };
-};
+}
+exports.messagerDoEval = messagerDoEval;
 function djsDebug(info) {
     deps_1.logger.custom(info, `[${/^(?:Sending heartbeat|Heartbeat acknowledged)$/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`, "magenta");
 }
@@ -56,7 +59,7 @@ exports.djsWarn = djsWarn;
 function botMessage(msg) {
     const thingy = deps_1.commandHandler(msg);
     if (thingy.catch) {
-        thingy.catch(exports.rejct);
+        thingy.catch(rejct);
     }
 }
 exports.botMessage = botMessage;
@@ -72,7 +75,7 @@ function loadCmds() {
     const loadedCmds = [];
     deps_1.fs.readdirSync("./commands").map((f) => {
         if (/\.js$/.test(f)) {
-            loadedCmds.push(exports.ncrequire(`../commands/${f}`));
+            loadedCmds.push(ncrequire(`../commands/${f}`));
         }
     });
     for (const cmd in loadedCmds) {

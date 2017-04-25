@@ -11,26 +11,26 @@ export interface IMessagerEvalData {
  * @param {*} rejection The rejection to handle
  * @returns {void}
  */
-export const rejct = (rejection: any): void => {
+export function rejct(rejection: any): void {
   logger.custom(rejection, "[ERR/REJECT]", "red", "error");
-};
+}
 
 /**
  * Require without being on cache
  * @param {string} fpath The path to require
  * @returns {*} The required value
  */
-export const ncrequire = (fpath: string) => {
+export function ncrequire(fpath: string) {
   delete require.cache[require.resolve(fpath)];
   return require(fpath);
-};
+}
 
 /**
  * Factory function for event function for doEval on messager
  * @param {*} evaler The eval function
  * @returns {function} The generated function
  */
-export const messagerDoEval = (evaler: any) => {
+export function messagerDoEval(evaler: any) {
   /**
    * Event function for doEval on messager
    * @param {*} data Data
@@ -50,8 +50,8 @@ export const messagerDoEval = (evaler: any) => {
       });
     }
   };
-};
-export function djsDebug(info: string)  {
+}
+export function djsDebug(info: string) {
   logger.custom(
     info, `[${/^(?:Sending heartbeat|Heartbeat acknowledged)$/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`, "magenta",
     );
