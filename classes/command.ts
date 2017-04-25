@@ -122,7 +122,7 @@ export default class Command {
       return `\`\`\`
 ${p}${this.name}${this.private ? " (Dev-only)" : ""}
 ${this.description}
-Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${_.trim(this.example).replace("{p}", p)}` : ``}
+Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${_.trim(this.example).replace(/{p}/g, p)}` : ``}
 \`\`\``;
     }
     const embed = new RichEmbed();

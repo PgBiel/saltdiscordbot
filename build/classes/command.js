@@ -86,7 +86,7 @@ class Command {
             return `\`\`\`
 ${p}${this.name}${this.private ? " (Dev-only)" : ""}
 ${this.description}
-Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${deps_1._.trim(this.example).replace("{p}", p)}` : ``}
+Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${deps_1._.trim(this.example).replace(/{p}/g, p)}` : ``}
 \`\`\``;
         }
         const embed = new discord_js_1.RichEmbed();
