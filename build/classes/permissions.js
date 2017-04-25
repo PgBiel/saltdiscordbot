@@ -2,18 +2,18 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const sequelize_1 = require("../sequelize/sequelize");
-const deps_1 = require("../util/deps");
+const bot_1 = require("../util/bot");
 class Permz {
     get permlist() {
         const obj = {};
-        Object.entries(deps_1.bot.commands).forEach(([cmd, v]) => {
+        Object.entries(bot_1.bot.commands).forEach(([cmd, v]) => {
             obj[cmd] = v.perms;
         });
         return obj;
     }
     get defaultPerms() {
         const arr = [];
-        Object.entries(deps_1.bot.commands).forEach(([cmd, v]) => v.default ?
+        Object.entries(bot_1.bot.commands).forEach(([cmd, v]) => v.default ?
             arr.push(v.perms) :
             (typeof v === "string" ? null : Object.entries(v).forEach(([perm, vv]) => {
                 if (vv === true) {

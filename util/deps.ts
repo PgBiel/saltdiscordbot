@@ -5,6 +5,12 @@ import * as fs from "fs";
 import * as _ from "lodash";
 import * as Sequelize from "sequelize";
 import * as toml from "toml";
+export const data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
+export const sql = new Sequelize("botdata", data.sql.user || null, data.sql.pass || null, {
+  host: "localhost",
+  dialect: "postgres",
+  logging: false,
+});
 import * as util from "util";
 
 import Command from "../classes/command";
@@ -19,20 +25,8 @@ import messager from "../misc/Messager";
 // declare const decodeT: (...a) => any;
 const commandParse: any = 1; // unused
 
-export const data = toml.parse(fs.readFileSync("./data.toml", "utf8"));
-
 // let obj: {[prop: string]: any} = {};
-export const bot = new CommandClient({
-  disableEveryone: true,
-  disabledEvents: ["TYPING_START"],
-  fetchAllMembers: true,
-});
-
-export const sql = new Sequelize("botdata", data.sql.user || null, data.sql.pass || null, {
-  host: "localhost",
-  dialect: "postgre",
-  logging: false,
-});
+export * from "./bot";
 
 export const ownerID: string = "180813971853410305";
 

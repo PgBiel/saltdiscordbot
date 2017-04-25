@@ -1,10 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-require("./changeConsole");
+const colors = require("chalk");
+const changeConsole_1 = require("./changeConsole");
+process.on("unhandledRejection", (rejection) => {
+    console.log(colors.red("[ERR/REJCTUNH]"), rejection);
+});
+const setShards = { id: null };
+changeConsole_1.default(false, setShards);
+console.log("Initializing...");
 require("./misc/events");
 const deps_1 = require("./util/deps");
+setShards.id = deps_1.bot.shard.id;
 const funcs_1 = require("./util/funcs");
-// Object.assign(global, require("./sequelize/sequelize.js"));
 const { Collection, Message } = deps_1.Discord;
 process.on("message", (mdata) => {
     funcs_1.processMessage(mdata);
@@ -17,4 +24,4 @@ deps_1.messager.on("doEval", (edata) => {
     funcs_1.messagerDoEval((thing) => eval(thing))(edata); // tslint:disable-line:no-eval
 });
 deps_1.sql.sync().catch(funcs_1.rejct);
-deps_1.bot.login(deps_1.decodeT(/Beta/.test(process.cwd()) ? deps_1.data.bot.token_beta : deps_1.data.bot.token)).catch(funcs_1.rejct);
+deps_1.bot.login(deps_1.decodeT(deps_1.data.bot.token_beta)).catch(funcs_1.rejct);

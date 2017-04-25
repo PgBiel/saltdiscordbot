@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const deps_1 = require("../util/deps");
+const _ = require("lodash");
 class Command {
     constructor(options) {
         if (!options.name) {
@@ -86,7 +86,7 @@ class Command {
             return `\`\`\`
 ${p}${this.name}${this.private ? " (Dev-only)" : ""}
 ${this.description}
-Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${deps_1._.trim(this.example).replace(/{p}/g, p)}` : ``}
+Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${_.trim(this.example).replace(/{p}/g, p)}` : ``}
 \`\`\``;
         }
         const embed = new discord_js_1.RichEmbed();
@@ -95,7 +95,7 @@ Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${deps_1._.trim
             .setDescription(this.description || "\u200B")
             .addField("Usage", "${p}${this.name}${usedargs}");
         if (this.example) {
-            embed.addField("Example", deps_1._.trim(this.example).replace("{p}", p));
+            embed.addField("Example", _.trim(this.example).replace("{p}", p));
         }
         return embed;
     }

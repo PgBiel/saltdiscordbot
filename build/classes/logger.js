@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const colors = require("chalk");
 const events_1 = require("events");
-const deps_1 = require("../util/deps");
 class Logger extends events_1.EventEmitter {
     /**
      * Print information
@@ -9,7 +9,7 @@ class Logger extends events_1.EventEmitter {
      * @returns {void}
      */
     info(...text) {
-        console.log.apply(this, [deps_1.colors.blue("[INFO]"), ...text]);
+        console.log.apply(this, [colors.blue("[INFO]"), ...text]);
         this.emit("info", text);
     }
     /**
@@ -18,7 +18,7 @@ class Logger extends events_1.EventEmitter {
      * @returns {void}
      */
     debug(...text) {
-        console.log.apply(this, [deps_1.colors.green("[DEBUG]"), ...text]);
+        console.log.apply(this, [colors.green("[DEBUG]"), ...text]);
         this.emit("debug", text);
     }
     /**
@@ -27,7 +27,7 @@ class Logger extends events_1.EventEmitter {
      * @returns {void}
      */
     error(...text) {
-        console.error.apply(this, [deps_1.colors.red("[ERROR]"), ...text]);
+        console.error.apply(this, [colors.red("[ERROR]"), ...text]);
         this.emit("info", text);
     }
     /**
@@ -36,7 +36,7 @@ class Logger extends events_1.EventEmitter {
      * @returns {void}
      */
     warn(...text) {
-        console.log.apply(this, [deps_1.colors.yellow("[WARN]"), ...text]);
+        console.log.apply(this, [colors.yellow("[WARN]"), ...text]);
         this.emit("warn", text);
     }
     /**
@@ -47,7 +47,7 @@ class Logger extends events_1.EventEmitter {
      * @param {string} [type="log"] The type (Console property to use as function)
      */
     custom(text, prefix = "[GENERIC]", color = "cyan", type = "log") {
-        console[type].apply(this, [deps_1.colors[color](prefix), text]);
+        console[type].apply(this, [colors[color](prefix), text]);
         this.emit("custom", { text, prefix, color, type });
     }
     /**

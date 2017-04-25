@@ -1,7 +1,9 @@
 import { Collection, GuildMember, Message, User } from "discord.js";
+import * as _ from "lodash";
+import logger from "./classes/logger";
 import perms from "./classes/permissions";
 import { moderation, prefixes } from "./sequelize/sequelize";
-import { _, bot, logger } from "./util/deps";
+import { bot } from "./util/bot";
 import { cloneObject, rejct } from "./util/funcs";
 
 type SaltRole = "moderator" | "mod" | "administrator" | "admin";

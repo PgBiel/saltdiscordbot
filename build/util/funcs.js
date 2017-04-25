@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const cmds = require("../commands/cmdIndex");
 const deps_1 = require("./deps");
 /**
  * Handle a rejection
@@ -72,18 +73,20 @@ function cloneObject(objec) {
 }
 exports.cloneObject = cloneObject;
 function loadCmds() {
-    const loadedCmds = [];
-    deps_1.fs.readdirSync("./commands").map((f) => {
-        if (/\.js$/.test(f)) {
-            loadedCmds.push(ncrequire(`../commands/${f}`));
-        }
-    });
-    for (const cmd in loadedCmds) {
-        if (loadedCmds.hasOwnProperty(cmd)) {
-            const parsed = deps_1.commandParse(loadedCmds[cmd]);
-            if (parsed) {
-                deps_1.bot.commands[parsed.name] = parsed;
-            }
+    /* const loadedCmds = [];
+    fs.readdirSync("./commands").map((f: string) => {
+      if (/\.js$/.test(f)) {
+        loadedCmds.push(ncrequire(`../commands/${f}`));
+      }
+    }); */
+    const loadedCmds = cmds;
+    for (const cmdn in loadedCmds) {
+        if (loadedCmds.hasOwnProperty(cmdn)) {
+            const cmd = loadedCmds[cmdn];
+            // const parsed = commandParse(loadedCmds[cmd]);
+            // if (parsed) {
+            deps_1.bot.commands[cmd.name] = cmd;
+            // }
         }
     }
 }

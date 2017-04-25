@@ -1,3 +1,4 @@
+import * as cmds from "../commands/cmdIndex";
 import { bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager } from "./deps";
 
 export interface IMessagerEvalData {
@@ -72,18 +73,20 @@ export function cloneObject <T>(objec: T): T {
   return Object.assign(Object.create((objec as any)), objec);
 }
 export function loadCmds() {
-  const loadedCmds = [];
+  /* const loadedCmds = [];
   fs.readdirSync("./commands").map((f: string) => {
     if (/\.js$/.test(f)) {
       loadedCmds.push(ncrequire(`../commands/${f}`));
     }
-  });
-  for (const cmd in loadedCmds) {
-    if (loadedCmds.hasOwnProperty(cmd)) {
-      const parsed = commandParse(loadedCmds[cmd]);
-      if (parsed) {
-        bot.commands[parsed.name] = parsed;
-      }
+  }); */
+  const loadedCmds = cmds;
+  for (const cmdn in loadedCmds) {
+    if (loadedCmds.hasOwnProperty(cmdn)) {
+      const cmd = loadedCmds[cmdn];
+      // const parsed = commandParse(loadedCmds[cmd]);
+      // if (parsed) {
+      bot.commands[cmd.name] = cmd;
+      // }
     }
   }
 }

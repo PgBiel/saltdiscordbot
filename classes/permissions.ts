@@ -2,7 +2,7 @@ import { GuildMember } from "discord.js";
 import * as _ from "lodash";
 
 import { disabledcmds, permissions } from "../sequelize/sequelize";
-import { bot } from "../util/deps";
+import { bot } from "../util/bot";
 
 interface IAnyObj {
   [prop: string]: any;

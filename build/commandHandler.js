@@ -1,11 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
+const _ = require("lodash");
+const logger_1 = require("./classes/logger");
 const permissions_1 = require("./classes/permissions");
 const sequelize_1 = require("./sequelize/sequelize");
-const deps_1 = require("./util/deps");
+const bot_1 = require("./util/bot");
 const funcs_1 = require("./util/funcs");
-const doError = deps_1.logger.error;
+const doError = logger_1.default.error;
 exports.default = async (msg) => {
     const input = msg.content;
     const chanel = msg.channel;
@@ -17,14 +19,14 @@ exports.default = async (msg) => {
         thingy = msg.guild ? (await sequelize_1.prefixes.findOne({ where: { serverid: msg.guild.id } })) || "+" : "+";
     }
     catch (err) {
-        deps_1.logger.error(`Error at Command Handler (await/thingy): ${err}`);
+        logger_1.default.error(`Error at Command Handler (await/thingy): ${err}`);
         return;
     }
     let prefix;
     if (thingy) {
         prefix = thingy.prefix || thingy;
     }
-    deps_1.logger.debug(prefix);
+    logger_1.default.debug(prefix);
     let mentionfix;
     if (/^<@!?244533925408538624>\s?/i.test(input)) {
         if (!(/^<@!?244533925408538624>\s?/i.test(prefix))) {
@@ -66,24 +68,24 @@ exports.default = async (msg) => {
     if (msg.channel.type === "text" && !(msg.author.bot)) {
         (() => {
             // start of text channel part
-            theGrandObject.botmember = msg.guild.member(deps_1.bot.user);
+            theGrandObject.botmember = msg.guild.member(bot_1.bot.user);
             // require("./misc/autoSaver.js")(msg, gueldid);
             if (/^\+prefix/i.test(input)) {
                 const instruction = input.replace(/^\+/i, "");
                 theGrandObject.instruction = instruction;
                 theGrandObject.args = instruction.replace(/^prefix\s*/i, "").length < 1 ? null : instruction.replace(/^prefix\s*/i, "");
                 theGrandObject.arrargs = theGrandObject.args ? theGrandObject.args.split ` ` : null;
-                return deps_1.bot.commands.prefix.func(message, theGrandObject);
+                return bot_1.bot.commands.prefix.func(message, theGrandObject);
             }
             if (!(upparcaso.startsWith(prefix.toUpperCase()) || /^<@!?244533925408538624>\s?/i.test(upparcaso))) {
                 return; // console.log(colors.green("AAAAA"), upparcaso, prefix);
             }
-            const instruction = input.replace(new RegExp("^" + deps_1._.escapeRegExp(mentionfix || prefix), "i"), "");
+            const instruction = input.replace(new RegExp("^" + _.escapeRegExp(mentionfix || prefix), "i"), "");
             theGrandObject.instruction = instruction;
-            deps_1.logger.debug(instruction);
-            for (const cmdn in deps_1.bot.commands) {
-                if (deps_1.bot.commands.hasOwnProperty(cmdn)) {
-                    const cmd = deps_1.bot.commands[cmdn];
+            logger_1.default.debug(instruction);
+            for (const cmdn in bot_1.bot.commands) {
+                if (bot_1.bot.commands.hasOwnProperty(cmdn)) {
+                    const cmd = bot_1.bot.commands[cmdn];
                     /* const noPattern = _=>{
                       console.error(colors.red("[ERROR]") + " Attempted to load " + (
                       cmd.name?`command ${cmd.name}`:"unnamed command"
@@ -95,7 +97,7 @@ exports.default = async (msg) => {
                     !(cmd.pattern instanceof RegExp || typeof cmd.pattern === "string")
                     ) noPattern("it had an invalid pattern!"); */
                     if (!(cmd.func)) {
-                        deps_1.logger.error(`Attemped to load ${cmd.name ? `command ${cmd.name}` : "unnamed command"} but it had no function!`);
+                        logger_1.default.error(`Attemped to load ${cmd.name ? `command ${cmd.name}` : "unnamed command"} but it had no function!`);
                         continue;
                     }
                     if (cmd.name === "prefix") {
@@ -129,16 +131,16 @@ exports.default = async (msg) => {
                                     }
                                     catch (err) {
                                         parsedPerms[permission] = false; // error :(
-                                        deps_1.logger.custom(err, `[ERR/PERMCHECK]`, "red", "error");
+                                        logger_1.default.custom(err, `[ERR/PERMCHECK]`, "red", "error");
                                     }
                                     parsedPerms[permission] = !!parsedPerms[permission];
                                 }
                             }
                             theGrandObject.perms = parsedPerms;
                         }
-                        theGrandObject.args = instruction.replace(`^${deps_1._.escapeRegExp(cmd.name)}\\s*`, "i").length < 1 ?
+                        theGrandObject.args = instruction.replace(`^${_.escapeRegExp(cmd.name)}\\s*`, "i").length < 1 ?
                             null :
-                            instruction.replace(`^${deps_1._.escapeRegExp(cmd.name)}\s*`, "i");
+                            instruction.replace(`^${_.escapeRegExp(cmd.name)}\s*`, "i");
                         theGrandObject.arrArgs = theGrandObject.args ? theGrandObject.args.split ` ` : null; // array args
                         let result;
                         try {
@@ -153,7 +155,7 @@ exports.default = async (msg) => {
                     };
                     // console.log(chalk.green("[DEBUG 101]"), new RegExp(`^${_.escapeRegExp(cmd.name)}(?:\\s*[^]+)?$`, "i"));
                     if (cmd.pattern && cmd.pattern instanceof RegExp ? cmd.pattern.test(instruction) : cmd.pattern === instruction
-                        || (new RegExp(`^${deps_1._.escapeRegExp(cmd.name)}(?:\s*[^]+)?$`, "i")).test(instruction)) {
+                        || (new RegExp(`^${_.escapeRegExp(cmd.name)}(?:\s*[^]+)?$`, "i")).test(instruction)) {
                         return exeFunc().catch(funcs_1.rejct);
                     }
                 }
