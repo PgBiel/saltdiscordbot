@@ -7,7 +7,7 @@ require("./changeConsole");
 cmd
     .option("-b", "--beta", "Is beta or not")
     .parse(process.argv);
-process.chdir(`${process.env.HOME}/Documents/Bot Stuff/${cmd.beta ? "Beta " : ""}Salt`);
+process.chdir(`${process.env.HOME}/Documents/Bot Stuff/${cmd.beta ? "Beta " : ""}Salt/build`);
 const Manager = new Discord.ShardingManager("./bot.js", {
     totalShards: 2,
 });
