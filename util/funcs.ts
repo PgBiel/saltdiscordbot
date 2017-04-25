@@ -28,7 +28,7 @@ export function ncrequire(fpath: string) {
 /**
  * Factory function for event function for doEval on messager
  * @param {*} evaler The eval function
- * @returns {function} The generated function
+ * @returns {Function} The generated function
  */
 export function messagerDoEval(evaler: any) {
   /**
