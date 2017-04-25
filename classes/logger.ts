@@ -1,4 +1,5 @@
 import { EventEmitter } from "events";
+import { colors } from "../util/deps";
 
 class Logger extends EventEmitter {
   /**

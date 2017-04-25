@@ -1,5 +1,12 @@
 import { Collection, GuildMember, Message, User } from "discord.js";
-import { logger } from "../util/deps";
+import perms from "./classes/permissions";
+import { moderation, prefixes } from "./sequelize/sequelize";
+import { _, bot, logger } from "./util/deps";
+import { cloneObject, rejct } from "./util/funcs";
+
+type SaltRole = "moderator" | "mod" | "administrator" | "admin";
+type CommandSetPerm = boolean | { default: boolean };
+const doError = logger.error;
 
 export default async (msg: Message) => {
   const input = msg.content;
@@ -19,7 +26,6 @@ export default async (msg: Message) => {
     prefix = thingy.prefix || thingy;
   }
   logger.debug(prefix);
-  const {Collection} = Discord;
   let mentionfix;
   if (/^<@!?244533925408538624>\s?/i.test(input)) {
     if (!(/^<@!?244533925408538624>\s?/i.test(prefix))) {
@@ -27,26 +33,34 @@ export default async (msg: Message) => {
     }
   }
   const disabledreply = (pt: string) => message.reply(":lock: That command has been disabled for this " + pt + "!");
-  const checkmodrole = (member: GuildMember) => {
-    if (servermods[gueldid]) {
-      if (servermods[gueldid].moderator !== "") {
-        if (member.roles.get(servermods[gueldid].moderator)) {
-          return true;
-        } else {
-          return false;
-        }
+  const checkRole = async (role: SaltRole, member: GuildMember): Promise<boolean> => {
+    if (["mod", "admin"].includes(role)) {
+      role = role === "mod" ? "moderator" : "administrator";
+    }
+    if (!gueldid) {
+      return false;
+    }
+    const result: {[prop: string]: any} = await moderation.findOne({ where: { serverid: gueldid } });
+    if (!result || !result[role]) {
+      return false;
+    }
+    if (member.roles && member.roles.get(result[role])) {
+      return true;
+    }
+    return false;
+  };
+  const checkPerm = (node: string, author: GuildMember | User = message.member, isDefault: boolean = false) => {
+    if (author instanceof User) {
+      const oldAuthor = author;
+      author = message.guild.members.get(author.id);
+      if (!author) {
+        throw new Error(`Invalid member: ${oldAuthor.username}`);
       }
     }
-  };
-  const checkperm = (node: string, returnarr: boolean = true, author: GuildMember | User = message.member) => {
-    return returnarr ?
-    permclass.checkPerms(node, perms, author, servercmds, message.guild.id, message.channel.id) :
-    (typeof (permclass.checkPerms(node, perms, author, servercmds, message.guild.id, message.channel.id)) === "string" ?
-      permclass.checkPerms(node, perms, author, servercmds, message.guild.id, message.channel.id) :
-      permclass.checkPerms(node, perms, author, servercmds, message.guild.id, message.channel.id)[0]);
+    return perms.hasPerm(author, gueldid, node, isDefault);
   };
   const theGrandObject: {[prop: string]: any} = {
-    checkperm, disabledreply, checkmodrole, prefix, gueldid, mentionfix, upparcaso, input, chanel, msg,
+    checkPerm, disabledreply, checkRole, prefix, gueldid, mentionfix, upparcaso, input, chanel, msg,
 
     channel: chanel, guildid: gueldid, inputUpCase: upparcaso, send: chanel.send.bind(chanel),
     reply: msg.reply.bind(msg), message: msg, content: msg.content,
@@ -85,7 +99,7 @@ export default async (msg: Message) => {
           ) noPattern("it had an invalid pattern!"); */
           if (!(cmd.func)) {
             logger.error(
-              ` Attemped to load ${cmd.name ? `command ${cmd.name}` : "unnamed command"} but it had no function!`,
+              `Attemped to load ${cmd.name ? `command ${cmd.name}` : "unnamed command"} but it had no function!`,
               );
             continue;
           }
@@ -93,49 +107,51 @@ export default async (msg: Message) => {
             continue;
           }
           const exeFunc = async () => {
-            let disabled;
+            let disabled: string;
             try {
               disabled = await perms.isDisabled(gueldid, chanel.id, cmd.name); // is disabled?
             } catch (err) {
               return rejct(err);
             }
             if (disabled) {
-              return message.reply(":lock: That command is disabled for this " + flummery + "!");
+              return message.reply(":lock: That command is disabled for this " + disabled + "!");
             }
             const zeperms = cmd.perms;
             if (zeperms) { // if it uses permissions then
-              const targetobj = typeof zeperms === "string" ? {} : cloneObject(zeperms); // what we are going to use
+              const usedpermissions: {[permission: string]: CommandSetPerm} = typeof zeperms === "string" ?
+              {} :
+              cloneObject(zeperms); // what we are going to use
               if (typeof zeperms === "string") {
-                targetobj[zeperms] = !!cmd.default; // if it's a string then set it
+                usedpermissions[zeperms] = !!cmd.default; // if it's a string (a single perm) then set it
               }
-              const flummery = {}; // parsed perms
-              for (const thang in targetobj) {
-                if (targetobj.hasOwnProperty(thang)) {
-                  const thingy2 = targetobj[thang];
+              const parsedPerms = {}; // parsed perms
+              for (const permission in usedpermissions) {
+                if (usedpermissions.hasOwnProperty(permission)) {
+                  const isDefault = usedpermissions[permission];
                   try {
-                    flummery[thang] = await perms.hasPerm(
-                      msg.member, gueldid, thang, typeof thingy2 === "boolean" ? thingy2 : !!thingy2.default,
+                    parsedPerms[permission] = await perms.hasPerm(
+                      msg.member, gueldid, permission, typeof isDefault === "boolean" ? isDefault : !!isDefault.default,
                       ); // check perm
                   } catch (err) {
-                    flummery[thang] = false; // error :(
+                    parsedPerms[permission] = false; // error :(
                     logger.custom(err, `[ERR/PERMCHECK]`, "red", "error");
                   }
-                  flummery[thang] = !!flummery[thang];
+                  parsedPerms[permission] = !!parsedPerms[permission];
                   }
               }
-              theGrandObject.perms = flummery;
+              theGrandObject.perms = parsedPerms;
             }
 
             theGrandObject.args = instruction.replace(`^${_.escapeRegExp(cmd.name)}\\s*`, "i").length < 1 ?
             null :
             instruction.replace(`^${_.escapeRegExp(cmd.name)}\s*`, "i");
 
-            theGrandObject.arrargs = theGrandObject.args ? theGrandObject.args.split` ` : null; // array args
+            theGrandObject.arrArgs = theGrandObject.args ? theGrandObject.args.split` ` : null; // array args
             let result;
             try {
               result = cmd.func(message, theGrandObject); // execute command
             } catch (err) {
-              return funcs.doError(err);
+              return doError(err);
             }
             if (result instanceof Promise) {
               result.catch(rejct);

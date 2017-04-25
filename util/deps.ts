@@ -3,7 +3,7 @@ import * as chalk from "chalk";
 import * as Discord from "discord.js";
 import * as fs from "fs";
 import * as _ from "lodash";
-import * as r from "rethinkdb";
+import * as Sequelize from "sequelize";
 import * as toml from "toml";
 import * as util from "util";
 
@@ -19,11 +19,19 @@ import messager from "../misc/Messager";
 // declare const decodeT: (...a) => any;
 const commandParse: any = 1; // unused
 
+export const data = toml.parse(fs.readFileSync("./data.toml", "utf8"));
+
 // let obj: {[prop: string]: any} = {};
 export const bot = new CommandClient({
   disableEveryone: true,
   disabledEvents: ["TYPING_START"],
   fetchAllMembers: true,
+});
+
+export const sql = new Sequelize("botdata", data.sql.user || null, data.sql.pass || null, {
+  host: "localhost",
+  dialect: "postgre",
+  logging: false,
 });
 
 export const ownerID: string = "180813971853410305";
@@ -45,22 +53,11 @@ export {
   Discord,
   fs,
   toml,
-  // Sequelize,
+  Sequelize,
   util,
   messager,
   perms,
   logger,
-
-  /*sql: new obj.Sequelize("botdata", null, null, {
-    host: "localhost",
-    dialect: "sqlite",
-    storage: "botdata.sqlite",
-    logging() {
-      const arrayThing = Array.from(arguments);
-      arrayThing.unshift(obj.colors.yellow("[SQL]"));
-      SQLLogger.apply({}, arrayThing);
-    }
-  }),*/
   chalk,
 
   decodeT,

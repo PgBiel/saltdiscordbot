@@ -10,6 +10,9 @@ interface IArgument {
 interface ICommandOptions {
   name: string;
   func: (message: Message, context: {[prop: string]: any}) => any;
+  perms?: string;
+  default?: boolean;
+  pattern?: RegExp | string;
   description?: string;
   example?: string;
   args?: {[prop: string]: boolean | IArgument};
@@ -20,6 +23,9 @@ interface ICommandOptions {
 export default class Command {
   public name: string;
   public func: (message: Message, context: {[prop: string]: any}) => any;
+  public perms?: string;
+  public default: boolean;
+  public pattern?: RegExp | string;
   public description?: string;
   public example?: string;
   public args?: {[prop: string]: boolean | IArgument};
@@ -43,6 +49,18 @@ export default class Command {
      * @type {Function}
      */
     this.func = options.func;
+
+    /**
+     * The command permissions.
+     * @type {?string}
+     */
+    this.perms = options.perms;
+
+    /**
+     * If this command is accessible by default.
+     * @type {boolean}
+     */
+    this.default = Boolean(options.default);
 
     /**
      * The description of the command.

@@ -1,18 +1,11 @@
 import { EventEmitter } from "events";
-import { logger } from "../util/deps";
-
+import { logger, Sequelize, sql } from "../util/deps";
+// this file is not really needed anymore but w/e
 class Database extends EventEmitter {
   public models: {[prop: string]: any};
   constructor(rethonk) {
     super();
     this.models = {};
-    const r = rethonk;
-    r.connect({ host: "localhost", port: 8080, db: "salt" }, (err, connect) => {
-      if (err) {
-        throw new Error(`Could not connect to rethonk: ${err}`);
-      }
-      conn = connect;
-    });
   }
 
   /**
