@@ -1,7 +1,7 @@
 import { Message } from "discord.js";
 import Command from "../classes/command";
 
-const func = async (msg, { send }) => {
+const func = async (msg: Message, { send }) => {
   const now = Date.now();
   const sentmsg = await send("Calculating ping...");
   sentmsg.edit(`Pong! ${Date.now() - now}ms.`);

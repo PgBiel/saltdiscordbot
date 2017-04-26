@@ -6,7 +6,9 @@ import { moderation, prefixes } from "./sequelize/sequelize";
 import { bot } from "./util/bot";
 import { cloneObject, rejct } from "./util/funcs";
 
-type SaltRole = "moderator" | "mod" | "administrator" | "admin";
+export * from "./misc/contextType";
+
+export type SaltRole = "moderator" | "mod" | "administrator" | "admin";
 type CommandSetPerm = boolean | { default: boolean };
 const doError = logger.error;
 
@@ -34,7 +36,7 @@ export default async (msg: Message) => {
       mentionfix = input.match(/^(<@!?244533925408538624>\s?)/)[1];
     }
   }
-  const disabledreply = (pt: string) => message.reply(":lock: That command has been disabled for this " + pt + "!");
+  const disabledReply = (pt: string) => message.reply(":lock: That command has been disabled for this " + pt + "!");
   const checkRole = async (role: SaltRole, member: GuildMember): Promise<boolean> => {
     if (["mod", "admin"].includes(role)) {
       role = role === "mod" ? "moderator" : "administrator";
@@ -62,7 +64,7 @@ export default async (msg: Message) => {
     return perms.hasPerm(author, gueldid, node, isDefault);
   };
   const theGrandObject: {[prop: string]: any} = {
-    checkPerm, disabledreply, checkRole, prefix, gueldid, mentionfix, upparcaso, input, chanel, msg,
+    checkPerm, disabledReply, checkRole, prefix, gueldid, mentionfix, upparcaso, input, chanel, msg,
 
     channel: chanel, guildid: gueldid, inputUpCase: upparcaso, send: chanel.send.bind(chanel),
     reply: msg.reply.bind(msg), message: msg, content: msg.content,
@@ -71,14 +73,15 @@ export default async (msg: Message) => {
     (() => {
       // start of text channel part
       theGrandObject.botmember = msg.guild.member(bot.user);
+      theGrandObject.hasPermission = message.member.hasPermission.bind(message.member);
       // require("./misc/autoSaver.js")(msg, gueldid);
       if (/^\+prefix/i.test(input)) {
         const instruction = input.replace(/^\+/i, "");
         theGrandObject.instruction = instruction;
         theGrandObject.args = instruction.replace(
           /^prefix\s*/i, "").length < 1 ? null : instruction.replace(/^prefix\s*/i, "");
-        theGrandObject.arrargs = theGrandObject.args ? theGrandObject.args.split` ` : null;
-        return bot.commands.prefix.func(message, theGrandObject);
+        theGrandObject.arrArgs = theGrandObject.args ? theGrandObject.args.split` ` : null;
+        return bot.commands.prefix && bot.commands.prefix.func(message, theGrandObject);
       }
       if (!(upparcaso.startsWith(prefix.toUpperCase()) || /^<@!?244533925408538624>\s?/i.test(upparcaso))) {
         return; // console.log(colors.green("AAAAA"), upparcaso, prefix);
