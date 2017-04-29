@@ -31,4 +31,6 @@ export const prefix = new Command({
    This also requires, without extra permissions, at least `Manage Server`.",
   example: "+prefix +",
   category: "Administration",
+  customPrefix: "+",
+  guildOnly: true,
 });

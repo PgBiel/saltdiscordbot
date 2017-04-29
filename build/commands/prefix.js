@@ -27,4 +27,6 @@ exports.prefix = new command_1.default({
    This also requires, without extra permissions, at least `Manage Server`.",
     example: "+prefix +",
     category: "Administration",
+    customPrefix: "+",
+    guildOnly: true,
 });
