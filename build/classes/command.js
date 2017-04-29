@@ -1,3 +1,8 @@
+/**
+ * An argument.
+ * @typedef {Object} CommandArgument
+ * @property {boolean} optional If this argument is optional or not
+ */
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
@@ -10,56 +15,20 @@ class Command {
         if (!options.func) {
             throw new Error(`No function given for ${options.name}.`);
         }
-        /**
-         * Name of the command.
-         * @type {string}
-         */
         this.name = options.name;
-        /**
-         * The command function.
-         * @type {Function}
-         */
         this.func = options.func;
-        /**
-         * The command permissions.
-         * @type {?string}
-         */
         this.perms = options.perms;
-        /**
-         * If this command is accessible by default.
-         * @type {boolean}
-         */
         this.default = Boolean(options.default);
-        /**
-         * The description of the command.
-         * @type {?string}
-         */
         this.description = options.description || "";
-        /**
-         * An example of usage of the command.
-         * @type {?string}
-         */
+        this.pattern = (typeof options.pattern === "string" ?
+            new RegExp(options.pattern) :
+            options.pattern) || null;
         this.example = options.example || "";
-        /**
-         * An argument.
-         * @typedef {Object} CommandArgument
-         * @property {boolean} optional If this argument is optional or not
-         */
-        /**
-         * Arguments on the command.
-         * @type {?Object<string, boolean | CommandArgument>}
-         */
         this.args = options.args || null;
-        /**
-         * The category this command fits in.
-         * @type {?string}
-         */
         this.category = options.category || "";
-        /**
-         * If this command may only be used by devs or not.
-         * @type {boolean}
-         */
         this.private = Boolean(options.devonly);
+        this.guildOnly = options.guildOnly == null ? true : Boolean(options.guildOnly);
+        this.customPrefix = options.customPrefix || null;
     }
     /**
      * Get the help embed or string.

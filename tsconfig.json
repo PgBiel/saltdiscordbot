@@ -3,5 +3,8 @@
     "module": "CommonJS",
     "target": "ES2017",
     "outDir": "./build"
-  }
+  },
+  "exclude": [
+    "./oldfiles"
+  ]
 }

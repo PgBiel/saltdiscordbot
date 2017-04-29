@@ -2,18 +2,27 @@ import { Message } from "discord.js";
 import Command from "../classes/command";
 import Database from "../classes/database";
 import { TcmdFunc } from "../commandHandler";
+import { prefixes } from "../sequelize/sequelize";
+import { Constants, logger } from "../util/deps";
 
-const func: TcmdFunc = async (msg: Message, { reply, send, arrArgs, prefix, hasPermission, perms }) => {
+const func: TcmdFunc = async (msg: Message, { guildId, reply, send, arrArgs, prefix, hasPermission, perms }) => {
   if (arrArgs.length < 1) {
     return send(`Current prefix for this server: ${prefix}`);
   }
+  logger.debug("prefix:", arrArgs.toString());
+  const thingToUse = arrArgs[0];
   if (!hasPermission("MANAGE_GUILD") && !perms.prefix) {
     return reply(
     "You do not have `Manage Server` (nor a permission overwrite).",
     );
   }
+  const result = await Database.findAdd(prefixes, { where: { serverid: guildId }, defaults: { prefix: thingToUse } });
+  if (!result[1]) {
+    result[0].update({ prefix: thingToUse });
+  }
+  send(`Prefix set to \`${thingToUse}\`!`);
 };
-const prefix = new Command({
+export const prefix = new Command({
   func,
   name: "prefix",
   perms: "prefix",
@@ -23,5 +32,3 @@ const prefix = new Command({
   example: "+prefix +",
   category: "Administration",
 });
-
-export default prefix;

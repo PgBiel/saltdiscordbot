@@ -1,12 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
-const deps_1 = require("../util/deps");
-// this file is not really needed anymore but w/e
 class Database extends events_1.EventEmitter {
-    constructor(rethonk) {
+    constructor() {
         super();
-        this.models = {};
+        // this.models = {};
     }
     /**
      * Define a model and function for checking
@@ -14,27 +12,39 @@ class Database extends events_1.EventEmitter {
      * @param {Function} func The checking function
      * @returns {boolean} If it succeeded
      */
-    define(name, func) {
-        if (this.models[name]) {
-            return false;
-        }
-        this.models[name] = func;
-        return true;
+    /* public define(name: string, func: (...stuff: any[]) => any) {
+      if (this.models[name]) {
+        return false;
+      }
+      this.models[name] = func;
+      return true;
+    } */
+    /**
+     * Find a value in the database
+     * @param {Sequelize.Model} model The model
+     * @param {*} val The value to find
+     * @returns {Promise<*>}
+     */
+    async find(model, val) {
+        return await model.find(val);
     }
     /**
-     * Add a value in the database using a model
-     * @param {string} name Model name
-     * @param {*} val The value to set
-     * @returns {*}
+     * Find a value in the database or create it if not existent
+     * @param {Sequelize.Model} model The model
+     * @param {*} val The value to add
+     * @returns {Promise<[*, boolean]>}
      */
-    set(thing, val) {
-        if (!this.models[thing]) {
-            deps_1.logger.error("Invalid Model:", thing, "!");
-        }
-        const result = this.models[thing](val);
-        if (!result) {
-            return false;
-        }
-        return result;
+    async findAdd(model, val) {
+        return await model.findOrCreate(val);
+    }
+    /**
+     * Add a value in the database using a model, alias for its .create
+     * @param {Sequelize.Model} model The model
+     * @param {*} val The value to add
+     * @returns {Promise<*>}
+     */
+    async add(model, val) {
+        return await model.create(val);
     }
 }
+exports.default = new Database();

@@ -6,12 +6,10 @@ const func = async (msg: Message, { send }) => {
   const sentmsg = await send("Calculating ping...");
   sentmsg.edit(`Pong! ${Date.now() - now}ms.`);
 };
-const ping = new Command({
+export const ping = new Command({
   func,
   name: "ping",
   description: "View the ping of the bot.",
   example: "{p}ping",
   category: "Utility",
 });
-
-export default ping;
