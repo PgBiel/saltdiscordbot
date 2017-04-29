@@ -5,22 +5,21 @@ import { TcmdFunc } from "../commandHandler";
 import { prefixes } from "../sequelize/sequelize";
 import { Constants, logger } from "../util/deps";
 
-const func: TcmdFunc = async (msg: Message, { guildId, reply, send, arrArgs, prefix, hasPermission, perms }) => {
+const func: TcmdFunc = async (msg: Message, { guildId, reply, send, args, arrArgs, prefix, hasPermission, perms }) => {
   if (arrArgs.length < 1) {
     return send(`Current prefix for this server: ${prefix}`);
   }
   logger.debug("prefix:", arrArgs.toString());
-  const thingToUse = arrArgs[0];
   if (!hasPermission("MANAGE_GUILD") && !perms.prefix) {
     return reply(
     "You do not have `Manage Server` (nor a permission overwrite).",
     );
   }
-  const result = await Database.findAdd(prefixes, { where: { serverid: guildId }, defaults: { prefix: thingToUse } });
+  const result = await Database.findAdd(prefixes, { where: { serverid: guildId }, defaults: { prefix: args } });
   if (!result[1]) {
-    result[0].update({ prefix: thingToUse });
+    result[0].update({ prefix: args });
   }
-  send(`Prefix set to \`${thingToUse}\`!`);
+  send(`Prefix set to \`${args}\`!`);
 };
 export const prefix = new Command({
   func,

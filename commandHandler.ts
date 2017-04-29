@@ -63,7 +63,7 @@ export default async (msg: Message) => {
     }
     return false;
   };
-  const hasPermission = msg.member.hasPermission;
+  const hasPermission = msg.member.hasPermission.bind(msg.member);
 
   const userError = (data: string) => reply(
     `Sorry, but it seems there was an error while executing this command.\
@@ -76,8 +76,8 @@ export default async (msg: Message) => {
     botmember: msg.guild ? msg.guild.member(bot.user) : null,
     checkRole,
   };
-  const possiblePrefix = msg.guild ?
-  (await prefixes.findOne({ where: { serverid: msg.guild.id } })) as string || "+" :
+  const possiblePrefix: string = msg.guild ?
+  ((await prefixes.findOne({ where: { serverid: msg.guild.id } })) as any).prefix || "+" :
   "+";
   for (const cmdn in bot.commands) {
     if (!bot.commands.hasOwnProperty(cmdn)) {
@@ -107,18 +107,10 @@ export default async (msg: Message) => {
       new RegExp(`^${_.escapeRegExp(usedPrefix)}`), "");
 
     const checkCommandRegex: RegExp = cmd.pattern || new RegExp(
-      `^${_.escapeRegExp(cmd.name)}\s{0,4}$`);
+      `^${_.escapeRegExp(cmd.name)}(?:\\s{1,4}[^]*)?$`, "i");
     if (!checkCommandRegex.test(instruction)) {
       continue;
     }
-    const authorTag: string = subContext.authorTag = `${msg.author.username}#${msg.author.discriminator}`;
-    logger.custom( // log when someone does a command.
-      `User ${chalk.cyan(authorTag)}, ${
-        channel instanceof TextChannel ?
-        `at channel ${chalk.cyan("#" + channel.name)} of ${chalk.cyan(msg.guild.name)}` :
-        `in DMs with Salt`
-      }, ran command ${chalk.cyan(cmd.name)}.`, "[CMD]", "magenta");
-
     try {
       const disabled = await perms.isDisabled(guildId, channel.id, cmd.name);
       if (disabled) {
@@ -128,6 +120,14 @@ export default async (msg: Message) => {
       logger.error(`At disable: ${err}`);
       return userError(`AT DISABLE`);
     }
+
+    const authorTag: string = subContext.authorTag = `${msg.author.username}#${msg.author.discriminator}`;
+    logger.custom( // log when someone does a command.
+      `User ${chalk.cyan(authorTag)}, ${
+        channel instanceof TextChannel ?
+        `at channel ${chalk.cyan("#" + channel.name)} of ${chalk.cyan(msg.guild.name)}` :
+        `in DMs with Salt`
+      }, ran command ${chalk.cyan(cmd.name)}.`, "[CMD]", "magenta");
 
     if (cmd.perms) { // permission checking :)
       const permsToCheck: {[permission: string]: CommandSetPerm} = typeof cmd.perms === "string" ?
@@ -167,6 +167,7 @@ export default async (msg: Message) => {
         result.catch(rejct);
       }
     } catch (err) {
+      logger.error(`At Execution: ${err}`);
       return userError("AT EXECUTION");
     }
   }

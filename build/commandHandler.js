@@ -44,7 +44,7 @@ exports.default = async (msg) => {
         }
         return false;
     };
-    const hasPermission = msg.member.hasPermission;
+    const hasPermission = msg.member.hasPermission.bind(msg.member);
     const userError = (data) => reply(`Sorry, but it seems there was an error while executing this command.\
     If you want to contact the bot devs, please tell them this information: \`${data}\`. Thanks!`);
     const context = {
@@ -54,7 +54,7 @@ exports.default = async (msg) => {
         checkRole,
     };
     const possiblePrefix = msg.guild ?
-        (await sequelize_1.prefixes.findOne({ where: { serverid: msg.guild.id } })) || "+" :
+        (await sequelize_1.prefixes.findOne({ where: { serverid: msg.guild.id } })).prefix || "+" :
         "+";
     for (const cmdn in bot_1.bot.commands) {
         if (!bot_1.bot.commands.hasOwnProperty(cmdn)) {
@@ -82,15 +82,10 @@ exports.default = async (msg) => {
             continue;
         }
         const instruction = subContext.instruction = input.replace(new RegExp(`^${_.escapeRegExp(usedPrefix)}`), "");
-        const checkCommandRegex = cmd.pattern || new RegExp(`^${_.escapeRegExp(cmd.name)}\s{0,4}$`);
+        const checkCommandRegex = cmd.pattern || new RegExp(`^${_.escapeRegExp(cmd.name)}(?:\\s{1,4}[^]*)?$`, "i");
         if (!checkCommandRegex.test(instruction)) {
             continue;
         }
-        const authorTag = subContext.authorTag = `${msg.author.username}#${msg.author.discriminator}`;
-        logger_1.default.custom(// log when someone does a command.
-        `User ${deps_1.chalk.cyan(authorTag)}, ${channel instanceof discord_js_1.TextChannel ?
-            `at channel ${deps_1.chalk.cyan("#" + channel.name)} of ${deps_1.chalk.cyan(msg.guild.name)}` :
-            `in DMs with Salt`}, ran command ${deps_1.chalk.cyan(cmd.name)}.`, "[CMD]", "magenta");
         try {
             const disabled = await permissions_1.default.isDisabled(guildId, channel.id, cmd.name);
             if (disabled) {
@@ -101,6 +96,11 @@ exports.default = async (msg) => {
             logger_1.default.error(`At disable: ${err}`);
             return userError(`AT DISABLE`);
         }
+        const authorTag = subContext.authorTag = `${msg.author.username}#${msg.author.discriminator}`;
+        logger_1.default.custom(// log when someone does a command.
+        `User ${deps_1.chalk.cyan(authorTag)}, ${channel instanceof discord_js_1.TextChannel ?
+            `at channel ${deps_1.chalk.cyan("#" + channel.name)} of ${deps_1.chalk.cyan(msg.guild.name)}` :
+            `in DMs with Salt`}, ran command ${deps_1.chalk.cyan(cmd.name)}.`, "[CMD]", "magenta");
         if (cmd.perms) {
             const permsToCheck = typeof cmd.perms === "string" ?
                 {} :
@@ -137,6 +137,7 @@ exports.default = async (msg) => {
             }
         }
         catch (err) {
+            logger_1.default.error(`At Execution: ${err}`);
             return userError("AT EXECUTION");
         }
     }
