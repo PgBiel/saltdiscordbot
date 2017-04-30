@@ -3,5 +3,5 @@ export let sql = {
 };
 
 export let times = {
-  AMBIGUITY_EXPIRE: 1800000,
+  AMBIGUITY_EXPIRE: 30000,
 };

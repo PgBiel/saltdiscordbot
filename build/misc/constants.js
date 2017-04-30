@@ -4,5 +4,5 @@ exports.sql = {
     UNIQUE_CONSTRAINT: "SequelizeUniqueConstraintError",
 };
 exports.times = {
-    AMBIGUITY_EXPIRE: 1800000,
+    AMBIGUITY_EXPIRE: 30000,
 };
