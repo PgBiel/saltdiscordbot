@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const cmds = require("../commands/cmdIndex");
 const deps_1 = require("./deps");
 /**
  * Handle a rejection
@@ -79,7 +78,7 @@ function loadCmds() {
         loadedCmds.push(ncrequire(`../commands/${f}`));
       }
     }); */
-    const loadedCmds = cmds;
+    const loadedCmds = ncrequire("../commands/cmdIndex");
     for (const cmdn in loadedCmds) {
         if (loadedCmds.hasOwnProperty(cmdn)) {
             const cmd = loadedCmds[cmdn];

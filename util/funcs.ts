@@ -1,3 +1,4 @@
+import Command from "../classes/command";
 import * as cmds from "../commands/cmdIndex";
 import { bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager } from "./deps";
 
@@ -79,10 +80,10 @@ export function loadCmds() {
       loadedCmds.push(ncrequire(`../commands/${f}`));
     }
   }); */
-  const loadedCmds = cmds;
+  const loadedCmds = ncrequire("../commands/cmdIndex");
   for (const cmdn in loadedCmds) {
     if (loadedCmds.hasOwnProperty(cmdn)) {
-      const cmd = loadedCmds[cmdn];
+      const cmd: Command = loadedCmds[cmdn];
       // const parsed = commandParse(loadedCmds[cmd]);
       // if (parsed) {
       bot.commands[cmd.name] = cmd;
