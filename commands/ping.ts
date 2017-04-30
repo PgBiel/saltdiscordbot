@@ -12,4 +12,5 @@ export const ping = new Command({
   description: "View the ping of the bot.",
   example: "{p}ping",
   category: "Utility",
+  guildOnly: false,
 });

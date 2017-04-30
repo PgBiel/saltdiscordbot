@@ -4,6 +4,7 @@ const discord_js_1 = require("discord.js");
 const _ = require("lodash");
 const logger_1 = require("./classes/logger");
 const permissions_1 = require("./classes/permissions");
+const searcher_1 = require("./classes/searcher");
 const sequelize_1 = require("./sequelize/sequelize");
 const bot_1 = require("./util/bot");
 const deps_1 = require("./util/deps");
@@ -14,20 +15,24 @@ exports.default = async (msg) => {
     const channel = msg.channel;
     const message = msg;
     const guildId = msg.guild ? msg.guild.id : null;
-    const reply = (content, options = {}) => {
-        const result = msg.reply.bind(msg)(content, options);
-        if (options.autoCatch == null || options.autoCatch) {
-            result.catch(funcs_1.rejct);
-        }
-        return result;
+    const sendingFunc = (func) => {
+        return (content, options) => {
+            if (typeof content === "object" && !options && !(content instanceof Array)) {
+                options = content;
+                content = "";
+            }
+            else if (!options) {
+                options = {};
+            }
+            const result = channel.send.bind(channel)(content, options);
+            if (options.autoCatch == null || options.autoCatch) {
+                result.catch(funcs_1.rejct);
+            }
+            return result;
+        };
     };
-    const send = (content, options = {}) => {
-        const result = channel.send.bind(channel)(content, options);
-        if (options.autoCatch == null || options.autoCatch) {
-            result.catch(funcs_1.rejct);
-        }
-        return result;
-    };
+    const reply = sendingFunc(msg.reply.bind(msg));
+    const send = sendingFunc(channel.send.bind(channel));
     const checkRole = async (role, member) => {
         if (["mod", "admin"].includes(role)) {
             role = role === "mod" ? "moderator" : "administrator";
@@ -44,14 +49,98 @@ exports.default = async (msg) => {
         }
         return false;
     };
-    const hasPermission = msg.member.hasPermission.bind(msg.member);
+    const promptAmbig = async (members) => {
+        let satisfied = false;
+        let cancelled = false;
+        let currentOptions = [];
+        members.forEach((gm) => currentOptions.push(gm));
+        const filter = (msg2) => {
+            const options = currentOptions;
+            if (msg2.author.id !== msg.author.id) {
+                return false;
+            }
+            if (msg2.content === "cancel" || msg2.content === "`cancel`") {
+                cancelled = true;
+                return true;
+            }
+            const tagOptions = options.map((gm) => gm.user.tag);
+            if (tagOptions.includes(msg2.content)) {
+                satisfied = true;
+                currentOptions = [options[tagOptions.indexOf(msg2.content)]];
+                return true;
+            }
+            const collOptions = new discord_js_1.Collection();
+            options.forEach((gm) => {
+                collOptions.set(gm.id, gm);
+            });
+            const searcher2 = new searcher_1.default({ members: collOptions });
+            const resultingMembers = searcher2.searchMember(msg2.content);
+            if (resultingMembers.length < 1) {
+                return true;
+            }
+            if (resultingMembers.length > 1) {
+                currentOptions = resultingMembers;
+                return true;
+            }
+            satisfied = true;
+            currentOptions = resultingMembers;
+            return true;
+        };
+        reply(`Multiple members have matched that search. Please specify one.
+This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
+__**Members Matched**__:
+\`${currentOptions.map((gm) => gm.user.tag).join("`,`")}\``);
+        for (let i = 0; i < 5; i++) {
+            try {
+                const result = await channel.awaitMessages(filter, {
+                    time: deps_1.Constants.times.AMBIGUITY_EXPIRE, maxMatches: 1,
+                    errors: ["time"],
+                });
+                if (satisfied) {
+                    return {
+                        member: currentOptions[0],
+                        cancelled: false,
+                    };
+                }
+                if (cancelled) {
+                    send("Command cancelled.");
+                    return {
+                        member: null,
+                        cancelled: true,
+                    };
+                }
+                if (i < 5) {
+                    reply(`Multiple members have matched that search. Please specify one.
+This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
+**Members Matched**:
+\`${currentOptions.map((gm) => gm.user.tag).join("`,`")}\``);
+                }
+            }
+            catch (err) {
+                send("Command cancelled.");
+                return {
+                    member: null,
+                    cancelled: true,
+                };
+            }
+        }
+        send("Automatically cancelled command.");
+        return {
+            member: null,
+            cancelled: true,
+        };
+    };
+    const hasPermission = msg.member ? msg.member.hasPermission.bind(msg.member) : null;
     const userError = (data) => reply(`Sorry, but it seems there was an error while executing this command.\
     If you want to contact the bot devs, please tell them this information: \`${data}\`. Thanks!`);
     const context = {
         input, channel, message, msg, guildId,
+        author: msg.author, member: msg.member,
+        tag: `${msg.author.username}#${msg.author.discriminator}`,
         reply, send, hasPermission, hasPermissions: hasPermission,
         botmember: msg.guild ? msg.guild.member(bot_1.bot.user) : null,
-        checkRole,
+        searcher: msg.guild ? new searcher_1.default({ guild: msg.guild }) : null,
+        checkRole, promptAmbig,
     };
     const possiblePrefix = msg.guild ?
         (await sequelize_1.prefixes.findOne({ where: { serverid: msg.guild.id } })).prefix || "+" :
@@ -86,22 +175,24 @@ exports.default = async (msg) => {
         if (!checkCommandRegex.test(instruction)) {
             continue;
         }
-        try {
-            const disabled = await permissions_1.default.isDisabled(guildId, channel.id, cmd.name);
-            if (disabled) {
-                return send(":lock: That command is disabled for this " + disabled + "!");
+        if (guildId) {
+            try {
+                const disabled = await permissions_1.default.isDisabled(guildId, channel.id, cmd.name);
+                if (disabled) {
+                    return send(":lock: That command is disabled for this " + disabled + "!");
+                }
             }
-        }
-        catch (err) {
-            logger_1.default.error(`At disable: ${err}`);
-            return userError(`AT DISABLE`);
+            catch (err) {
+                logger_1.default.error(`At disable: ${err}`);
+                return userError(`AT DISABLE`);
+            }
         }
         const authorTag = subContext.authorTag = `${msg.author.username}#${msg.author.discriminator}`;
         logger_1.default.custom(// log when someone does a command.
         `User ${deps_1.chalk.cyan(authorTag)}, ${channel instanceof discord_js_1.TextChannel ?
             `at channel ${deps_1.chalk.cyan("#" + channel.name)} of ${deps_1.chalk.cyan(msg.guild.name)}` :
             `in DMs with Salt`}, ran command ${deps_1.chalk.cyan(cmd.name)}.`, "[CMD]", "magenta");
-        if (cmd.perms) {
+        if (cmd.perms && guildId) {
             const permsToCheck = typeof cmd.perms === "string" ?
                 {} :
                 funcs_1.cloneObject(cmd.perms);
@@ -123,6 +214,9 @@ exports.default = async (msg) => {
                 }
             }
             subContext.perms = parsedPerms;
+        }
+        else {
+            subContext.perms = null;
         }
         const cmdRegex = new RegExp(`^${_.escapeRegExp(cmd.name)}\\s*`, "i");
         const args = subContext.args = instruction.replace(cmdRegex, "").length < 1 ?

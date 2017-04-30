@@ -7,10 +7,15 @@ import { Constants, logger } from "../util/deps";
 
 const func: TcmdFunc = async (msg: Message, { guildId, reply, send, args, arrArgs, prefix, hasPermission, perms }) => {
   if (arrArgs.length < 1) {
-    return send(`Current prefix for this server: ${prefix}`);
+    let prefixUsed = (await Database.find(prefixes, { where: { serverid: guildId } })) || "+";
+    if (prefixUsed.prefix) {
+      prefixUsed = prefixUsed.prefix;
+    }
+    return send(
+      `Current prefix for this server: ${prefixUsed}`);
   }
   logger.debug("prefix:", arrArgs.toString());
-  if (!hasPermission("MANAGE_GUILD") && !perms.prefix) {
+  if (!hasPermission(["MANAGE_GUILD"]) && !perms.prefix) {
     return reply(
     "You do not have `Manage Server` (nor a permission overwrite).",
     );

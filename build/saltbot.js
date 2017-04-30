@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const colors = require("chalk");
 const cmd = require("commander");
 const Discord = require("discord.js");
-const util_1 = require("util");
 const changeConsole_1 = require("./changeConsole");
 changeConsole_1.default(true);
 cmd
@@ -15,7 +14,7 @@ const dir = `${process.env.HOME}/${cmd.github ?
     `Documents/Bot Stuff/${cmd.beta ?
         "Beta " :
         ""}Salt`}/build`;
-console.log(dir, util_1.inspect(cmd));
+// console.log(dir, inspect(cmd));
 process.chdir(dir);
 const Manager = new Discord.ShardingManager("./bot.js", {
     totalShards: 2,

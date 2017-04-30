@@ -12,4 +12,5 @@ exports.ping = new command_1.default({
     description: "View the ping of the bot.",
     example: "{p}ping",
     category: "Utility",
+    guildOnly: false,
 });

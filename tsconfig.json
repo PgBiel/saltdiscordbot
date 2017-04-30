@@ -5,6 +5,7 @@
     "outDir": "./build"
   },
   "exclude": [
-    "./oldfiles"
+    "./oldfiles",
+    "./node_modules"
   ]
 }

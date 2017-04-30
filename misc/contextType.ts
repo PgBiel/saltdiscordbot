@@ -1,47 +1,43 @@
 import { DMChannel, GroupDMChannel, GuildMember, Message, TextChannel, User } from "discord.js";
-import { ExtendedMsgOptions, SaltRole } from "../commandHandler";
+import Searcher from "../classes/Searcher";
+import { ExtendedMsgOptions, ExtendedSend, IAmbigResult, SaltRole } from "../commandHandler";
 
 export type DjsChannel = DMChannel | GroupDMChannel | TextChannel;
 
-export interface IContext {
+interface IBaseContext {
   checkRole: (role: SaltRole, member: GuildMember) => Promise<boolean>;
+  author: User;
+  tag: string;
+  member?: GuildMember;
   prefix: string;
   input: string;
   msg: Message;
-  channel: DjsChannel;
   guildId: string;
-  send: (content: string, options?: ExtendedMsgOptions) => Promise<Message>;
-  reply: (content: string, options?: ExtendedMsgOptions) => Promise<Message>;
+  send: ExtendedSend;
+  reply: ExtendedSend;
   message: Message;
   content: string;
   args?: string;
   botmember?: GuildMember;
   hasPermission?: typeof GuildMember.prototype.hasPermissions;
   hasPermissions?: typeof GuildMember.prototype.hasPermission;
+  searcher?: Searcher;
   instruction?: string;
   arrArgs?: string[];
-  perms: {[perm: string]: boolean};
+  perms?: {[perm: string]: boolean};
+  promptAmbig: (members: GuildMember[]) => IAmbigResult;
 }
 
-export interface ITContext {
-  checkRole: (role: SaltRole, member: GuildMember) => Promise<boolean>;
-  prefix: string;
-  input: string;
-  msg: Message;
+interface IContext {
+  channel: DjsChannel;
+}
+
+interface ITContext {
   channel: TextChannel;
-  guildId: string;
-  send: (content: string, options?: ExtendedMsgOptions) => Promise<Message>;
-  reply: (content: string, options?: ExtendedMsgOptions) => Promise<Message>;
-  message: Message;
-  content: string;
-  args?: string;
-  botmember?: GuildMember;
-  hasPermission?: typeof GuildMember.prototype.hasPermission;
-  hasPermissions?: typeof GuildMember.prototype.hasPermission;
-  instruction?: string;
-  arrArgs?: string[];
-  perms: {[perm: string]: boolean};
 }
 
-export type cmdFunc = (msg: Message, context: IContext) => any;
-export type TcmdFunc = (msg: Message, context: ITContext) => any;
+export type Context = IBaseContext & IContext;
+export type TContext = IBaseContext & ITContext;
+
+export type cmdFunc = (msg: Message, context: Context) => any;
+export type TcmdFunc = (msg: Message, context: TContext) => any;

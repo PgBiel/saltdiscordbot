@@ -13,7 +13,7 @@ const dir = `${process.env.HOME}/${cmd.github ?
     `Documents/Bot Stuff/${cmd.beta ?
       "Beta " :
       ""}Salt`}/build`;
-console.log(dir, inspect(cmd));
+// console.log(dir, inspect(cmd));
 process.chdir(dir);
 const Manager = new Discord.ShardingManager("./bot.js", {
   totalShards: 2,

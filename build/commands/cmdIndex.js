@@ -5,3 +5,4 @@ function __export(m) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./ping"));
 __export(require("./prefix"));
+__export(require("./avatar"));

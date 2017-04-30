@@ -1,16 +1,22 @@
 import {
-  Channel, Collection, DMChannel, GroupDMChannel, GuildMember, Message, MessageOptions, TextChannel, User,
+  Channel, Collection, DMChannel, GroupDMChannel, GuildMember, Message, MessageOptions, StringResolvable,
+  TextChannel, User,
 } from "discord.js";
 import * as _ from "lodash";
 import { CommandSetPerm } from "./classes/command";
 import logger from "./classes/logger";
 import perms from "./classes/permissions";
+import Searcher from "./classes/searcher";
 import { moderation, prefixes } from "./sequelize/sequelize";
 import { bot } from "./util/bot";
-import { chalk } from "./util/deps";
+import { chalk, Constants } from "./util/deps";
 import { cloneObject, rejct } from "./util/funcs";
 
 export * from "./misc/contextType";
+
+export type ExtendedSend = { // tslint:disable-line:interface-over-type-literal
+  (content: StringResolvable, options?: ExtendedMsgOptions): Promise<Message | Message[]>;
+  (options: ExtendedMsgOptions): Promise<Message | Message[]> };
 
 export type SaltRole = "moderator" | "mod" | "administrator" | "admin";
 const doError = logger.error;
@@ -21,6 +27,11 @@ interface ICustomSendType {
   autoCatch?: boolean;
 }
 
+export interface IAmbigResult {
+  cancelled: boolean;
+  member?: GuildMember;
+}
+
 export type ExtendedMsgOptions = MessageOptions & ICustomSendType;
 
 export default async (msg: Message) => {
@@ -29,24 +40,24 @@ export default async (msg: Message) => {
   const message: Message = msg;
   const guildId: string = msg.guild ? msg.guild.id : null;
 
-  const reply:
-  (content: string, options?: ExtendedMsgOptions) => Promise<Message> =
-  (content: string, options: ExtendedMsgOptions = {}) => {
-    const result = msg.reply.bind(msg)(content, options);
-    if (options.autoCatch == null || options.autoCatch) {
-      result.catch(rejct);
-    }
-    return result;
+  const sendingFunc = (func: (...args: any[]) => any): ExtendedSend => { // factory for sending functions
+    return (content: StringResolvable | ExtendedMsgOptions, options?: ExtendedMsgOptions) => {
+      if (typeof content === "object" && !options && !(content instanceof Array)) {
+        options = content;
+        content = "";
+      } else if (!options) {
+        options = {};
+      }
+      const result = channel.send.bind(channel)(content, options);
+      if (options.autoCatch == null || options.autoCatch) {
+        result.catch(rejct);
+      }
+      return result;
+    };
   };
-  const send:
-  (content: string, options?: ExtendedMsgOptions) => Promise<Message> =
-  (content: string, options: ExtendedMsgOptions = {}) => {
-    const result = channel.send.bind(channel)(content, options);
-    if (options.autoCatch == null || options.autoCatch) {
-      result.catch(rejct);
-    }
-    return result;
-  };
+  const reply = sendingFunc(msg.reply.bind(msg));
+  const send = sendingFunc(channel.send.bind(channel));
+
   const checkRole = async (role: SaltRole, member: GuildMember): Promise<boolean> => {
     if (["mod", "admin"].includes(role)) {
       role = role === "mod" ? "moderator" : "administrator";
@@ -63,7 +74,90 @@ export default async (msg: Message) => {
     }
     return false;
   };
-  const hasPermission = msg.member.hasPermission.bind(msg.member);
+  const promptAmbig = async (members: GuildMember[]): Promise<IAmbigResult> => {
+    let satisfied: boolean = false;
+    let cancelled: boolean = false;
+    let currentOptions: GuildMember[] = [];
+
+    members.forEach((gm: GuildMember) => currentOptions.push(gm));
+    const filter = (msg2: Message) => {
+      const options = currentOptions;
+      if (msg2.author.id !== msg.author.id) {
+        return false;
+      }
+      if (msg2.content === "cancel" || msg2.content === "`cancel`") {
+        cancelled = true;
+        return true;
+      }
+      const tagOptions: string[] = options.map((gm: GuildMember) => gm.user.tag);
+      if (tagOptions.includes(msg2.content)) {
+        satisfied = true;
+        currentOptions = [options[tagOptions.indexOf(msg2.content)]];
+        return true;
+      }
+      const collOptions = new Collection<string, GuildMember>();
+      options.forEach((gm: GuildMember) => {
+        collOptions.set(gm.id, gm);
+      });
+      const searcher2: Searcher = new Searcher({ members: collOptions });
+      const resultingMembers: GuildMember[] = searcher2.searchMember(msg2.content);
+      if (resultingMembers.length < 1) {
+        return true;
+      }
+      if (resultingMembers.length > 1) {
+        currentOptions = resultingMembers;
+        return true;
+      }
+      satisfied = true;
+      currentOptions = resultingMembers;
+      return true;
+    };
+    reply(`Multiple members have matched that search. Please specify one.
+This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
+__**Members Matched**__:
+\`${currentOptions.map((gm) => gm.user.tag).join("`,`")}\``);
+    for (let i = 0; i < 5; i++) {
+      try {
+        const result = await channel.awaitMessages(
+          filter, {
+            time: Constants.times.AMBIGUITY_EXPIRE, maxMatches: 1,
+            errors: ["time"],
+          },
+          );
+        if (satisfied) {
+          return {
+            member: currentOptions[0],
+            cancelled: false,
+          };
+        }
+        if (cancelled) {
+          send("Command cancelled.");
+          return {
+            member: null,
+            cancelled: true,
+          };
+        }
+        if (i < 5) {
+          reply(`Multiple members have matched that search. Please specify one.
+This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
+**Members Matched**:
+\`${currentOptions.map((gm) => gm.user.tag).join("`,`")}\``);
+        }
+      } catch (err) {
+        send("Command cancelled.");
+        return {
+          member: null,
+          cancelled: true,
+        };
+      }
+    }
+    send("Automatically cancelled command.");
+    return {
+      member: null,
+      cancelled: true,
+    };
+  };
+  const hasPermission = msg.member ? msg.member.hasPermission.bind(msg.member) : null;
 
   const userError = (data: string) => reply(
     `Sorry, but it seems there was an error while executing this command.\
@@ -71,10 +165,13 @@ export default async (msg: Message) => {
 
   const context: {[prop: string]: any} = {
     input, channel, message, msg, guildId,
+    author: msg.author, member: msg.member,
+    tag: `${msg.author.username}#${msg.author.discriminator}`,
 
     reply, send, hasPermission, hasPermissions: hasPermission,
     botmember: msg.guild ? msg.guild.member(bot.user) : null,
-    checkRole,
+    searcher: msg.guild ? new Searcher({ guild: msg.guild }) : null,
+    checkRole, promptAmbig,
   };
   const possiblePrefix: string = msg.guild ?
   ((await prefixes.findOne({ where: { serverid: msg.guild.id } })) as any).prefix || "+" :
@@ -111,14 +208,16 @@ export default async (msg: Message) => {
     if (!checkCommandRegex.test(instruction)) {
       continue;
     }
-    try {
-      const disabled = await perms.isDisabled(guildId, channel.id, cmd.name);
-      if (disabled) {
-        return send(":lock: That command is disabled for this " + disabled + "!");
+    if (guildId) {
+      try {
+        const disabled = await perms.isDisabled(guildId, channel.id, cmd.name);
+        if (disabled) {
+          return send(":lock: That command is disabled for this " + disabled + "!");
+        }
+      } catch (err) {
+        logger.error(`At disable: ${err}`);
+        return userError(`AT DISABLE`);
       }
-    } catch (err) {
-      logger.error(`At disable: ${err}`);
-      return userError(`AT DISABLE`);
     }
 
     const authorTag: string = subContext.authorTag = `${msg.author.username}#${msg.author.discriminator}`;
@@ -129,7 +228,7 @@ export default async (msg: Message) => {
         `in DMs with Salt`
       }, ran command ${chalk.cyan(cmd.name)}.`, "[CMD]", "magenta");
 
-    if (cmd.perms) { // permission checking :)
+    if (cmd.perms && guildId) { // permission checking :)
       const permsToCheck: {[permission: string]: CommandSetPerm} = typeof cmd.perms === "string" ?
       {} :
       cloneObject(cmd.perms);
@@ -153,6 +252,8 @@ export default async (msg: Message) => {
       }
 
       subContext.perms = parsedPerms;
+    } else {
+      subContext.perms = null;
     }
 
     const cmdRegex = new RegExp(`^${_.escapeRegExp(cmd.name)}\\s*`, "i");
