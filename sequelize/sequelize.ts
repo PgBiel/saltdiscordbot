@@ -19,5 +19,6 @@ export * from "./models/perms";
 export * from "./models/prefix";
 export * from "./models/punishments";
 export * from "./models/roles";
+export * from "./models/starboard";
 export * from "./models/warns";
 export * from "./models/welcfarew";

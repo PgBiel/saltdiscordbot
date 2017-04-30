@@ -24,5 +24,6 @@ __export(require("./models/perms"));
 __export(require("./models/prefix"));
 __export(require("./models/punishments"));
 __export(require("./models/roles"));
+__export(require("./models/starboard"));
 __export(require("./models/warns"));
 __export(require("./models/welcfarew"));
