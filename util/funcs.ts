@@ -55,7 +55,7 @@ export function messagerDoEval(evaler: any) {
 }
 export function djsDebug(info: string) {
   logger.custom(
-    info, `[${/^(?:Sending heartbeat|Heartbeat acknowledged)$/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`, "magenta",
+    info, `[${/heartbeat/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`, "magenta",
     );
 }
 export function djsWarn(info: string) {
