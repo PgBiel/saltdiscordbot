@@ -1,6 +1,6 @@
 import Command from "../classes/command";
 import * as cmds from "../commands/cmdIndex";
-import { bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager } from "./deps";
+import { _, bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager } from "./deps";
 
 export interface IMessagerEvalData {
   content: string;
@@ -39,11 +39,12 @@ export function messagerDoEval(evaler: any) {
    * @returns {void}
    */
   return (data: IMessagerEvalData) => {
-    const { bot, message, gueldid, input, chanel, deps, funcs } = data.vars;
+    const { bot, message, msg, input, channel, deps, funcs, guildId, send, reply } = data.vars;
     try {
+      const result = eval(data.content); // tslint:disable-line:no-eval
       messager.emit(`${data.id}eval`, {
         success: true,
-        result: eval(data.content), // tslint:disable-line:no-eval
+        result,
       });
     } catch (err) {
       messager.emit(`${data.id}eval`, {

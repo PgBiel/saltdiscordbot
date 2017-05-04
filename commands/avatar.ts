@@ -5,11 +5,6 @@ import { cmdFunc } from "../commandHandler";
 import { bot, logger, util } from "../util/deps";
 import { rejct } from "../util/funcs";
 
-interface IFart {
-  send(content: number, fart: string): number;
-  send(content: string, fart: number): string;
-}
-
 function getAvatarEmb(author: User) {
   const avatarRegex = /^((?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpe?g|png|gif|webp))\?size=\d+$/;
   const embed = new RichEmbed();

@@ -1,9 +1,6 @@
 import { EventEmitter } from "events";
 
 class Messager extends EventEmitter {
-  constructor() {
-    super();
-  }
 
   /**
    * Promisify an event

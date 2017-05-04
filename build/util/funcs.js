@@ -32,11 +32,12 @@ function messagerDoEval(evaler) {
      * @returns {void}
      */
     return (data) => {
-        const { bot, message, gueldid, input, chanel, deps, funcs } = data.vars;
+        const { bot, message, msg, input, channel, deps, funcs, guildId, send, reply } = data.vars;
         try {
+            const result = eval(data.content); // tslint:disable-line:no-eval
             deps_1.messager.emit(`${data.id}eval`, {
                 success: true,
-                result: eval(data.content),
+                result,
             });
         }
         catch (err) {
@@ -49,7 +50,7 @@ function messagerDoEval(evaler) {
 }
 exports.messagerDoEval = messagerDoEval;
 function djsDebug(info) {
-    deps_1.logger.custom(info, `[${/^(?:Sending heartbeat|Heartbeat acknowledged)$/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`, "magenta");
+    deps_1.logger.custom(info, `[${/heartbeat/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`, "magenta");
 }
 exports.djsDebug = djsDebug;
 function djsWarn(info) {

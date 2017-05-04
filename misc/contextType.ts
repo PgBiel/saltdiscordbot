@@ -1,31 +1,35 @@
 import { DMChannel, GroupDMChannel, GuildMember, Message, TextChannel, User } from "discord.js";
 import Searcher from "../classes/Searcher";
-import { ExtendedMsgOptions, ExtendedSend, IAmbigResult, SaltRole } from "../commandHandler";
+import { ExtendedMsgOptions, ExtendedSend, IAmbigResult, IDoEvalResult, SaltRole } from "../commandHandler";
 
 export type DjsChannel = DMChannel | GroupDMChannel | TextChannel;
 
 interface IBaseContext {
-  checkRole: (role: SaltRole, member: GuildMember) => Promise<boolean>;
-  author: User;
-  tag: string;
-  member?: GuildMember;
-  prefix: string;
-  input: string;
-  msg: Message;
-  guildId: string;
-  send: ExtendedSend;
-  reply: ExtendedSend;
-  message: Message;
-  content: string;
   args?: string;
+  arrArgs?: string[];
+  author: User;
+  authorTag: string;
   botmember?: GuildMember;
+  content: string;
+  guildId: string;
+  input: string;
+  instruction?: string;
+  member?: GuildMember;
+  message: Message;
+  msg: Message;
+  perms?: {[perm: string]: boolean};
+  prefix: string;
+  searcher?: Searcher;
+}
+
+interface IFuncs {
+  checkRole: (role: SaltRole, member: GuildMember) => Promise<boolean>;
+  doEval: (content: string) => Promise<IDoEvalResult>;
   hasPermission?: typeof GuildMember.prototype.hasPermissions;
   hasPermissions?: typeof GuildMember.prototype.hasPermission;
-  searcher?: Searcher;
-  instruction?: string;
-  arrArgs?: string[];
-  perms?: {[perm: string]: boolean};
   promptAmbig: (members: GuildMember[]) => IAmbigResult;
+  reply: ExtendedSend;
+  send: ExtendedSend;
 }
 
 interface IContext {
@@ -36,8 +40,9 @@ interface ITContext {
   channel: TextChannel;
 }
 
-export type Context = IBaseContext & IContext;
-export type TContext = IBaseContext & ITContext;
+export type BaseContext = IBaseContext & IFuncs;
+export type Context = BaseContext & IContext;
+export type TContext = BaseContext & ITContext;
 
 export type cmdFunc = (msg: Message, context: Context) => any;
 export type TcmdFunc = (msg: Message, context: TContext) => any;

@@ -16,12 +16,12 @@ import * as util from "util";
 import Command from "../classes/command";
 import CommandClient from "../classes/commandClient";
 import logger from "../classes/logger";
+import messager from "../classes/messager";
 import perms from "../classes/permissions";
 import commandHandler from "../commandHandler";
 
 import * as Constants from "../misc/constants";
 import decodeT from "../misc/decodeT";
-import messager from "../misc/Messager";
 // declare const decodeT: (...a) => any;
 const commandParse: any = 1; // unused
 

@@ -19,7 +19,7 @@ bot.on("message", (m: any) => {
 });
 loadCmds();
 messager.on("doEval", (edata: IMessagerEvalData) => {
-  messagerDoEval((thing) => eval(thing))(edata); // tslint:disable-line:no-eval
+  messagerDoEval((thing: any) => eval(thing))(edata); // tslint:disable-line:no-eval
 });
 sql.sync().catch(rejct);
 bot.login(decodeT(data.bot.token_beta)).catch(rejct);
