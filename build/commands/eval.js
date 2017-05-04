@@ -12,6 +12,7 @@ const func = async (msg, { args, doEval, send }) => {
         send(`\`\`\`js
 Input
 ${args}
+
 Output
 ${resultStr}
 \`\`\``);
@@ -20,6 +21,7 @@ ${resultStr}
         send(`\`\`\`js
 Input
 ${args}
+
 Error
 ${resultStr}`);
     }

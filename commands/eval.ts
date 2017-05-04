@@ -14,6 +14,7 @@ const func: cmdFunc = async (msg: Message, { args, doEval, send }) => {
     send(`\`\`\`js
 Input
 ${args}
+
 Output
 ${resultStr}
 \`\`\``);
@@ -21,6 +22,7 @@ ${resultStr}
     send(`\`\`\`js
 Input
 ${args}
+
 Error
 ${resultStr}`);
   }
