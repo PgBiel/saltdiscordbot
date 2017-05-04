@@ -144,6 +144,7 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
             funcs,
         });
         const data = {
+            content,
             id: Date.now(),
             vars: objectToUse,
         };

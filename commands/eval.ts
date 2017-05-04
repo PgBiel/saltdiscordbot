@@ -8,7 +8,7 @@ const func: cmdFunc = async (msg: Message, { args, doEval, send }) => {
     return;
   }
   const results = await doEval(args);
-  const resultStr = results.result.toString().replace(
+  const resultStr = String(results.result).replace(
     new RegExp(_.escapeRegExp(bot.token), "ig"), "shaker");
   if (results.success) {
     send(`\`\`\`js

@@ -7,7 +7,7 @@ const func = async (msg, { args, doEval, send }) => {
         return;
     }
     const results = await doEval(args);
-    const resultStr = results.result.toString().replace(new RegExp(deps_1._.escapeRegExp(deps_1.bot.token), "ig"), "shaker");
+    const resultStr = String(results.result).replace(new RegExp(deps_1._.escapeRegExp(deps_1.bot.token), "ig"), "shaker");
     if (results.success) {
         send(`\`\`\`js
 Input
