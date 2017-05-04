@@ -20,7 +20,7 @@ exports.default = async (msg) => {
     const channel = msg.channel;
     const message = msg;
     const guildId = msg.guild ? msg.guild.id : null;
-    const { hasPermission, userError, promptAmbig, checkRole, send, reply, } = commandHandlerFuncs_1.default(msg);
+    const { hasPermission, userError, promptAmbig, checkRole, send, reply, doEval, } = commandHandlerFuncs_1.default(msg);
     const context = {
         input, channel, message, msg, guildId,
         author: msg.author, member: msg.member,

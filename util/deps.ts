@@ -13,15 +13,14 @@ export const sql = new Sequelize("botdata", data.sql.user || null, data.sql.pass
 });
 import * as util from "util";
 
+import * as Constants from "../misc/constants";
+import decodeT from "../misc/decodeT";
+
 import Command from "../classes/command";
 import CommandClient from "../classes/commandClient";
 import logger from "../classes/logger";
 import messager from "../classes/messager";
 import perms from "../classes/permissions";
-import commandHandler from "../commandHandler";
-
-import * as Constants from "../misc/constants";
-import decodeT from "../misc/decodeT";
 // declare const decodeT: (...a) => any;
 const commandParse: any = 1; // unused
 
@@ -31,6 +30,8 @@ export * from "./bot";
 export const ownerID: string = "180813971853410305";
 
 export const colors = chalk;
+
+import commandHandler from "../commandHandler";
 
 export const commandHandle = commandHandler;
 export const commandParser = commandParse;

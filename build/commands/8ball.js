@@ -15,7 +15,7 @@ const func = async (msg, { args, reply }) => {
         "Low chance of so.",
         "Very unlikely.",
     ];
-    reply(answers[funcs_1.random(0, answers.length)]);
+    reply(answers[funcs_1.random(0, answers.length - 1)]);
 };
 exports.eightball = new command_1.default({
     func,

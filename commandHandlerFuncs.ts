@@ -7,7 +7,7 @@ import { moderation } from "./sequelize/sequelize";
 import * as deps from "./util/deps";
 import * as funcs from "./util/funcs";
 
-const { bot, Constants } = deps; // I did it like this so I could use them for doEval below
+const { bot, Constants, logger } = deps; // I did it like this so I could use them for doEval below
 const { cloneObject, rejct } = funcs;
 
 export type ExtendedSend = { // tslint:disable-line:interface-over-type-literal
@@ -151,6 +151,7 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
 \`${currentOptions.map((gm) => gm.user.tag).join("`,`")}\``);
         }
       } catch (err) {
+        logger.error(`At PromptAmbig: ${err}`);
         send("Command cancelled.");
         return {
           member: null,

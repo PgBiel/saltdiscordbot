@@ -17,7 +17,7 @@ const func: cmdFunc = async (msg: Message, { args, reply }) => {
     "Very unlikely.",
   ];
   reply(
-    answers[random(0, answers.length)],
+    answers[random(0, answers.length - 1)],
     );
 };
 export const eightball = new Command({

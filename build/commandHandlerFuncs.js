@@ -6,7 +6,7 @@ const searcher_1 = require("./classes/searcher");
 const sequelize_1 = require("./sequelize/sequelize");
 const deps = require("./util/deps");
 const funcs = require("./util/funcs");
-const { bot, Constants } = deps; // I did it like this so I could use them for doEval below
+const { bot, Constants, logger } = deps; // I did it like this so I could use them for doEval below
 const { cloneObject, rejct } = funcs;
 function returnFuncs(msg) {
     const input = msg.content;
@@ -115,6 +115,7 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
                 }
             }
             catch (err) {
+                logger.error(`At PromptAmbig: ${err}`);
                 send("Command cancelled.");
                 return {
                     member: null,

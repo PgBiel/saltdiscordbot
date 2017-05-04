@@ -25,6 +25,10 @@ exports.sql = new Sequelize("botdata", exports.data.sql.user || null, exports.da
 });
 const util = require("util");
 exports.util = util;
+const Constants = require("../misc/constants");
+exports.Constants = Constants;
+const decodeT_1 = require("../misc/decodeT");
+exports.decodeT = decodeT_1.default;
 const command_1 = require("../classes/command");
 exports.Command = command_1.default;
 const logger_1 = require("../classes/logger");
@@ -33,12 +37,6 @@ const messager_1 = require("../classes/messager");
 exports.messager = messager_1.default;
 const permissions_1 = require("../classes/permissions");
 exports.perms = permissions_1.default;
-const commandHandler_1 = require("../commandHandler");
-exports.commandHandler = commandHandler_1.default;
-const Constants = require("../misc/constants");
-exports.Constants = Constants;
-const decodeT_1 = require("../misc/decodeT");
-exports.decodeT = decodeT_1.default;
 // declare const decodeT: (...a) => any;
 const commandParse = 1; // unused
 exports.commandParse = commandParse;
@@ -46,6 +44,8 @@ exports.commandParse = commandParse;
 __export(require("./bot"));
 exports.ownerID = "180813971853410305";
 exports.colors = chalk;
+const commandHandler_1 = require("../commandHandler");
+exports.commandHandler = commandHandler_1.default;
 exports.commandHandle = commandHandler_1.default;
 exports.commandParser = commandParse;
 /* tslint:enable:object-literal-sort-keys */

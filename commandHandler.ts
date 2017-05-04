@@ -27,7 +27,7 @@ export default async (msg: Message) => {
 
   const {
     hasPermission, userError, promptAmbig, checkRole,
-    send, reply,
+    send, reply, doEval,
   } = funcs(msg);
 
   const context: {[prop: string]: any} = {
