@@ -19,7 +19,6 @@ bot.on("message", (m: any) => {
 });
 loadCmds();
 messager.on("doEval", (edata: IMessagerEvalData) => {
-  logger.debug("Received doEval with data:", edata);
   messagerDoEval((thing: any) => eval(thing))(edata); // tslint:disable-line:no-eval
 });
 sql.sync().catch(rejct);

@@ -21,7 +21,6 @@ deps_1.bot.on("message", (m) => {
 });
 funcs_1.loadCmds();
 deps_1.messager.on("doEval", (edata) => {
-    deps_1.logger.debug("Received doEval with data:", edata);
     funcs_1.messagerDoEval((thing) => eval(thing))(edata); // tslint:disable-line:no-eval
 });
 deps_1.sql.sync().catch(funcs_1.rejct);
