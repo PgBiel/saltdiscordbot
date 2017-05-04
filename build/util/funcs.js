@@ -105,3 +105,14 @@ function bcEval() {
     return deps_1.bot.shard.broadcastEval.apply(deps_1.bot.shard, Array.from(arguments));
 }
 exports.bcEval = bcEval;
+function random(min, max) {
+    if (isNaN(min) || isNaN(max)) {
+        return;
+    }
+    [min, max] = [Math.ceil(Number(min)), Math.floor(Number(max))];
+    if (min > max) {
+        [min, max] = [max, min];
+    }
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+exports.random = random;

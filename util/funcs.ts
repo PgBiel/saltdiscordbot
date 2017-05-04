@@ -103,3 +103,13 @@ export function doError(...stuff: string[]): void {
 export function bcEval() {
   return bot.shard.broadcastEval.apply(bot.shard, Array.from(arguments));
 }
+export function random(min: number, max: number): number {
+  if (isNaN(min) || isNaN(max)) {
+    return;
+  }
+  [min, max] = [Math.ceil(Number(min)), Math.floor(Number(max))];
+  if (min > max) {
+    [min, max] = [max, min];
+  }
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
