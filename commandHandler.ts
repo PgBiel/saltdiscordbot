@@ -38,7 +38,7 @@ export default async (msg: Message) => {
     reply, send, hasPermission, hasPermissions: hasPermission,
     botmember: msg.guild ? msg.guild.member(bot.user) : null,
     searcher: msg.guild ? new Searcher({ guild: msg.guild }) : null,
-    checkRole, promptAmbig, userError,
+    checkRole, promptAmbig, userError, doEval,
   };
   const possiblePrefix: string = msg.guild ?
   ((await prefixes.findOne({ where: { serverid: msg.guild.id } })) as any).prefix || "+" :

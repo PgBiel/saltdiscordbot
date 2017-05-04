@@ -28,7 +28,7 @@ exports.default = async (msg) => {
         reply, send, hasPermission, hasPermissions: hasPermission,
         botmember: msg.guild ? msg.guild.member(bot_1.bot.user) : null,
         searcher: msg.guild ? new searcher_1.default({ guild: msg.guild }) : null,
-        checkRole, promptAmbig, userError,
+        checkRole, promptAmbig, userError, doEval,
     };
     const possiblePrefix = msg.guild ?
         (await sequelize_1.prefixes.findOne({ where: { serverid: msg.guild.id } })).prefix || "+" :
