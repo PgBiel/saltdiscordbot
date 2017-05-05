@@ -25,6 +25,7 @@ exports.default = async (msg) => {
         input, channel, message, msg, guildId,
         author: msg.author, member: msg.member,
         tag: `${msg.author.username}#${msg.author.discriminator}`,
+        guild: msg.guild,
         reply, send, hasPermission, hasPermissions: hasPermission,
         botmember: msg.guild ? msg.guild.member(bot_1.bot.user) : null,
         searcher: msg.guild ? new searcher_1.default({ guild: msg.guild }) : null,

@@ -1,4 +1,4 @@
-import { DMChannel, GroupDMChannel, GuildMember, Message, TextChannel, User } from "discord.js";
+import { DMChannel, GroupDMChannel, Guild, GuildMember, Message, TextChannel, User } from "discord.js";
 import Searcher from "../classes/Searcher";
 import { ExtendedMsgOptions, ExtendedSend, IAmbigResult, IDoEvalResult, SaltRole } from "../commandHandler";
 
@@ -11,6 +11,7 @@ interface IBaseContext {
   authorTag: string;
   botmember?: GuildMember;
   content: string;
+  guild?: Guild;
   guildId: string;
   input: string;
   instruction?: string;

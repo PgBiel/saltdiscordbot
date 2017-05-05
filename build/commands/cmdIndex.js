@@ -9,3 +9,4 @@ __export(require("./eval"));
 __export(require("./ping"));
 __export(require("./prefix"));
 __export(require("./random"));
+__export(require("./rip"));

@@ -34,6 +34,7 @@ export default async (msg: Message) => {
     input, channel, message, msg, guildId,
     author: msg.author, member: msg.member,
     tag: `${msg.author.username}#${msg.author.discriminator}`,
+    guild: msg.guild,
 
     reply, send, hasPermission, hasPermissions: hasPermission,
     botmember: msg.guild ? msg.guild.member(bot.user) : null,
