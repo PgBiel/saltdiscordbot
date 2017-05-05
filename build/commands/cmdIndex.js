@@ -8,3 +8,4 @@ __export(require("./avatar"));
 __export(require("./eval"));
 __export(require("./ping"));
 __export(require("./prefix"));
+__export(require("./random"));

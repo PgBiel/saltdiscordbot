@@ -3,3 +3,4 @@ export * from "./avatar";
 export * from "./eval";
 export * from "./ping";
 export * from "./prefix";
+export * from "./random";
