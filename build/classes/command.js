@@ -52,8 +52,8 @@ ${this.customPrefix || p}${this.name}${this.private ?
                 ""}${this.default ?
                 " (Usable by default)" :
                 ""}${this.guildOnly ?
-                "" :
-                " (Not usable in DMs)"}
+                " (Not usable in DMs)" :
+                ""}
 ${this.description}
 Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
                 `\n\nExample: ${_.trim(this.example).replace(/{p}/g, p)}` :
@@ -68,8 +68,8 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
             ""}${this.default ?
             " (Usable by default)" :
             ""}${this.guildOnly ?
-            "" :
-            " (Not usable in DMs)"}`)
+            " (Not usable in DMs)" :
+            ""}`)
             .addField("Usage", `${this.customPrefix || p}${this.name}${usedargs}`);
         if (this.description) {
             embed.setDescription(this.description);
