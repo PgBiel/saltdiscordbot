@@ -71,5 +71,6 @@ export const avatar = new Command({
   description: "View the avatar of you or someone else.",
   example: "{p}avatar",
   category: "Utility",
+  args: {member: true},
   guildOnly: false,
 });

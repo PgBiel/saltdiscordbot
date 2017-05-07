@@ -30,5 +30,6 @@ exports.rip = new command_1.default({
     description: "RIP. Generates a ripme.xyz link.",
     example: "{p}rip John",
     category: "Fun",
+    args: { text: true },
     guildOnly: false,
 });

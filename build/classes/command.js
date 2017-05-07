@@ -30,12 +30,6 @@ class Command {
         this.guildOnly = options.guildOnly == null ? true : Boolean(options.guildOnly);
         this.customPrefix = options.customPrefix || null;
     }
-    /**
-     * Get the help embed or string.
-     * @param {string} p The prefix to use
-     * @param {boolean} [useEmbed=false] If it should use embed or not
-     * @returns {string|RichEmbed} The result
-     */
     help(p, useEmbed = false) {
         if (!p) {
             throw new TypeError("No prefix given.");
@@ -43,7 +37,7 @@ class Command {
         let usedargs = "";
         if (this.args) {
             Object.entries([this.args, usedargs += " "][0]).map(([a, v]) => {
-                if (v.optional) {
+                if (typeof v === "boolean" ? v : v.optional) {
                     usedargs += (usedargs.endsWith(" ") ? `[${a}]` : ` [${a}]`);
                 }
                 else {
@@ -53,18 +47,35 @@ class Command {
         }
         if (!useEmbed) {
             return `\`\`\`
-${p}${this.name}${this.private ? " (Dev-only)" : ""}
+${this.customPrefix || p}${this.name}${this.private ?
+                " (Dev-only)" :
+                ""}${this.default ?
+                " (Usable by default)" :
+                ""}${this.guildOnly ?
+                "" :
+                " (Not usable in DMs)"}
 ${this.description}
-Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${_.trim(this.example).replace(/{p}/g, p)}` : ``}
+Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
+                `\n\nExample: ${_.trim(this.example).replace(/{p}/g, p)}` :
+                ``}
 \`\`\``;
         }
         const embed = new discord_js_1.RichEmbed();
         embed
-            .setTitle(`\`${p}${this.name}\` ${this.private ? " (Dev-only)" : ""}`)
-            .setDescription(this.description || "\u200B")
-            .addField("Usage", "${p}${this.name}${usedargs}");
+            .setColor("RANDOM")
+            .setTitle(`\`${this.customPrefix || p}${this.name}\`${this.private ?
+            " (Dev-only)" :
+            ""}${this.default ?
+            " (Usable by default)" :
+            ""}${this.guildOnly ?
+            "" :
+            " (Not usable in DMs)"}`)
+            .addField("Usage", `${this.customPrefix || p}${this.name}${usedargs}`);
+        if (this.description) {
+            embed.setDescription(this.description);
+        }
         if (this.example) {
-            embed.addField("Example", _.trim(this.example).replace("{p}", p));
+            embed.addField("Example", _.trim(this.example).replace(/{p}/g, p), true);
         }
         return embed;
     }

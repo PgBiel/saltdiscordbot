@@ -21,6 +21,7 @@ export const randomN = new Command({
   name: "random",
   description: "Get a random number between two numbers.",
   example: "{p}random 1 10",
+  args: {min: false, max: false},
   category: "Fun",
   guildOnly: false,
 });

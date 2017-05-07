@@ -19,6 +19,7 @@ exports.randomN = new command_1.default({
     name: "random",
     description: "Get a random number between two numbers.",
     example: "{p}random 1 10",
+    args: { min: false, max: false },
     category: "Fun",
     guildOnly: false,
 });

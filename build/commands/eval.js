@@ -34,5 +34,6 @@ exports.evaler = new command_1.default({
     category: "Private",
     guildOnly: false,
     customPrefix: "+",
+    args: { code: false },
     devonly: true,
 });

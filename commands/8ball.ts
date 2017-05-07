@@ -26,5 +26,6 @@ export const eightball = new Command({
   description: "See the answer to your questions...",
   example: "{p}8ball Is chocolate nice?",
   category: "Fun",
+  args: {question: false},
   guildOnly: false,
 });

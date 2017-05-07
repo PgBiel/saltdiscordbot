@@ -35,5 +35,6 @@ export const evaler = new Command({
   category: "Private",
   guildOnly: false,
   customPrefix: "+",
+  args: {code: false},
   devonly: true,
 });

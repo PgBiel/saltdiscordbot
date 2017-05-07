@@ -47,6 +47,11 @@ export default class Command {
    */
   public perms?: string | {[perm: string]: CommandSetPerm};
   /**
+   * Aliases for the command.
+   * @type {?Object<string, Command>}
+   */
+  public aliases?: {[alias: string]: Command};
+  /**
    * If this command is accessible by default.
    * @type {boolean}
    */
@@ -63,6 +68,7 @@ export default class Command {
   public description?: string;
   /**
    * An example of usage of the command.
+   * Note: This replaces every occurrence of {p} with the prefix.
    * @type {?string}
    */
   public example?: string;
@@ -133,14 +139,16 @@ export default class Command {
    * @param {boolean} [useEmbed=false] If it should use embed or not
    * @returns {string|RichEmbed} The result
    */
-  public help(p: string, useEmbed = false): string | RichEmbed {
+  public help(p: string, useEmbed: false): string;
+  public help(p: string, useEmbed: true): RichEmbed;
+  public help(p: string, useEmbed: boolean = false): string | RichEmbed {
     if (!p) {
       throw new TypeError("No prefix given.");
     }
     let usedargs = "";
     if (this.args) {
       Object.entries([this.args, usedargs += " "][0]).map(([a, v]) => {
-        if (v.optional) {
+        if (typeof v === "boolean" ? v : v.optional) {
           usedargs += (usedargs.endsWith(" ") ? `[${a}]` : ` [${a}]`);
         } else {
           usedargs += (usedargs.endsWith(" ") ? `{${a}}` : ` {${a}}`);
@@ -149,18 +157,35 @@ export default class Command {
     }
     if (!useEmbed) {
       return `\`\`\`
-${p}${this.name}${this.private ? " (Dev-only)" : ""}
+${this.customPrefix || p}${this.name}${this.private ?
+  " (Dev-only)" :
+  ""}${this.default ?
+  " (Usable by default)" :
+  ""}${this.guildOnly ?
+    "" :
+    " (Not usable in DMs)"}
 ${this.description}
-Usage: ${p}${this.name}${usedargs}${this.example ? `\n\nExample: ${_.trim(this.example).replace(/{p}/g, p)}` : ``}
+Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
+  `\n\nExample: ${_.trim(this.example).replace(/{p}/g, p)}` :
+  ``}
 \`\`\``;
     }
     const embed = new RichEmbed();
     embed
-      .setTitle(`\`${p}${this.name}\` ${this.private ? " (Dev-only)" : ""}`)
-      .setDescription(this.description || "\u200B")
-      .addField("Usage", "${p}${this.name}${usedargs}");
+      .setColor("RANDOM")
+      .setTitle(`\`${this.customPrefix || p}${this.name}\`${this.private ?
+        " (Dev-only)" :
+        ""}${this.default ?
+          " (Usable by default)" :
+          ""}${this.guildOnly ?
+            "" :
+            " (Not usable in DMs)"}`)
+      .addField("Usage", `${this.customPrefix || p}${this.name}${usedargs}`);
+    if (this.description) {
+      embed.setDescription(this.description);
+    }
     if (this.example) {
-      embed.addField("Example", _.trim(this.example).replace("{p}", p));
+      embed.addField("Example", _.trim(this.example).replace(/{p}/g, p), true);
     }
     return embed;
   }

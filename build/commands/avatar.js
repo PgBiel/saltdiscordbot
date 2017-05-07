@@ -65,5 +65,6 @@ exports.avatar = new command_1.default({
     description: "View the avatar of you or someone else.",
     example: "{p}avatar",
     category: "Utility",
+    args: { member: true },
     guildOnly: false,
 });

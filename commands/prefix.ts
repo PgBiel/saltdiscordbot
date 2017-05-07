@@ -31,10 +31,11 @@ export const prefix = new Command({
   name: "prefix",
   perms: "prefix",
   description:
-  "Set of the bot for the server. This always has the prefix +.\
+  "Set the prefix of the bot for the server. This always has the prefix +.\
    This also requires, without extra permissions, at least `Manage Server`.",
   example: "+prefix +",
   category: "Administration",
   customPrefix: "+",
+  args: {"new prefix": true},
   guildOnly: true,
 });
