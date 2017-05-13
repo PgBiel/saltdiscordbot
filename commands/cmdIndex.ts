@@ -1,5 +1,6 @@
 export * from "./8ball";
 export * from "./avatar";
+export * from "./ban";
 export * from "./eval";
 export * from "./help";
 export * from "./ping";

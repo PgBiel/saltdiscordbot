@@ -27,7 +27,7 @@ export default async (msg: Message) => {
 
   const {
     hasPermission, userError, promptAmbig, checkRole,
-    send, reply, doEval,
+    send, reply, doEval, prompt,
   } = funcs(msg);
 
   const context: {[prop: string]: any} = {
@@ -39,11 +39,17 @@ export default async (msg: Message) => {
     reply, send, hasPermission, hasPermissions: hasPermission,
     botmember: msg.guild ? msg.guild.member(bot.user) : null,
     searcher: msg.guild ? new Searcher({ guild: msg.guild }) : null,
-    checkRole, promptAmbig, userError, doEval,
+    checkRole, promptAmbig, userError, doEval, prompt,
   };
-  const possiblePrefix: string = msg.guild ?
-  ((await prefixes.findOne({ where: { serverid: msg.guild.id } })) as any).prefix || "+" :
+  let possiblePrefix: string = msg.guild ?
+  ((await prefixes.findOne({ where: { serverid: msg.guild.id } })) as any) || "+" :
   "+";
+  if (!possiblePrefix) {
+    possiblePrefix = "+";
+  }
+  if ((possiblePrefix as any).prefix) {
+    possiblePrefix = (possiblePrefix as any).prefix;
+  }
   for (const cmdn in bot.commands) {
     if (!bot.commands.hasOwnProperty(cmdn)) {
       continue;

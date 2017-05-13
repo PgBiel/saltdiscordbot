@@ -21,15 +21,16 @@ const func: TcmdFunc = async (msg: Message, {
   const [preUser, preReason] = [
     args.match(Constants.regex.BAN_MATCH(true)), args.match(Constants.regex.BAN_MATCH(false)),
   ];
-  if (preUser && preUser[1]) {
+  if (preUser) {
     user = preUser[1];
   }
-  if (preReason && preReason[1]) {
+  if (preReason) {
     reason = preReason[1];
   }
   if (!user && !reason) {
     return;
   }
+  logger.debug(user, reason);
   let memberToUse: GuildMember;
   let membersMatched: GuildMember[];
   if (/[^]#\d{4}$/.test(user)) {
@@ -45,12 +46,11 @@ const func: TcmdFunc = async (msg: Message, {
   if (!memberToUse) {
     membersMatched = searcher.searchMember(user);
   }
-  if (membersMatched.length < 1) {
+  if (membersMatched && membersMatched.length < 1) {
     return reply("Member not found!");
-  }
-  if (membersMatched.length === 1) {
+  } else if (membersMatched && membersMatched.length === 1) {
     memberToUse = membersMatched[0];
-  } else if (membersMatched.length > 1) {
+  } else if (membersMatched && membersMatched.length > 1) {
     const result = await promptAmbig(membersMatched);
     if (result.cancelled) {
       return;
@@ -64,9 +64,9 @@ const func: TcmdFunc = async (msg: Message, {
     return reply("That member's highest role is higher in position than mine!");
   } else if (memberToUse.highestRole.position === botmember.highestRole.position) {
     return reply("That member's highest role is the same in position as mine!");
-  } else if (memberToUse.highestRole.position > member.highestRole.position) {
+  } else if (memberToUse.highestRole.position > member.highestRole.position && memberToUse.id !== guild.owner.id) {
     return reply("That member's highest role is higher in position than yours!");
-  } else if (memberToUse.highestRole.position === member.highestRole.position) {
+  } else if (memberToUse.highestRole.position === member.highestRole.position && memberToUse.id !== guild.owner.id) {
     return reply("That member's highest role is the same in position as yours!");
   } else if (memberToUse.id === guild.owner.id) {
     return reply("That member is the owner!");
@@ -83,7 +83,7 @@ Check the conditions for being banned (e.g. must not be owner, etc)!");
   const result = await prompt(
     "Are you sure you want to ban this member? This will expire in 15 seconds. Type __y__es or __n__o.",
   "__Y__es or __n__o?", (msg2) => {
-    return /^(?:y(?:es)?)|(?:no?)$/.test(msg2.content);
+    return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
   }, Time.seconds(15), false, { embed });
   if (!result) {
     return;
@@ -100,7 +100,7 @@ Check the conditions for being banned (e.g. must not be owner, etc)!");
     .setTimestamp(new Date());
   const executeBan = () => {
     const banPrefix = `[Ban command executed by ${author.tag}] `;
-    const availableLength = reason.length - banPrefix.length;
+    const availableLength = 512 - (reason.length + banPrefix.length);
     let compressedReason = reason.substring(0, availableLength);
     if (compressedReason.length >= availableLength) {
       compressedReason = compressedReason.replace(/[^]{3}$/, "...");

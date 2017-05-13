@@ -10,7 +10,7 @@ exports.regex = {
     HAS_DECIMAL: /\.(?!0+$)/,
     BAN_MATCH: (isUser) => {
         if (isUser) {
-            return /^([^]+?(?:#\d{4})?)\s+[^]*$/;
+            return /^([^]+?(?:#\d{4})?)(?:\s+[^]*)?$/;
         }
         else {
             return /^[^]+?(?:#\d{4})?\s+([^]*)$/;

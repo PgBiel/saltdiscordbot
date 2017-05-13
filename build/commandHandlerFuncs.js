@@ -141,13 +141,15 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
             }
             const result = filter(msg2);
             if (result !== false && result != null) {
-                return (satisfied = msg2);
+                satisfied = msg2;
+                return true;
             }
+            return false;
         };
         const sentmsg = await send(question, options || {});
         for (let i = 0; i < deps_1.Constants.numbers.MAX_PROMPT; i++) {
             try {
-                const msgs = await msg.channel.awaitMessages(filter, { time: timeout, maxMatches: 1, errors: ["time"] });
+                const msgs = await msg.channel.awaitMessages(filterToUse, { time: timeout, maxMatches: 1, errors: ["time"] });
                 if (!satisfied) {
                     if (i < 5) {
                         send(invalidMsg);

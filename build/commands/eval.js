@@ -23,7 +23,8 @@ Input
 ${args}
 
 Error
-${resultStr}`);
+${resultStr}
+\`\`\``);
     }
 };
 exports.evaler = new command_1.default({

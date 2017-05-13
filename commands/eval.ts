@@ -24,7 +24,8 @@ Input
 ${args}
 
 Error
-${resultStr}`);
+${resultStr}
+\`\`\``);
   }
 };
 export const evaler = new Command({

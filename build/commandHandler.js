@@ -20,7 +20,7 @@ exports.default = async (msg) => {
     const channel = msg.channel;
     const message = msg;
     const guildId = msg.guild ? msg.guild.id : null;
-    const { hasPermission, userError, promptAmbig, checkRole, send, reply, doEval, } = commandHandlerFuncs_1.default(msg);
+    const { hasPermission, userError, promptAmbig, checkRole, send, reply, doEval, prompt, } = commandHandlerFuncs_1.default(msg);
     const context = {
         input, channel, message, msg, guildId,
         author: msg.author, member: msg.member,
@@ -29,11 +29,17 @@ exports.default = async (msg) => {
         reply, send, hasPermission, hasPermissions: hasPermission,
         botmember: msg.guild ? msg.guild.member(bot_1.bot.user) : null,
         searcher: msg.guild ? new searcher_1.default({ guild: msg.guild }) : null,
-        checkRole, promptAmbig, userError, doEval,
+        checkRole, promptAmbig, userError, doEval, prompt,
     };
-    const possiblePrefix = msg.guild ?
-        (await sequelize_1.prefixes.findOne({ where: { serverid: msg.guild.id } })).prefix || "+" :
+    let possiblePrefix = msg.guild ?
+        (await sequelize_1.prefixes.findOne({ where: { serverid: msg.guild.id } })) || "+" :
         "+";
+    if (!possiblePrefix) {
+        possiblePrefix = "+";
+    }
+    if (possiblePrefix.prefix) {
+        possiblePrefix = possiblePrefix.prefix;
+    }
     for (const cmdn in bot_1.bot.commands) {
         if (!bot_1.bot.commands.hasOwnProperty(cmdn)) {
             continue;
