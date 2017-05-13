@@ -82,6 +82,7 @@ const func = async (msg, { args, send, reply, prefix, botmember }) => {
 exports.help = new command_1.default({
     func,
     name: "help",
+    default: true,
     description: "Show information about commands/a command/a category of commands.",
     example: "{p}help\n{p}help 8ball\n{p}help fun",
     category: "Utility",

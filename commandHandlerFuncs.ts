@@ -5,10 +5,12 @@ import messager from "./classes/messager";
 import Searcher from "./classes/searcher";
 import { moderation } from "./sequelize/sequelize";
 import * as deps from "./util/deps";
+import { bot, Constants, logger } from "./util/deps";
 import * as funcs from "./util/funcs";
+import { cloneObject, rejct } from "./util/funcs";
 
-const { bot, Constants, logger } = deps; // I did it like this so I could use them for doEval below
-const { cloneObject, rejct } = funcs;
+// const { bot, Constants, logger } = deps;
+// const { cloneObject, rejct } = funcs;
 
 export type ExtendedSend = { // tslint:disable-line:interface-over-type-literal
   (content: StringResolvable, options?: ExtendedMsgOptions): Promise<Message>;
@@ -123,7 +125,7 @@ export default function returnFuncs(msg: Message) {
 This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
 **Members Matched**:
 \`${currentOptions.map((gm) => gm.user.tag).join("`,`")}\``);
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
       try {
         const result = await channel.awaitMessages(
           filter, {
@@ -171,9 +173,49 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     `Sorry, but it seems there was an error while executing this command.\
     If you want to contact the bot devs, please tell them this information: \`${data}\`. Thanks!`);
 
+  const prompt = async (
+    question: string, invalidMsg: string, filter: ((msg: Message) => any),
+    timeout: number = Constants.times.AMBIGUITY_EXPIRE, cancel: boolean = true,
+    options: ExtendedMsgOptions = {},
+  ): Promise<string> => {
+    let cancelled: boolean = false;
+    let satisfied: Message = null;
+    const filterToUse = (msg2: Message) => {
+      if (msg2.content === "cancel" && cancel) {
+        return (cancelled = true);
+      }
+      const result = filter(msg2);
+      if (result !== false && result != null) {
+        return (satisfied = msg2);
+      }
+    };
+    const sentmsg = await send(question, options || {});
+    for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
+      try {
+        const msgs = await msg.channel.awaitMessages(filter, { time: timeout, maxMatches: 1, errors: ["time"] });
+        if (!satisfied) {
+          if (i < 5) {
+            send(invalidMsg);
+          }
+          continue;
+        }
+        if (cancelled) {
+          break;
+        }
+        if (satisfied) {
+          return satisfied.content;
+        }
+      } catch (err) {
+        break;
+      }
+    }
+    send("Command cancelled.");
+    return "";
+  };
+
   const obj: {[func: string]: (...args: any[]) => any} = {
     hasPermission, userError, promptAmbig, checkRole,
-    send, reply,
+    send, reply, prompt,
   };
 
   const doEval = (content: string) => {

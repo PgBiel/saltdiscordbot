@@ -17,6 +17,8 @@ const func = async (msg, { arrArgs, reply }) => {
 exports.randomN = new command_1.default({
     func,
     name: "random",
+    perms: "random",
+    default: true,
     description: "Get a random number between two numbers.",
     example: "{p}random 1 10",
     args: { min: false, max: false },

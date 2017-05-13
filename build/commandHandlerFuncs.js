@@ -5,9 +5,9 @@ const messager_1 = require("./classes/messager");
 const searcher_1 = require("./classes/searcher");
 const sequelize_1 = require("./sequelize/sequelize");
 const deps = require("./util/deps");
+const deps_1 = require("./util/deps");
 const funcs = require("./util/funcs");
-const { bot, Constants, logger } = deps; // I did it like this so I could use them for doEval below
-const { cloneObject, rejct } = funcs;
+const funcs_1 = require("./util/funcs");
 function returnFuncs(msg) {
     const input = msg.content;
     const channel = msg.channel;
@@ -24,7 +24,7 @@ function returnFuncs(msg) {
             }
             const result = func(content, options);
             if (options.autoCatch == null || options.autoCatch) {
-                result.catch(rejct);
+                result.catch(funcs_1.rejct);
             }
             return result;
         };
@@ -88,10 +88,10 @@ function returnFuncs(msg) {
 This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
 **Members Matched**:
 \`${currentOptions.map((gm) => gm.user.tag).join("`,`")}\``);
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < deps_1.Constants.numbers.MAX_PROMPT; i++) {
             try {
                 const result = await channel.awaitMessages(filter, {
-                    time: Constants.times.AMBIGUITY_EXPIRE, maxMatches: 1,
+                    time: deps_1.Constants.times.AMBIGUITY_EXPIRE, maxMatches: 1,
                     errors: ["time"],
                 });
                 if (satisfied) {
@@ -115,7 +115,7 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
                 }
             }
             catch (err) {
-                logger.error(`At PromptAmbig: ${err}`);
+                deps_1.logger.error(`At PromptAmbig: ${err}`);
                 send("Command cancelled.");
                 return {
                     member: null,
@@ -132,14 +132,50 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     const hasPermission = msg.member ? msg.member.hasPermission.bind(msg.member) : null;
     const userError = (data) => reply(`Sorry, but it seems there was an error while executing this command.\
     If you want to contact the bot devs, please tell them this information: \`${data}\`. Thanks!`);
+    const prompt = async (question, invalidMsg, filter, timeout = deps_1.Constants.times.AMBIGUITY_EXPIRE, cancel = true, options = {}) => {
+        let cancelled = false;
+        let satisfied = null;
+        const filterToUse = (msg2) => {
+            if (msg2.content === "cancel" && cancel) {
+                return (cancelled = true);
+            }
+            const result = filter(msg2);
+            if (result !== false && result != null) {
+                return (satisfied = msg2);
+            }
+        };
+        const sentmsg = await send(question, options || {});
+        for (let i = 0; i < deps_1.Constants.numbers.MAX_PROMPT; i++) {
+            try {
+                const msgs = await msg.channel.awaitMessages(filter, { time: timeout, maxMatches: 1, errors: ["time"] });
+                if (!satisfied) {
+                    if (i < 5) {
+                        send(invalidMsg);
+                    }
+                    continue;
+                }
+                if (cancelled) {
+                    break;
+                }
+                if (satisfied) {
+                    return satisfied.content;
+                }
+            }
+            catch (err) {
+                break;
+            }
+        }
+        send("Command cancelled.");
+        return "";
+    };
     const obj = {
         hasPermission, userError, promptAmbig, checkRole,
-        send, reply,
+        send, reply, prompt,
     };
     const doEval = (content) => {
-        let objectToUse = cloneObject(obj);
+        let objectToUse = funcs_1.cloneObject(obj);
         objectToUse = Object.assign(objectToUse, {
-            bot, msg, message: msg,
+            bot: deps_1.bot, msg, message: msg,
             channel, guildId, deps,
             funcs,
         });

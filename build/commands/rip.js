@@ -27,6 +27,8 @@ const func = async (msg, { args, send, channel, member, author, guild }) => {
 exports.rip = new command_1.default({
     func,
     name: "rip",
+    perms: "rip",
+    default: true,
     description: "RIP. Generates a ripme.xyz link.",
     example: "{p}rip John",
     category: "Fun",

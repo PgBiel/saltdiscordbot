@@ -68,6 +68,8 @@ const func: cmdFunc = async (msg: Message, {
 export const avatar = new Command({
   func,
   name: "avatar",
+  perms: "avatar",
+  default: true,
   description: "View the avatar of you or someone else.",
   example: "{p}avatar",
   category: "Utility",

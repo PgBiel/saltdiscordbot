@@ -9,4 +9,5 @@ exports.moderation = deps_1.sql.define(`mods`, {
     moderator: deps_1.Sequelize.STRING,
     administrator: deps_1.Sequelize.STRING,
     logs: deps_1.Sequelize.STRING,
+    latestCase: deps_1.Sequelize.STRING,
 });

@@ -23,6 +23,8 @@ const func: cmdFunc = async (msg: Message, { args, reply }) => {
 export const eightball = new Command({
   func,
   name: "8ball",
+  perms: "8ball",
+  default: true,
   description: "See the answer to your questions...",
   example: "{p}8ball Is chocolate nice?",
   category: "Fun",

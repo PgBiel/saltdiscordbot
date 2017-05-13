@@ -19,6 +19,8 @@ const func: cmdFunc = async (msg: Message, { arrArgs, reply }) => {
 export const randomN = new Command({
   func,
   name: "random",
+  perms: "random",
+  default: true,
   description: "Get a random number between two numbers.",
   example: "{p}random 1 10",
   args: {min: false, max: false},

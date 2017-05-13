@@ -1,6 +1,7 @@
 import * as assert from "assert";
 import * as chalk from "chalk";
 import * as Discord from "discord.js";
+import msgEmbedToRich from "discordjs-embed-converter";
 import * as fs from "fs";
 import * as _ from "lodash";
 import * as Sequelize from "sequelize";
@@ -21,6 +22,8 @@ import CommandClient from "../classes/commandClient";
 import logger from "../classes/logger";
 import messager from "../classes/messager";
 import perms from "../classes/permissions";
+import Searcher from "../classes/searcher";
+import Time from "../classes/time";
 // declare const decodeT: (...a) => any;
 const commandParse: any = 1; // unused
 
@@ -54,7 +57,10 @@ export {
   perms,
   logger,
   chalk,
+  Searcher,
+  Time,
 
   decodeT,
+  msgEmbedToRich,
 }; // );
 /* tslint:enable:object-literal-sort-keys */

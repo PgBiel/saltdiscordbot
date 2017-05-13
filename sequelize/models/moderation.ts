@@ -8,4 +8,5 @@ export const moderation = sql.define(`mods`, {
   moderator: Sequelize.STRING,
   administrator: Sequelize.STRING,
   logs: Sequelize.STRING,
+  latestCase: Sequelize.STRING,
 });

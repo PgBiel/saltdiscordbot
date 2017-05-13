@@ -62,6 +62,8 @@ const func = async (msg, { channel, guildId, author, args, arrArgs, send, reply,
 exports.avatar = new command_1.default({
     func,
     name: "avatar",
+    perms: "avatar",
+    default: true,
     description: "View the avatar of you or someone else.",
     example: "{p}avatar",
     category: "Utility",

@@ -79,6 +79,7 @@ const func: cmdFunc = async (msg: Message, { args, send, reply, prefix, botmembe
 export const help = new Command({
   func,
   name: "help",
+  default: true,
   description: "Show information about commands/a command/a category of commands.",
   example: "{p}help\n{p}help 8ball\n{p}help fun",
   category: "Utility",

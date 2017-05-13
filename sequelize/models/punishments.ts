@@ -9,7 +9,10 @@ export const cases = sql.define(`punishments`, {
     type: Sequelize.STRING,
     allowNull: false,
   },
-  moderator: Sequelize.STRING,
+  moderator: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
   time: Sequelize.STRING,
   reason: Sequelize.TEXT,
   duration: Sequelize.STRING,

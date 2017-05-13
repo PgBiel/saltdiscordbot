@@ -72,6 +72,9 @@ function cloneObject(objec) {
     return Object.assign(Object.create(objec), objec);
 }
 exports.cloneObject = cloneObject;
+/**
+ * Loads commands.
+ */
 function loadCmds() {
     /* const loadedCmds = [];
     fs.readdirSync("./commands").map((f: string) => {
@@ -105,6 +108,12 @@ function bcEval() {
     return deps_1.bot.shard.broadcastEval.apply(deps_1.bot.shard, Array.from(arguments));
 }
 exports.bcEval = bcEval;
+/**
+ * Get a random value between two numbers.
+ * @param {number} min The minimum number.
+ * @param {number} max The maximum number.
+ * @returns {number}
+ */
 function random(min, max) {
     if (isNaN(min) || isNaN(max)) {
         return;
@@ -116,3 +125,14 @@ function random(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 exports.random = random;
+/**
+ * Escape Discord markdown in a string.
+ * @param {string} str The string.
+ * @param {boolean} [escaper=false] If backslash should be escaped.
+ * @returns {string} The newly escaped string.
+ */
+function escMarkdown(str, escaper = false) {
+    const regex = new RegExp(`[\`*_~${escaper ? "\\\\" : ""}]`, "g");
+    return str.replace(regex, (piece) => "\\" + piece);
+}
+exports.escMarkdown = escMarkdown;

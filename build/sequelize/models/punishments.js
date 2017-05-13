@@ -10,7 +10,10 @@ exports.cases = deps_1.sql.define(`punishments`, {
         type: deps_1.Sequelize.STRING,
         allowNull: false,
     },
-    moderator: deps_1.Sequelize.STRING,
+    moderator: {
+        type: deps_1.Sequelize.STRING,
+        allowNull: false,
+    },
     time: deps_1.Sequelize.STRING,
     reason: deps_1.Sequelize.TEXT,
     duration: deps_1.Sequelize.STRING,

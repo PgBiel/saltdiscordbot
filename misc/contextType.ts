@@ -1,4 +1,6 @@
-import { DMChannel, GroupDMChannel, Guild, GuildMember, Message, TextChannel, User } from "discord.js";
+import {
+  DMChannel, GroupDMChannel, Guild, GuildMember, Message, PermissionResolvable, TextChannel, User,
+} from "discord.js";
 import Searcher from "../classes/Searcher";
 import { ExtendedMsgOptions, ExtendedSend, IAmbigResult, IDoEvalResult, SaltRole } from "../commandHandler";
 
@@ -28,6 +30,10 @@ interface IFuncs {
   doEval: (content: string) => Promise<IDoEvalResult>;
   hasPermission?: typeof GuildMember.prototype.hasPermissions;
   hasPermissions?: typeof GuildMember.prototype.hasPermission;
+  prompt: (
+    question: string, invalidMsg: string, filter: ((msg: Message) => any), timeout?: number,
+    cancel?: boolean, options?: ExtendedMsgOptions,
+  ) => Promise<string>;
   promptAmbig: (members: GuildMember[]) => IAmbigResult;
   reply: ExtendedSend;
   send: ExtendedSend;

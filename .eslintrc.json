@@ -8,7 +8,7 @@
     "node": true
   },
   "rules": {
-    "no-undef": false,
+    "no-undef": 0,
     "semi": "warn",
     "spaced-comment": "warn",
     "arrow-parens": ["error", "as-needed"],
