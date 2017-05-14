@@ -2,7 +2,9 @@ import {
   DMChannel, GroupDMChannel, Guild, GuildMember, Message, PermissionResolvable, TextChannel, User,
 } from "discord.js";
 import Searcher from "../classes/Searcher";
-import { ExtendedMsgOptions, ExtendedSend, IAmbigResult, IDoEvalResult, SaltRole } from "../commandHandler";
+import {
+  ExtendedActionLogOptions, ExtendedMsgOptions, ExtendedSend, IAmbigResult, IDoEvalResult, IPromptOptions, SaltRole,
+} from "../commandHandler";
 
 export type DjsChannel = DMChannel | GroupDMChannel | TextChannel;
 
@@ -13,6 +15,7 @@ interface IBaseContext {
   authorTag: string;
   botmember?: GuildMember;
   content: string;
+  dummy: {[prop: string]: any};
   guild?: Guild;
   guildId: string;
   input: string;
@@ -22,18 +25,16 @@ interface IBaseContext {
   msg: Message;
   perms?: {[perm: string]: boolean};
   prefix: string;
-  searcher?: Searcher;
+  searcher?: Searcher<GuildMember>;
 }
 
 interface IFuncs {
+  actionLog: (options: ExtendedActionLogOptions) => Promise<Message>;
   checkRole: (role: SaltRole, member: GuildMember) => Promise<boolean>;
   doEval: (content: string) => Promise<IDoEvalResult>;
   hasPermission?: typeof GuildMember.prototype.hasPermissions;
   hasPermissions?: typeof GuildMember.prototype.hasPermission;
-  prompt: (
-    question: string, invalidMsg: string, filter: ((msg: Message) => any), timeout?: number,
-    cancel?: boolean, options?: ExtendedMsgOptions,
-  ) => Promise<string>;
+  prompt: (options: IPromptOptions) => Promise<string>;
   promptAmbig: (members: GuildMember[]) => IAmbigResult;
   reply: ExtendedSend;
   send: ExtendedSend;

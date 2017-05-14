@@ -1,6 +1,6 @@
 import { ColorResolvable, Guild, GuildChannel, GuildMember, Message, RichEmbed, TextChannel, User } from "discord.js";
 import { cases, moderation } from "../sequelize/sequelize";
-import { msgEmbedToRich, Time } from "../util/deps";
+import { logger, msgEmbedToRich, Sequelize, Time } from "../util/deps";
 import { rejct } from "../util/funcs";
 
 /**
@@ -21,11 +21,6 @@ export interface ILogOption {
    * The type (i.e. punishment).
    */
   type: string;
-  /**
-   * The guild to log.
-   * @type {Guild}
-   */
-  guild: Guild;
   /**
    * The author of the action.
    * @type {User|GuildMember}
@@ -57,8 +52,12 @@ class ActionLog {
    * @param {LogOptions} options The options.
    * @returns {Promise<?Message>} The sent message.
    */
-  public async log(options: ILogOption): Promise<Message> {
+  public async log(options: ILogOption & { guild: Guild }): Promise<Message> {
     const { action_desc, guild, author, reason, color, extraFields, target, type } = options;
+    const logChannel = await this._getLog(guild);
+    if (!logChannel) {
+      return null;
+    }
     const authorToUse: string = typeof author === "string" ?
     author :
     `<@${author.id}>`;
@@ -112,7 +111,7 @@ class ActionLog {
     embed.addField("Reason", reason, false);
     let msgSent: Message;
     try {
-      const semiMsgSent = await (await this._getLog(guild)).send({ embed });
+      const semiMsgSent = await logChannel.send({ embed });
       if (Array.isArray(semiMsgSent)) {
         msgSent = semiMsgSent[0];
       } else {
@@ -131,7 +130,15 @@ class ActionLog {
       reason: reason || "None",
       duration: time ? new Date(time.time) : null,
       messageid: msgSent.id,
-    });
+    }).catch(rejct);
+    try {
+      const entry: {[prop: string]: any} = await moderation.findOne({ where: { serverid: guild.id } });
+      entry.update({
+        latestCase: caseNum,
+      }).catch(rejct);
+    } catch (err) {
+      logger.error(`At updating moderation entry (Case num: ${caseNum}, guild: ${guild.id}): ${err}`);
+    }
     return msgSent;
   }
 
@@ -142,12 +149,16 @@ class ActionLog {
    * @returns {Promise<boolean>} If it was deleted or not.
    */
   public async delCase(caseN: number, guild: Guild): Promise<boolean> {
-    const caseToLook: {[prop: string]: any} = cases.find({ where: { case: caseN, serverid: guild.id } });
+    const caseToLook: {[prop: string]: any} = await cases.find({ where: { case: caseN, serverid: guild.id } });
     if (!caseToLook) {
       return false;
     }
+    const logChannel = await this._getLog(guild);
+    if (!logChannel) {
+      return false;
+    }
     try {
-      const logged = await (await this._getLog(guild)).fetchMessage(caseToLook.messageid);
+      const logged = await logChannel.fetchMessage(caseToLook.messageid);
       logged.delete();
       caseToLook.destroy();
       return true;
@@ -164,12 +175,16 @@ class ActionLog {
    * @returns {Promise<boolean>} If it was edited or not.
    */
   public async editCase(reason: string, caseN: number, guild: Guild): Promise<boolean> {
-    const caseToLook: {[prop: string]: any} = cases.find({ where: { case: caseN, serverid: guild.id } });
+    const caseToLook: {[prop: string]: any} = await cases.find({ where: { case: caseN, serverid: guild.id } });
     if (!caseToLook) {
       return false;
     }
+    const logChannel = await this._getLog(guild);
+    if (!logChannel) {
+      return false;
+    }
     try {
-      const logged = await (await this._getLog(guild)).fetchMessage(caseToLook.messageid);
+      const logged = await logChannel.fetchMessage(caseToLook.messageid);
       const oldEmbed = logged.embeds[0];
       const newEmbed: RichEmbed = msgEmbedToRich(oldEmbed);
       newEmbed.fields.forEach((field, i) => {
@@ -220,4 +235,4 @@ class ActionLog {
     return null;
   }
 }
-export default ActionLog;
+export default new ActionLog();

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
+const actionlogger_1 = require("./classes/actionlogger");
 const messager_1 = require("./classes/messager");
 const searcher_1 = require("./classes/searcher");
 const sequelize_1 = require("./sequelize/sequelize");
@@ -132,7 +133,7 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     const hasPermission = msg.member ? msg.member.hasPermission.bind(msg.member) : null;
     const userError = (data) => reply(`Sorry, but it seems there was an error while executing this command.\
     If you want to contact the bot devs, please tell them this information: \`${data}\`. Thanks!`);
-    const prompt = async (question, invalidMsg, filter, timeout = deps_1.Constants.times.AMBIGUITY_EXPIRE, cancel = true, options = {}) => {
+    const prompt = async ({ question, invalidMsg, filter, timeout = deps_1.Constants.times.AMBIGUITY_EXPIRE, cancel = true, options = {} }) => {
         let cancelled = false;
         let satisfied = null;
         const filterToUse = (msg2) => {
@@ -170,9 +171,16 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
         send("Command cancelled.");
         return "";
     };
+    const actionLog2 = (options) => {
+        if (!msg.guild) {
+            return;
+        }
+        const newOptions = Object.assign({ guild: msg.guild }, options);
+        return actionlogger_1.default.log(newOptions);
+    };
     const obj = {
         hasPermission, userError, promptAmbig, checkRole,
-        send, reply, prompt,
+        send, reply, prompt, actionLog: actionLog2,
     };
     const doEval = (content) => {
         let objectToUse = funcs_1.cloneObject(obj);

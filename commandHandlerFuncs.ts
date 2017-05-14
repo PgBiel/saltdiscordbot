@@ -1,6 +1,8 @@
 import {
-  Collection, DMChannel, GroupDMChannel, GuildMember, Message, MessageOptions, StringResolvable, TextChannel,
+  Collection, DMChannel, GroupDMChannel, Guild, GuildMember, Message, MessageOptions, StringResolvable,
+  TextChannel,
 } from "discord.js";
+import actionLog, { ILogOption } from "./classes/actionlogger";
 import messager from "./classes/messager";
 import Searcher from "./classes/searcher";
 import { moderation } from "./sequelize/sequelize";
@@ -11,6 +13,10 @@ import { cloneObject, rejct } from "./util/funcs";
 
 // const { bot, Constants, logger } = deps;
 // const { cloneObject, rejct } = funcs;
+
+export type ExtendedActionLogOptions = ILogOption & {
+  guild?: any,
+};
 
 export type ExtendedSend = { // tslint:disable-line:interface-over-type-literal
   (content: StringResolvable, options?: ExtendedMsgOptions): Promise<Message>;
@@ -34,6 +40,15 @@ interface ICustomSendType {
 export interface IDoEvalResult {
   success: boolean;
   result: any;
+}
+
+export interface IPromptOptions {
+  question: string;
+  invalidMsg: string;
+  filter: ((msg: Message) => any);
+  timeout?: number;
+  cancel?: boolean;
+  options?: ExtendedMsgOptions;
 }
 
 export type SaltRole = "moderator"
@@ -108,7 +123,7 @@ export default function returnFuncs(msg: Message) {
       options.forEach((gm: GuildMember) => {
         collOptions.set(gm.id, gm);
       });
-      const searcher2: Searcher = new Searcher({ members: collOptions });
+      const searcher2: Searcher<GuildMember> = new Searcher({ members: collOptions });
       const resultingMembers: GuildMember[] = searcher2.searchMember(msg2.content);
       if (resultingMembers.length < 1) {
         return true;
@@ -174,9 +189,10 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     If you want to contact the bot devs, please tell them this information: \`${data}\`. Thanks!`);
 
   const prompt = async (
-    question: string, invalidMsg: string, filter: ((msg: Message) => any),
-    timeout: number = Constants.times.AMBIGUITY_EXPIRE, cancel: boolean = true,
-    options: ExtendedMsgOptions = {},
+    {
+      question, invalidMsg, filter,
+      timeout = Constants.times.AMBIGUITY_EXPIRE, cancel = true,
+      options = {} }: IPromptOptions,
   ): Promise<string> => {
     let cancelled: boolean = false;
     let satisfied: Message = null;
@@ -215,9 +231,17 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     return "";
   };
 
+  const actionLog2 = (options: ExtendedActionLogOptions) => {
+    if (!msg.guild) {
+      return;
+    }
+    const newOptions: typeof options & {guild: Guild} = Object.assign({ guild: msg.guild }, options);
+    return actionLog.log(newOptions);
+  };
+
   const obj: {[func: string]: (...args: any[]) => any} = {
     hasPermission, userError, promptAmbig, checkRole,
-    send, reply, prompt,
+    send, reply, prompt, actionLog: actionLog2,
   };
 
   const doEval = (content: string) => {

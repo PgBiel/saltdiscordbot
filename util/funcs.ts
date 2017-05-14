@@ -132,3 +132,32 @@ export function escMarkdown(str: string, escaper: boolean = false): string {
   const regex = new RegExp(`[\`*_~${escaper ? "\\\\" : ""}]`, "g");
   return str.replace(regex, (piece: string) => "\\" + piece);
 }
+/**
+ * Abstract strings if it is too long.
+ * @param {string} text The string to abstract.
+ * @param {number} length The max length.
+ * @returns {string} The abstracted string.
+ */
+export function textAbstract(text: string, length: number): string {
+    if (text == null) {
+        return "";
+    }
+    if (typeof text !== "string") {
+      try {
+        text = (text as any).toString();
+      } catch (err) {
+        text = String(text);
+      }
+    }
+    if (typeof length !== "number") {
+      if (isNaN(length)) {
+        throw new TypeError("Length must be a number!");
+      }
+      length = Number(length);
+    }
+    if (text.length <= length) {
+        return text;
+    }
+    const newText = text.substring(0, length).replace(/[^]{0,3}$/, "...");
+    return newText || "...";
+}

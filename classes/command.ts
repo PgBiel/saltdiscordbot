@@ -5,9 +5,21 @@
  */
 
 import { Message, RichEmbed } from "discord.js";
+import { logger } from "../util/deps";
+import { cloneObject } from "../util/funcs";
 
 import * as assert from "assert";
 import * as _ from "lodash";
+
+export interface IAliasData {
+  perms?: string | {[perm: string]: CommandSetPerm};
+  default?: boolean;
+  pattern?: RegExp | string;
+  description?: string;
+  example?: string;
+  args?: {[prop: string]: boolean | IArgument};
+  [prop: string]: any;
+}
 
 interface IArgument {
   optional: boolean;
@@ -18,6 +30,8 @@ export type CommandSetPerm = boolean | { default: boolean };
 interface ICommandOptions {
   name: string;
   func: (message: Message, context: {[prop: string]: any}) => any;
+  aliases?: {[name: string]: Command} | string[];
+  aliasData?: IAliasData;
   perms?: string | {[perm: string]: CommandSetPerm};
   default?: boolean;
   pattern?: RegExp | string;
@@ -31,6 +45,37 @@ interface ICommandOptions {
 }
 
 export default class Command {
+  /**
+   * Generate a command as alias from another.
+   * @param {Command} cmd The command.
+   * @param {string} name The name of the alias.
+   * @param {Object<string, any>} data The alias data.
+   * @returns {Command} The newly created command.
+   */
+  public static aliasFrom(cmd: Command, name: string, data: IAliasData): Command {
+    const newData = cloneObject(data);
+    Object.defineProperty(newData, "__aliasOf", {
+      value: cmd,
+      writable: false,
+      enumerable: false,
+      configurable: true,
+    });
+    const newCmd = new Command({
+      name,
+      func: null,
+      aliasData: newData,
+      category: cmd.category,
+      customPrefix: cmd.customPrefix,
+      devonly: cmd.private,
+      perms: data.perms || cmd.perms,
+      default: data.default || cmd.default,
+      pattern: data.pattern || cmd.pattern,
+      description: data.description || cmd.description,
+      example: data.example || null,
+      args: data.args || cmd.args,
+    });
+    return newCmd;
+  }
   /**
    * Name of the command.
    * @type {string}
@@ -48,9 +93,17 @@ export default class Command {
   public perms?: string | {[perm: string]: CommandSetPerm};
   /**
    * Aliases for the command.
-   * @type {?Object<string, Command>}
+   * @type {?Object<string, CommandOrString>}
    */
-  public aliases?: {[alias: string]: Command};
+  public aliases?: {[alias: string]: Command} | string[];
+  /**
+   * Alias data for using at the `dummy` object.
+   * @type {?Object<string, any>}
+   */
+  public aliasData?: {
+    __aliasOf?: Command,
+    [prop: string]: any,
+  };
   /**
    * If this command is accessible by default.
    * @type {boolean}
@@ -98,11 +151,12 @@ export default class Command {
    * @type {?string}
    */
   public customPrefix?: string;
+
   constructor(options: ICommandOptions) {
     if (!options.name) {
       throw new Error("No name given.");
     }
-    if (!options.func) {
+    if (!options.func && (options.aliasData ? !options.aliasData.__aliasOf : true)) {
       throw new Error(`No function given for ${options.name}.`);
     }
 
@@ -111,6 +165,10 @@ export default class Command {
     this.func = options.func;
 
     this.perms = options.perms;
+
+    this.aliases = options.aliases;
+
+    this.aliasData = options.aliasData;
 
     this.default = Boolean(options.default);
 
@@ -131,6 +189,24 @@ export default class Command {
     this.guildOnly = options.guildOnly == null ? true : Boolean(options.guildOnly);
 
     this.customPrefix = options.customPrefix || null;
+  }
+
+  /**
+   * Set what command this command is alias of.
+   * @param {Command} cmd The command.
+   * @returns {Command} This command.
+   */
+  public setAlias(cmd: Command): this {
+    if (!this.aliasData) {
+      this.aliasData = {};
+    }
+    Object.defineProperty(this.aliasData, "__aliasOf", {
+      value: cmd,
+      writable: false,
+      enumerable: false,
+      configurable: true,
+    });
+    return this;
   }
 
   /**

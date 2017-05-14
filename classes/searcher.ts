@@ -5,9 +5,9 @@ export type GuildResolvable = Guild | string;
 export type SearchChannelType = "text" | "voice" | "all";
 export type SearchChannelResult = GuildChannel[];
 
-export interface ISearcherOptions {
+export interface ISearcherOptions<MemberColl> {
   guild?: Guild;
-  members?: Collection<string, GuildMember>;
+  members?: Collection<string, MemberColl>;
   roles?: Collection<string, Role>;
   channels?: Collection<string, GuildChannel>;
 }
@@ -16,7 +16,7 @@ export interface ISearcherOptions {
  * Utility class for searching for members,
  * channels, and roles.
  */
-export default class Searcher {
+export default class Searcher<MemberColl> {
   /**
    * The guild that this instance looks in.
    * @type {?Guild}
@@ -25,9 +25,9 @@ export default class Searcher {
 
   /**
    * The member collection to look members in.
-   * @type {Collection<string, GuildMember>}
+   * @type {Collection<string, MemberColl>}
    */
-  public members: Collection<string, GuildMember>;
+  public members: Collection<string, MemberColl>;
 
   /**
    * The channel collection to look channels in.
@@ -44,13 +44,13 @@ export default class Searcher {
   /**
    * @param {SearcherOptions} options The options
    */
-  constructor(options: ISearcherOptions) {
+  constructor(options: ISearcherOptions<MemberColl>) {
     const { guild, members, roles, channels } = options;
     if (guild) {
       this.guild = guild;
       this.roles = guild.roles;
       this.channels = guild.channels;
-      this.members = guild.members;
+      this.members = (guild.members as any);
     }
     if (roles) {
       this.roles = roles;
@@ -66,31 +66,42 @@ export default class Searcher {
   /**
    * Search for a member.
    * @param {string|RegExp} nameOrPattern The name/nickname to look for or pattern to test for
-   * @returns {Array<GuildMember>} The result(s)
+   * @returns {Array<MemberColl>} The result(s)
    */
-  public searchMember(nameOrPattern: string | RegExp): GuildMember[] {
+  public searchMember(nameOrPattern: string | RegExp): MemberColl[] {
     const pattern = nameOrPattern instanceof RegExp ?
     nameOrPattern :
     new RegExp(_.escapeRegExp(nameOrPattern), "i");
-    const match: GuildMember[] = [];
+    const match: MemberColl[] = [];
+    const getUser = (member: MemberColl): User => {
+      const userToUse: User = member instanceof GuildMember ?
+      member.user :
+      member instanceof User ?
+      member :
+      null;
+
+      return userToUse;
+    };
     for (const [id, member] of this.members) {
+      const userToUse: User = getUser(member);
       if (
-        (typeof nameOrPattern === "string" && member.user.username === nameOrPattern)
-        || (typeof nameOrPattern !== "string" && pattern.test(member.user.username))
+        (typeof nameOrPattern === "string" && userToUse.username === nameOrPattern)
+        || (typeof nameOrPattern !== "string" && pattern.test(userToUse.username))
         ) {
         match.push(member);
       }
     }
     if (match.length < 1 && typeof nameOrPattern === "string") {
       for (const [id, member] of this.members) {
-        if (pattern.test(member.user.username)) {
+        const userToUse = getUser(member);
+        if (pattern.test(userToUse.username)) {
           match.push(member);
         }
       }
     }
     if (match.length < 1) {
       for (const [id, member] of this.members) {
-        if (pattern.test(member.nickname)) {
+        if (pattern.test(member instanceof GuildMember ? member.nickname : getUser(member).username)) {
           match.push(member);
         }
       }

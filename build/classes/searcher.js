@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const discord_js_1 = require("discord.js");
 const deps_1 = require("../util/deps");
 /**
  * Utility class for searching for members,
@@ -30,29 +31,39 @@ class Searcher {
     /**
      * Search for a member.
      * @param {string|RegExp} nameOrPattern The name/nickname to look for or pattern to test for
-     * @returns {Array<GuildMember>} The result(s)
+     * @returns {Array<MemberColl>} The result(s)
      */
     searchMember(nameOrPattern) {
         const pattern = nameOrPattern instanceof RegExp ?
             nameOrPattern :
             new RegExp(deps_1._.escapeRegExp(nameOrPattern), "i");
         const match = [];
+        const getUser = (member) => {
+            const userToUse = member instanceof discord_js_1.GuildMember ?
+                member.user :
+                member instanceof discord_js_1.User ?
+                    member :
+                    null;
+            return userToUse;
+        };
         for (const [id, member] of this.members) {
-            if ((typeof nameOrPattern === "string" && member.user.username === nameOrPattern)
-                || (typeof nameOrPattern !== "string" && pattern.test(member.user.username))) {
+            const userToUse = getUser(member);
+            if ((typeof nameOrPattern === "string" && userToUse.username === nameOrPattern)
+                || (typeof nameOrPattern !== "string" && pattern.test(userToUse.username))) {
                 match.push(member);
             }
         }
         if (match.length < 1 && typeof nameOrPattern === "string") {
             for (const [id, member] of this.members) {
-                if (pattern.test(member.user.username)) {
+                const userToUse = getUser(member);
+                if (pattern.test(userToUse.username)) {
                     match.push(member);
                 }
             }
         }
         if (match.length < 1) {
             for (const [id, member] of this.members) {
-                if (pattern.test(member.nickname)) {
+                if (pattern.test(member instanceof discord_js_1.GuildMember ? member.nickname : getUser(member).username)) {
                     match.push(member);
                 }
             }

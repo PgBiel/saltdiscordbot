@@ -27,19 +27,19 @@ export default async (msg: Message) => {
 
   const {
     hasPermission, userError, promptAmbig, checkRole,
-    send, reply, doEval, prompt,
+    send, reply, doEval, prompt, actionLog,
   } = funcs(msg);
 
   const context: {[prop: string]: any} = {
     input, channel, message, msg, guildId,
     author: msg.author, member: msg.member,
     tag: `${msg.author.username}#${msg.author.discriminator}`,
-    guild: msg.guild,
+    guild: msg.guild, dummy: {},
 
     reply, send, hasPermission, hasPermissions: hasPermission,
     botmember: msg.guild ? msg.guild.member(bot.user) : null,
-    searcher: msg.guild ? new Searcher({ guild: msg.guild }) : null,
-    checkRole, promptAmbig, userError, doEval, prompt,
+    searcher: msg.guild ? new Searcher<GuildMember>({ guild: msg.guild }) : null,
+    checkRole, promptAmbig, userError, doEval, prompt, actionLog,
   };
   let possiblePrefix: string = msg.guild ?
   ((await prefixes.findOne({ where: { serverid: msg.guild.id } })) as any) || "+" :
@@ -54,18 +54,28 @@ export default async (msg: Message) => {
     if (!bot.commands.hasOwnProperty(cmdn)) {
       continue;
     }
-    const subContext = context;
+    const subContext = cloneObject(context);
+    subContext.dummy = {};
     const cmd = bot.commands[cmdn];
-    if (!cmd.name || !cmd.func) {
+    const descCmd = cmd.aliasData && cmd.aliasData.__aliasOf ? cmd.aliasData.__aliasOf : cmd;
+    if (!cmd.name || !descCmd.func) {
       continue;
     }
     let prefix: string;
-    if (cmd.customPrefix) {
-      prefix = cmd.customPrefix;
+    if (cmd.aliasData) {
+      for (const key in cmd.aliasData) {
+        if (!cmd.aliasData.hasOwnProperty(key)) {
+          continue;
+        }
+        subContext.dummy[key] = cmd.aliasData[key];
+      }
+    }
+    if (descCmd.customPrefix) {
+      prefix = descCmd.customPrefix;
     } else {
       prefix = possiblePrefix;
     }
-    if (cmd.guildOnly && !msg.guild) {
+    if (descCmd.guildOnly && !msg.guild) {
       continue;
     }
     subContext.prefix = prefix;
@@ -137,7 +147,7 @@ export default async (msg: Message) => {
     subContext.arrArgs = args ? args.split(" ") : []; // array form of arguments.
     // and finally... we execute the command.
     try {
-      const result = cmd.func(message, subContext);
+      const result = descCmd.func(message, subContext);
       if (result instanceof Promise) {
         result.catch(rejct);
       }
