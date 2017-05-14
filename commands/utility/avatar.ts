@@ -1,9 +1,9 @@
 import { Collection, GuildMember, Message, RichEmbed, TextChannel, User } from "discord.js";
-import Command from "../classes/command";
-import Searcher from "../classes/searcher";
-import { cmdFunc } from "../commandHandler";
-import { bot, logger, util } from "../util/deps";
-import { rejct } from "../util/funcs";
+import Command from "../../classes/command";
+import Searcher from "../../classes/searcher";
+import { cmdFunc } from "../../commandHandler";
+import { bot, logger, util } from "../../util/deps";
+import { rejct } from "../../util/funcs";
 
 function getAvatarEmb(author: User) {
   const avatarRegex = /^((?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpe?g|png|gif|webp))\?size=\d+$/;

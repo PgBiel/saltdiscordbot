@@ -1,8 +1,8 @@
 import { Message, RichEmbed } from "discord.js";
-import Command from "../classes/command";
-import { cmdFunc } from "../commandHandler";
-import { _, bot } from "../util/deps";
-import { rejct } from "../util/funcs";
+import Command from "../../classes/command";
+import { cmdFunc } from "../../commandHandler";
+import { _, bot } from "../../util/deps";
+import { rejct } from "../../util/funcs";
 
 const func: cmdFunc = async (msg: Message, { args, send, reply, prefix, botmember }) => {
   const sendIt = (emb: RichEmbed) => {
@@ -30,7 +30,7 @@ const func: cmdFunc = async (msg: Message, { args, send, reply, prefix, botmembe
     Object.entries(categories).forEach(([k, v]) => {
       let str = "";
       Object.keys(v).forEach((k2: string) => {
-        str += k2 + "\n\n";
+        str += k2 + "\n";
       });
       embed.addField(k, _.trim(str), true);
     });
@@ -44,7 +44,7 @@ const func: cmdFunc = async (msg: Message, { args, send, reply, prefix, botmembe
       .setDescription("All commands available in that category.");
     let str = "";
     Object.values(categories[category]).forEach((cmd: Command) => {
-      str += cmd.name + "\n\n";
+      str += cmd.name + "\n";
     });
     str = _.trim(str);
     embed.addField("Commands", str);

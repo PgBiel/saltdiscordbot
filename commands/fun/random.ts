@@ -1,7 +1,7 @@
 import { Message } from "discord.js";
-import Command from "../classes/command";
-import { cmdFunc } from "../commandHandler";
-import { random } from "../util/funcs";
+import Command from "../../classes/command";
+import { cmdFunc } from "../../commandHandler";
+import { random } from "../../util/funcs";
 
 const func: cmdFunc = async (msg: Message, { arrArgs, reply }) => {
   if (arrArgs.length < 2) {

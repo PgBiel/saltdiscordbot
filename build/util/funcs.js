@@ -68,12 +68,18 @@ function processMessage(data) {
     deps_1.logger.debug("Received message");
 }
 exports.processMessage = processMessage;
+/**
+ * Clone an object.
+ * @param {*} objec The object.
+ * @returns {*} The cloned object.
+ */
 function cloneObject(objec) {
     return Object.assign(Object.create(objec), objec);
 }
 exports.cloneObject = cloneObject;
 /**
  * Loads commands.
+ * @returns {void}
  */
 function loadCmds() {
     /* const loadedCmds = [];
@@ -82,7 +88,7 @@ function loadCmds() {
         loadedCmds.push(ncrequire(`../commands/${f}`));
       }
     }); */
-    const loadedCmds = ncrequire("../commands/cmdIndex");
+    const loadedCmds = ncrequire("../commands/cmdIndex").commands;
     for (const cmdn in loadedCmds) {
         if (loadedCmds.hasOwnProperty(cmdn)) {
             const cmd = loadedCmds[cmdn];

@@ -3,7 +3,10 @@ import * as chalk from "chalk";
 import * as Discord from "discord.js";
 import msgEmbedToRich from "discordjs-embed-converter";
 import * as fs from "fs";
+import * as klawSync from "klaw-sync";
+const klaw: typeof klawSync.klawSync = (klawSync as any);
 import * as _ from "lodash";
+import * as querystring from "querystring";
 import * as Sequelize from "sequelize";
 import * as toml from "toml";
 export const data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
@@ -51,12 +54,14 @@ export {
   Discord,
   fs,
   toml,
+  klaw,
   Sequelize,
   util,
   messager,
   perms,
   logger,
   chalk,
+  querystring,
   Searcher,
   Time,
 

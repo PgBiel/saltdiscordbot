@@ -1,6 +1,6 @@
 import { GuildMember, Message, TextChannel } from "discord.js";
-import Command from "../classes/command";
-import { cmdFunc } from "../commandHandler";
+import Command from "../../classes/command";
+import { cmdFunc } from "../../commandHandler";
 
 const func: cmdFunc = async (msg: Message, { args, send, channel, member, author, guild }) => {
   let ripContent: string = "";

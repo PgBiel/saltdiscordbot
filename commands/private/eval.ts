@@ -1,7 +1,7 @@
 import { Message } from "discord.js";
-import Command from "../classes/command";
-import { cmdFunc } from "../commandHandler";
-import { _, bot, ownerID } from "../util/deps";
+import Command from "../../classes/command";
+import { cmdFunc } from "../../commandHandler";
+import { _, bot, ownerID } from "../../util/deps";
 
 const func: cmdFunc = async (msg: Message, { args, doEval, send }) => {
   if (msg.author.id !== ownerID || args.length < 1) {

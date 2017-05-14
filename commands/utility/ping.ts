@@ -1,6 +1,6 @@
 import { Message } from "discord.js";
-import Command from "../classes/command";
-import { TcmdFunc } from "../commandHandler";
+import Command from "../../classes/command";
+import { TcmdFunc } from "../../commandHandler";
 
 const func: TcmdFunc = async (msg: Message, { send }) => {
   const now = Date.now();

@@ -1,6 +1,6 @@
 import { ban } from "./ban";
 
-import Command from "../classes/command";
+import Command from "../../classes/command";
 
 export const nodelban = Command.aliasFrom(ban, "nodelban", {
   perms: "ban",

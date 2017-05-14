@@ -71,20 +71,26 @@ export function botMessage(msg: Discord.Message) {
 export function processMessage(data: any) {
   logger.debug("Received message");
 }
+/**
+ * Clone an object.
+ * @param {*} objec The object.
+ * @returns {*} The cloned object.
+ */
 export function cloneObject <T>(objec: T): T {
   return Object.assign(Object.create((objec as any)), objec);
 }
 /**
  * Loads commands.
+ * @returns {void}
  */
-export function loadCmds() {
+export function loadCmds(): void {
   /* const loadedCmds = [];
   fs.readdirSync("./commands").map((f: string) => {
     if (/\.js$/.test(f)) {
       loadedCmds.push(ncrequire(`../commands/${f}`));
     }
   }); */
-  const loadedCmds = ncrequire("../commands/cmdIndex");
+  const loadedCmds = ncrequire("../commands/cmdIndex").commands;
   for (const cmdn in loadedCmds) {
     if (loadedCmds.hasOwnProperty(cmdn)) {
       const cmd: Command = loadedCmds[cmdn];

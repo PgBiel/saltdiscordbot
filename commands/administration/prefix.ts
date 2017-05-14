@@ -1,9 +1,9 @@
 import { Message } from "discord.js";
-import Command from "../classes/command";
-import Database from "../classes/database";
-import { TcmdFunc } from "../commandHandler";
-import { prefixes } from "../sequelize/sequelize";
-import { Constants, logger } from "../util/deps";
+import Command from "../../classes/command";
+import Database from "../../classes/database";
+import { TcmdFunc } from "../../commandHandler";
+import { prefixes } from "../../sequelize/sequelize";
+import { Constants, logger } from "../../util/deps";
 
 const func: TcmdFunc = async (msg: Message, { guildId, reply, send, args, arrArgs, prefix, hasPermission, perms }) => {
   if (arrArgs.length < 1) {

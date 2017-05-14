@@ -1,8 +1,8 @@
 import { GuildMember, Message, RichEmbed } from "discord.js";
-import { TcmdFunc } from "../commandHandler";
-import { prefixes } from "../sequelize/sequelize";
-import { Command, Constants, logger, Time } from "../util/deps";
-import { escMarkdown, rejct, textAbstract } from "../util/funcs";
+import { TcmdFunc } from "../../commandHandler";
+import { prefixes } from "../../sequelize/sequelize";
+import { Command, Constants, logger, querystring, Time } from "../../util/deps";
+import { escMarkdown, rejct, textAbstract } from "../../util/funcs";
 
 const func: TcmdFunc = async (msg: Message, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
@@ -99,7 +99,7 @@ Check the conditions for being kicked (e.g. must not be owner, etc)!");
   const executeKick = () => {
     const kickPrefix = `[Kick command executed by ${author.tag}] `;
     const compressedText = textAbstract(kickPrefix + (reason || "No reason given"), 512);
-    memberToUse.kick(compressedText).then(finish).catch(fail);
+    memberToUse.kick(querystring.escape(compressedText)).then(finish).catch(fail);
   };
   let sent: boolean = false;
   let timeoutRan: boolean = false;

@@ -1,8 +1,8 @@
 import { GuildMember, Message, RichEmbed, User } from "discord.js";
-import { TcmdFunc } from "../commandHandler";
-import { prefixes } from "../sequelize/sequelize";
-import { Command, Constants, logger, Searcher, Time } from "../util/deps";
-import { escMarkdown, rejct, textAbstract } from "../util/funcs";
+import { TcmdFunc } from "../../commandHandler";
+import { prefixes } from "../../sequelize/sequelize";
+import { Command, Constants, logger, Searcher, Time } from "../../util/deps";
+import { escMarkdown, rejct, textAbstract } from "../../util/funcs";
 
 const func: TcmdFunc = async (msg: Message, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
