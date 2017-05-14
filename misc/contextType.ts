@@ -35,7 +35,7 @@ interface IFuncs {
   hasPermission?: typeof GuildMember.prototype.hasPermissions;
   hasPermissions?: typeof GuildMember.prototype.hasPermission;
   prompt: (options: IPromptOptions) => Promise<string>;
-  promptAmbig: (members: GuildMember[]) => IAmbigResult;
+  promptAmbig: <T>(members: T[], pluralName?: string) => Promise<IAmbigResult<T>>;
   reply: ExtendedSend;
   send: ExtendedSend;
 }

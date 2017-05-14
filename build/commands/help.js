@@ -57,26 +57,26 @@ const func = async (msg, { args, send, reply, prefix, botmember }) => {
         sendIt(embed);
     }
     else {
-        let cmdToUse = null;
-        Object.values(deps_1.bot.commands).forEach((cmd) => {
-            if (cmdToUse) {
+        return reply("Unknown command/category!");
+        /* let cmdToUse = null;
+        Object.values(bot.commands).forEach((cmd: Command) => {
+          if (cmdToUse) {
+            return;
+          }
+          if (cmd.aliases) {
+            Object.values(cmd.aliases).forEach((alias: Command) => {
+              if (cmdToUse) {
                 return;
-            }
-            if (cmd.aliases) {
-                Object.values(cmd.aliases).forEach((alias) => {
-                    if (cmdToUse) {
-                        return;
-                    }
-                    if (alias.name.toLowerCase() === deps_1._.trim(args).toLowerCase()) {
-                        cmdToUse = alias;
-                    }
-                });
-            }
+              }
+              if (alias.name.toLowerCase() === _.trim(args).toLowerCase()) {
+                cmdToUse = alias;
+              }
+            });
+          }
         });
         if (!cmdToUse) {
-            return reply("Unknown command/category!");
         }
-        sendIt(cmdToUse.help(prefix, true));
+        sendIt(cmdToUse.help(prefix, true)); */
     }
 };
 exports.help = new command_1.default({

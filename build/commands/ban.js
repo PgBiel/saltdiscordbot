@@ -34,7 +34,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     if (!user && !reason) {
         return;
     }
-    deps_1.logger.debug(user, reason);
+    // logger.debug(user, reason);
     let memberToUse;
     let membersMatched;
     if (/[^]#\d{4}$/.test(user)) {
@@ -55,12 +55,15 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     else if (membersMatched && membersMatched.length === 1) {
         memberToUse = membersMatched[0];
     }
-    else if (membersMatched && membersMatched.length > 1) {
+    else if (membersMatched && membersMatched.length > 1 && membersMatched.length < 10) {
         const result = await promptAmbig(membersMatched);
         if (result.cancelled) {
             return;
         }
         memberToUse = result.member;
+    }
+    else if (membersMatched) {
+        return reply("Multiple members have matched your search. Please be more specific.");
     }
     if (!memberToUse) {
         return;

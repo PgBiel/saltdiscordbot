@@ -1,6 +1,6 @@
 import {
   Collection, DMChannel, GroupDMChannel, Guild, GuildMember, Message, MessageOptions, StringResolvable,
-  TextChannel,
+  TextChannel, User,
 } from "discord.js";
 import actionLog, { ILogOption } from "./classes/actionlogger";
 import messager from "./classes/messager";
@@ -28,9 +28,9 @@ export type ExtendedSendArr = { // tslint:disable-line:interface-over-type-liter
 
 export type ExtendedMsgOptions = MessageOptions & ICustomSendType;
 
-export interface IAmbigResult {
+export interface IAmbigResult<T> {
   cancelled: boolean;
-  member?: GuildMember;
+  member?: T;
 }
 
 interface ICustomSendType {
@@ -98,12 +98,22 @@ export default function returnFuncs(msg: Message) {
     }
     return false;
   };
-  const promptAmbig = async (members: GuildMember[]): Promise<IAmbigResult> => {
+  const promptAmbig = async <T> (members: T[], pluralName: string = "members"): Promise<IAmbigResult<T>> => {
     let satisfied: boolean = false;
     let cancelled: boolean = false;
-    let currentOptions: GuildMember[] = [];
+    let currentOptions: T[] = [];
 
-    members.forEach((gm: GuildMember) => currentOptions.push(gm));
+    const getTag = (gm: T): string => {
+      if (gm instanceof User) {
+        return gm.tag;
+      } else if (gm instanceof GuildMember) {
+        return gm.user.tag;
+      } else {
+        return gm.toString();
+      }
+    };
+
+    members.forEach((gm: T) => currentOptions.push(gm));
     const filter = (msg2: Message) => {
       const options = currentOptions;
       if (msg2.author.id !== msg.author.id) {
@@ -113,18 +123,18 @@ export default function returnFuncs(msg: Message) {
         cancelled = true;
         return true;
       }
-      const tagOptions: string[] = options.map((gm: GuildMember) => gm.user.tag);
+      const tagOptions: string[] = options.map((gm: T) => getTag(gm));
       if (tagOptions.includes(msg2.content)) {
         satisfied = true;
         currentOptions = [options[tagOptions.indexOf(msg2.content)]];
         return true;
       }
-      const collOptions = new Collection<string, GuildMember>();
-      options.forEach((gm: GuildMember) => {
-        collOptions.set(gm.id, gm);
+      const collOptions = new Collection<string, T>();
+      options.forEach((gm: T) => {
+        collOptions.set((gm instanceof GuildMember || gm instanceof User) ? gm.id : gm.toString(), gm);
       });
-      const searcher2: Searcher<GuildMember> = new Searcher({ members: collOptions });
-      const resultingMembers: GuildMember[] = searcher2.searchMember(msg2.content);
+      const searcher2: Searcher<T> = new Searcher<T>({ members: collOptions });
+      const resultingMembers: T[] = searcher2.searchMember(msg2.content);
       if (resultingMembers.length < 1) {
         return true;
       }
@@ -136,10 +146,10 @@ export default function returnFuncs(msg: Message) {
       currentOptions = resultingMembers;
       return true;
     };
-    reply(`Multiple members have matched that search. Please specify one.
+    reply(`Multiple ${pluralName} have matched that search. Please specify one.
 This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
 **Members Matched**:
-\`${currentOptions.map((gm) => gm.user.tag).join("`,`")}\``);
+\`${currentOptions.map((gm) => getTag(gm)).join("`,`")}\``);
     for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
       try {
         const result = await channel.awaitMessages(
@@ -162,10 +172,10 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
           };
         }
         if (i < 5) {
-          reply(`Multiple members have matched that search. Please specify one.
+          reply(`Multiple ${pluralName} have matched that search. Please specify one.
 This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
 **Members Matched**:
-\`${currentOptions.map((gm) => gm.user.tag).join("`,`")}\``);
+\`${currentOptions.map((gm) => getTag(gm)).join("`,`")}\``);
         }
       } catch (err) {
         logger.error(`At PromptAmbig: ${err}`);

@@ -48,10 +48,21 @@ function returnFuncs(msg) {
         }
         return false;
     };
-    const promptAmbig = async (members) => {
+    const promptAmbig = async (members, pluralName = "members") => {
         let satisfied = false;
         let cancelled = false;
         let currentOptions = [];
+        const getTag = (gm) => {
+            if (gm instanceof discord_js_1.User) {
+                return gm.tag;
+            }
+            else if (gm instanceof discord_js_1.GuildMember) {
+                return gm.user.tag;
+            }
+            else {
+                return gm.toString();
+            }
+        };
         members.forEach((gm) => currentOptions.push(gm));
         const filter = (msg2) => {
             const options = currentOptions;
@@ -62,7 +73,7 @@ function returnFuncs(msg) {
                 cancelled = true;
                 return true;
             }
-            const tagOptions = options.map((gm) => gm.user.tag);
+            const tagOptions = options.map((gm) => getTag(gm));
             if (tagOptions.includes(msg2.content)) {
                 satisfied = true;
                 currentOptions = [options[tagOptions.indexOf(msg2.content)]];
@@ -70,7 +81,7 @@ function returnFuncs(msg) {
             }
             const collOptions = new discord_js_1.Collection();
             options.forEach((gm) => {
-                collOptions.set(gm.id, gm);
+                collOptions.set((gm instanceof discord_js_1.GuildMember || gm instanceof discord_js_1.User) ? gm.id : gm.toString(), gm);
             });
             const searcher2 = new searcher_1.default({ members: collOptions });
             const resultingMembers = searcher2.searchMember(msg2.content);
@@ -85,10 +96,10 @@ function returnFuncs(msg) {
             currentOptions = resultingMembers;
             return true;
         };
-        reply(`Multiple members have matched that search. Please specify one.
+        reply(`Multiple ${pluralName} have matched that search. Please specify one.
 This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
 **Members Matched**:
-\`${currentOptions.map((gm) => gm.user.tag).join("`,`")}\``);
+\`${currentOptions.map((gm) => getTag(gm)).join("`,`")}\``);
         for (let i = 0; i < deps_1.Constants.numbers.MAX_PROMPT; i++) {
             try {
                 const result = await channel.awaitMessages(filter, {
@@ -109,10 +120,10 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
                     };
                 }
                 if (i < 5) {
-                    reply(`Multiple members have matched that search. Please specify one.
+                    reply(`Multiple ${pluralName} have matched that search. Please specify one.
 This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
 **Members Matched**:
-\`${currentOptions.map((gm) => gm.user.tag).join("`,`")}\``);
+\`${currentOptions.map((gm) => getTag(gm)).join("`,`")}\``);
                 }
             }
             catch (err) {

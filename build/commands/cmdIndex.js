@@ -14,3 +14,4 @@ __export(require("./ping"));
 __export(require("./prefix"));
 __export(require("./random"));
 __export(require("./rip"));
+__export(require("./unban"));

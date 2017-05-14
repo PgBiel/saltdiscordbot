@@ -19,13 +19,42 @@ class Searcher {
             this.members = guild.members;
         }
         if (roles) {
-            this.roles = roles;
+            if (roles instanceof Array) {
+                const rolesToUse = new discord_js_1.Collection();
+                for (const role of roles) {
+                    rolesToUse.set(role.id, role);
+                }
+                this.roles = rolesToUse;
+            }
+            else {
+                this.roles = roles;
+            }
         }
         if (channels) {
-            this.channels = channels;
+            if (channels instanceof Array) {
+                const channelsToUse = new discord_js_1.Collection();
+                for (const channel of channels) {
+                    channelsToUse.set(channel.id, channel);
+                }
+                this.channels = channelsToUse;
+            }
+            else {
+                this.channels = channels;
+            }
         }
         if (members) {
-            this.members = members;
+            if (members instanceof Array) {
+                const membersToUse = new discord_js_1.Collection();
+                for (const member of members) {
+                    membersToUse.set((member instanceof discord_js_1.GuildMember || member instanceof discord_js_1.User) ?
+                        member.id :
+                        member.toString(), member);
+                }
+                this.members = membersToUse;
+            }
+            else {
+                this.members = members;
+            }
         }
     }
     /**

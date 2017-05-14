@@ -37,7 +37,7 @@ const func: TcmdFunc = async (msg: Message, {
   if (!user && !reason) {
     return;
   }
-  logger.debug(user, reason);
+  // logger.debug(user, reason);
   let memberToUse: GuildMember;
   let membersMatched: GuildMember[];
   if (/[^]#\d{4}$/.test(user)) {
@@ -57,12 +57,14 @@ const func: TcmdFunc = async (msg: Message, {
     return reply("Member not found!");
   } else if (membersMatched && membersMatched.length === 1) {
     memberToUse = membersMatched[0];
-  } else if (membersMatched && membersMatched.length > 1) {
+  } else if (membersMatched && membersMatched.length > 1 && membersMatched.length < 10) {
     const result = await promptAmbig(membersMatched);
     if (result.cancelled) {
       return;
     }
     memberToUse = result.member;
+  } else if (membersMatched) {
+    return reply("Multiple members have matched your search. Please be more specific.");
   }
   if (!memberToUse) {
     return;

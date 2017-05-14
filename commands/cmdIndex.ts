@@ -11,3 +11,4 @@ export * from "./ping";
 export * from "./prefix";
 export * from "./random";
 export * from "./rip";
+export * from "./unban";

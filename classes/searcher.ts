@@ -7,9 +7,9 @@ export type SearchChannelResult = GuildChannel[];
 
 export interface ISearcherOptions<MemberColl> {
   guild?: Guild;
-  members?: Collection<string, MemberColl>;
-  roles?: Collection<string, Role>;
-  channels?: Collection<string, GuildChannel>;
+  members?: Collection<string, MemberColl> | MemberColl[];
+  roles?: Collection<string, Role> | Role[];
+  channels?: Collection<string, GuildChannel> | GuildChannel[];
 }
 
 /**
@@ -53,13 +53,41 @@ export default class Searcher<MemberColl> {
       this.members = (guild.members as any);
     }
     if (roles) {
-      this.roles = roles;
+      if (roles instanceof Array) {
+        const rolesToUse = new Collection<string, Role>();
+        for (const role of roles) {
+          rolesToUse.set(role.id, role);
+        }
+        this.roles = rolesToUse;
+      } else {
+        this.roles = roles;
+      }
     }
     if (channels) {
+      if (channels instanceof Array) {
+        const channelsToUse = new Collection<string, GuildChannel>();
+        for (const channel of channels) {
+          channelsToUse.set(channel.id, channel);
+        }
+        this.channels = channelsToUse;
+      } else {
       this.channels = channels;
+      }
     }
     if (members) {
-      this.members = members;
+      if (members instanceof Array) {
+        const membersToUse = new Collection<string, MemberColl>();
+        for (const member of members) {
+          membersToUse.set(
+            (member instanceof GuildMember || member instanceof User) ?
+            member.id :
+            member.toString(), member,
+          );
+        }
+        this.members = membersToUse;
+      } else {
+        this.members = members;
+      }
     }
   }
 

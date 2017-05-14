@@ -54,7 +54,8 @@ const func: cmdFunc = async (msg: Message, { args, send, reply, prefix, botmembe
     const embed = bot.commands[cmdn].help(prefix, true);
     sendIt(embed);
   } else {
-    let cmdToUse = null;
+    return reply("Unknown command/category!");
+    /* let cmdToUse = null;
     Object.values(bot.commands).forEach((cmd: Command) => {
       if (cmdToUse) {
         return;
@@ -71,9 +72,8 @@ const func: cmdFunc = async (msg: Message, { args, send, reply, prefix, botmembe
       }
     });
     if (!cmdToUse) {
-      return reply("Unknown command/category!");
     }
-    sendIt(cmdToUse.help(prefix, true));
+    sendIt(cmdToUse.help(prefix, true)); */
   }
 };
 export const help = new Command({
