@@ -7,6 +7,7 @@ export * from "./noDelBan";
 
 export * from "./eval";
 export * from "./help";
+export * from "./kick";
 export * from "./ping";
 export * from "./prefix";
 export * from "./random";

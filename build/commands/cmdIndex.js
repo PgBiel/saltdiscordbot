@@ -10,6 +10,7 @@ __export(require("./softban"));
 __export(require("./noDelBan"));
 __export(require("./eval"));
 __export(require("./help"));
+__export(require("./kick"));
 __export(require("./ping"));
 __export(require("./prefix"));
 __export(require("./random"));

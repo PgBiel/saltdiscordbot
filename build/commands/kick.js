@@ -4,21 +4,14 @@ const discord_js_1 = require("discord.js");
 const deps_1 = require("../util/deps");
 const funcs_1 = require("../util/funcs");
 const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms, searcher, promptAmbig, author, botmember, member, actionLog, dummy, }) => {
-    const actions = [
-        (dummy.actions && dummy.actions[0]) || "Banning",
-        (dummy.actions && dummy.actions[1]) || "Banned",
-        (dummy.actions && dummy.actions[2]) || "banned",
-        (dummy.actions && dummy.actions[3]) || "Ban",
-        (dummy.actions && dummy.actions[4]) || "ban",
-    ];
-    if (!perms[dummy.perms || "ban"] && !hasPermission(["BAN_MEMBERS"])) {
+    if (!perms.kick && !hasPermission(["KICK_MEMBERS"])) {
         return reply("You do not have sufficient permissions! :frowning:");
     }
-    else if (!botmember.hasPermission(["BAN_MEMBERS"])) {
-        return reply("I do not have the permission `Ban Members`! :frowning:");
+    else if (!botmember.hasPermission(["KICK_MEMBERS"])) {
+        return reply("I do not have the permission `Kick Members`! :frowning:");
     }
     if (!args) {
-        return reply(`Please tell me who to ${actions[4]}!`);
+        return reply("Please tell me who to kick!");
     }
     let user;
     let reason;
@@ -34,7 +27,6 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     if (!user && !reason) {
         return;
     }
-    // logger.debug(user, reason);
     let memberToUse;
     let membersMatched;
     if (/[^]#\d{4}$/.test(user)) {
@@ -83,102 +75,67 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     else if (memberToUse.id === guild.owner.id) {
         return reply("That member is the owner!");
     }
-    else if (!memberToUse.bannable) {
-        return reply("That member is not bannable (being generic here). \
-Check the conditions for being banned (e.g. must not be owner, etc)!");
+    else if (!memberToUse.kickable) {
+        return reply("That member is not kickable (being generic here). \
+Check the conditions for being kicked (e.g. must not be owner, etc)!");
     }
-    const embed = new discord_js_1.RichEmbed();
-    embed
-        .setAuthor(`${actions[3]} confirmation - ${memberToUse.user.tag}`, memberToUse.user.displayAvatarURL)
-        .setColor("RED")
-        .setDescription(reason || "No reason")
-        .setTimestamp(new Date());
-    if (dummy.usePrompt == null || dummy.usePrompt) {
-        const result = await prompt({
-            question: `Are you sure you want to ${actions[4]} this member? \
-This will expire in 15 seconds. Type __y__es or __n__o.`,
-            invalidMsg: "__Y__es or __n__o?",
-            filter: (msg2) => {
-                return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
-            },
-            timeout: deps_1.Time.seconds(15),
-            cancel: false,
-            options: { embed },
-        });
-        if (!result) {
-            return;
-        }
-        if (/^n/i.test(result)) {
-            send("Command cancelled.");
-            return;
-        }
-    }
-    const sentBanMsg = await send(`${actions[0]} ${memberToUse.user.tag}... (Sending DM...)`);
+    const sentKickMsg = await send(`Kicking ${memberToUse.user.tag}... (Sending DM...)`);
     const reasonEmbed = new discord_js_1.RichEmbed();
     reasonEmbed
-        .setColor(dummy.color || "RED")
+        .setColor("ORANGE")
         .setDescription(reason || "None")
         .setTimestamp(new Date());
     const finish = () => {
-        sentBanMsg.edit(`${actions[1]} ${memberToUse.user.tag} successfully.`).catch(funcs_1.rejct);
+        sentKickMsg.edit(`Kicked ${memberToUse.user.tag} successfully.`).catch(funcs_1.rejct);
         actionLog({
-            action_desc: `**{target}** was ${actions[2]}`,
+            action_desc: `**{target}** was kicked`,
             target: { toString: () => memberToUse.user.tag },
-            type: actions[3],
+            type: "kick",
             author: member,
-            color: dummy.color || "RED",
+            color: "ORANGE",
             reason: reason || "None",
         }).catch(funcs_1.rejct);
     };
     const fail = (err) => {
         funcs_1.rejct(err);
-        sentBanMsg.edit(`The ${actions[4]} failed! :frowning:`).catch(funcs_1.rejct);
+        sentKickMsg.edit(`The kick failed! :frowning:`).catch(funcs_1.rejct);
     };
-    const executeBan = () => {
-        const banPrefix = `[${actions[3]} command executed by ${author.tag}] `;
-        // const availableLength = 512 - (reason.length + banPrefix.length);
-        const compressedText = funcs_1.textAbstract(banPrefix + (reason || "No reason given"), 512);
-        memberToUse.ban({ days: dummy.days == null ? 1 : dummy.days, reason: compressedText }).then(() => {
-            if (dummy.banType === "softban") {
-                sentBanMsg.edit(`${actions[0]} ${memberToUse.user.tag}... (Waiting for unban...)`).catch(funcs_1.rejct);
-                guild.unban(memberToUse.user).then(finish).catch(fail);
-            }
-            else {
-                finish();
-            }
-        }).catch(fail);
+    const executeKick = () => {
+        const kickPrefix = `[Kick command executed by ${author.tag}] `;
+        const compressedText = funcs_1.textAbstract(kickPrefix + (reason || "No reason given"), 512);
+        memberToUse.kick(compressedText).then(finish).catch(fail);
     };
     let sent = false;
     let timeoutRan = false;
-    memberToUse.send(`You were ${actions[2]} at the server **${funcs_1.escMarkdown(guild.name)}** for the reason of:`, { embed: reasonEmbed }).then(() => {
+    memberToUse.send(`You were kicked at the server **${funcs_1.escMarkdown(guild.name)}** for the reason of:`, { embed: reasonEmbed }).then(() => {
         if (timeoutRan) {
             return;
         }
         sent = true;
-        sentBanMsg.edit(`${actions[0]} ${memberToUse.user.tag}... (DM Sent. Swinging ban hammer...)`).catch(funcs_1.rejct);
-        executeBan();
+        sentKickMsg.edit(`Kicking ${memberToUse.user.tag}... (DM Sent. Kicking member...)`).catch(funcs_1.rejct);
+        executeKick();
     }).catch((err) => {
         funcs_1.rejct(err);
         if (timeoutRan) {
             return;
         }
         sent = true;
-        sentBanMsg.edit(`${actions[0]} ${memberToUse.user.tag}... (DM Failed. Swinging ban hammer anyway...)`).catch(funcs_1.rejct);
-        executeBan();
+        sentKickMsg.edit(`Kicking ${memberToUse.user.tag}... (DM Failed. Kicking member anyway...)`).catch(funcs_1.rejct);
+        executeKick();
     });
     setTimeout(() => {
         if (!sent) {
             timeoutRan = true;
-            executeBan();
+            executeKick();
         }
     }, deps_1.Time.seconds(2.8));
 };
-exports.ban = new deps_1.Command({
+exports.kick = new deps_1.Command({
     func,
-    name: "ban",
-    perms: "ban",
-    description: "Ban a member.",
-    example: "{p}ban @EvilGuy#0010 Being evil",
+    name: "kick",
+    perms: "kick",
+    description: "Kick a member.",
+    example: "{p}kick @EvilGuy#0010 Being sort of evil",
     category: "Moderation",
     args: { member: false, reason: true },
     guildOnly: true,
