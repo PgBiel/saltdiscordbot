@@ -175,7 +175,6 @@ export const ban = new Command({
   func,
   name: "ban",
   perms: "ban",
-  aliases: ["softban"],
   description: "Ban a member.",
   example: "{p}ban @EvilGuy#0010 Being evil",
   category: "Moderation",
