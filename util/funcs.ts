@@ -1,11 +1,19 @@
+import { Guild } from "discord.js";
 import Command from "../classes/command";
 import * as cmds from "../commands/cmdIndex";
-import { _, bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager } from "./deps";
+import { _, bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager, Time, xreg } from "./deps";
 
 export interface IMessagerEvalData {
   content: string;
   vars: {[prop: string]: any};
   id: number;
+}
+
+export interface IMuteParseResults {
+  ok: boolean;
+  user: string;
+  time: Time;
+  reason: string;
 }
 
 /**
@@ -166,4 +174,145 @@ export function textAbstract(text: string, length: number): string {
     }
     const newText = text.substring(0, length).replace(/[^]{0,3}$/, "...");
     return newText || "...";
+}
+/**
+ * Combine regexs into one.
+ * @param {RegExp[]|string[]} regs The RegExp expressions or strings.
+ * @param {string} [options] The flags.
+ * @returns {RegExp} The combined regex.
+ */
+export function combineRegex(regs: Array<string | RegExp>, options: string = ""): RegExp {
+  let regexStr = "";
+  for (const match of regs) {
+    regexStr += match instanceof RegExp ? match.source : match;
+  }
+  return new RegExp(regexStr, options);
+}
+
+/**
+ * Parse a time string. (Used for mute command)
+ * @param {string} str The time string.
+ * @returns {?Object} The parsed time, with all units as a property.
+ */
+export function parseTimeStr(str: string): typeof Time.prototype.units {
+  logger.debug(str);
+  const time = new Time();
+  if (typeof str !== "string") {
+    return time.units;
+  }
+  const match = str.match(Constants.regex.MUTE.TIME_MATCH);
+  if (!match || match.length < 1) {
+    return time.units;
+  }
+  logger.debug(match);
+  for (const result of match) {
+    const [amount, unit] = [
+      result.match(Constants.regex.MUTE.SINGLE_TIME_MATCH(true))[1],
+      result.match(Constants.regex.MUTE.SINGLE_TIME_MATCH(false))[1],
+    ];
+    if (Time.validUnit(unit)) {
+      time.add(unit, Number(amount));
+    }
+  }
+  return time.units;
+}
+
+/**
+ * Make a mute role.
+ * @param {Guild} guild The guild to create the mute role at.
+ * @returns {Promise<Role>} The created role.
+ */
+export async function createMutedRole(guild: Guild) {
+  const newRole = await guild.createRole({
+    name: "SaltMuted",
+    permissions: [],
+  });
+  for (const [id, channel] of guild.channels) {
+    channel.overwritePermissions(newRole, { SEND_MESSAGES: false }).catch(rejct);
+  }
+  return newRole;
+}
+
+/**
+ * Convert a string to binary.
+ * @param {string} str The string to convert.
+ * @param {string} [joinChar] The character to separate each separate digit. " " by default.
+ * @param {string} [unicodeJoinChar] The character to separate each character used to make one bigger character.
+ * Nothing by default.
+ * @returns {string} The converted string.
+ */
+export function toBin(str: string, joinChar: string = " ", unicodeJoinChar: string = ""): string {
+  const PADDING = "0".repeat(8);
+
+  const resultArr: string[] = [];
+
+  if (typeof str !== "string") {
+    try {
+      str = (str as any).toString();
+    } catch (err) {
+      str = String(str);
+    }
+  }
+
+  for (const i of Object.keys(str)) {
+    if (isNaN(Number(i))) {
+      return;
+    }
+    const compact: string = str.charCodeAt(Number(i)).toString(2);
+    if (compact.length / 8 > 1) {
+      const el: string[] = [];
+      compact.match(/[^]{8}/g).forEach((byte: string) => {
+        const padded2: string = PADDING.substring(0, PADDING.length - byte.length) + byte;
+        el.push(padded2);
+      });
+      resultArr.push(el.join(unicodeJoinChar || ""));
+      continue;
+    }
+    const padded: string = PADDING.substring(0, PADDING.length - compact.length) + compact;
+    resultArr.push(padded);
+  }
+  const result: string = resultArr.join(joinChar);
+  return result;
+}
+
+/**
+ * Parse arguments for the mute command.
+ * @param {string} str The arguments.
+ * @returns {Object} The result.
+ */
+export function parseMute(str: string): IMuteParseResults {
+  const obj = {
+    ok: true,
+    user: "",
+    time: null,
+    reason: "",
+  };
+  const reg = xreg(Constants.regex.MUTE.MATCH_REG, "x");
+  const results = str.match(reg);
+  if (!results) {
+    obj.ok = false;
+    return obj;
+  }
+  results.forEach((piece: string, index: number) => {
+    if (index < 1 || index > 7 || !piece) { return; }
+    if (!obj.user) {
+      obj.user = piece;
+    } else if (!obj.time || obj.time.time < 1) {
+      if (!obj.time) {
+        obj.time = new Time();
+      }
+      if (Constants.regex.MUTE.IS_JUST_NUMBER.test(piece)) {
+        obj.time.add("m", Number(piece));
+        return;
+      }
+      const parsedTime = parseTimeStr(piece);
+      for (const [unit, amount] of Object.entries(parsedTime)) {
+        if (Time.validUnit(unit)) {
+          obj.time.add(unit, amount);
+        }
+      }
+    }
+  });
+  obj.reason = results[8] || "";
+  return obj;
 }

@@ -9,6 +9,7 @@ import * as _ from "lodash";
 import * as querystring from "querystring";
 import * as Sequelize from "sequelize";
 import * as toml from "toml";
+import xreg = require("xregexp");
 export const data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
 export const sql = new Sequelize("botdata", data.sql.user || null, data.sql.pass || null, {
   host: "localhost",
@@ -27,6 +28,9 @@ import messager from "../classes/messager";
 import perms from "../classes/permissions";
 import Searcher from "../classes/searcher";
 import Time from "../classes/time";
+
+import * as models from "../sequelize/sequelize";
+
 // declare const decodeT: (...a) => any;
 const commandParse: any = 1; // unused
 
@@ -58,12 +62,14 @@ export {
   Sequelize,
   util,
   messager,
+  models,
   perms,
   logger,
   chalk,
   querystring,
   Searcher,
   Time,
+  xreg,
 
   decodeT,
   msgEmbedToRich,

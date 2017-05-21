@@ -24,6 +24,8 @@ const Sequelize = require("sequelize");
 exports.Sequelize = Sequelize;
 const toml = require("toml");
 exports.toml = toml;
+const xreg = require("xregexp");
+exports.xreg = xreg;
 exports.data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
 exports.sql = new Sequelize("botdata", exports.data.sql.user || null, exports.data.sql.pass || null, {
     host: "localhost",
@@ -48,6 +50,8 @@ const searcher_1 = require("../classes/searcher");
 exports.Searcher = searcher_1.default;
 const time_1 = require("../classes/time");
 exports.Time = time_1.default;
+const models = require("../sequelize/sequelize");
+exports.models = models;
 // declare const decodeT: (...a) => any;
 const commandParse = 1; // unused
 exports.commandParse = commandParse;

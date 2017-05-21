@@ -1,5 +1,5 @@
 import { Collection, Guild, GuildChannel, GuildMember, Role, TextChannel, User, VoiceChannel } from "discord.js";
-import { _, bot, logger } from "../util/deps";
+import { _, bot, Constants, logger } from "../util/deps";
 
 export type GuildResolvable = Guild | string;
 export type SearchChannelType = "text" | "voice" | "all";
@@ -110,6 +110,13 @@ export default class Searcher<MemberColl> {
 
       return userToUse;
     };
+    if (typeof nameOrPattern === "string" && Constants.regex.NAME_AND_DISCRIM(true).test(nameOrPattern)) {
+      const result = this.members.find((memb: MemberColl) => getUser(memb).tag === nameOrPattern);
+      if (result) {
+        match.push(result);
+        return match;
+      }
+    }
     for (const [id, member] of this.members) {
       const userToUse: User = getUser(member);
       if (
@@ -127,13 +134,25 @@ export default class Searcher<MemberColl> {
         }
       }
     }
-    if (match.length < 1) {
-      for (const [id, member] of this.members) {
-        if (pattern.test(member instanceof GuildMember ? member.nickname : getUser(member).username)) {
-          match.push(member);
+    // if (match.length < 1) {
+    for (const [id, member] of this.members) {
+      if (pattern.test(member instanceof GuildMember ? member.nickname : getUser(member).username)) {
+        let shouldContinue: boolean = false;
+        match.forEach((m: MemberColl) => {
+          if (shouldContinue) {
+            return;
+          }
+          if ((getUser(m) ? getUser(m).id : m) === (getUser(member) || { id: member }).id) {
+            shouldContinue = true;
+          }
+        });
+        if (shouldContinue) {
+          continue;
         }
+        match.push(member);
       }
     }
+    // }
     if (match.length < 1 && typeof nameOrPattern === "string") {
       if (this.members.has(nameOrPattern)) {
         match.push(this.members.get(nameOrPattern));

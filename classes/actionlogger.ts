@@ -125,16 +125,16 @@ class ActionLog {
       serverid: guild.id,
       type,
       moderator: author.id,
-      case: caseNum,
+      case: caseNum + 1,
       time: at.getTime(),
       reason: reason || "None",
-      duration: time ? new Date(time.time) : null,
+      duration: time ? time.time : null,
       messageid: msgSent.id,
     }).catch(rejct);
     try {
       const entry: {[prop: string]: any} = await moderation.findOne({ where: { serverid: guild.id } });
       entry.update({
-        latestCase: caseNum,
+        latestCase: caseNum + 1,
       }).catch(rejct);
     } catch (err) {
       logger.error(`At updating moderation entry (Case num: ${caseNum}, guild: ${guild.id}): ${err}`);
@@ -228,7 +228,7 @@ class ActionLog {
     const logCase: {[prop: string]: any} = await moderation.findOne({ where: { serverid: guild.id } });
     if (logCase) {
       const returnVal = isNaN(logCase.latestCase) ? logCase.latestCase : Number(logCase.latestCase);
-      if (returnVal) {
+      if (typeof returnVal === "string" || typeof returnVal === "number") {
         return returnVal;
       }
     }

@@ -173,3 +173,146 @@ function textAbstract(text, length) {
     return newText || "...";
 }
 exports.textAbstract = textAbstract;
+/**
+ * Combine regexs into one.
+ * @param {RegExp[]|string[]} regs The RegExp expressions or strings.
+ * @param {string} [options] The flags.
+ * @returns {RegExp} The combined regex.
+ */
+function combineRegex(regs, options = "") {
+    let regexStr = "";
+    for (const match of regs) {
+        regexStr += match instanceof RegExp ? match.source : match;
+    }
+    return new RegExp(regexStr, options);
+}
+exports.combineRegex = combineRegex;
+/**
+ * Parse a time string. (Used for mute command)
+ * @param {string} str The time string.
+ * @returns {?Object} The parsed time, with all units as a property.
+ */
+function parseTimeStr(str) {
+    deps_1.logger.debug(str);
+    const time = new deps_1.Time();
+    if (typeof str !== "string") {
+        return time.units;
+    }
+    const match = str.match(deps_1.Constants.regex.MUTE.TIME_MATCH);
+    if (!match || match.length < 1) {
+        return time.units;
+    }
+    deps_1.logger.debug(match);
+    for (const result of match) {
+        const [amount, unit] = [
+            result.match(deps_1.Constants.regex.MUTE.SINGLE_TIME_MATCH(true))[1],
+            result.match(deps_1.Constants.regex.MUTE.SINGLE_TIME_MATCH(false))[1],
+        ];
+        if (deps_1.Time.validUnit(unit)) {
+            time.add(unit, Number(amount));
+        }
+    }
+    return time.units;
+}
+exports.parseTimeStr = parseTimeStr;
+/**
+ * Make a mute role.
+ * @param {Guild} guild The guild to create the mute role at.
+ * @returns {Promise<Role>} The created role.
+ */
+async function createMutedRole(guild) {
+    const newRole = await guild.createRole({
+        name: "SaltMuted",
+        permissions: [],
+    });
+    for (const [id, channel] of guild.channels) {
+        channel.overwritePermissions(newRole, { SEND_MESSAGES: false }).catch(rejct);
+    }
+    return newRole;
+}
+exports.createMutedRole = createMutedRole;
+/**
+ * Convert a string to binary.
+ * @param {string} str The string to convert.
+ * @param {string} [joinChar] The character to separate each separate digit. " " by default.
+ * @param {string} [unicodeJoinChar] The character to separate each character used to make one bigger character.
+ * Nothing by default.
+ * @returns {string} The converted string.
+ */
+function toBin(str, joinChar = " ", unicodeJoinChar = "") {
+    const PADDING = "0".repeat(8);
+    const resultArr = [];
+    if (typeof str !== "string") {
+        try {
+            str = str.toString();
+        }
+        catch (err) {
+            str = String(str);
+        }
+    }
+    for (const i of Object.keys(str)) {
+        if (isNaN(Number(i))) {
+            return;
+        }
+        const compact = str.charCodeAt(Number(i)).toString(2);
+        if (compact.length / 8 > 1) {
+            const el = [];
+            compact.match(/[^]{8}/g).forEach((byte) => {
+                const padded2 = PADDING.substring(0, PADDING.length - byte.length) + byte;
+                el.push(padded2);
+            });
+            resultArr.push(el.join(unicodeJoinChar || ""));
+            continue;
+        }
+        const padded = PADDING.substring(0, PADDING.length - compact.length) + compact;
+        resultArr.push(padded);
+    }
+    const result = resultArr.join(joinChar);
+    return result;
+}
+exports.toBin = toBin;
+/**
+ * Parse arguments for the mute command.
+ * @param {string} str The arguments.
+ * @returns {Object} The result.
+ */
+function parseMute(str) {
+    const obj = {
+        ok: true,
+        user: "",
+        time: null,
+        reason: "",
+    };
+    const reg = deps_1.xreg(deps_1.Constants.regex.MUTE.MATCH_REG, "x");
+    const results = str.match(reg);
+    if (!results) {
+        obj.ok = false;
+        return obj;
+    }
+    results.forEach((piece, index) => {
+        if (index < 1 || index > 7 || !piece) {
+            return;
+        }
+        if (!obj.user) {
+            obj.user = piece;
+        }
+        else if (!obj.time || obj.time.time < 1) {
+            if (!obj.time) {
+                obj.time = new deps_1.Time();
+            }
+            if (deps_1.Constants.regex.MUTE.IS_JUST_NUMBER.test(piece)) {
+                obj.time.add("m", Number(piece));
+                return;
+            }
+            const parsedTime = parseTimeStr(piece);
+            for (const [unit, amount] of Object.entries(parsedTime)) {
+                if (deps_1.Time.validUnit(unit)) {
+                    obj.time.add(unit, amount);
+                }
+            }
+        }
+    });
+    obj.reason = results[8] || "";
+    return obj;
+}
+exports.parseMute = parseMute;

@@ -86,16 +86,16 @@ class ActionLog {
             serverid: guild.id,
             type,
             moderator: author.id,
-            case: caseNum,
+            case: caseNum + 1,
             time: at.getTime(),
             reason: reason || "None",
-            duration: time ? new Date(time.time) : null,
+            duration: time ? time.time : null,
             messageid: msgSent.id,
         }).catch(funcs_1.rejct);
         try {
             const entry = await sequelize_1.moderation.findOne({ where: { serverid: guild.id } });
             entry.update({
-                latestCase: caseNum,
+                latestCase: caseNum + 1,
             }).catch(funcs_1.rejct);
         }
         catch (err) {
@@ -188,7 +188,7 @@ class ActionLog {
         const logCase = await sequelize_1.moderation.findOne({ where: { serverid: guild.id } });
         if (logCase) {
             const returnVal = isNaN(logCase.latestCase) ? logCase.latestCase : Number(logCase.latestCase);
-            if (returnVal) {
+            if (typeof returnVal === "string" || typeof returnVal === "number") {
                 return returnVal;
             }
         }

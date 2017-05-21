@@ -75,6 +75,13 @@ class Searcher {
                     null;
             return userToUse;
         };
+        if (typeof nameOrPattern === "string" && deps_1.Constants.regex.NAME_AND_DISCRIM(true).test(nameOrPattern)) {
+            const result = this.members.find((memb) => getUser(memb).tag === nameOrPattern);
+            if (result) {
+                match.push(result);
+                return match;
+            }
+        }
         for (const [id, member] of this.members) {
             const userToUse = getUser(member);
             if ((typeof nameOrPattern === "string" && userToUse.username === nameOrPattern)
@@ -90,13 +97,25 @@ class Searcher {
                 }
             }
         }
-        if (match.length < 1) {
-            for (const [id, member] of this.members) {
-                if (pattern.test(member instanceof discord_js_1.GuildMember ? member.nickname : getUser(member).username)) {
-                    match.push(member);
+        // if (match.length < 1) {
+        for (const [id, member] of this.members) {
+            if (pattern.test(member instanceof discord_js_1.GuildMember ? member.nickname : getUser(member).username)) {
+                let shouldContinue = false;
+                match.forEach((m) => {
+                    if (shouldContinue) {
+                        return;
+                    }
+                    if ((getUser(m) ? getUser(m).id : m) === (getUser(member) || { id: member }).id) {
+                        shouldContinue = true;
+                    }
+                });
+                if (shouldContinue) {
+                    continue;
                 }
+                match.push(member);
             }
         }
+        // }
         if (match.length < 1 && typeof nameOrPattern === "string") {
             if (this.members.has(nameOrPattern)) {
                 match.push(this.members.get(nameOrPattern));
