@@ -7,9 +7,11 @@ const setShards = { id: null };
 changeConsole(false, setShards);
 console.log("Initializing...");
 import "./misc/events";
-import { bot, data, decodeT, Discord, fs, logger, messager, sql, toml } from "./util/deps";
+import { bot, data, decodeT, Discord, fs, logger, messager, sql, Time, toml } from "./util/deps";
 setShards.id = bot.shard.id;
-import { botMessage, IMessagerEvalData, loadCmds, messagerDoEval, processMessage, rejct } from "./util/funcs";
+import {
+  botMessage, checkMutes, IMessagerEvalData, loadCmds, messagerDoEval, processMessage, rejct,
+} from "./util/funcs";
 const { Collection, Message } = Discord;
 process.on("message", (mdata: any) => {
   processMessage(mdata);
@@ -23,3 +25,4 @@ messager.on("doEval", (edata: IMessagerEvalData) => {
 });
 sql.sync().catch(rejct);
 bot.login(decodeT(data.bot.token_beta)).catch(rejct);
+setInterval(checkMutes, Time.seconds(10));

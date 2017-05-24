@@ -8,6 +8,16 @@ exports.mutes = deps_1.sql.define(`mutes`, {
     },
     muteRoleID: deps_1.Sequelize.STRING,
 });
+exports.immunemutes = deps_1.sql.define(`immunemutes`, {
+    serverid: {
+        type: deps_1.Sequelize.STRING,
+        allowNull: false,
+    },
+    channelid: {
+        type: deps_1.Sequelize.STRING,
+        primaryKey: true,
+    },
+});
 exports.activemutes = deps_1.sql.define(`activemutes`, {
     serverid: {
         type: deps_1.Sequelize.STRING,

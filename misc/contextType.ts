@@ -24,6 +24,7 @@ interface IBaseContext {
   message: Message;
   msg: Message;
   perms?: {[perm: string]: boolean};
+  setPerms?: {[perm: string]: boolean};
   prefix: string;
   searcher?: Searcher<GuildMember>;
 }

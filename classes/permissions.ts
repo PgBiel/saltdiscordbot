@@ -8,6 +8,11 @@ interface IAnyObj {
   [prop: string]: any;
 }
 
+interface IPermsResult {
+  hasPerm: boolean;
+  setPerm: boolean;
+}
+
 class Permz {
   get permlist() {
     const obj = {};
@@ -39,9 +44,11 @@ class Permz {
    * @param {string} guildid Guild to check
    * @param {string} perm The permission node to check (e.g. command.subcommand)
    * @param {boolean} [isDefault=false] If it is a default permission
-   * @returns {Promise<boolean>}
+   * @returns {Promise<Object>}
    */
-  public async checkPerm(member: GuildMember, gueldid: string, perm: string, isDefault: boolean = false) {
+  public async checkPerm(
+    member: GuildMember, gueldid: string, perm: string, isDefault: boolean = false,
+  ): IPermsResult {
     const [cmdname, extra] = _.toPath(perm);
     const whereobj = { serverid: gueldid, type: "user", thingid: member.id };
     // if (extra1) whereobj.extra1 = extra1;
@@ -49,6 +56,7 @@ class Permz {
     // if (extra3) whereobj.extra3 = extra3;
     const thingy: IAnyObj[] = await permissions.findAll({ where: whereobj });
     let hasPerm = false;
+    let setPerm = false;
     const thingyfiltered = thingy.filter((item: any) => item.command === cmdname || item.command
      === "any").sort((a, b) => a.command === "any" ? -1 : (b.command === "any" ? 1 : 0));
     if (thingyfiltered.length < 1) {
@@ -70,10 +78,13 @@ class Permz {
           attemptfiltered.forEach((item: any) => {
             if (item.command === "all") {
               hasPerm = !item.disabled;
+              setPerm = true;
             } else if (item.extra === null) {
               hasPerm = !item.disabled;
+              setPerm = true;
             } else if (extra && item.extra === extra) {
               hasPerm = !item.disabled;
+              setPerm = true;
             }
           });
         }
@@ -82,14 +93,20 @@ class Permz {
       thingyfiltered.forEach((item: any) => {
         if (item.command === "all") {
           hasPerm = !item.disabled;
+          setPerm = true;
         } else if (item.extra === null) {
           hasPerm = !item.disabled;
+          setPerm = true;
         } else if (extra && item.extra === extra) {
           hasPerm = !item.disabled;
+          setPerm = true;
         }
       });
     }
-    return hasPerm;
+    return {
+      hasPerm,
+      setPerm,
+    };
   }
 
   /**
@@ -122,7 +139,7 @@ class Permz {
    * @param {string} guildid Guild to check
    * @param {string} perm The permission node to check (e.g. command.subcommand)
    * @param {boolean} [isDefault=false] If it is a default permission
-   * @returns {Promise<boolean>}
+   * @returns {Promise<Object>}
    */
   public hasPerm(member: GuildMember, gueldid: string, perm: string, isDefault: boolean = false) {
     return this.checkPerm(member, gueldid, perm, isDefault);

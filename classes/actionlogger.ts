@@ -4,6 +4,22 @@ import { logger, msgEmbedToRich, Sequelize, Time } from "../util/deps";
 import { rejct } from "../util/funcs";
 
 /**
+ * Options for editing a case.
+ */
+export interface ICaseEditOptions {
+  /**
+   * A new reason.
+   * @type {string}
+   */
+  reason?: string;
+  /**
+   * To toggle thumbnail.
+   * @type {string}
+   */
+  toggleThumbnail?: boolean;
+}
+
+/**
  * Options for action logging.
  */
 export interface ILogOption {
@@ -169,12 +185,14 @@ class ActionLog {
 
   /**
    * Edit a case.
-   * @param {string} reason The new reason.
    * @param {number} caseN The case number.
+   * @param {Object} options The options.
+   * @param {string} [options.reason] The reason to set.
+   * @param {boolean} [options.toggleThumbnail] If it should toggle thumbnail.
    * @param {Guild} guild The guild to edit at.
    * @returns {Promise<boolean>} If it was edited or not.
    */
-  public async editCase(reason: string, caseN: number, guild: Guild): Promise<boolean> {
+  public async editCase(caseN: number, options: ICaseEditOptions, guild: Guild): Promise<boolean> {
     const caseToLook: {[prop: string]: any} = await cases.find({ where: { case: caseN, serverid: guild.id } });
     if (!caseToLook) {
       return false;
@@ -187,13 +205,22 @@ class ActionLog {
       const logged = await logChannel.fetchMessage(caseToLook.messageid);
       const oldEmbed = logged.embeds[0];
       const newEmbed: RichEmbed = msgEmbedToRich(oldEmbed);
-      newEmbed.fields.forEach((field, i) => {
-        if (field.name === "Reason") {
-          newEmbed.fields.splice(1, i);
+      if (options.reason) {
+        newEmbed.fields.forEach((field, i) => {
+          if (field.name === "Reason") {
+            newEmbed.fields.splice(1, i);
+          }
+        });
+        newEmbed.addField("Reason", options.reason, false);
+      }
+      if (options.toggleThumbnail) {
+        if (newEmbed.thumbnail) {
+          newEmbed.thumbnail = null;
+        } else {
+          newEmbed.setThumbnail(caseToLook.thumbnail);
         }
-      });
-      newEmbed.addField("Reason", reason, false);
-      logged.edit({ embed: newEmbed });
+      }
+      await logged.edit({ embed: newEmbed });
       return true;
     } catch (err) {
       rejct(err);

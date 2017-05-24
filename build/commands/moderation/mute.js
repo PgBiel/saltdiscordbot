@@ -4,8 +4,28 @@ const discord_js_1 = require("discord.js");
 const sequelize_1 = require("../../sequelize/sequelize");
 const deps_1 = require("../../util/deps");
 const funcs_1 = require("../../util/funcs");
-const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms, searcher, promptAmbig, author, botmember, member, actionLog, dummy, }) => {
-    if (!perms.mute && (dummy.perms ? !perms[dummy.perms] : true) && !hasPermission(["MANAGE_ROLES"])) {
+const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms, setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy, checkRole, }) => {
+    let hasPerm = false;
+    if (hasPermission(["MANAGE_ROLES"])) {
+        hasPerm = true;
+    }
+    try {
+        if (await checkRole("mod", member)) {
+            hasPerm = true;
+        }
+    }
+    catch (err) {
+        deps_1.logger.error(`At check role: ${err}`);
+    }
+    if (setPerms.mute) {
+        if (!perms.mute) {
+            hasPerm = false;
+        }
+        if (dummy.perms && !perms[dummy.perms] && setPerms[dummy.perms]) {
+            hasPerm = false;
+        }
+    }
+    if (!hasPerm) {
         return reply("You do not have sufficient permissions! :frowning:");
     }
     else if (!botmember.hasPermission(["MANAGE_ROLES"])) {
@@ -98,9 +118,14 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
         }
         catch (err) {
             deps_1.logger.error(`At making mute role: ${err}`);
-            return reply("I attempted to create role for muting, but I couldn't! :(");
+            return reply("I attempted to create role for muting, but I couldn't! :frowning:");
         }
     }
+    /* if (memberToUse.id === guild.owner.id) {
+      return reply("That user is the owner, so muting would have no effect!");
+    } else if (memberToUse.hasPermission(["ADMINISTRATOR"])) {
+      return reply("That user has `Administrator` permissions, so muting would have no effect!");
+    } else */
     if (muteRole.position > botmember.highestRole.position) {
         return reply("The role used for muting has a higher position than my highest role!");
     }
@@ -130,7 +155,18 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
         sentMuteMsg.edit(`The mute failed! :frowning:`).catch(funcs_1.rejct);
     };
     const executeMute = () => {
-        memberToUse.addRole(muteRole).then(finish).catch(fail);
+        const timestamp = new deps_1.Time(Date.now())
+            .add(timeToUse)
+            .time
+            .toString();
+        sequelize_1.activemutes.create({
+            serverid: guild.id,
+            userid: memberToUse.id,
+            timestamp,
+            permanent: Boolean(dummy.permanent),
+        }).then(() => {
+            memberToUse.addRole(muteRole).then(finish).catch(fail);
+        }).catch(fail);
     };
     let sent = false;
     let timeoutRan = false;

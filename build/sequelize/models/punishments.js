@@ -19,4 +19,5 @@ exports.cases = deps_1.sql.define(`punishments`, {
     duration: deps_1.Sequelize.STRING,
     messageid: deps_1.Sequelize.STRING,
     case: deps_1.Sequelize.STRING,
+    thumbnail: deps_1.Sequelize.STRING,
 });

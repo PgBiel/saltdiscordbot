@@ -105,23 +105,29 @@ exports.default = async (msg) => {
                 permsToCheck[cmd.perms] = Boolean(cmd.default);
             }
             const parsedPerms = {};
+            const setPerms = {};
             for (const permission in permsToCheck) {
                 if (!permsToCheck.hasOwnProperty(permission)) {
                     continue;
                 }
                 const isDefault = Boolean(permsToCheck[permission]);
                 try {
-                    parsedPerms[permission] = Boolean(await permissions_1.default.hasPerm(msg.member, guildId, permission, isDefault));
+                    const permsResult = await permissions_1.default.hasPerm(msg.member, guildId, permission, isDefault);
+                    parsedPerms[permission] = Boolean(permsResult.hasPerm);
+                    setPerms[permission] = Boolean(permsResult.setPerm);
                 }
                 catch (err) {
                     parsedPerms[permission] = false; // ¯\_(ツ)_/¯
+                    setPerms[permission] = false;
                     logger_1.default.custom(err, `[ERR/PERMCHECK]`, "red", "error");
                 }
             }
             subContext.perms = parsedPerms;
+            subContext.setPerms = setPerms;
         }
         else {
             subContext.perms = null;
+            subContext.setPerms = null;
         }
         const cmdRegex = new RegExp(`^${_.escapeRegExp(cmd.name)}\\s*`, "i");
         const args = subContext.args = instruction.replace(cmdRegex, "").length < 1 ?

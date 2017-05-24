@@ -69,7 +69,9 @@ const func: TcmdFunc = async (msg: Message, {
   if (!memberToUse) {
     return;
   }
-  if (memberToUse.highestRole.position > botmember.highestRole.position) {
+  if (memberToUse.id === member.id) {
+    return reply(`You cannot ${actions[4]} yourself!`);
+  } else if (memberToUse.highestRole.position > botmember.highestRole.position) {
     return reply("That member's highest role is higher in position than mine!");
   } else if (memberToUse.highestRole.position === botmember.highestRole.position) {
     return reply("That member's highest role is the same in position as mine!");

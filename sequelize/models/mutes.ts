@@ -7,6 +7,18 @@ export const mutes = sql.define(`mutes`, {
     },
     muteRoleID: Sequelize.STRING,
 });
+
+export const immunemutes = sql.define(`immunemutes`, {
+  serverid: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
+  channelid: {
+    type: Sequelize.STRING,
+    primaryKey: true,
+  },
+});
+
 export const activemutes = sql.define(`activemutes`, {
   serverid: {
     type: Sequelize.STRING,

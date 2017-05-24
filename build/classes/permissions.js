@@ -31,7 +31,7 @@ class Permz {
      * @param {string} guildid Guild to check
      * @param {string} perm The permission node to check (e.g. command.subcommand)
      * @param {boolean} [isDefault=false] If it is a default permission
-     * @returns {Promise<boolean>}
+     * @returns {Promise<Object>}
      */
     async checkPerm(member, gueldid, perm, isDefault = false) {
         const [cmdname, extra] = _.toPath(perm);
@@ -41,6 +41,7 @@ class Permz {
         // if (extra3) whereobj.extra3 = extra3;
         const thingy = await sequelize_1.permissions.findAll({ where: whereobj });
         let hasPerm = false;
+        let setPerm = false;
         const thingyfiltered = thingy.filter((item) => item.command === cmdname || item.command
             === "any").sort((a, b) => a.command === "any" ? -1 : (b.command === "any" ? 1 : 0));
         if (thingyfiltered.length < 1) {
@@ -63,12 +64,15 @@ class Permz {
                     attemptfiltered.forEach((item) => {
                         if (item.command === "all") {
                             hasPerm = !item.disabled;
+                            setPerm = true;
                         }
                         else if (item.extra === null) {
                             hasPerm = !item.disabled;
+                            setPerm = true;
                         }
                         else if (extra && item.extra === extra) {
                             hasPerm = !item.disabled;
+                            setPerm = true;
                         }
                     });
                 }
@@ -78,16 +82,22 @@ class Permz {
             thingyfiltered.forEach((item) => {
                 if (item.command === "all") {
                     hasPerm = !item.disabled;
+                    setPerm = true;
                 }
                 else if (item.extra === null) {
                     hasPerm = !item.disabled;
+                    setPerm = true;
                 }
                 else if (extra && item.extra === extra) {
                     hasPerm = !item.disabled;
+                    setPerm = true;
                 }
             });
         }
-        return hasPerm;
+        return {
+            hasPerm,
+            setPerm,
+        };
     }
     /**
      * Check if a command is disabled
@@ -118,7 +128,7 @@ class Permz {
      * @param {string} guildid Guild to check
      * @param {string} perm The permission node to check (e.g. command.subcommand)
      * @param {boolean} [isDefault=false] If it is a default permission
-     * @returns {Promise<boolean>}
+     * @returns {Promise<Object>}
      */
     hasPerm(member, gueldid, perm, isDefault = false) {
         return this.checkPerm(member, gueldid, perm, isDefault);

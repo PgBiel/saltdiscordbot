@@ -63,6 +63,30 @@ const func: TcmdFunc = async (msg: Message, {
   if (!memberToUse) {
     return;
   }
+  const embed = new RichEmbed();
+  embed
+    .setAuthor(`Unban confirmation - ${memberToUse.tag}`, memberToUse.displayAvatarURL)
+    .setColor("DARK_GREEN")
+    .setDescription(reason || "No reason")
+    .setTimestamp(new Date());
+  const result = await prompt({
+    question: `Are you sure you want to unban this member? \
+This will expire in 15 seconds. Type __y__es or __n__o.`,
+    invalidMsg: "__Y__es or __n__o?",
+    filter: (msg2) => {
+      return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
+    },
+    timeout: Time.seconds(15),
+    cancel: false,
+    options: { embed },
+  });
+  if (!result) {
+    return;
+  }
+  if (/^n/i.test(result)) {
+    send("Command cancelled.");
+    return;
+  }
   const sentUnbanMsg = await send(`Unbanning ${memberToUse.tag}... (Sending DM...)`);
   const reasonEmbed = new RichEmbed();
   reasonEmbed

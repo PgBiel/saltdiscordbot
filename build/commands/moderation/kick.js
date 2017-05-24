@@ -60,7 +60,10 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     if (!memberToUse) {
         return;
     }
-    if (memberToUse.highestRole.position > botmember.highestRole.position) {
+    if (memberToUse.id === member.id) {
+        return reply(`You cannot kick yourself!`);
+    }
+    else if (memberToUse.highestRole.position > botmember.highestRole.position) {
         return reply("That member's highest role is higher in position than mine!");
     }
     else if (memberToUse.highestRole.position === botmember.highestRole.position) {

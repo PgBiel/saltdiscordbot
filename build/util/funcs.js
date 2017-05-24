@@ -316,3 +316,67 @@ function parseMute(str) {
     return obj;
 }
 exports.parseMute = parseMute;
+/**
+ * Check all mutes and unmute / add muted role if needed.
+ * @returns {Promise<void>}
+ */
+async function checkMutes() {
+    if (!deps_1.bot.readyTimestamp) {
+        return;
+    }
+    const mutes = await deps_1.models.activemutes.findAll();
+    const mutesForShard = mutes.filter((mute) => deps_1.bot.guilds.has(mute.serverid));
+    for (const mute of mutesForShard) {
+        const guild = deps_1.bot.guilds.get(mute.serverid);
+        if (!guild) {
+            continue;
+        }
+        const member = guild.members.get(mute.userid);
+        if (!member) {
+            continue;
+        }
+        const mutesForGuild = await deps_1.models.mutes.findOne({ where: { serverid: guild.id } });
+        if (!mutesForGuild) {
+            continue;
+        }
+        const muteRole = guild.roles.get(mutesForGuild.muteRoleID);
+        if (!muteRole || mute.permanent || !mute.timestamp || isNaN(mute.timestamp)) {
+            continue;
+        }
+        const botmember = guild.members.get(deps_1.bot.user.id);
+        const now = Date.now();
+        const escapedName = escMarkdown(guild.name);
+        if (now >= mute.timestamp) {
+            mute.destroy();
+            if (member.roles.has(muteRole.id)) {
+                member.removeRole(muteRole).then(() => {
+                    member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
+                        .catch(rejct);
+                }).catch((err) => {
+                    if (!botmember.hasPermission(["MANAGE_ROLES"])) {
+                        member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
+However, I was unable to take the role away from you due to having no \`Manage Roles\` permission. :frowning:`);
+                    }
+                    else if (botmember.highestRole.position < muteRole.position) {
+                        member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
+However, I was unable to take the role away from you due to the mute role being higher than my highest role. \
+:frowning:`);
+                    }
+                    else if (botmember.highestRole.id === muteRole.id) {
+                        member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
+However, I was unable to take the role away from you due to the mute role being  my highest role. :frowning:`);
+                    }
+                });
+            }
+            else {
+                member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
+                    .catch(rejct);
+            }
+        }
+        else if (!member.roles.has(muteRole.id)) {
+            member.addRole(muteRole)
+                .catch(rejct);
+        }
+    }
+}
+exports.checkMutes = checkMutes;

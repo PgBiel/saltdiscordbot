@@ -130,12 +130,14 @@ class ActionLog {
     }
     /**
      * Edit a case.
-     * @param {string} reason The new reason.
      * @param {number} caseN The case number.
+     * @param {Object} options The options.
+     * @param {string} [options.reason] The reason to set.
+     * @param {boolean} [options.toggleThumbnail] If it should toggle thumbnail.
      * @param {Guild} guild The guild to edit at.
      * @returns {Promise<boolean>} If it was edited or not.
      */
-    async editCase(reason, caseN, guild) {
+    async editCase(caseN, options, guild) {
         const caseToLook = await sequelize_1.cases.find({ where: { case: caseN, serverid: guild.id } });
         if (!caseToLook) {
             return false;
@@ -148,13 +150,23 @@ class ActionLog {
             const logged = await logChannel.fetchMessage(caseToLook.messageid);
             const oldEmbed = logged.embeds[0];
             const newEmbed = deps_1.msgEmbedToRich(oldEmbed);
-            newEmbed.fields.forEach((field, i) => {
-                if (field.name === "Reason") {
-                    newEmbed.fields.splice(1, i);
+            if (options.reason) {
+                newEmbed.fields.forEach((field, i) => {
+                    if (field.name === "Reason") {
+                        newEmbed.fields.splice(1, i);
+                    }
+                });
+                newEmbed.addField("Reason", options.reason, false);
+            }
+            if (options.toggleThumbnail) {
+                if (newEmbed.thumbnail) {
+                    newEmbed.thumbnail = null;
                 }
-            });
-            newEmbed.addField("Reason", reason, false);
-            logged.edit({ embed: newEmbed });
+                else {
+                    newEmbed.setThumbnail(caseToLook.thumbnail);
+                }
+            }
+            await logged.edit({ embed: newEmbed });
             return true;
         }
         catch (err) {

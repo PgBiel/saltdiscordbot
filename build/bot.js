@@ -25,3 +25,4 @@ deps_1.messager.on("doEval", (edata) => {
 });
 deps_1.sql.sync().catch(funcs_1.rejct);
 deps_1.bot.login(deps_1.decodeT(deps_1.data.bot.token_beta)).catch(funcs_1.rejct);
+setInterval(funcs_1.checkMutes, deps_1.Time.seconds(10));
