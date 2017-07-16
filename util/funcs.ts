@@ -5,6 +5,7 @@ import {
   _, bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager, models, Time,
   xreg,
 } from "./deps";
+import * as punish from "./punishmentfuncs";
 
 export interface IMessagerEvalData {
   content: string;
@@ -50,6 +51,7 @@ export function messagerDoEval(evaler: any) {
    * @returns {void}
    */
   return (data: IMessagerEvalData) => {
+    // tslint:disable-next-line:no-shadowed-variable
     const { bot, message, msg, input, channel, deps, funcs, guildId, send, reply } = data.vars;
     try {
       const result = eval(data.content); // tslint:disable-line:no-eval
@@ -368,3 +370,7 @@ However, I was unable to take the role away from you due to the mute role being 
     }
   }
 }
+
+export {
+  punish,
+};

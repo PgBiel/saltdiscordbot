@@ -2,7 +2,7 @@ import { ban } from "./ban";
 
 import Command from "../../classes/command";
 
-export const nodelban = Command.aliasFrom(ban, "idban", {
+export const idban = Command.aliasFrom(ban, "idban", {
   perms: "ban",
   banType: "idban",
   default: false,

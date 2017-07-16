@@ -34,6 +34,16 @@ export interface ILogOption {
    */
   target: any;
   /**
+   * ID of the target.
+   * @type {?string}
+   */
+  targetId?: string;
+  /**
+   * A thumbnail.
+   * @type {?string}
+   */
+  thumbnail?: string;
+  /**
    * The type (i.e. punishment).
    */
   type: string;
@@ -56,7 +66,7 @@ export interface ILogOption {
    * Any extra fields that appear next to the author field.
    * @type {?Array<Array<string, string | Date | Time | number>>}
    */
-  extraFields?: [[string, string | Date | Time | number]];
+  extraFields?: Array<[string, string | Date | Time | number]>;
 }
 
 /**
@@ -69,7 +79,10 @@ class ActionLog {
    * @returns {Promise<?Message>} The sent message.
    */
   public async log(options: ILogOption & { guild: Guild }): Promise<Message> {
-    const { action_desc, guild, author, reason, color, extraFields, target, type } = options;
+    const {
+      action_desc, guild, author, reason, color, extraFields, target, type,
+      targetId, thumbnail,
+    } = options;
     const logChannel = await this._getLog(guild);
     if (!logChannel) {
       return null;
@@ -104,7 +117,13 @@ class ActionLog {
       .addField("Author", authorToUse, true);
     if (target instanceof GuildMember || target instanceof User) {
       const targetUser = target instanceof GuildMember ? target.user : target;
-      embed.setThumbnail(targetUser.displayAvatarURL);
+      embed
+        .setThumbnail(targetUser.displayAvatarURL)
+        .setFooter(`Target Member's ID: ${targetUser.id}`);
+    } else {
+      embed
+        .setThumbnail(thumbnail)
+        .setFooter(`Target Member's ID: ${targetId}`);
     }
     if (extraFields) {
       for (const field of extraFields) {
@@ -137,7 +156,7 @@ class ActionLog {
       rejct(err);
       return null;
     }
-    cases.create({
+    const caseObj: {[prop: string]: any} = {
       serverid: guild.id,
       type,
       moderator: author.id,
@@ -146,7 +165,11 @@ class ActionLog {
       reason: reason || "None",
       duration: time ? time.time : null,
       messageid: msgSent.id,
-    }).catch(rejct);
+    };
+    if (embed.thumbnail) {
+      caseObj.thumbnail = embed.thumbnail.url;
+    }
+    cases.create(caseObj).catch(rejct);
     try {
       const entry: {[prop: string]: any} = await moderation.findOne({ where: { serverid: guild.id } });
       entry.update({

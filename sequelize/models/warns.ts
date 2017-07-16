@@ -13,3 +13,19 @@ export const warns = sql.define(`warns`, {
   moderatorid: Sequelize.STRING,
   warnedat: Sequelize.STRING,
 });
+
+export const warnsteps = sql.define(`warnsteps`, {
+  serverid: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
+  amount: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+  },
+  punishment: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
+  time: Sequelize.STRING,
+});

@@ -110,7 +110,7 @@ const func: TcmdFunc = async (msg: Message, {
     sentMuteMsg.edit(`Unmuted ${memberToUse.user.tag} successfully.`).catch(rejct);
     actionLog({
       action_desc: `**{target}** was unmuted`,
-      target: { toString: () => memberToUse.user.tag },
+      target: memberToUse,
       type: "unmute",
       author: member,
       color: "GREEN",

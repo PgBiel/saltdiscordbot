@@ -150,6 +150,7 @@ export default async (msg: Message) => {
     null : // no
     instruction.replace(cmdRegex, ""); // yes
     subContext.arrArgs = args ? args.split(" ") : []; // array form of arguments.
+    subContext.self = subContext; // The context itself.
     // and finally... we execute the command.
     try {
       const result = descCmd.func(message, subContext);

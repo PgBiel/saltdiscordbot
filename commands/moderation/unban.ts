@@ -97,7 +97,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     sentUnbanMsg.edit(`Unbanned ${memberToUse.tag} successfully.`).catch(rejct);
     actionLog({
       action_desc: `**{target}** was unbanned`,
-      target: { toString: () => memberToUse.tag },
+      target: memberToUse,
       type: "unban",
       author: member,
       color: "DARK_GREEN",

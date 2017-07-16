@@ -63,6 +63,7 @@ export default function returnFuncs(msg: Message) {
   const channel: TextBasedChannel = msg.channel;
   const message: Message = msg;
   const guildId: string = msg.guild ? msg.guild.id : null;
+  const guild: Guild = msg.guild || null;
 
   const sendingFunc = (func: (...args: any[]) => any): ExtendedSend => { // factory for sending functions
     return (content: StringResolvable | ExtendedMsgOptions, options?: ExtendedMsgOptions) => {
@@ -254,12 +255,13 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     send, reply, prompt, actionLog: actionLog2,
   };
 
-  const doEval = (content: string) => {
+  const doEval = (content: string, subC: {[prop: string]: any} = {}) => {
     let objectToUse = cloneObject(obj);
     objectToUse = Object.assign(objectToUse, {
       bot, msg, message: msg,
       channel, guildId, deps,
-      funcs,
+      funcs, context: subC || {},
+      guild,
     });
     const data = {
       content,

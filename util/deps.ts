@@ -36,6 +36,7 @@ const commandParse: any = 1; // unused
 
 // let obj: {[prop: string]: any} = {};
 export * from "./bot";
+// export * from "./db";
 
 export const ownerID: string = "180813971853410305";
 

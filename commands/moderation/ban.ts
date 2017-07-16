@@ -81,7 +81,14 @@ const func: TcmdFunc = async (msg: Message, {
     } else if (bot.users.has(user)) {
       memberToUse = bot.users.get(user);
     } else {
-      id = user;
+      try {
+        memberToUse = await bot.fetchUser(user);
+      } catch (err) {
+        // User not found.
+      }
+      if (!memberToUse) {
+        id = user;
+      }
     }
   }
   if (!id && memberToUse.id === member.id) {
@@ -137,7 +144,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     .setDescription(reason || "None")
     .setTimestamp(new Date());
   const finishAsync = async (target: GuildMember | User | string) => {
-    let targetToUse;
+    let targetToUse: typeof target;
     if (typeof target === "string") {
       sentBanMsg
       .edit(`${actions[0]} ${id || getUser().tag}... (Banned successfully. Fetching username...)`)
@@ -157,14 +164,16 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
       targetToUse.tag :
       targetToUse;
     sentBanMsg.edit(`${actions[1]} ${name} successfully.`).catch(rejct);
-    actionLog({
+    const userTarget = targetToUse instanceof GuildMember ? targetToUse.user : targetToUse;
+    const logObj = {
       action_desc: `**{target}** was ${actions[2]}`,
-      target: { toString: () => name },
       type: actions[3],
       author: member,
       color: dummy.color || "RED",
       reason: reason || "None",
-    }).catch(rejct);
+      target: userTarget,
+    };
+    actionLog(logObj).catch(rejct);
   };
   const finish = (target: GuildMember | User | string) => {
     finishAsync(target).catch((err: any) => { throw err; });

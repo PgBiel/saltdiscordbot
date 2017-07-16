@@ -87,7 +87,7 @@ Check the conditions for being kicked (e.g. must not be owner, etc)!");
     sentKickMsg.edit(`Kicked ${memberToUse.user.tag} successfully.`).catch(rejct);
     actionLog({
       action_desc: `**{target}** was kicked`,
-      target: { toString: () => memberToUse.user.tag },
+      target: memberToUse,
       type: "kick",
       author: member,
       color: "ORANGE",

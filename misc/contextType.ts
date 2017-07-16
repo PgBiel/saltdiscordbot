@@ -8,12 +8,13 @@ import {
 
 export type DjsChannel = DMChannel | GroupDMChannel | TextChannel;
 
-interface IBaseContext {
+interface IBaseContext<ChannelType> {
   args?: string;
   arrArgs?: string[];
   author: User;
   authorTag: string;
   botmember?: GuildMember;
+  channel: ChannelType;
   content: string;
   dummy: {[prop: string]: any};
   guild?: Guild;
@@ -27,6 +28,7 @@ interface IBaseContext {
   setPerms?: {[perm: string]: boolean};
   prefix: string;
   searcher?: Searcher<GuildMember>;
+  self: BaseContext<ChannelType> & ChannelType;
 }
 
 interface IFuncs {
@@ -49,9 +51,9 @@ interface ITContext {
   channel: TextChannel;
 }
 
-export type BaseContext = IBaseContext & IFuncs;
-export type Context = BaseContext & IContext;
-export type TContext = BaseContext & ITContext;
+export type BaseContext<ChannelType> = IBaseContext<ChannelType> & IFuncs;
+export type Context = BaseContext<DjsChannel>;
+export type TContext = BaseContext<TextChannel>;
 
 export type cmdFunc = (msg: Message, context: Context) => any;
 export type TcmdFunc = (msg: Message, context: TContext) => any;

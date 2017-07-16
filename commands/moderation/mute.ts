@@ -140,7 +140,7 @@ const func: TcmdFunc = async (msg: Message, {
     ).catch(rejct);
     actionLog({
       action_desc: `**{target}** was muted`,
-      target: { toString: () => memberToUse.user.tag },
+      target: memberToUse,
       extraFields: [["Muted For", timeToUse]],
       type: "mute",
       author: member,
