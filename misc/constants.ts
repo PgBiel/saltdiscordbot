@@ -1,29 +1,17 @@
 import { combineRegex } from "../util/funcs";
 
-export let sql = {
+export const sql = {
   UNIQUE_CONSTRAINT: "SequelizeUniqueConstraintError",
 };
 
-export let times = {
+export const times = {
   AMBIGUITY_EXPIRE: 30000,
 };
 
-export let regex = {
+export const regex = {
   HAS_DECIMAL: /\.(?!0+$)/,
-  NAME_AND_DISCRIM: (isName: boolean) => {
-    if (isName) {
-      return /^([^]{1,32})#\d{4}$/;
-    } else {
-      return /^[^]{1,32}#(\d{4})$/;
-    }
-  },
-  BAN_MATCH: (isUser: boolean) => {
-    if (isUser) {
-      return /^([^]+?(?:#\d{4})?)(?:\s+[^]*)?$/;
-    } else {
-      return /^[^]+?(?:#\d{4})?\s+([^]*)$/;
-    }
-  },
+  NAME_AND_DISCRIM: /^([^]{1,32})#(\d{4})$/,
+  BAN_MATCH: /^([^]+?(?:#\d{4})?)(?:\s+([^]*))?$/,
   MUTE: {
     /**
      * Mute regex.
@@ -145,6 +133,10 @@ export let regex = {
   },
 };
 
-export let numbers = {
+export const numbers = {
   MAX_PROMPT: 5,
+};
+
+export const identifiers = {
+  OWNER: "180813971853410305",
 };

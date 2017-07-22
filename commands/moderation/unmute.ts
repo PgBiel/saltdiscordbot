@@ -1,7 +1,7 @@
 import { GuildMember, Message, RichEmbed, Role } from "discord.js";
 import { TcmdFunc } from "../../commandHandler";
 import { activemutes, mutes } from "../../sequelize/sequelize";
-import { Command, Constants, logger, Time } from "../../util/deps";
+import { _, Command, Constants, logger, Time } from "../../util/deps";
 import { createMutedRole, escMarkdown, parseMute, rejct } from "../../util/funcs";
 
 const func: TcmdFunc = async (msg: Message, {
@@ -36,17 +36,7 @@ const func: TcmdFunc = async (msg: Message, {
   if (!args) {
     return reply("Please tell me who to unmute!");
   }
-  let user: string;
-  let reason: string;
-  const [preUser, preReason] = [
-    args.match(Constants.regex.BAN_MATCH(true)), args.match(Constants.regex.BAN_MATCH(false)),
-  ];
-  if (preUser) {
-    user = preUser[1];
-  }
-  if (preReason) {
-    reason = preReason[1];
-  }
+  const [user, reason]: string[] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }

@@ -3,7 +3,7 @@ import { GuildMember, Message, RichEmbed } from "discord.js";
 import * as querystring from "querystring";
 import { TcmdFunc } from "../../commandHandler";
 import { warns as warnsModel, warnsteps } from "../../sequelize/sequelize";
-import { bot, Command, Constants, logger, Time } from "../../util/deps";
+import { _, bot, Command, Constants, logger, Time } from "../../util/deps";
 import { escMarkdown, rejct, textAbstract } from "../../util/funcs";
 
 const func: TcmdFunc = async (msg: Message, {
@@ -28,17 +28,7 @@ const func: TcmdFunc = async (msg: Message, {
   if (!args) {
     return reply("Please tell me who to warn!");
   }
-  let user: string;
-  let reason: string;
-  const [preUser, preReason] = [
-    args.match(Constants.regex.BAN_MATCH(true)), args.match(Constants.regex.BAN_MATCH(false)),
-  ];
-  if (preUser) {
-    user = preUser[1];
-  }
-  if (preReason) {
-    reason = preReason[1];
-  }
+  const [user, reason]: string[] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
@@ -118,8 +108,8 @@ const func: TcmdFunc = async (msg: Message, {
           const zeDummy = {
             provides: true,
             member: memberToUse,
-            time: time
-          }
+            time,
+          };
           let reasonStr: string;
           if (memberToUse.highestRole.position > botmember.highestRole.position) {
             reasonStr = "that member's highest role is higher in position than mine!";

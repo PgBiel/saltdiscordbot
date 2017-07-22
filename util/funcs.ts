@@ -5,7 +5,6 @@ import {
   _, bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager, models, Time,
   xreg,
 } from "./deps";
-import * as punish from "./punishmentfuncs";
 
 export interface IMessagerEvalData {
   content: string;
@@ -370,7 +369,3 @@ However, I was unable to take the role away from you due to the mute role being 
     }
   }
 }
-
-export {
-  punish,
-};

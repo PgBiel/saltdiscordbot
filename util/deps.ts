@@ -47,6 +47,8 @@ import commandHandler from "../commandHandler";
 export const commandHandle = commandHandler;
 export const commandParser = commandParse;
 
+export { Storage } from "saltjs";
+
 /* tslint:disable:object-literal-sort-keys */
 // obj = Object.assign(obj, {
 export {

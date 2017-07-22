@@ -3,6 +3,7 @@ import * as _ from "lodash";
 
 import { disabledcmds, permissions } from "../sequelize/sequelize";
 import { bot } from "../util/bot";
+import { Constants } from "../util/deps";
 
 interface IAnyObj {
   [prop: string]: any;
@@ -12,6 +13,8 @@ interface IPermsResult {
   hasPerm: boolean;
   setPerm: boolean;
 }
+
+export const immune = [Constants.identifiers.OWNER];
 
 class Permz {
   get permlist() {
@@ -24,17 +27,20 @@ class Permz {
 
   get defaultPerms() {
     const arr = [];
-    Object.entries(bot.commands).forEach(
-      ([cmd, v]) => v.default ?
-       arr.push(v.perms) :
-        (typeof v === "string" ? null : Object.entries(v).forEach(([perm, vv]) => {
-      if (vv === true) {
-        return arr.push(perm);
+    Object.entries(bot.commands).forEach(([cmdn, cmd]) => {
+      if (cmd.default) {
+        arr.push(cmd.perms);
+      } else if (typeof cmd.perms !== "string") {
+        Object.entries(cmd.perms).forEach(([permName, perm]) => {
+          if (perm === true) {
+            return arr.push(permName);
+          }
+          if (perm && perm.default) {
+            return arr.push(permName);
+          }
+        });
       }
-      if (vv && vv.default) {
-        return arr.push(perm);
-      }
-    })));
+    });
     return arr;
   }
 
@@ -48,38 +54,36 @@ class Permz {
    */
   public async checkPerm(
     member: GuildMember, gueldid: string, perm: string, isDefault: boolean = false,
-  ): IPermsResult {
+  ): Promise<IPermsResult> {
     const [cmdname, extra] = _.toPath(perm);
     const whereobj = { serverid: gueldid, type: "user", thingid: member.id };
     // if (extra1) whereobj.extra1 = extra1;
     // if (extra2) whereobj.extra2 = extra2;
     // if (extra3) whereobj.extra3 = extra3;
-    const thingy: IAnyObj[] = await permissions.findAll({ where: whereobj });
+    const perms: IAnyObj[] = await permissions.findAll({ where: whereobj });
     let hasPerm = false;
     let setPerm = false;
-    const thingyfiltered = thingy.filter((item: any) => item.command === cmdname || item.command
+    const filtered = perms.filter((item: any) => item.command === cmdname || item.command
      === "any").sort((a, b) => a.command === "any" ? -1 : (b.command === "any" ? 1 : 0));
-    if (thingyfiltered.length < 1) {
+    if (filtered.length < 1) { // no user perm that could influence the execution. Proceeding to role perms.
       whereobj.type = "role";
-      const roles = [];
-      member.roles.forEach(roles.push.bind(roles));
-      roles.sort((a, b) => b.position - a.position);
+      const roles = member.roles.array().sort((a, b) => b.position - a.position);
       for (const role of roles) {
         whereobj.thingid = role.id;
-        const attempt: IAnyObj[] = await permissions.findAll({ where: whereobj });
-        if (attempt.length < 1) {
+        const roleperms: IAnyObj[] = await permissions.findAll({ where: whereobj });
+        if (roleperms.length < 1) {
           continue;
         }
-        const attemptfiltered = attempt.filter((item: any) => item.command === cmdname || item.command
+        const rolefiltered = roleperms.filter((item: any) => item.command === cmdname || item.command
      === "any").sort((a, b) => a.command === "any" ? -1 : (b.command === "any" ? 1 : 0));
-        if (attemptfiltered.length < 1) {
+        if (rolefiltered.length < 1) { // nothing that could influence the command execution. Check if is default.
           hasPerm = !!isDefault;
         } else {
-          attemptfiltered.forEach((item: any) => {
-            if (item.command === "all") {
+          rolefiltered.forEach((item: any) => { // yay there's a role perm. Let's check if it's negated.
+            if (item.command === "any") {
               hasPerm = !item.disabled;
               setPerm = true;
-            } else if (item.extra === null) {
+            } else if (item.extra == null) {
               hasPerm = !item.disabled;
               setPerm = true;
             } else if (extra && item.extra === extra) {
@@ -90,11 +94,11 @@ class Permz {
         }
       }
     } else {
-      thingyfiltered.forEach((item: any) => {
-        if (item.command === "all") {
+      filtered.forEach((item: any) => {
+        if (item.command === "any") {
           hasPerm = !item.disabled;
           setPerm = true;
-        } else if (item.extra === null) {
+        } else if (item.extra == null) {
           hasPerm = !item.disabled;
           setPerm = true;
         } else if (extra && item.extra === extra) {
@@ -103,6 +107,7 @@ class Permz {
         }
       });
     }
+    // hasPerm = immune.includes(member.id) ? true : hasPerm; // commented for testing permissions
     return {
       hasPerm,
       setPerm,
@@ -117,19 +122,20 @@ class Permz {
    * @returns {Promise<string>}
    */
   public async isDisabled(gueldid: string, channelid: string, name: string): Promise<string> {
-    const thingy: {[prop: string]: any} = await disabledcmds.findOne({ where: { serverid: gueldid, command: name } });
-    if (!thingy) {
+    const disabled: {[prop: string]: any} = await disabledcmds
+      .findOne({ where: { serverid: gueldid, command: name } });
+    if (!disabled) {
       return "";
     }
-    if (thingy.type === "server") {
-      return thingy.type;
+    if (disabled.type === "server") {
+      return disabled.type;
     }
-    if (thingy.type === "channel") {
-      if (thingy.channelid === channelid) {
-        return thingy.type;
+    if (disabled.type === "channel") {
+      if (disabled.channelid === channelid) {
+        return disabled.type;
       }
     }
-    return thingy ? thingy.type : "";
+    return disabled ? disabled.type : "";
   }
 
   /**

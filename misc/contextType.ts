@@ -28,7 +28,7 @@ interface IBaseContext<ChannelType> {
   setPerms?: {[perm: string]: boolean};
   prefix: string;
   searcher?: Searcher<GuildMember>;
-  self: BaseContext<ChannelType> & ChannelType;
+  self: BaseContext<ChannelType>;
 }
 
 interface IFuncs {

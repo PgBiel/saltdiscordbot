@@ -1,4 +1,5 @@
 import { GuildMember, Message, RichEmbed, TextChannel, User } from "discord.js";
+import { BaseContext, DjsChannel } from "../misc/contextType";
 import { querystring } from "../util/deps";
 import { escMarkdown, rejct, textAbstract } from "../util/funcs";
 import { Punishment } from "./punishment";
@@ -16,27 +17,24 @@ class Kick extends Punishment {
    * @returns {void}
    */
   public async punish(
-    member: GuildMember, reason?: string, auctPrefix?: string, reply?: (text: string) => any,
-    send?: (text: string) => any, actionLog?: (...args: any[]) => any,
+    member: GuildMember, reason?: string, auctPrefix?: string, context?: BaseContext<DjsChannel | TextChannel>,
   ): Promise<void> {
     const guild = member.guild;
     const botmember = guild.me;
-    reply = async (t: string) => reply ? reply(t) : null;
-    const voidReply = (t: string) => void reply(t);
-    send = async (t: string) => send ? send(t) : null;
-    actionLog = (...args: any[]) => actionLog ? actionLog(...args) : null;
+    const def = (...args: any[]) => null;
+    const { reply = def, send = def, actionLog = def } = context;
     if (member.highestRole.position > botmember.highestRole.position) {
-      return voidReply("That member's highest role is higher in position than mine!");
+      return void reply("That member's highest role is higher in position than mine!");
     } else if (member.highestRole.position === botmember.highestRole.position) {
-      return voidReply("That member's highest role is the same in position as mine!");
+      return void reply("That member's highest role is the same in position as mine!");
     } else if (member.highestRole.position > member.highestRole.position && member.id !== guild.owner.id) {
-      return voidReply("That member's highest role is higher in position than yours!");
+      return void reply("That member's highest role is higher in position than yours!");
     } else if (member.highestRole.position === member.highestRole.position && member.id !== guild.owner.id) {
-      return voidReply("That member's highest role is the same in position as yours!");
+      return void reply("That member's highest role is the same in position as yours!");
     } else if (member.id === guild.owner.id) {
-      return voidReply("That member is the owner!");
+      return void reply("That member is the owner!");
     } else if (!member.kickable) {
-      return voidReply("That member is not kickable (being generic here). \
+      return void reply("That member is not kickable (being generic here). \
   Check the conditions for being kicked (e.g. must not be owner, etc)!");
     }
     const sentKickMsg = await send(`Kicking ${member.user.tag}... (Sending DM...)`);
@@ -68,3 +66,5 @@ class Kick extends Punishment {
     };
   }
 }
+
+export default new Kick();

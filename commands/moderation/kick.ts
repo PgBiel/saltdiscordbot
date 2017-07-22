@@ -1,12 +1,13 @@
 import { GuildMember, Message, RichEmbed } from "discord.js";
 import { TcmdFunc } from "../../commandHandler";
+import kickP from "../../punishments/kick";
 import { prefixes } from "../../sequelize/sequelize";
-import { Command, Constants, logger, querystring, Time } from "../../util/deps";
+import { _, Command, Constants, logger, querystring, Time } from "../../util/deps";
 import { escMarkdown, rejct, textAbstract } from "../../util/funcs";
 
 const func: TcmdFunc = async (msg: Message, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
-  searcher, promptAmbig, author, botmember, member, actionLog, dummy,
+  searcher, promptAmbig, author, botmember, member, actionLog, dummy, self,
 }) => {
   if (!perms.kick && !hasPermission(["KICK_MEMBERS"])) {
     return reply("You do not have sufficient permissions! :frowning:");
@@ -16,17 +17,7 @@ const func: TcmdFunc = async (msg: Message, {
   if (!args) {
     return reply("Please tell me who to kick!");
   }
-  let user: string;
-  let reason: string;
-  const [preUser, preReason] = [
-    args.match(Constants.regex.BAN_MATCH(true)), args.match(Constants.regex.BAN_MATCH(false)),
-  ];
-  if (preUser) {
-    user = preUser[1];
-  }
-  if (preReason) {
-    reason = preReason[1];
-  }
+  const [user, reason]: string[] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
@@ -63,72 +54,8 @@ const func: TcmdFunc = async (msg: Message, {
   }
   if (memberToUse.id === member.id) {
     return reply(`You cannot kick yourself!`);
-  } else if (memberToUse.highestRole.position > botmember.highestRole.position) {
-    return reply("That member's highest role is higher in position than mine!");
-  } else if (memberToUse.highestRole.position === botmember.highestRole.position) {
-    return reply("That member's highest role is the same in position as mine!");
-  } else if (memberToUse.highestRole.position > member.highestRole.position && member.id !== guild.owner.id) {
-    return reply("That member's highest role is higher in position than yours!");
-  } else if (memberToUse.highestRole.position === member.highestRole.position && member.id !== guild.owner.id) {
-    return reply("That member's highest role is the same in position as yours!");
-  } else if (memberToUse.id === guild.owner.id) {
-    return reply("That member is the owner!");
-  } else if (!memberToUse.kickable) {
-    return reply("That member is not kickable (being generic here). \
-Check the conditions for being kicked (e.g. must not be owner, etc)!");
   }
-  const sentKickMsg = await send(`Kicking ${memberToUse.user.tag}... (Sending DM...)`);
-  const reasonEmbed = new RichEmbed();
-  reasonEmbed
-    .setColor("ORANGE")
-    .setDescription(reason || "None")
-    .setTimestamp(new Date());
-  const finish = () => {
-    sentKickMsg.edit(`Kicked ${memberToUse.user.tag} successfully.`).catch(rejct);
-    actionLog({
-      action_desc: `**{target}** was kicked`,
-      target: memberToUse,
-      type: "kick",
-      author: member,
-      color: "ORANGE",
-      reason: reason || "None",
-    }).catch(rejct);
-  };
-  const fail = (err: any) => {
-    rejct(err);
-    sentKickMsg.edit(`The kick failed! :frowning:`).catch(rejct);
-  };
-  const executeKick = () => {
-    const kickPrefix = `[Kick command executed by ${author.tag}] `;
-    const compressedText = textAbstract(kickPrefix + (reason || "No reason given"), 512);
-    memberToUse.kick(querystring.escape(compressedText)).then(finish).catch(fail);
-  };
-  let sent: boolean = false;
-  let timeoutRan: boolean = false;
-  memberToUse.send(
-    `You were kicked at the server **${escMarkdown(guild.name)}** for the reason of:`, { embed: reasonEmbed },
-  ).then(() => {
-    if (timeoutRan) {
-      return;
-    }
-    sent = true;
-    sentKickMsg.edit(`Kicking ${memberToUse.user.tag}... (DM Sent. Kicking member...)`).catch(rejct);
-    executeKick();
-  }).catch((err) => {
-    rejct(err);
-    if (timeoutRan) {
-      return;
-    }
-    sent = true;
-    sentKickMsg.edit(`Kicking ${memberToUse.user.tag}... (DM Failed. Kicking member anyway...)`).catch(rejct);
-    executeKick();
-  });
-  setTimeout(() => {
-    if (!sent) {
-      timeoutRan = true;
-      executeKick();
-    }
-  }, Time.seconds(2.8));
+  kickP.punish(memberToUse, reason, `[Kick command executed by ${author.tag}]`, self);
 };
 export const kick = new Command({
   func,

@@ -110,7 +110,7 @@ export default class Searcher<MemberColl> {
 
       return userToUse;
     };
-    if (typeof nameOrPattern === "string" && Constants.regex.NAME_AND_DISCRIM(true).test(nameOrPattern)) {
+    if (typeof nameOrPattern === "string" && Constants.regex.NAME_AND_DISCRIM.test(nameOrPattern)) {
       const result = this.members.find((memb: MemberColl) => getUser(memb).tag === nameOrPattern);
       if (result) {
         match.push(result);

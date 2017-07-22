@@ -1,7 +1,7 @@
 import { GuildMember, Message, RichEmbed, User } from "discord.js";
 import { TcmdFunc } from "../../commandHandler";
 import { prefixes } from "../../sequelize/sequelize";
-import { Command, Constants, logger, Searcher, Time } from "../../util/deps";
+import { _, Command, Constants, logger, Searcher, Time } from "../../util/deps";
 import { escMarkdown, rejct, textAbstract } from "../../util/funcs";
 
 const func: TcmdFunc = async (msg: Message, {
@@ -16,17 +16,7 @@ const func: TcmdFunc = async (msg: Message, {
   if (!args) {
     return reply("Please tell me who to unban!");
   }
-  let user: string;
-  let reason: string;
-  const [preUser, preReason] = [
-    args.match(Constants.regex.BAN_MATCH(true)), args.match(Constants.regex.BAN_MATCH(false)),
-  ];
-  if (preUser) {
-    user = preUser[1];
-  }
-  if (preReason) {
-    reason = preReason[1];
-  }
+  const [user, reason]: string[] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
@@ -52,11 +42,11 @@ const func: TcmdFunc = async (msg: Message, {
   } else if (membersMatched && membersMatched.length === 1) {
     memberToUse = membersMatched[0];
   } else if (membersMatched && membersMatched.length > 1 && membersMatched.length < 10) {
-    const result = await promptAmbig(membersMatched, "banned users");
-    if (result.cancelled) {
+    const resultPrompt = await promptAmbig(membersMatched, "banned users");
+    if (resultPrompt.cancelled) {
       return;
     }
-    memberToUse = result.member;
+    memberToUse = resultPrompt.member;
   } else if (membersMatched) {
     return reply("Multiple banned users have matched your search. Please be more specific.");
   }
