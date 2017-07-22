@@ -1,6 +1,6 @@
 import { GuildMember, Message, RichEmbed, TextChannel, User } from "discord.js";
 import { BaseContext, DjsChannel } from "../misc/contextType";
-import { querystring } from "../util/deps";
+import { querystring, Time } from "../util/deps";
 import { escMarkdown, rejct, textAbstract } from "../util/funcs";
 import { Punishment } from "./punishment";
 
@@ -41,14 +41,14 @@ class Kick extends Punishment {
       }
     }
     const sentKickMsg = await send(`Kicking ${member.user.tag}... (Sending DM...)`);
-    const isMsg = sentKickMsg instanceof Message;
+    const edit = (text: string) => sentKickMsg instanceof Message ? sentKickMsg.edit(text) : Promise.resolve(null);
     const reasonEmbed = new RichEmbed();
     reasonEmbed
       .setColor("ORANGE")
       .setDescription(reason || "None")
       .setTimestamp(new Date());
     const finish = () => {
-      if (isMsg) { sentKickMsg.edit(`Kicked ${member.user.tag} successfully.`).catch(rejct); }
+      edit(`Kicked ${member.user.tag} successfully.`).catch(rejct);
       actionLog({
         action_desc: `**{target}** was kicked`,
         target: member,
@@ -60,13 +60,39 @@ class Kick extends Punishment {
     };
     const fail = (err: any) => {
       rejct(err);
-      if (isMsg) { sentKickMsg.edit(`The kick failed! :frowning:`).catch(rejct); }
+      edit(`The kick failed! :frowning:`).catch(rejct);
     };
     const executeKick = () => {
       // const kickPrefix = origin ? `[Kick command executed by ${origin.tag}] ` : "";
       const compressedText = textAbstract(auctPrefix + " " + (reason || "No reason given"), 512);
       member.kick(querystring.escape(compressedText)).then(finish).catch(fail);
     };
+    let sent: boolean = false;
+    let timeoutRan: boolean = false;
+    const escapedName: string = escMarkdown(guild.name);
+    member.send(`You were kicked at the server **${escapedName}** for the reason of:`, { embed: reasonEmbed })
+      .then(() => {
+        if (timeoutRan) {
+          return;
+        }
+        sent = true;
+        edit(`Kicking ${member.user.tag}... (DM Sent. Kicking...)`).catch(rejct);
+        executeKick();
+      }).catch((err) => {
+        rejct(err);
+        if (timeoutRan) {
+          return;
+        }
+        sent = true;
+        edit(`Kicking ${member.user.tag}... (DM Failed. Kicking anyway...)`);
+        executeKick();
+      });
+    setTimeout(() => {
+      if (!sent) {
+        timeoutRan = true;
+        executeKick();
+      }
+    }, Time.seconds(2.8));
   }
 }
 
