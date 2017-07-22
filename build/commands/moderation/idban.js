@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const ban_1 = require("./ban");
 const command_1 = require("../../classes/command");
-exports.nodelban = command_1.default.aliasFrom(ban_1.ban, "idban", {
+exports.idban = command_1.default.aliasFrom(ban_1.ban, "idban", {
     perms: "ban",
     banType: "idban",
     default: false,

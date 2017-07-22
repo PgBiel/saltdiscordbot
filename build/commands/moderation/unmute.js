@@ -34,17 +34,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     if (!args) {
         return reply("Please tell me who to unmute!");
     }
-    let user;
-    let reason;
-    const [preUser, preReason] = [
-        args.match(deps_1.Constants.regex.BAN_MATCH(true)), args.match(deps_1.Constants.regex.BAN_MATCH(false)),
-    ];
-    if (preUser) {
-        user = preUser[1];
-    }
-    if (preReason) {
-        reason = preReason[1];
-    }
+    const [user, reason] = deps_1._.tail((args.match(deps_1.Constants.regex.BAN_MATCH) || Array(3)));
     if (!user && !reason) {
         return;
     }
@@ -109,7 +99,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
         sentMuteMsg.edit(`Unmuted ${memberToUse.user.tag} successfully.`).catch(funcs_1.rejct);
         actionLog({
             action_desc: `**{target}** was unmuted`,
-            target: { toString: () => memberToUse.user.tag },
+            target: memberToUse,
             type: "unmute",
             author: member,
             color: "GREEN",

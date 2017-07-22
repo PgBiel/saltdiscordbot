@@ -22,17 +22,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     }
     let memberToUse;
     const getUser = () => memberToUse instanceof discord_js_1.GuildMember ? memberToUse.user : memberToUse;
-    let user;
-    let reason;
-    const [preUser, preReason] = [
-        args.match(deps_1.Constants.regex.BAN_MATCH(true)), args.match(deps_1.Constants.regex.BAN_MATCH(false)),
-    ];
-    if (preUser) {
-        user = preUser[1];
-    }
-    if (preReason) {
-        reason = preReason[1];
-    }
+    const [user, reason] = deps_1._.tail((args.match(deps_1.Constants.regex.BAN_MATCH) || Array(3)));
     if (!user && !reason) {
         return;
     }
@@ -83,7 +73,15 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
             memberToUse = deps_1.bot.users.get(user);
         }
         else {
-            id = user;
+            try {
+                memberToUse = await deps_1.bot.fetchUser(user);
+            }
+            catch (err) {
+                // User not found.
+            }
+            if (!memberToUse) {
+                id = user;
+            }
         }
     }
     if (!id && memberToUse.id === member.id) {
@@ -167,14 +165,16 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
                 targetToUse.tag :
                 targetToUse;
         sentBanMsg.edit(`${actions[1]} ${name} successfully.`).catch(funcs_1.rejct);
-        actionLog({
+        const userTarget = targetToUse instanceof discord_js_1.GuildMember ? targetToUse.user : targetToUse;
+        const logObj = {
             action_desc: `**{target}** was ${actions[2]}`,
-            target: { toString: () => name },
             type: actions[3],
             author: member,
             color: dummy.color || "RED",
             reason: reason || "None",
-        }).catch(funcs_1.rejct);
+            target: userTarget,
+        };
+        actionLog(logObj).catch(funcs_1.rejct);
     };
     const finish = (target) => {
         finishAsync(target).catch((err) => { throw err; });

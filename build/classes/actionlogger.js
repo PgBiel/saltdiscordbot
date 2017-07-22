@@ -14,7 +14,7 @@ class ActionLog {
      * @returns {Promise<?Message>} The sent message.
      */
     async log(options) {
-        const { action_desc, guild, author, reason, color, extraFields, target, type } = options;
+        const { action_desc, guild, author, reason, color, extraFields, target, type, targetId, thumbnail, } = options;
         const logChannel = await this._getLog(guild);
         if (!logChannel) {
             return null;
@@ -49,7 +49,14 @@ class ActionLog {
             .addField("Author", authorToUse, true);
         if (target instanceof discord_js_1.GuildMember || target instanceof discord_js_1.User) {
             const targetUser = target instanceof discord_js_1.GuildMember ? target.user : target;
-            embed.setThumbnail(targetUser.displayAvatarURL);
+            embed
+                .setThumbnail(targetUser.displayAvatarURL)
+                .setFooter(`Target Member's ID: ${targetUser.id}`);
+        }
+        else {
+            embed
+                .setThumbnail(thumbnail)
+                .setFooter(`Target Member's ID: ${targetId}`);
         }
         if (extraFields) {
             for (const field of extraFields) {
@@ -82,7 +89,7 @@ class ActionLog {
             funcs_1.rejct(err);
             return null;
         }
-        sequelize_1.cases.create({
+        const caseObj = {
             serverid: guild.id,
             type,
             moderator: author.id,
@@ -91,7 +98,11 @@ class ActionLog {
             reason: reason || "None",
             duration: time ? time.time : null,
             messageid: msgSent.id,
-        }).catch(funcs_1.rejct);
+        };
+        if (embed.thumbnail) {
+            caseObj.thumbnail = embed.thumbnail.url;
+        }
+        sequelize_1.cases.create(caseObj).catch(funcs_1.rejct);
         try {
             const entry = await sequelize_1.moderation.findOne({ where: { serverid: guild.id } });
             entry.update({

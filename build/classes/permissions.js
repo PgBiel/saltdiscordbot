@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const sequelize_1 = require("../sequelize/sequelize");
 const bot_1 = require("../util/bot");
+const deps_1 = require("../util/deps");
+exports.immune = [deps_1.Constants.identifiers.OWNER];
 class Permz {
     get permlist() {
         const obj = {};
@@ -13,16 +15,21 @@ class Permz {
     }
     get defaultPerms() {
         const arr = [];
-        Object.entries(bot_1.bot.commands).forEach(([cmd, v]) => v.default ?
-            arr.push(v.perms) :
-            (typeof v === "string" ? null : Object.entries(v).forEach(([perm, vv]) => {
-                if (vv === true) {
-                    return arr.push(perm);
-                }
-                if (vv && vv.default) {
-                    return arr.push(perm);
-                }
-            })));
+        Object.entries(bot_1.bot.commands).forEach(([cmdn, cmd]) => {
+            if (cmd.default) {
+                arr.push(cmd.perms);
+            }
+            else if (typeof cmd.perms !== "string") {
+                Object.entries(cmd.perms).forEach(([permName, perm]) => {
+                    if (perm === true) {
+                        return arr.push(permName);
+                    }
+                    if (perm && perm.default) {
+                        return arr.push(permName);
+                    }
+                });
+            }
+        });
         return arr;
     }
     /**
@@ -39,34 +46,32 @@ class Permz {
         // if (extra1) whereobj.extra1 = extra1;
         // if (extra2) whereobj.extra2 = extra2;
         // if (extra3) whereobj.extra3 = extra3;
-        const thingy = await sequelize_1.permissions.findAll({ where: whereobj });
+        const perms = await sequelize_1.permissions.findAll({ where: whereobj });
         let hasPerm = false;
         let setPerm = false;
-        const thingyfiltered = thingy.filter((item) => item.command === cmdname || item.command
+        const filtered = perms.filter((item) => item.command === cmdname || item.command
             === "any").sort((a, b) => a.command === "any" ? -1 : (b.command === "any" ? 1 : 0));
-        if (thingyfiltered.length < 1) {
+        if (filtered.length < 1) {
             whereobj.type = "role";
-            const roles = [];
-            member.roles.forEach(roles.push.bind(roles));
-            roles.sort((a, b) => b.position - a.position);
+            const roles = member.roles.array().sort((a, b) => b.position - a.position);
             for (const role of roles) {
                 whereobj.thingid = role.id;
-                const attempt = await sequelize_1.permissions.findAll({ where: whereobj });
-                if (attempt.length < 1) {
+                const roleperms = await sequelize_1.permissions.findAll({ where: whereobj });
+                if (roleperms.length < 1) {
                     continue;
                 }
-                const attemptfiltered = attempt.filter((item) => item.command === cmdname || item.command
+                const rolefiltered = roleperms.filter((item) => item.command === cmdname || item.command
                     === "any").sort((a, b) => a.command === "any" ? -1 : (b.command === "any" ? 1 : 0));
-                if (attemptfiltered.length < 1) {
+                if (rolefiltered.length < 1) {
                     hasPerm = !!isDefault;
                 }
                 else {
-                    attemptfiltered.forEach((item) => {
-                        if (item.command === "all") {
+                    rolefiltered.forEach((item) => {
+                        if (item.command === "any") {
                             hasPerm = !item.disabled;
                             setPerm = true;
                         }
-                        else if (item.extra === null) {
+                        else if (item.extra == null) {
                             hasPerm = !item.disabled;
                             setPerm = true;
                         }
@@ -79,12 +84,12 @@ class Permz {
             }
         }
         else {
-            thingyfiltered.forEach((item) => {
-                if (item.command === "all") {
+            filtered.forEach((item) => {
+                if (item.command === "any") {
                     hasPerm = !item.disabled;
                     setPerm = true;
                 }
-                else if (item.extra === null) {
+                else if (item.extra == null) {
                     hasPerm = !item.disabled;
                     setPerm = true;
                 }
@@ -94,6 +99,7 @@ class Permz {
                 }
             });
         }
+        // hasPerm = immune.includes(member.id) ? true : hasPerm; // commented for testing permissions
         return {
             hasPerm,
             setPerm,
@@ -107,19 +113,20 @@ class Permz {
      * @returns {Promise<string>}
      */
     async isDisabled(gueldid, channelid, name) {
-        const thingy = await sequelize_1.disabledcmds.findOne({ where: { serverid: gueldid, command: name } });
-        if (!thingy) {
+        const disabled = await sequelize_1.disabledcmds
+            .findOne({ where: { serverid: gueldid, command: name } });
+        if (!disabled) {
             return "";
         }
-        if (thingy.type === "server") {
-            return thingy.type;
+        if (disabled.type === "server") {
+            return disabled.type;
         }
-        if (thingy.type === "channel") {
-            if (thingy.channelid === channelid) {
-                return thingy.type;
+        if (disabled.type === "channel") {
+            if (disabled.channelid === channelid) {
+                return disabled.type;
             }
         }
-        return thingy ? thingy.type : "";
+        return disabled ? disabled.type : "";
     }
     /**
      * Check permissions

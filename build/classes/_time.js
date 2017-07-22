@@ -1,5 +1,5 @@
-// old Time file
 "use strict";
+// old Time file
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * Helper class for representing timespans.

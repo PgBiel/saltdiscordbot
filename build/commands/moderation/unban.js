@@ -13,17 +13,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     if (!args) {
         return reply("Please tell me who to unban!");
     }
-    let user;
-    let reason;
-    const [preUser, preReason] = [
-        args.match(deps_1.Constants.regex.BAN_MATCH(true)), args.match(deps_1.Constants.regex.BAN_MATCH(false)),
-    ];
-    if (preUser) {
-        user = preUser[1];
-    }
-    if (preReason) {
-        reason = preReason[1];
-    }
+    const [user, reason] = deps_1._.tail((args.match(deps_1.Constants.regex.BAN_MATCH) || Array(3)));
     if (!user && !reason) {
         return;
     }
@@ -50,11 +40,11 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
         memberToUse = membersMatched[0];
     }
     else if (membersMatched && membersMatched.length > 1 && membersMatched.length < 10) {
-        const result = await promptAmbig(membersMatched, "banned users");
-        if (result.cancelled) {
+        const resultPrompt = await promptAmbig(membersMatched, "banned users");
+        if (resultPrompt.cancelled) {
             return;
         }
-        memberToUse = result.member;
+        memberToUse = resultPrompt.member;
     }
     else if (membersMatched) {
         return reply("Multiple banned users have matched your search. Please be more specific.");
@@ -96,7 +86,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         sentUnbanMsg.edit(`Unbanned ${memberToUse.tag} successfully.`).catch(funcs_1.rejct);
         actionLog({
             action_desc: `**{target}** was unbanned`,
-            target: { toString: () => memberToUse.tag },
+            target: memberToUse,
             type: "unban",
             author: member,
             color: "DARK_GREEN",

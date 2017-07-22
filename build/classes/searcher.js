@@ -75,7 +75,7 @@ class Searcher {
                     null;
             return userToUse;
         };
-        if (typeof nameOrPattern === "string" && deps_1.Constants.regex.NAME_AND_DISCRIM(true).test(nameOrPattern)) {
+        if (typeof nameOrPattern === "string" && deps_1.Constants.regex.NAME_AND_DISCRIM.test(nameOrPattern)) {
             const result = this.members.find((memb) => getUser(memb).tag === nameOrPattern);
             if (result) {
                 match.push(result);

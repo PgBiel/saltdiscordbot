@@ -142,7 +142,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
         sentMuteMsg.edit(`Muted ${memberToUse.user.tag} for **${timeToUse.toString()}** ${time ? "" : "(default) "}successfully.`).catch(funcs_1.rejct);
         actionLog({
             action_desc: `**{target}** was muted`,
-            target: { toString: () => memberToUse.user.tag },
+            target: memberToUse,
             extraFields: [["Muted For", timeToUse]],
             type: "mute",
             author: member,

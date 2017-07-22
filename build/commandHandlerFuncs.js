@@ -14,6 +14,7 @@ function returnFuncs(msg) {
     const channel = msg.channel;
     const message = msg;
     const guildId = msg.guild ? msg.guild.id : null;
+    const guild = msg.guild || null;
     const sendingFunc = (func) => {
         return (content, options) => {
             if (typeof content === "object" && !options && !(content instanceof Array)) {
@@ -193,12 +194,13 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
         hasPermission, userError, promptAmbig, checkRole,
         send, reply, prompt, actionLog: actionLog2,
     };
-    const doEval = (content) => {
+    const doEval = (content, subC = {}) => {
         let objectToUse = funcs_1.cloneObject(obj);
         objectToUse = Object.assign(objectToUse, {
             bot: deps_1.bot, msg, message: msg,
             channel, guildId, deps,
-            funcs,
+            funcs, context: subC || {},
+            guild,
         });
         const data = {
             content,

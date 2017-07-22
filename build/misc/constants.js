@@ -8,22 +8,8 @@ exports.times = {
 };
 exports.regex = {
     HAS_DECIMAL: /\.(?!0+$)/,
-    NAME_AND_DISCRIM: (isName) => {
-        if (isName) {
-            return /^([^]{1,32})#\d{4}$/;
-        }
-        else {
-            return /^[^]{1,32}#(\d{4})$/;
-        }
-    },
-    BAN_MATCH: (isUser) => {
-        if (isUser) {
-            return /^([^]+?(?:#\d{4})?)(?:\s+[^]*)?$/;
-        }
-        else {
-            return /^[^]+?(?:#\d{4})?\s+([^]*)$/;
-        }
-    },
+    NAME_AND_DISCRIM: /^([^]{1,32})#(\d{4})$/,
+    BAN_MATCH: /^([^]+?(?:#\d{4})?)(?:\s+([^]*))?$/,
     MUTE: {
         /**
          * Mute regex.
@@ -145,4 +131,7 @@ exports.regex = {
 };
 exports.numbers = {
     MAX_PROMPT: 5,
+};
+exports.identifiers = {
+    OWNER: "180813971853410305",
 };

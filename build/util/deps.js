@@ -57,10 +57,13 @@ const commandParse = 1; // unused
 exports.commandParse = commandParse;
 // let obj: {[prop: string]: any} = {};
 __export(require("./bot"));
+// export * from "./db";
 exports.ownerID = "180813971853410305";
 exports.colors = chalk;
 const commandHandler_1 = require("../commandHandler");
 exports.commandHandler = commandHandler_1.default;
 exports.commandHandle = commandHandler_1.default;
 exports.commandParser = commandParse;
+var saltjs_1 = require("saltjs");
+exports.Storage = saltjs_1.Storage;
 /* tslint:enable:object-literal-sort-keys */
