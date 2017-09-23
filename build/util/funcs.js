@@ -4,10 +4,11 @@ const deps_1 = require("./deps");
 /**
  * Handle a rejection
  * @param {*} rejection The rejection to handle
+ * @param {*} [prefix] Text to use before the error message
  * @returns {void}
  */
-function rejct(rejection) {
-    deps_1.logger.custom(rejection, "[ERR/REJECT]", "red", "error");
+function rejct(rejection, prefix) {
+    deps_1.logger.custom(prefix + rejection, { prefix: "[ERR/REJECT]", color: "red", type: "error" });
 }
 exports.rejct = rejct;
 /**
@@ -51,11 +52,14 @@ function messagerDoEval(evaler) {
 }
 exports.messagerDoEval = messagerDoEval;
 function djsDebug(info) {
-    deps_1.logger.custom(info, `[${/heartbeat/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`, "magenta");
+    deps_1.logger.custom(info, {
+        prefix: `[${/heartbeat/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`,
+        color: "magenta",
+    });
 }
 exports.djsDebug = djsDebug;
 function djsWarn(info) {
-    deps_1.logger.custom(info, `[DJS WARN]`, "yellow");
+    deps_1.logger.custom(info, { prefix: `[DJS WARN]`, color: "yellow" });
 }
 exports.djsWarn = djsWarn;
 function botMessage(msg) {
@@ -104,7 +108,7 @@ exports.loadCmds = loadCmds;
 // tslint:disable-next-line:prefer-const
 let isUnique = (err) => err == null ? false : err.name === deps_1.Constants.sql.UNIQUE_CONSTRAINT;
 function SQLLogger(...stuff) {
-    return deps_1.logger.custom(stuff.join(" "), "[SQL]", "yellow");
+    return deps_1.logger.custom(stuff.join(" "), { prefix: "[SQL]", color: "yellow" });
 }
 exports.SQLLogger = SQLLogger;
 function doError(...stuff) {
@@ -381,3 +385,20 @@ However, I was unable to take the role away from you due to the mute role being 
     }
 }
 exports.checkMutes = checkMutes;
+/**
+ * Converts a cursor to an array.
+ * @param {Cursor|Promise<Cursor>} cursor The cursor
+ * @returns {Promise<any[]>}
+ */
+async function cursor(
+    // tslint:disable-next-line:no-shadowed-variable
+    cursor) {
+    if (cursor instanceof Promise) {
+        cursor = await cursor;
+    }
+    if (!cursor) {
+        return;
+    }
+    return cursor.toArray();
+}
+exports.cursor = cursor;

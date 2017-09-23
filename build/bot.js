@@ -23,6 +23,6 @@ funcs_1.loadCmds();
 deps_1.messager.on("doEval", (edata) => {
     funcs_1.messagerDoEval((thing) => eval(thing))(edata); // tslint:disable-line:no-eval
 });
-deps_1.sql.sync().catch(funcs_1.rejct);
+// sql.sync().catch(rejct);
 deps_1.bot.login(deps_1.decodeT(deps_1.data.bot.token_beta)).catch(funcs_1.rejct);
 setInterval(funcs_1.checkMutes, deps_1.Time.seconds(10));

@@ -1,9 +1,9 @@
-"use strict";
 /**
  * An argument.
  * @typedef {Object} CommandArgument
  * @property {boolean} optional If this argument is optional or not
  */
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const funcs_1 = require("../util/funcs");

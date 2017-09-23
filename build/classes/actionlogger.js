@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const sequelize_1 = require("../sequelize/sequelize");
+// import { cases, moderation } from "../sequelize/sequelize";
 const deps_1 = require("../util/deps");
 const funcs_1 = require("../util/funcs");
 /**
@@ -90,24 +90,21 @@ class ActionLog {
             return null;
         }
         const caseObj = {
-            serverid: guild.id,
             type,
             moderator: author.id,
             case: caseNum + 1,
-            time: at.getTime(),
+            time: at.getTime().toString(),
             reason: reason || "None",
-            duration: time ? time.time : null,
+            duration: time ? time.time.toString() : null,
             messageid: msgSent.id,
+            thumbnail: null,
         };
         if (embed.thumbnail) {
             caseObj.thumbnail = embed.thumbnail.url;
         }
-        sequelize_1.cases.create(caseObj).catch(funcs_1.rejct);
+        deps_1.db.table("punishments").add(guild.id, caseObj);
         try {
-            const entry = await sequelize_1.moderation.findOne({ where: { serverid: guild.id } });
-            entry.update({
-                latestCase: caseNum + 1,
-            }).catch(funcs_1.rejct);
+            deps_1.db.table("mods").assign(guild.id, { latestCase: caseNum + 1 });
         }
         catch (err) {
             deps_1.logger.error(`At updating moderation entry (Case num: ${caseNum}, guild: ${guild.id}): ${err}`);
@@ -121,7 +118,18 @@ class ActionLog {
      * @returns {Promise<boolean>} If it was deleted or not.
      */
     async delCase(caseN, guild) {
-        const caseToLook = await sequelize_1.cases.find({ where: { case: caseN, serverid: guild.id } });
+        let id;
+        const cases = deps_1.db.table("punishments");
+        const caseToLook = cases
+            .get(guild.id)
+            .find((punish, iden) => {
+            const con = punish.case === caseN;
+            if (con) {
+                id = iden;
+                return true;
+            }
+            return false;
+        });
         if (!caseToLook) {
             return false;
         }
@@ -132,7 +140,7 @@ class ActionLog {
         try {
             const logged = await logChannel.fetchMessage(caseToLook.messageid);
             logged.delete();
-            caseToLook.destroy();
+            cases.spliceArr(guild.id, id, 1);
             return true;
         }
         catch (err) {
@@ -149,7 +157,18 @@ class ActionLog {
      * @returns {Promise<boolean>} If it was edited or not.
      */
     async editCase(caseN, options, guild) {
-        const caseToLook = await sequelize_1.cases.find({ where: { case: caseN, serverid: guild.id } });
+        let id;
+        const cases = deps_1.db.table("punishments");
+        const caseToLook = cases
+            .get(guild.id)
+            .find((punish, iden) => {
+            const con = punish.case === caseN;
+            if (con) {
+                id = iden;
+                return true;
+            }
+            return false;
+        });
         if (!caseToLook) {
             return false;
         }
@@ -192,9 +211,9 @@ class ActionLog {
      * @private
      */
     async _getLog(guild) {
-        const logChannel = await sequelize_1.moderation.findOne({ where: { serverid: guild.id } });
+        const logChannel = deps_1.db.table("mods").prop(guild.id, "logs");
         if (logChannel) {
-            const returnVal = guild.channels.get(logChannel.logs);
+            const returnVal = guild.channels.get(logChannel);
             if (returnVal && returnVal instanceof discord_js_1.TextChannel) {
                 return returnVal;
             }
@@ -208,9 +227,9 @@ class ActionLog {
      * @private
      */
     async _getCase(guild) {
-        const logCase = await sequelize_1.moderation.findOne({ where: { serverid: guild.id } });
+        const logCase = deps_1.db.table("mods").prop(guild.id, "latestCase");
         if (logCase) {
-            const returnVal = isNaN(logCase.latestCase) ? logCase.latestCase : Number(logCase.latestCase);
+            const returnVal = isNaN(logCase) ? logCase : Number(logCase);
             if (typeof returnVal === "string" || typeof returnVal === "number") {
                 return returnVal;
             }

@@ -4,7 +4,7 @@ const command_1 = require("../../classes/command");
 const func = async (msg, { send }) => {
     const now = Date.now();
     const sentmsg = await send("Calculating ping...");
-    const ping = Date.now() - now;
+    const ping = Date.now() - now; // tslint:disable-line:no-shadowed-variable
     let pingRate;
     if (ping < 0) {
         pingRate = ", uh, ...*unexistent*";

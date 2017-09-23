@@ -20,18 +20,21 @@ const _ = require("lodash");
 exports._ = _;
 const querystring = require("querystring");
 exports.querystring = querystring;
-const Sequelize = require("sequelize");
-exports.Sequelize = Sequelize;
+// import * as Sequelize from "sequelize";
+const rethink = require("rethinkdb");
+exports.rethink = rethink;
 const toml = require("toml");
 exports.toml = toml;
+const rethinkSetup_1 = require("../misc/rethinkSetup");
 const xreg = require("xregexp");
 exports.xreg = xreg;
 exports.data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
-exports.sql = new Sequelize("botdata", exports.data.sql.user || null, exports.data.sql.pass || null, {
-    host: "localhost",
-    dialect: "postgres",
-    logging: false,
-});
+const a = 1;
+rethink.connect({ host: "localhost", port: 28015 }).then((c) => {
+    exports.conn = c;
+    exports.r = rethink.db("saltbot");
+    rethinkSetup_1.default(exports.r, c);
+}).catch((err) => { throw err; });
 const util = require("util");
 exports.util = util;
 const Constants = require("../misc/constants");
@@ -57,6 +60,8 @@ const commandParse = 1; // unused
 exports.commandParse = commandParse;
 // let obj: {[prop: string]: any} = {};
 __export(require("./bot"));
+var database_1 = require("../classes/database");
+exports.db = database_1.db;
 // export * from "./db";
 exports.ownerID = "180813971853410305";
 exports.colors = chalk;

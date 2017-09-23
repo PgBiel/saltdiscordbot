@@ -52,7 +52,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     if (memberToUse.id === member.id) {
         return reply(`You cannot kick yourself!`);
     }
-    kick_1.default.punish(memberToUse, member, reason, `[Kick command executed by ${author.tag}]`, self);
+    await kick_1.default.punish(memberToUse, { author: member, reason, auctPrefix: `[Kick command executed by ${author.tag}]`, context: self });
 };
 exports.kick = new deps_1.Command({
     func,

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 // TODO finish this. This is WIP
 const discord_js_1 = require("discord.js");
-const sequelize_1 = require("../../sequelize/sequelize");
+// import { warns as warnsModel, warnsteps } from "../../sequelize/sequelize";
 const deps_1 = require("../../util/deps");
 const funcs_1 = require("../../util/funcs");
 const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms, searcher, promptAmbig, author, botmember, member, actionLog, dummy, checkRole, setPerms, }) => {
@@ -84,14 +84,14 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     };
     const executeWarnAsync = async () => {
         try {
-            const warns = await sequelize_1.warns.findAll({ where: { serverid: guild.id, userid: memberToUse.id } });
-            const warnStep = await sequelize_1.warnsteps.findOne({ where: { serverid: guild.id, amount: warns.length + 1 } });
-            let warnSteps = (await sequelize_1.warnsteps.findAll({ where: { serverid: guild.id } }));
+            const warns = deps_1.db.table("warns").get(guild.id, []).filter((u) => u.userid === memberToUse.id);
+            let warnSteps = deps_1.db.table("warnsteps").get(guild.id, []);
+            const warnStep = warnSteps.find((step) => step.amount >= warns.length + 1);
             warnSteps = warnSteps.sort((step1, step2) => step2.amount - step1.amount);
             if (warnStep) {
                 if (warnStep.amount === warnSteps[0].amount) {
                     warns.forEach((warn) => {
-                        warn.destroy().catch(funcs_1.rejct);
+                        deps_1.db.table("warns").remArr(guild.id, warn);
                     });
                 }
                 const punishment = warnStep.punishment;
@@ -123,16 +123,15 @@ I am not able to kick them because ${reasonStr}`);
                     }
                 }
                 else if (punishment === "ban") {
-                    // ...
+                    // WIP
                 }
             }
-            await sequelize_1.warns.create({
-                serverid: guild.id,
+            await deps_1.db.table("warns").add(guild.id, {
                 userid: memberToUse.id,
-                warn: reason || "None",
+                reason: reason || "None",
                 moderatorid: member.id,
-                warnedat: Date.now(),
-            });
+                warnedat: Date.now().toString(),
+            }, true);
         }
         catch (err) {
             fail(err);

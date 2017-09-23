@@ -21,4 +21,9 @@ const Manager = new Discord.ShardingManager("./bot.js", {
 });
 Manager.spawn().then((shards) => {
     console.log("Spawned", colors.cyan(shards.size.toString()), "shards!");
+    Manager.on("message", (message) => {
+        if (message && message.type === "dbUpdate" && message.table && message.statement) {
+            Manager.broadcast(message);
+        }
+    });
 });

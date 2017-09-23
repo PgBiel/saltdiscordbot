@@ -42,11 +42,9 @@ class Logger extends events_1.EventEmitter {
     /**
      * Custom-print some text
      * @param {string} text The text to print in console
-     * @param {string} [prefix="[GENERIC]"] The prefix
-     * @param {string} [color="cyan"] The color
-     * @param {string} [type="log"] The type (Console property to use as function)
+     * @param {Object} options The options
      */
-    custom(text, prefix = "[GENERIC]", color = "cyan", type = "log") {
+    custom(text, { prefix = "[GENERIC]", color = "cyan", type = "log" }) {
         console[type].apply(this, [colors[color](prefix), text]);
         this.emit("custom", { text, prefix, color, type });
     }

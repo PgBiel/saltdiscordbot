@@ -9,7 +9,7 @@ const logger_1 = require("./classes/logger");
 const permissions_1 = require("./classes/permissions");
 const searcher_1 = require("./classes/searcher");
 const commandHandlerFuncs_1 = require("./commandHandlerFuncs");
-const sequelize_1 = require("./sequelize/sequelize");
+// import { moderation, prefixes } from "./sequelize/sequelize";
 const bot_1 = require("./util/bot");
 const deps_1 = require("./util/deps");
 const funcs_1 = require("./util/funcs");
@@ -31,15 +31,19 @@ exports.default = async (msg) => {
         searcher: msg.guild ? new searcher_1.default({ guild: msg.guild }) : null,
         checkRole, promptAmbig, userError, doEval, prompt, actionLog,
     };
-    let possiblePrefix = msg.guild ?
-        (await sequelize_1.prefixes.findOne({ where: { serverid: msg.guild.id } })) || "+" :
-        "+";
-    if (!possiblePrefix) {
-        possiblePrefix = "+";
+    let dbPrefix;
+    if (msg.guild) {
+        try {
+            const result = deps_1.db.table("prefixes").filter("serverid", message.guild.id);
+            if (result && result.size >= 1) {
+                dbPrefix = result.first();
+            }
+        }
+        catch (err) {
+            logger_1.default.warn(`Unable to fetch prefix for guild ${msg.guild.id}: ${err.stack}`);
+        }
     }
-    if (possiblePrefix.prefix) {
-        possiblePrefix = possiblePrefix.prefix;
-    }
+    const possiblePrefix = dbPrefix || "+";
     for (const cmdn in bot_1.bot.commands) {
         if (!bot_1.bot.commands.hasOwnProperty(cmdn)) {
             continue;
@@ -82,7 +86,7 @@ exports.default = async (msg) => {
         }
         if (guildId) {
             try {
-                const disabled = await permissions_1.default.isDisabled(guildId, channel.id, cmd.name);
+                const disabled = permissions_1.default.isDisabled(guildId, channel.id, cmd.name);
                 if (disabled) {
                     return send(":lock: That command is disabled for this " + disabled + "!");
                 }
@@ -96,7 +100,7 @@ exports.default = async (msg) => {
         logger_1.default.custom(// log when someone does a command.
         `User ${deps_1.chalk.cyan(authorTag)}, ${channel instanceof discord_js_1.TextChannel ?
             `at channel ${deps_1.chalk.cyan("#" + channel.name)} of ${deps_1.chalk.cyan(msg.guild.name)}` :
-            `in DMs with Salt`}, ran command ${deps_1.chalk.cyan(cmd.name)}.`, "[CMD]", "magenta");
+            `in DMs with Salt`}, ran command ${deps_1.chalk.cyan(cmd.name)}.`, { prefix: "[CMD]", color: "magenta" });
         if (cmd.perms && guildId) {
             const permsToCheck = typeof cmd.perms === "string" ?
                 {} :
@@ -112,14 +116,14 @@ exports.default = async (msg) => {
                 }
                 const isDefault = Boolean(permsToCheck[permission]);
                 try {
-                    const permsResult = await permissions_1.default.hasPerm(msg.member, guildId, permission, isDefault);
+                    const permsResult = permissions_1.default.hasPerm(msg.member, guildId, permission, isDefault);
                     parsedPerms[permission] = Boolean(permsResult.hasPerm);
                     setPerms[permission] = Boolean(permsResult.setPerm);
                 }
                 catch (err) {
                     parsedPerms[permission] = false; // ¯\_(ツ)_/¯
                     setPerms[permission] = false;
-                    logger_1.default.custom(err, `[ERR/PERMCHECK]`, "red", "error");
+                    logger_1.default.custom(err, { prefix: `[ERR/PERMCHECK]`, color: "red", type: "error" });
                 }
             }
             subContext.perms = parsedPerms;
@@ -137,14 +141,12 @@ exports.default = async (msg) => {
         subContext.self = subContext; // The context itself.
         // and finally... we execute the command.
         try {
-            const result = descCmd.func(message, subContext);
-            if (result instanceof Promise) {
-                result.catch(funcs_1.rejct);
-            }
+            const result = await descCmd.func(message, subContext);
         }
         catch (err) {
             logger_1.default.error(`At Execution: ${err}`);
             return userError("AT EXECUTION");
         }
+        break;
     }
 };
