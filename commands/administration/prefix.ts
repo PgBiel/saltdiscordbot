@@ -1,18 +1,16 @@
 import { Message } from "discord.js";
 import Command from "../../classes/command";
-import Database from "../../classes/database";
+import db from "../../classes/database";
 import { TcmdFunc } from "../../commandHandler";
-import { prefixes } from "../../sequelize/sequelize";
+// import { prefixes } from "../../sequelize/sequelize";
 import { Constants, logger } from "../../util/deps";
 
-const func: TcmdFunc = async (msg: Message, { guildId, reply, send, args, arrArgs, prefix, hasPermission, perms }) => {
+const func: TcmdFunc = async (
+  msg: Message, { guildId, reply, send, args, arrArgs, prefix: p, hasPermission, perms },
+) => {
   if (arrArgs.length < 1) {
-    let prefixUsed = (await Database.find(prefixes, { where: { serverid: guildId } })) || "+";
-    if (prefixUsed.prefix) {
-      prefixUsed = prefixUsed.prefix;
-    }
-    return send(
-      `Current prefix for this server: ${prefixUsed}`);
+    const prefixUsed = db.table("prefixes").get(guildId) || "+";
+    return send(`Current prefix for this server: ${prefixUsed}`);
   }
   logger.debug("prefix:", arrArgs.toString());
   if (!hasPermission(["MANAGE_GUILD"]) && !perms.prefix) {
@@ -20,10 +18,7 @@ const func: TcmdFunc = async (msg: Message, { guildId, reply, send, args, arrArg
     "You do not have `Manage Server` (nor a permission overwrite).",
     );
   }
-  const result = await Database.findAdd(prefixes, { where: { serverid: guildId }, defaults: { prefix: args } });
-  if (!result[1]) {
-    result[0].update({ prefix: args });
-  }
+  db.table("prefixes").set(guildId, args);
   send(`Prefix set to \`${args}\`!`);
 };
 export const prefix = new Command({

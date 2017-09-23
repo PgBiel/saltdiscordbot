@@ -10,7 +10,11 @@
       },
       "no-console": {
         "severity": "off"
-      }
+      },
+      "curly": {
+        "severity": "off"
+      },
+      "max-line-length": [true, 130]
     },
     "rulesDirectory": []
 }

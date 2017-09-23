@@ -2,8 +2,8 @@
 import { GuildMember, Message, RichEmbed } from "discord.js";
 import * as querystring from "querystring";
 import { TcmdFunc } from "../../commandHandler";
-import { warns as warnsModel, warnsteps } from "../../sequelize/sequelize";
-import { _, bot, Command, Constants, logger, Time } from "../../util/deps";
+// import { warns as warnsModel, warnsteps } from "../../sequelize/sequelize";
+import { _, bot, Command, Constants, db, logger, Time } from "../../util/deps";
 import { escMarkdown, rejct, textAbstract } from "../../util/funcs";
 
 const func: TcmdFunc = async (msg: Message, {
@@ -86,19 +86,14 @@ const func: TcmdFunc = async (msg: Message, {
   };
   const executeWarnAsync = async () => {
     try {
-      const warns: Array<{[prop: string]: any}> =
-        await warnsModel.findAll({ where: { serverid: guild.id, userid: memberToUse.id } });
-      const warnStep: {[prop: string]: any} = await warnsteps.findOne(
-        { where: { serverid: guild.id, amount: warns.length + 1 } },
-      );
-      let warnSteps: Array<{[prop: string]: any}> = (await warnsteps.findAll(
-        { where: { serverid: guild.id } },
-      ));
+      const warns = db.table("warns").get(guild.id, []).filter((u) => u.userid === memberToUse.id);
+      let warnSteps = db.table("warnsteps").get(guild.id, []);
+      const warnStep = warnSteps.find((step) => step.amount >= warns.length + 1);
       warnSteps = warnSteps.sort((step1, step2) => step2.amount - step1.amount);
       if (warnStep) {
         if (warnStep.amount === warnSteps[0].amount) {
           warns.forEach((warn) => {
-            warn.destroy().catch(rejct);
+            db.table("warns").remArr(guild.id, warn);
           });
         }
         const punishment = warnStep.punishment;
@@ -126,16 +121,15 @@ const func: TcmdFunc = async (msg: Message, {
 I am not able to kick them because ${reasonStr}`);
           }
         } else if (punishment === "ban") {
-          // ...
+          // WIP
         }
       }
-      await warnsModel.create({
-        serverid: guild.id,
+      await db.table("warns").add(guild.id, {
         userid: memberToUse.id,
-        warn: reason || "None",
+        reason: reason || "None",
         moderatorid: member.id,
-        warnedat: Date.now(),
-      });
+        warnedat: Date.now().toString(),
+      }, true);
     } catch (err) {
       fail(err);
     }

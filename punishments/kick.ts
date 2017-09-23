@@ -9,20 +9,20 @@ class Kick extends Punishment {
   /**
    * Kick someone.
    * @param {GuildMember} member The member that is being punished.
-   * @param {string} [reason] The reason of the punishment.
-   * @param {string} [auctPrefix] A prefix to be included on the audit logs.
-   * @param {Function} [reply] A function that takes a string argument and replies.
-   * @param {Function} [send] A function that takes a string argument and sends.
-   * @param {Function} [actionLog] A function that takes any argument to action log.
-   * @returns {void}
+   * @param {Object} [options] Options to pass.
+   * @param {GuildMember} [options.author] The author of the punishment.
+   * @param {string} [options.reason] The reason of the punishment.
+   * @param {string} [options.auctPrefix] A prefix to be included on the audit logs.
+   * @param {BaseContext<GuildChannel>} [options.context] The context of the command.
+   * @returns {Promise<void>}
    */
   public async punish(
-    member: GuildMember, author?: GuildMember, reason?: string, auctPrefix?: string,
-    context?: BaseContext<DjsChannel | TextChannel>,
+    member: GuildMember, { author, reason, auctPrefix, context }: { author?: GuildMember, reason?: string, auctPrefix?: string,
+    context?: BaseContext<DjsChannel | TextChannel> } = { author: null, reason: null, auctPrefix: null, context: null },
   ): Promise<void> {
     const guild = member.guild;
     const botmember = guild.me;
-    const def = (...args: any[]) => null;
+    const def = (...args: any[]) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def } = context;
     if (author) {
       if (member.highestRole.position > botmember.highestRole.position) {

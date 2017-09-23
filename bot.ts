@@ -7,7 +7,7 @@ const setShards = { id: null };
 changeConsole(false, setShards);
 console.log("Initializing...");
 import "./misc/events";
-import { bot, data, decodeT, Discord, fs, logger, messager, sql, Time, toml } from "./util/deps";
+import { bot, data, decodeT, Discord, fs, logger, messager, /* sql, */ Time, toml } from "./util/deps";
 setShards.id = bot.shard.id;
 import {
   botMessage, checkMutes, IMessagerEvalData, loadCmds, messagerDoEval, processMessage, rejct,
@@ -23,6 +23,6 @@ loadCmds();
 messager.on("doEval", (edata: IMessagerEvalData) => {
   messagerDoEval((thing: any) => eval(thing))(edata); // tslint:disable-line:no-eval
 });
-sql.sync().catch(rejct);
+// sql.sync().catch(rejct);
 bot.login(decodeT(data.bot.token_beta)).catch(rejct);
 setInterval(checkMutes, Time.seconds(10));

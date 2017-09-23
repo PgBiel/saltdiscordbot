@@ -2,7 +2,7 @@ import { Guild } from "discord.js";
 import Command from "../classes/command";
 import * as cmds from "../commands/cmdIndex";
 import {
-  _, bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager, models, Time,
+  _, bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager, models, rethink, Time,
   xreg,
 } from "./deps";
 
@@ -22,10 +22,11 @@ export interface IMuteParseResults {
 /**
  * Handle a rejection
  * @param {*} rejection The rejection to handle
+ * @param {*} [prefix] Text to use before the error message
  * @returns {void}
  */
-export function rejct(rejection: any): void {
-  logger.custom(rejection, "[ERR/REJECT]", "red", "error");
+export function rejct(rejection: any, prefix?: string): void {
+  logger.custom(prefix + rejection, { prefix: "[ERR/REJECT]", color: "red", type: "error" });
 }
 
 /**
@@ -67,12 +68,13 @@ export function messagerDoEval(evaler: any) {
   };
 }
 export function djsDebug(info: string) {
-  logger.custom(
-    info, `[${/heartbeat/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`, "magenta",
-    );
+  logger.custom(info, {
+      prefix: `[${/heartbeat/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`,
+      color: "magenta",
+  });
 }
 export function djsWarn(info: string) {
-  logger.custom(info, `[DJS WARN]`, "yellow");
+  logger.custom(info, { prefix: `[DJS WARN]`, color: "yellow" });
 }
 export function botMessage(msg: Discord.Message) {
   const thingy = commandHandler(msg);
@@ -116,7 +118,7 @@ export function loadCmds(): void {
 // tslint:disable-next-line:prefer-const
 let isUnique = (err: Error) => err == null ? false : err.name === Constants.sql.UNIQUE_CONSTRAINT;
 export function SQLLogger(...stuff: string[]) {
-  return logger.custom(stuff.join(" "), "[SQL]", "yellow");
+  return logger.custom(stuff.join(" "), { prefix: "[SQL]", color: "yellow" });
 }
 export function doError(...stuff: string[]): void {
   return logger.error.apply(logger, [...stuff]);
@@ -368,4 +370,22 @@ However, I was unable to take the role away from you due to the mute role being 
       .catch(rejct);
     }
   }
+}
+
+/**
+ * Converts a cursor to an array.
+ * @param {Cursor|Promise<Cursor>} cursor The cursor
+ * @returns {Promise<any[]>}
+ */
+export async function cursor<T = any>(
+  // tslint:disable-next-line:no-shadowed-variable
+  cursor: rethink.Cursor | Promise<rethink.Cursor>,
+): Promise<T[]> {
+  if (cursor instanceof Promise) {
+    cursor = await cursor;
+  }
+  if (!cursor) {
+    return;
+  }
+  return cursor.toArray();
 }

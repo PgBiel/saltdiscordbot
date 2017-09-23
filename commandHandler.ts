@@ -8,10 +8,10 @@ import logger from "./classes/logger";
 import perms from "./classes/permissions";
 import Searcher from "./classes/searcher";
 import funcs, { TextBasedChannel } from "./commandHandlerFuncs";
-import { moderation, prefixes } from "./sequelize/sequelize";
+// import { moderation, prefixes } from "./sequelize/sequelize";
 import { bot } from "./util/bot";
-import { chalk, Constants } from "./util/deps";
-import { cloneObject, rejct } from "./util/funcs";
+import { chalk, conn, Constants, db } from "./util/deps";
+import { cloneObject, cursor, rejct } from "./util/funcs";
 
 export * from "./misc/contextType";
 
@@ -41,15 +41,18 @@ export default async (msg: Message) => {
     searcher: msg.guild ? new Searcher<GuildMember>({ guild: msg.guild }) : null,
     checkRole, promptAmbig, userError, doEval, prompt, actionLog,
   };
-  let possiblePrefix: string = msg.guild ?
-  ((await prefixes.findOne({ where: { serverid: msg.guild.id } })) as any) || "+" :
-  "+";
-  if (!possiblePrefix) {
-    possiblePrefix = "+";
+  let dbPrefix;
+  if (msg.guild) {
+    try {
+      const result = db.table("prefixes").filter("serverid", message.guild.id);
+      if (result && result.size >= 1) {
+          dbPrefix = result.first();
+      }
+    } catch (err) {
+      logger.warn(`Unable to fetch prefix for guild ${msg.guild.id}: ${err.stack}`);
+    }
   }
-  if ((possiblePrefix as any).prefix) {
-    possiblePrefix = (possiblePrefix as any).prefix;
-  }
+  const possiblePrefix: string = dbPrefix || "+";
   for (const cmdn in bot.commands) {
     if (!bot.commands.hasOwnProperty(cmdn)) {
       continue;
@@ -94,7 +97,7 @@ export default async (msg: Message) => {
     }
     if (guildId) {
       try {
-        const disabled = await perms.isDisabled(guildId, channel.id, cmd.name);
+        const disabled = perms.isDisabled(guildId, channel.id, cmd.name);
         if (disabled) {
           return send(":lock: That command is disabled for this " + disabled + "!");
         }
@@ -110,7 +113,7 @@ export default async (msg: Message) => {
         channel instanceof TextChannel ?
         `at channel ${chalk.cyan("#" + channel.name)} of ${chalk.cyan(msg.guild.name)}` :
         `in DMs with Salt`
-      }, ran command ${chalk.cyan(cmd.name)}.`, "[CMD]", "magenta");
+      }, ran command ${chalk.cyan(cmd.name)}.`, { prefix: "[CMD]", color: "magenta" });
 
     if (cmd.perms && guildId) { // permission checking :)
       const permsToCheck: {[permission: string]: CommandSetPerm} = typeof cmd.perms === "string" ?
@@ -128,13 +131,13 @@ export default async (msg: Message) => {
         }
         const isDefault = Boolean(permsToCheck[permission]);
         try {
-          const permsResult = await perms.hasPerm(msg.member, guildId, permission, isDefault);
+          const permsResult = perms.hasPerm(msg.member, guildId, permission, isDefault);
           parsedPerms[permission] = Boolean(permsResult.hasPerm);
           setPerms[permission] = Boolean(permsResult.setPerm);
         } catch (err) {
           parsedPerms[permission] = false; // ¯\_(ツ)_/¯
           setPerms[permission] = false;
-          logger.custom(err, `[ERR/PERMCHECK]`, "red", "error");
+          logger.custom(err, { prefix: `[ERR/PERMCHECK]`, color: "red", type: "error" });
         }
       }
 
@@ -153,13 +156,11 @@ export default async (msg: Message) => {
     subContext.self = subContext; // The context itself.
     // and finally... we execute the command.
     try {
-      const result = descCmd.func(message, subContext);
-      if (result instanceof Promise) {
-        result.catch(rejct);
-      }
+      const result = await descCmd.func(message, subContext);
     } catch (err) {
       logger.error(`At Execution: ${err}`);
       return userError("AT EXECUTION");
     }
+    break;
   }
 };

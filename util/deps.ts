@@ -7,15 +7,25 @@ import * as klawSync from "klaw-sync";
 const klaw: typeof klawSync.klawSync = (klawSync as any);
 import * as _ from "lodash";
 import * as querystring from "querystring";
-import * as Sequelize from "sequelize";
+// import * as Sequelize from "sequelize";
+import * as rethink from "rethinkdb";
 import * as toml from "toml";
+import rethinkSetup from "../misc/rethinkSetup";
 import xreg = require("xregexp");
 export const data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
-export const sql = new Sequelize("botdata", data.sql.user || null, data.sql.pass || null, {
+/* export const sql = new Sequelize("botdata", data.sql.user || null, data.sql.pass || null, {
   host: "localhost",
   dialect: "postgres",
   logging: false,
-});
+}); */
+export let conn: rethink.Connection;
+const a = 1;
+export let r: rethink.Db;
+rethink.connect({ host: "localhost", port: 28015 }).then((c) => {
+  conn = c;
+  r = rethink.db("saltbot");
+  rethinkSetup(r, c);
+}).catch((err) => { throw err; });
 import * as util from "util";
 
 import * as Constants from "../misc/constants";
@@ -36,6 +46,8 @@ const commandParse: any = 1; // unused
 
 // let obj: {[prop: string]: any} = {};
 export * from "./bot";
+
+export { db } from "../classes/database";
 // export * from "./db";
 
 export const ownerID: string = "180813971853410305";
@@ -62,7 +74,7 @@ export {
   fs,
   toml,
   klaw,
-  Sequelize,
+  // Sequelize,
   util,
   messager,
   models,
@@ -73,6 +85,7 @@ export {
   Searcher,
   Time,
   xreg,
+  rethink,
 
   decodeT,
   msgEmbedToRich,

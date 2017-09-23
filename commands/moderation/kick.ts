@@ -55,7 +55,9 @@ const func: TcmdFunc = async (msg: Message, {
   if (memberToUse.id === member.id) {
     return reply(`You cannot kick yourself!`);
   }
-  kickP.punish(memberToUse, member, reason, `[Kick command executed by ${author.tag}]`, self);
+  await kickP.punish(
+    memberToUse, { author: member, reason, auctPrefix: `[Kick command executed by ${author.tag}]`, context: self },
+  );
 };
 export const kick = new Command({
   func,
