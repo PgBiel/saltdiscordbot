@@ -11,7 +11,7 @@ import funcs, { TextBasedChannel } from "./commandHandlerFuncs";
 // import { moderation, prefixes } from "./sequelize/sequelize";
 import { bot } from "./util/bot";
 import { chalk, conn, Constants, db } from "./util/deps";
-import { cloneObject, cursor, rejct } from "./util/funcs";
+import { cloneObject, rejct } from "./util/funcs";
 
 export * from "./misc/contextType";
 
@@ -41,17 +41,7 @@ export default async (msg: Message) => {
     searcher: msg.guild ? new Searcher<GuildMember>({ guild: msg.guild }) : null,
     checkRole, promptAmbig, userError, doEval, prompt, actionLog,
   };
-  let dbPrefix;
-  if (msg.guild) {
-    try {
-      const result = db.table("prefixes").filter("serverid", message.guild.id);
-      if (result && result.size >= 1) {
-          dbPrefix = result.first();
-      }
-    } catch (err) {
-      logger.warn(`Unable to fetch prefix for guild ${msg.guild.id}: ${err.stack}`);
-    }
-  }
+  const dbPrefix = msg.guild ? db.table("prefixes").get(guildId) : null;
   const possiblePrefix: string = dbPrefix || "+";
   for (const cmdn in bot.commands) {
     if (!bot.commands.hasOwnProperty(cmdn)) {
@@ -95,7 +85,7 @@ export default async (msg: Message) => {
     if (!checkCommandRegex.test(instruction)) {
       continue;
     }
-    if (guildId) {
+    if (guildId && cmd.name !== "eval") {
       try {
         const disabled = perms.isDisabled(guildId, channel.id, cmd.name);
         if (disabled) {

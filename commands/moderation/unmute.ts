@@ -1,7 +1,7 @@
 import { GuildMember, Message, RichEmbed, Role } from "discord.js";
 import { TcmdFunc } from "../../commandHandler";
-import { activemutes, mutes } from "../../sequelize/sequelize";
-import { _, Command, Constants, logger, Time } from "../../util/deps";
+// import { activemutes, mutes } from "../../sequelize/sequelize";
+import { _, Command, Constants, db, logger, Time } from "../../util/deps";
 import { createMutedRole, escMarkdown, parseMute, rejct } from "../../util/funcs";
 
 const func: TcmdFunc = async (msg: Message, {
@@ -14,7 +14,7 @@ const func: TcmdFunc = async (msg: Message, {
     hasPerm = true;
   }
   try {
-    if (await checkRole("mod", member)) {
+    if (checkRole("mod", member)) {
       hasPerm = true;
     }
   } catch (err) {
@@ -71,7 +71,7 @@ const func: TcmdFunc = async (msg: Message, {
   if (!memberToUse) {
     return;
   }
-  const muteInfo: {[prop: string]: any} = await mutes.find({ where: { serverid: guild.id } });
+  const muteInfo = db.table("mutes").get(guild.id);
   let muteRole: Role;
   if (muteInfo) {
     muteRole = guild.roles.get(muteInfo.muteRoleID);
@@ -79,8 +79,7 @@ const func: TcmdFunc = async (msg: Message, {
   if (!muteRole) {
     return reply("That member is not muted!");
   }
-  const activeMute: {[prop: string]: any} =
-  await activemutes.findOne({ where: { serverid: guild.id, userid: memberToUse.id } });
+  const activeMute = db.table("activemutes").get(guild.id, []).find((item) => item.userid === memberToUse.id);
 
   if (!activeMute) {
     return reply("That member is not muted!");
@@ -112,7 +111,7 @@ const func: TcmdFunc = async (msg: Message, {
     sentMuteMsg.edit(`The unmute failed! :frowning:`).catch(rejct);
   };
   const executeUnmute = () => {
-    activeMute.destroy().then(() => {
+    db.table("activemutes").remArr(guild.id, activeMute).then(() => {
       memberToUse.removeRole(muteRole).then(finish).catch(fail);
     }).catch(fail);
   };

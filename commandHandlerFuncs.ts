@@ -5,9 +5,8 @@ import {
 import actionLog, { ILogOption } from "./classes/actionlogger";
 import messager from "./classes/messager";
 import Searcher from "./classes/searcher";
-import { moderation } from "./sequelize/sequelize";
 import * as deps from "./util/deps";
-import { bot, Constants, logger } from "./util/deps";
+import { bot, Constants, db, logger } from "./util/deps";
 import * as funcs from "./util/funcs";
 import { cloneObject, rejct } from "./util/funcs";
 
@@ -83,14 +82,14 @@ export default function returnFuncs(msg: Message) {
   const reply = sendingFunc(msg.reply.bind(msg));
   const send = sendingFunc(channel.send.bind(channel));
 
-  const checkRole = async (role: SaltRole, member: GuildMember): Promise<boolean> => {
+  const checkRole = (role: SaltRole, member: GuildMember): boolean => {
     if (["mod", "admin"].includes(role)) {
       role = role === "mod" ? "moderator" : "administrator";
     }
     if (!guildId) {
       return false;
     }
-    const result: {[prop: string]: any} = await moderation.findOne({ where: { serverid: guildId } });
+    const result = db.table("mods").get(guild.id);
     if (!result || !result[role]) {
       return false;
     }
@@ -256,12 +255,11 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
   };
 
   const doEval = (content: string, subC: {[prop: string]: any} = {}) => {
-    let objectToUse = cloneObject(obj);
-    objectToUse = Object.assign(objectToUse, {
+    const objectToUse = Object.assign({}, obj, {
       bot, msg, message: msg,
       channel, guildId, deps,
       funcs, context: subC || {},
-      guild,
+      guild, db,
     });
     const data = {
       content,

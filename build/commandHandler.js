@@ -31,18 +31,7 @@ exports.default = async (msg) => {
         searcher: msg.guild ? new searcher_1.default({ guild: msg.guild }) : null,
         checkRole, promptAmbig, userError, doEval, prompt, actionLog,
     };
-    let dbPrefix;
-    if (msg.guild) {
-        try {
-            const result = deps_1.db.table("prefixes").filter("serverid", message.guild.id);
-            if (result && result.size >= 1) {
-                dbPrefix = result.first();
-            }
-        }
-        catch (err) {
-            logger_1.default.warn(`Unable to fetch prefix for guild ${msg.guild.id}: ${err.stack}`);
-        }
-    }
+    const dbPrefix = msg.guild ? deps_1.db.table("prefixes").get(guildId) : null;
     const possiblePrefix = dbPrefix || "+";
     for (const cmdn in bot_1.bot.commands) {
         if (!bot_1.bot.commands.hasOwnProperty(cmdn)) {
@@ -84,7 +73,7 @@ exports.default = async (msg) => {
         if (!checkCommandRegex.test(instruction)) {
             continue;
         }
-        if (guildId) {
+        if (guildId && cmd.name !== "eval") {
             try {
                 const disabled = permissions_1.default.isDisabled(guildId, channel.id, cmd.name);
                 if (disabled) {

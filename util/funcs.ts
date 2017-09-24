@@ -2,9 +2,11 @@ import { Guild } from "discord.js";
 import Command from "../classes/command";
 import * as cmds from "../commands/cmdIndex";
 import {
-  _, bot, commandHandler, commandParse, Constants, Discord, fs, logger, messager, models, rethink, Time,
+  _, bot, commandHandler, commandParse, Constants, db, Discord, fs, logger, messager, rethink, Time, util,
   xreg,
 } from "./deps";
+
+import { HelperVals } from "../misc/tableValues";
 
 export interface IMessagerEvalData {
   content: string;
@@ -51,8 +53,10 @@ export function messagerDoEval(evaler: any) {
    * @returns {void}
    */
   return (data: IMessagerEvalData) => {
-    // tslint:disable-next-line:no-shadowed-variable
-    const { bot, message, msg, input, channel, deps, funcs, guildId, send, reply } = data.vars;
+    // tslint:disable:no-shadowed-variable
+    const { bot, message, msg, input, channel, deps, funcs, guildId, send, reply, db } = data.vars;
+    const { _, Storage, util } = deps;
+    // tslint:enable:no-shadowed-variable
     try {
       const result = eval(data.content); // tslint:disable-line:no-eval
       messager.emit(`${data.id}eval`, {
@@ -328,22 +332,29 @@ export function parseMute(str: string): IMuteParseResults {
  */
 export async function checkMutes(): Promise<void> {
   if (!bot.readyTimestamp) { return; }
-  const mutes: Array<{[prop: string]: any}> = await models.activemutes.findAll();
-  const mutesForShard = mutes.filter((mute) => bot.guilds.has(mute.serverid));
+  const mutesForShard = _.flatten(
+    db.table("activemutes").storage.filter((mute, guildId) => bot.guilds.has(guildId.toString())).array()
+    .map(([guildId, vals]) => _.flatten(vals.map((value) => Object.assign({ serverid: guildId }, value, { old: value })))),
+  );
   for (const mute of mutesForShard) {
     const guild = bot.guilds.get(mute.serverid);
     if (!guild) { continue; }
     const member = guild.members.get(mute.userid);
     if (!member) { continue; }
-    const mutesForGuild: {[prop: string]: any} = await models.mutes.findOne({ where: { serverid: guild.id } });
+    const mutesForGuild = db.table("mutes").get(mute.serverid);
     if (!mutesForGuild) { continue; }
     const muteRole = guild.roles.get(mutesForGuild.muteRoleID);
-    if (!muteRole || mute.permanent || !mute.timestamp || isNaN(mute.timestamp)) { continue; }
+    const timestamp = Number(mute.timestamp);
+    if (
+      !muteRole
+      || mute.permanent
+      || timestamp == null
+      || isNaN(timestamp)) { continue; }
     const botmember = guild.members.get(bot.user.id);
     const now = Date.now();
     const escapedName = escMarkdown(guild.name);
-    if (now >= mute.timestamp) {
-      mute.destroy();
+    if (now >= timestamp) {
+      db.table("activemutes").remArr(guild.id, mute.old);
       if (member.roles.has(muteRole.id)) {
         member.removeRole(muteRole).then(() => {
           member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
@@ -351,14 +362,18 @@ export async function checkMutes(): Promise<void> {
         }).catch((err: any) => {
           if (!botmember.hasPermission(["MANAGE_ROLES"])) {
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
-However, I was unable to take the role away from you due to having no \`Manage Roles\` permission. :frowning:`);
+However, I was unable to take the role away from you due to having no \`Manage Roles\` permission. :frowning:`).catch(rejct);
           } else if (botmember.highestRole.position < muteRole.position) {
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
 However, I was unable to take the role away from you due to the mute role being higher than my highest role. \
-:frowning:`);
+:frowning:`).catch(rejct);
           } else if (botmember.highestRole.id === muteRole.id) {
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
-However, I was unable to take the role away from you due to the mute role being  my highest role. :frowning:`);
+However, I was unable to take the role away from you due to the mute role being my highest role. :frowning:`).catch(rejct);
+          } else {
+            rejct(err, "At mute auto-remove role:");
+            member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
+However, I was unable to take the role away from you for an yet unknown reason. :frowning:`).catch(rejct);
           }
         });
       } else {
@@ -370,22 +385,4 @@ However, I was unable to take the role away from you due to the mute role being 
       .catch(rejct);
     }
   }
-}
-
-/**
- * Converts a cursor to an array.
- * @param {Cursor|Promise<Cursor>} cursor The cursor
- * @returns {Promise<any[]>}
- */
-export async function cursor<T = any>(
-  // tslint:disable-next-line:no-shadowed-variable
-  cursor: rethink.Cursor | Promise<rethink.Cursor>,
-): Promise<T[]> {
-  if (cursor instanceof Promise) {
-    cursor = await cursor;
-  }
-  if (!cursor) {
-    return;
-  }
-  return cursor.toArray();
 }

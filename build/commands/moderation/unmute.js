@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const sequelize_1 = require("../../sequelize/sequelize");
+// import { activemutes, mutes } from "../../sequelize/sequelize";
 const deps_1 = require("../../util/deps");
 const funcs_1 = require("../../util/funcs");
 const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms, setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy, checkRole, }) => {
@@ -10,7 +10,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
         hasPerm = true;
     }
     try {
-        if (await checkRole("mod", member)) {
+        if (checkRole("mod", member)) {
             hasPerm = true;
         }
     }
@@ -71,7 +71,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     if (!memberToUse) {
         return;
     }
-    const muteInfo = await sequelize_1.mutes.find({ where: { serverid: guild.id } });
+    const muteInfo = deps_1.db.table("mutes").get(guild.id);
     let muteRole;
     if (muteInfo) {
         muteRole = guild.roles.get(muteInfo.muteRoleID);
@@ -79,7 +79,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
     if (!muteRole) {
         return reply("That member is not muted!");
     }
-    const activeMute = await sequelize_1.activemutes.findOne({ where: { serverid: guild.id, userid: memberToUse.id } });
+    const activeMute = deps_1.db.table("activemutes").get(guild.id, []).find((item) => item.userid === memberToUse.id);
     if (!activeMute) {
         return reply("That member is not muted!");
     }
@@ -111,7 +111,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
         sentMuteMsg.edit(`The unmute failed! :frowning:`).catch(funcs_1.rejct);
     };
     const executeUnmute = () => {
-        activeMute.destroy().then(() => {
+        deps_1.db.table("activemutes").remArr(guild.id, activeMute).then(() => {
             memberToUse.removeRole(muteRole).then(finish).catch(fail);
         }).catch(fail);
     };

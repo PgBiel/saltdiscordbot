@@ -33,8 +33,10 @@ function messagerDoEval(evaler) {
      * @returns {void}
      */
     return (data) => {
-        // tslint:disable-next-line:no-shadowed-variable
-        const { bot, message, msg, input, channel, deps, funcs, guildId, send, reply } = data.vars;
+        // tslint:disable:no-shadowed-variable
+        const { bot, message, msg, input, channel, deps, funcs, guildId, send, reply, db } = data.vars;
+        const { _, Storage, util } = deps;
+        // tslint:enable:no-shadowed-variable
         try {
             const result = eval(data.content); // tslint:disable-line:no-eval
             deps_1.messager.emit(`${data.id}eval`, {
@@ -329,8 +331,8 @@ async function checkMutes() {
     if (!deps_1.bot.readyTimestamp) {
         return;
     }
-    const mutes = await deps_1.models.activemutes.findAll();
-    const mutesForShard = mutes.filter((mute) => deps_1.bot.guilds.has(mute.serverid));
+    const mutesForShard = deps_1._.flatten(deps_1.db.table("activemutes").storage.filter((mute, guildId) => deps_1.bot.guilds.has(guildId.toString())).array()
+        .map(([guildId, vals]) => deps_1._.flatten(vals.map((value) => Object.assign({ serverid: guildId }, value, { old: value })))));
     for (const mute of mutesForShard) {
         const guild = deps_1.bot.guilds.get(mute.serverid);
         if (!guild) {
@@ -340,19 +342,23 @@ async function checkMutes() {
         if (!member) {
             continue;
         }
-        const mutesForGuild = await deps_1.models.mutes.findOne({ where: { serverid: guild.id } });
+        const mutesForGuild = deps_1.db.table("mutes").get(mute.serverid);
         if (!mutesForGuild) {
             continue;
         }
         const muteRole = guild.roles.get(mutesForGuild.muteRoleID);
-        if (!muteRole || mute.permanent || !mute.timestamp || isNaN(mute.timestamp)) {
+        const timestamp = Number(mute.timestamp);
+        if (!muteRole
+            || mute.permanent
+            || timestamp == null
+            || isNaN(timestamp)) {
             continue;
         }
         const botmember = guild.members.get(deps_1.bot.user.id);
         const now = Date.now();
         const escapedName = escMarkdown(guild.name);
-        if (now >= mute.timestamp) {
-            mute.destroy();
+        if (now >= timestamp) {
+            deps_1.db.table("activemutes").remArr(guild.id, mute.old);
             if (member.roles.has(muteRole.id)) {
                 member.removeRole(muteRole).then(() => {
                     member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
@@ -360,16 +366,21 @@ async function checkMutes() {
                 }).catch((err) => {
                     if (!botmember.hasPermission(["MANAGE_ROLES"])) {
                         member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
-However, I was unable to take the role away from you due to having no \`Manage Roles\` permission. :frowning:`);
+However, I was unable to take the role away from you due to having no \`Manage Roles\` permission. :frowning:`).catch(rejct);
                     }
                     else if (botmember.highestRole.position < muteRole.position) {
                         member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
 However, I was unable to take the role away from you due to the mute role being higher than my highest role. \
-:frowning:`);
+:frowning:`).catch(rejct);
                     }
                     else if (botmember.highestRole.id === muteRole.id) {
                         member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
-However, I was unable to take the role away from you due to the mute role being  my highest role. :frowning:`);
+However, I was unable to take the role away from you due to the mute role being my highest role. :frowning:`).catch(rejct);
+                    }
+                    else {
+                        rejct(err, "At mute auto-remove role:");
+                        member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
+However, I was unable to take the role away from you for an yet unknown reason. :frowning:`).catch(rejct);
                     }
                 });
             }
@@ -385,20 +396,3 @@ However, I was unable to take the role away from you due to the mute role being 
     }
 }
 exports.checkMutes = checkMutes;
-/**
- * Converts a cursor to an array.
- * @param {Cursor|Promise<Cursor>} cursor The cursor
- * @returns {Promise<any[]>}
- */
-async function cursor(
-    // tslint:disable-next-line:no-shadowed-variable
-    cursor) {
-    if (cursor instanceof Promise) {
-        cursor = await cursor;
-    }
-    if (!cursor) {
-        return;
-    }
-    return cursor.toArray();
-}
-exports.cursor = cursor;

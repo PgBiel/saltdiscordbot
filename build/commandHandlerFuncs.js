@@ -4,7 +4,6 @@ const discord_js_1 = require("discord.js");
 const actionlogger_1 = require("./classes/actionlogger");
 const messager_1 = require("./classes/messager");
 const searcher_1 = require("./classes/searcher");
-const sequelize_1 = require("./sequelize/sequelize");
 const deps = require("./util/deps");
 const deps_1 = require("./util/deps");
 const funcs = require("./util/funcs");
@@ -33,14 +32,14 @@ function returnFuncs(msg) {
     };
     const reply = sendingFunc(msg.reply.bind(msg));
     const send = sendingFunc(channel.send.bind(channel));
-    const checkRole = async (role, member) => {
+    const checkRole = (role, member) => {
         if (["mod", "admin"].includes(role)) {
             role = role === "mod" ? "moderator" : "administrator";
         }
         if (!guildId) {
             return false;
         }
-        const result = await sequelize_1.moderation.findOne({ where: { serverid: guildId } });
+        const result = deps_1.db.table("mods").get(guild.id);
         if (!result || !result[role]) {
             return false;
         }
@@ -195,12 +194,11 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
         send, reply, prompt, actionLog: actionLog2,
     };
     const doEval = (content, subC = {}) => {
-        let objectToUse = funcs_1.cloneObject(obj);
-        objectToUse = Object.assign(objectToUse, {
+        const objectToUse = Object.assign({}, obj, {
             bot: deps_1.bot, msg, message: msg,
             channel, guildId, deps,
             funcs, context: subC || {},
-            guild,
+            guild, db: deps_1.db,
         });
         const data = {
             content,

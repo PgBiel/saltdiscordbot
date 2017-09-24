@@ -1,16 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const discord_js_1 = require("discord.js");
-const sequelize_1 = require("../../sequelize/sequelize");
+const mute_1 = require("../../punishments/mute");
 const deps_1 = require("../../util/deps");
 const funcs_1 = require("../../util/funcs");
-const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms, setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy, checkRole, }) => {
+const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms, setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy, checkRole, self, }) => {
     let hasPerm = false;
     if (hasPermission(["MANAGE_ROLES"])) {
         hasPerm = true;
     }
     try {
-        if (await checkRole("mod", member)) {
+        if (checkRole("mod", member)) {
             hasPerm = true;
         }
     }
@@ -93,105 +92,13 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
         }
       }
     } */
-    const timeToUse = new deps_1.Time();
-    if (time) {
-        timeToUse.add(time);
+    if (deps_1.db.table("activemutes").get(guildId).findIndex((item) => item.userid === memberToUse.id) > -1) {
+        return reply("That member is already muted!");
     }
-    else {
-        timeToUse.add("m", 10);
-    }
-    const muteInfo = await sequelize_1.mutes.find({ where: { serverid: guild.id } });
-    let muteRole;
-    if (muteInfo) {
-        muteRole = guild.roles.get(muteInfo.muteRoleID);
-    }
-    if (!muteRole) {
-        try {
-            const newRole = await funcs_1.createMutedRole(guild);
-            const muteInstance = muteInfo || (await sequelize_1.mutes.create({
-                serverid: guild.id,
-            }));
-            muteInstance.update({
-                muteRoleID: newRole.id,
-            }).catch(funcs_1.rejct);
-            muteRole = newRole;
-        }
-        catch (err) {
-            deps_1.logger.error(`At making mute role: ${err}`);
-            return reply("I attempted to create role for muting, but I couldn't! :frowning:");
-        }
-    }
-    /* if (memberToUse.id === guild.owner.id) {
-      return reply("That user is the owner, so muting would have no effect!");
-    } else if (memberToUse.hasPermission(["ADMINISTRATOR"])) {
-      return reply("That user has `Administrator` permissions, so muting would have no effect!");
-    } else */
-    if (muteRole.position > botmember.highestRole.position) {
-        return reply("The role used for muting has a higher position than my highest role!");
-    }
-    else if (muteRole.position === botmember.highestRole.position) {
-        return reply("The role used for muting is my highest role!");
-    }
-    const sentMuteMsg = await send(`Muting ${memberToUse.user.tag}... (Sending DM...)`);
-    const reasonEmbed = new discord_js_1.RichEmbed();
-    reasonEmbed
-        .setColor("GOLD")
-        .setDescription(reason || "None")
-        .setTimestamp(new Date());
-    const finish = () => {
-        sentMuteMsg.edit(`Muted ${memberToUse.user.tag} for **${timeToUse.toString()}** ${time ? "" : "(default) "}successfully.`).catch(funcs_1.rejct);
-        actionLog({
-            action_desc: `**{target}** was muted`,
-            target: memberToUse,
-            extraFields: [["Muted For", timeToUse]],
-            type: "mute",
-            author: member,
-            color: "GOLD",
-            reason: reason || "None",
-        }).catch(funcs_1.rejct);
-    };
-    const fail = (err) => {
-        funcs_1.rejct(err);
-        sentMuteMsg.edit(`The mute failed! :frowning:`).catch(funcs_1.rejct);
-    };
-    const executeMute = () => {
-        const timestamp = new deps_1.Time(Date.now())
-            .add(timeToUse)
-            .time
-            .toString();
-        sequelize_1.activemutes.create({
-            serverid: guild.id,
-            userid: memberToUse.id,
-            timestamp,
-            permanent: Boolean(dummy.permanent),
-        }).then(() => {
-            memberToUse.addRole(muteRole).then(finish).catch(fail);
-        }).catch(fail);
-    };
-    let sent = false;
-    let timeoutRan = false;
-    memberToUse.send(`You were muted at the server **${funcs_1.escMarkdown(guild.name)}** for **${timeToUse.toString()}** for the reason of:`, { embed: reasonEmbed }).then(() => {
-        if (timeoutRan) {
-            return;
-        }
-        sent = true;
-        sentMuteMsg.edit(`Muting ${memberToUse.user.tag}... (DM Sent. Adding role for muting...)`).catch(funcs_1.rejct);
-        executeMute();
-    }).catch((err) => {
-        funcs_1.rejct(err);
-        if (timeoutRan) {
-            return;
-        }
-        sent = true;
-        sentMuteMsg.edit(`Muting ${memberToUse.user.tag}... (DM Failed. Adding role for muting anyway...)`).catch(funcs_1.rejct);
-        executeMute();
+    mute_1.default.punish(memberToUse, {
+        author: member, reason, auctPrefix: `[Mute command executed by ${author.tag}] `, context: self,
+        time, permanent: dummy.permanent,
     });
-    setTimeout(() => {
-        if (!sent) {
-            timeoutRan = true;
-            executeMute();
-        }
-    }, deps_1.Time.seconds(2.8));
 };
 exports.mute = new deps_1.Command({
     func,

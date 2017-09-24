@@ -27,6 +27,13 @@ exports.tables = [
     "warnsteps",
     "welcomes",
 ];
+exports.tables.forEach((table) => {
+    r.tableList().contains(table)
+        .do((tableExists) => {
+        return r.branch(tableExists, { tables_created: 0 }, r.tableCreate(table));
+    })
+        .run();
+});
 class Database {
     constructor() {
         this.cache = {};
@@ -66,9 +73,8 @@ class Database {
      */
     table(name) {
         const tableStor = this.cache[name];
-        if (tableStor) {
-            return new Table(name, tableStor, this);
-        }
+        if (tableStor)
+            return new Table(name, tableStor);
     }
     /**
      * Sets something in a Table.
@@ -115,12 +121,12 @@ class Database {
         }
     }
 }
+exports.db = new Database();
 // tslint:disable-next-line:max-classes-per-file
 class Table extends deps_1.Storage {
-    constructor(name, content, database) {
+    constructor(name, content) {
         super(content);
         this.name = name;
-        this.db = database;
     }
     /* public add <B extends keyof HelperVals>(key: string, val: HelperVals[B], table: B): Promise<ISetRes>;
     public add(key: string, val: any): Promise<ISetRes>; */
@@ -128,7 +134,7 @@ class Table extends deps_1.Storage {
         const arr = this.get(key) || [];
         if (!Array.isArray(arr))
             return Promise.resolve({ success: false, err: new TypeError("Non-array value.") });
-        return (reject ? this.setRejct : this.set)(key, arr.concat([val]));
+        return (reject ? this.setRejct : this.set).call(this, key, arr.concat([val]));
     }
     remArr(key, obj, reject) {
         const arr = this.get(key) || [];
@@ -147,7 +153,7 @@ class Table extends deps_1.Storage {
         if (Array.isArray(arr)) {
             const modify = arr.slice();
             modify.splice(ind, amount);
-            return (reject ? this.setRejct : this.set)(key, modify);
+            return (reject ? this.setRejct : this.set).call(this, key, modify);
         }
         return Promise.resolve({ success: false, err: new TypeError("Non-array value.") });
     }
@@ -161,7 +167,7 @@ class Table extends deps_1.Storage {
         const obj = this.get(key) || {};
         if (typeof obj !== "object")
             return Promise.resolve({ success: false, err: new TypeError("Non-object value.") });
-        return (reject ? this.setRejct : this.set)(key, Object.assign(obj, val));
+        return (reject ? this.setRejct : this.set).call(this, key, Object.assign(obj, val));
     }
     assignF(key, val, reject = false) {
         if (typeof val !== "object")
@@ -173,13 +179,13 @@ class Table extends deps_1.Storage {
         for (const [prop, value] of Object.entries(val)) {
             newObj[prop] = typeof value === "function" ? value(obj[prop]) : value;
         }
-        return (reject ? this.setRejct : this.set)(key, Object.assign(obj, newObj));
+        return (reject ? this.setRejct : this.set).call(this, key, Object.assign(obj, newObj));
     }
     set(key, val) {
         if (NaN)
             return this; // also totally not attempting to bypass typescript yelling at me
         if (typeof key !== "object")
-            return this.db.set(key, val, this.name);
+            return exports.db.set(key, val, this.name);
     }
     async setRejct(key, val) {
         const res = await this.set(key, val);
@@ -188,9 +194,9 @@ class Table extends deps_1.Storage {
         return res;
     }
     get(key, defaultVal) {
-        const val = this.db.get(key, this.name);
+        const val = exports.db.get(key, this.name);
         if (defaultVal && !val)
-            this.db.set(key, defaultVal, this.name);
+            exports.db.set(key, defaultVal, this.name);
         const defaulted = defaultVal ? (val || defaultVal) : val;
         super.set(key, defaulted);
         return defaulted;
@@ -208,10 +214,12 @@ class Table extends deps_1.Storage {
         return super.array.call(this.cache);
     }
     get cache() {
-        return this.db.cache[this.name] || new deps_1.Storage();
+        return exports.db.cache[this.name] || new deps_1.Storage();
+    }
+    get storage() {
+        return this.cache;
     }
 }
-exports.db = new Database();
 process.on("message", (message) => {
     if (message && message.type === "dbUpdate" && message.table && message.statements) {
         const msg = message;

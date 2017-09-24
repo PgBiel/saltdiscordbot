@@ -1,7 +1,6 @@
 import { GuildMember, Message, RichEmbed } from "discord.js";
 import { TcmdFunc } from "../../commandHandler";
 import kickP from "../../punishments/kick";
-import { prefixes } from "../../sequelize/sequelize";
 import { _, Command, Constants, logger, querystring, Time } from "../../util/deps";
 import { escMarkdown, rejct, textAbstract } from "../../util/funcs";
 

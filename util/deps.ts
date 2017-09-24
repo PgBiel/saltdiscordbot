@@ -10,7 +10,7 @@ import * as querystring from "querystring";
 // import * as Sequelize from "sequelize";
 import * as rethink from "rethinkdb";
 import * as toml from "toml";
-import rethinkSetup from "../misc/rethinkSetup";
+// import rethinkSetup from "../misc/rethinkSetup";
 import xreg = require("xregexp");
 export const data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
 /* export const sql = new Sequelize("botdata", data.sql.user || null, data.sql.pass || null, {
@@ -20,12 +20,12 @@ export const data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
 }); */
 export let conn: rethink.Connection;
 const a = 1;
-export let r: rethink.Db;
+/* export let r: rethink.Db;
 rethink.connect({ host: "localhost", port: 28015 }).then((c) => {
   conn = c;
   r = rethink.db("saltbot");
   rethinkSetup(r, c);
-}).catch((err) => { throw err; });
+}).catch((err) => { throw err; }); */
 import * as util from "util";
 
 import * as Constants from "../misc/constants";
@@ -39,7 +39,7 @@ import perms from "../classes/permissions";
 import Searcher from "../classes/searcher";
 import Time from "../classes/time";
 
-import * as models from "../sequelize/sequelize";
+// import * as models from "../sequelize/sequelize";
 
 // declare const decodeT: (...a) => any;
 const commandParse: any = 1; // unused
@@ -47,7 +47,7 @@ const commandParse: any = 1; // unused
 // let obj: {[prop: string]: any} = {};
 export * from "./bot";
 
-export { db } from "../classes/database";
+export { Storage } from "saltjs";
 // export * from "./db";
 
 export const ownerID: string = "180813971853410305";
@@ -59,7 +59,7 @@ import commandHandler from "../commandHandler";
 export const commandHandle = commandHandler;
 export const commandParser = commandParse;
 
-export { Storage } from "saltjs";
+export { db } from "../classes/database";
 
 /* tslint:disable:object-literal-sort-keys */
 // obj = Object.assign(obj, {
@@ -77,7 +77,6 @@ export {
   // Sequelize,
   util,
   messager,
-  models,
   perms,
   logger,
   chalk,

@@ -1,6 +1,5 @@
 import { GuildMember, Message, RichEmbed, User } from "discord.js";
 import { TcmdFunc } from "../../commandHandler";
-import { prefixes } from "../../sequelize/sequelize";
 import { _, Command, Constants, logger, Searcher, Time } from "../../util/deps";
 import { escMarkdown, rejct, textAbstract } from "../../util/funcs";
 

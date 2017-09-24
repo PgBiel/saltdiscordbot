@@ -1,6 +1,6 @@
 import { Guild, GuildMember, Message, RichEmbed, TextChannel, User } from "discord.js";
 import { BaseContext, DjsChannel } from "../misc/contextType";
-import { querystring, Time } from "../util/deps";
+import { Time } from "../util/deps";
 import { escMarkdown, rejct, textAbstract } from "../util/funcs";
 import { Punishment } from "./punishment";
 
@@ -113,7 +113,7 @@ class Ban extends Punishment {
       const logObj = {
         action_desc: `**{target}** was ${actions[2]}`,
         type: actions[3],
-        author: member,
+        author,
         color: color || "RED",
         reason: reason || "None",
         target: userTarget,

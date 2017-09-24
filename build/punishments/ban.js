@@ -112,7 +112,7 @@ class Ban extends punishment_1.Punishment {
             const logObj = {
                 action_desc: `**{target}** was ${actions[2]}`,
                 type: actions[3],
-                author: member,
+                author,
                 color: color || "RED",
                 reason: reason || "None",
                 target: userTarget,

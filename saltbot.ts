@@ -5,16 +5,19 @@ import { inspect } from "util";
 import changeConsole from "./changeConsole";
 changeConsole(true);
 cmd
+  .option("-d, --default", "Use current directory")
   .option("-b, --beta", "Is beta or not")
   .option("-g, --github", "Use github directory")
   .parse(process.argv);
-const dir = `${process.env.HOME}/${cmd.github ?
-    "GitHub/saltdiscordbot" :
-    `Documents/Bot Stuff/${cmd.beta ?
-      "Beta " :
-      ""}Salt`}/build`;
-// console.log(dir, inspect(cmd));
-process.chdir(dir);
+if (!cmd.default) {
+  const dir = cmd.github || cmd.beta ? `${process.env.HOME}/${cmd.github ?
+      "GitHub/saltdiscordbot" :
+      `Documents/Bot Stuff/${cmd.beta ?
+        "Beta " :
+        ""}Salt`}/build` : "./build";
+  // console.log(dir, inspect(cmd));
+  process.chdir(dir);
+}
 const Manager = new Discord.ShardingManager("./bot.js", {
   totalShards: 2,
 });
