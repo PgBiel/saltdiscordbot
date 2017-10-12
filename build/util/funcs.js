@@ -34,8 +34,9 @@ function messagerDoEval(evaler) {
      */
     return (data) => {
         // tslint:disable:no-shadowed-variable
-        const { bot, message, msg, input, channel, deps, funcs, guildId, send, reply, db } = data.vars;
+        const { bot, message, msg, input, channel, guild, deps, funcs, guildId, send, reply, db, context } = data.vars;
         const { _, Storage, util } = deps;
+        const { member, author } = context;
         // tslint:enable:no-shadowed-variable
         try {
             const result = eval(data.content); // tslint:disable-line:no-eval

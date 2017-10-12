@@ -43,10 +43,15 @@ function returnFuncs(msg) {
         if (!result || !result[role]) {
             return false;
         }
-        if (member.roles && member.roles.get(result[role])) {
-            return true;
+        if (Array.isArray(result[role])) {
+            for (const roleID of result[role]) {
+                if (member.roles.has(roleID))
+                    return true;
+            }
         }
-        return false;
+        else {
+            return member.roles.has(result[role]);
+        }
     };
     const promptAmbig = async (members, pluralName = "members") => {
         let satisfied = false;
@@ -189,10 +194,11 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
         const newOptions = Object.assign({ guild: msg.guild }, options);
         return actionlogger_1.default.log(newOptions);
     };
-    const obj = {
+    const oldObj = {
         hasPermission, userError, promptAmbig, checkRole,
         send, reply, prompt, actionLog: actionLog2,
     };
+    let obj;
     const doEval = (content, subC = {}) => {
         const objectToUse = Object.assign({}, obj, {
             bot: deps_1.bot, msg, message: msg,
@@ -207,7 +213,7 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
         };
         return messager_1.default.awaitForThenEmit("doEval", data, data.id + "eval");
     };
-    obj.doEval = doEval;
+    obj = Object.assign(oldObj, { doEval });
     return obj;
 }
 exports.default = returnFuncs;

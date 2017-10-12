@@ -147,7 +147,7 @@ export interface HelperVals {
   };
   warnsteps: {
     amount: number;
-    punishment: "kick" | "ban" | "mute";
+    punishment: "kick" | "ban" | "softban" | "mute";
     time?: string;
   };
 }

@@ -28,7 +28,7 @@ const func: TcmdFunc = async (msg: Message, { send }) => {
   } else {
     pingRate = " *very, very slow*";
   }
-  sentmsg.edit(`Pong! ${Date.now() - now}ms.
+  sentmsg.edit(`Pong! The ping is ${Date.now() - now}ms.
 I'd rate the speed as${pingRate}.`);
 };
 export const ping = new Command({

@@ -34,7 +34,7 @@ interface IBaseContext<ChannelType> {
 interface IFuncs {
   actionLog: (options: ExtendedActionLogOptions) => Promise<Message>;
   checkRole: (role: SaltRole, member: GuildMember) => Promise<boolean>;
-  doEval: (content: string) => Promise<IDoEvalResult>;
+  doEval: (content: string, subC?: {[prop: string]: any}) => Promise<IDoEvalResult>;
   hasPermission?: typeof GuildMember.prototype.hasPermissions;
   hasPermissions?: typeof GuildMember.prototype.hasPermission;
   prompt: (options: IPromptOptions) => Promise<string>;

@@ -92,7 +92,7 @@ const func: TcmdFunc = async (msg: Message, {
       }
     }
   } */
-  if (db.table("activemutes").get(guildId).findIndex((item) => item.userid === memberToUse.id) > -1) {
+  if (db.table("activemutes").get(guildId, []).findIndex((item) => item.userid === memberToUse.id) > -1) {
     return reply("That member is already muted!");
   }
   muteP.punish(memberToUse, {

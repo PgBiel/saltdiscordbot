@@ -3,11 +3,11 @@ import Command from "../../classes/command";
 import { cmdFunc } from "../../commandHandler";
 import { _, bot, ownerID } from "../../util/deps";
 
-const func: cmdFunc = async (msg: Message, { args, doEval, send }) => {
+const func: cmdFunc = async (msg: Message, { args, doEval, send, self }) => {
   if (msg.author.id !== ownerID || args.length < 1) {
     return;
   }
-  const results = await doEval(args);
+  const results = await doEval(args, self);
   const resultStr = String(results.result).replace(
     new RegExp(_.escapeRegExp(bot.token), "ig"), "shaker");
   if (results.success) {

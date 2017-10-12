@@ -92,7 +92,7 @@ const func = async (msg, { guildId, guild, reply, send, args, prompt, prefix, ha
         }
       }
     } */
-    if (deps_1.db.table("activemutes").get(guildId).findIndex((item) => item.userid === memberToUse.id) > -1) {
+    if (deps_1.db.table("activemutes").get(guildId, []).findIndex((item) => item.userid === memberToUse.id) > -1) {
         return reply("That member is already muted!");
     }
     mute_1.default.punish(memberToUse, {

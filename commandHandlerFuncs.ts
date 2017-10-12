@@ -93,10 +93,13 @@ export default function returnFuncs(msg: Message) {
     if (!result || !result[role]) {
       return false;
     }
-    if (member.roles && member.roles.get(result[role])) {
-      return true;
+    if (Array.isArray(result[role])) {
+      for (const roleID of result[role]) {
+        if (member.roles.has(roleID)) return true;
+      }
+    } else {
+      return member.roles.has(result[role]);
     }
-    return false;
   };
   const promptAmbig = async <T> (members: T[], pluralName: string = "members"): Promise<IAmbigResult<T>> => {
     let satisfied: boolean = false;
@@ -249,10 +252,12 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     return actionLog.log(newOptions);
   };
 
-  const obj: {[func: string]: (...args: any[]) => any} = {
+  const oldObj = {
     hasPermission, userError, promptAmbig, checkRole,
     send, reply, prompt, actionLog: actionLog2,
   };
+
+  let obj: typeof oldObj & { doEval: (content: string, subC?: {[prop: string]: any}) => Promise<any> };
 
   const doEval = (content: string, subC: {[prop: string]: any} = {}) => {
     const objectToUse = Object.assign({}, obj, {
@@ -268,7 +273,7 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     };
     return messager.awaitForThenEmit("doEval", data, data.id + "eval");
   };
-  obj.doEval = doEval;
+  obj = Object.assign(oldObj, { doEval });
 
   return obj;
 }

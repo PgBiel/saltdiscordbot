@@ -2,11 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const command_1 = require("../../classes/command");
 const deps_1 = require("../../util/deps");
-const func = async (msg, { args, doEval, send }) => {
+const func = async (msg, { args, doEval, send, self }) => {
     if (msg.author.id !== deps_1.ownerID || args.length < 1) {
         return;
     }
-    const results = await doEval(args);
+    const results = await doEval(args, self);
     const resultStr = String(results.result).replace(new RegExp(deps_1._.escapeRegExp(deps_1.bot.token), "ig"), "shaker");
     if (results.success) {
         send(`\`\`\`js
