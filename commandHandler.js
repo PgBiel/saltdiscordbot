@@ -19,7 +19,7 @@ export * from "./commandHandlerFuncs"; */
 
 const doError = logger.error;
 
-module.exports = async (msg: Message) => {
+module.exports = async msg => {
   // initialize some vars
   const input = msg.content;
   const channel = msg.channel;
@@ -70,29 +70,36 @@ module.exports = async (msg: Message) => {
         subContext.dummy[key] = cmd.aliasData[key];
       }
     }
-    // if the command has a required prefix (instead of the configurable one) then use it
+    // if the command has a required prefix (instead of the configurable one) then use it, otherwise the configurable one
     if (descCmd.customPrefix) {
       prefix = descCmd.customPrefix;
     } else {
       prefix = possiblePrefix;
     }
+    // if the command is only for guilds and we aren't in one, then skip
     if (descCmd.guildOnly && !msg.guild) {
       continue;
     }
     subContext.prefix = prefix;
-    const mentionfix: string = input.startsWith(`<@${bot.user.id}> `) ? `<@${bot.user.id}> ` : null;
-    const usedPrefix: string = mentionfix || prefix || "+";
+    // check if bot was summoned with mention...
+    const mentionfix = input.startsWith(`<@${bot.user.id}> `) ? `<@${bot.user.id}> ` : null;
+    // ...then really determine the prefix used.
+    const usedPrefix = mentionfix || prefix || "+";
+    // if message doesn't start with prefix... skip (not break the loop because commands can still have custom prefixes)
     if (!message.content.toUpperCase().startsWith(usedPrefix.toUpperCase())) {
       continue;
     }
-    const instruction: string = subContext.instruction = input.replace(
+    // message without prefix
+    const instruction = subContext.instruction = input.replace(
       new RegExp(`^${_.escapeRegExp(usedPrefix)}`), "");
-
-    const checkCommandRegex: RegExp = cmd.pattern || new RegExp(
+    // get command & args
+    const checkCommandRegex = cmd.pattern || new RegExp(
       `^${_.escapeRegExp(cmd.name)}(?:\\s{1,4}[^]*)?$`, "i");
+    // if the command used is not this one... continue
     if (!checkCommandRegex.test(instruction)) {
       continue;
     }
+    // check if command is disabled (and ensure eval isn't disabled :p)
     if (guildId && cmd.name !== "eval") {
       try {
         const disabled = perms.isDisabled(guildId, channel.id, cmd.name);
@@ -104,21 +111,21 @@ module.exports = async (msg: Message) => {
         return userError(`AT DISABLE`);
       }
     }
-
-    const authorTag: string = subContext.authorTag = msg.author.tag;
-    logger.custom( // log when someone does a command.
+    // get author's tag
+    const authorTag = subContext.authorTag = msg.author.tag;
+    logger.custom( // log when someone does a command. (mostly debugging)
       `User ${chalk.cyan(authorTag)}, ${
         channel instanceof TextChannel ?
-        `at channel ${chalk.cyan("#" + channel.name)} of ${chalk.cyan(msg.guild.name)}` :
-        `in DMs with Salt`
+        `at channel ${chalk.cyan("#" + channel.name)} of ${chalk.cyan(msg.guild.name)}` : // in a guild or...
+        `in DMs with Salt` // ... in dms?
       }, ran command ${chalk.cyan(cmd.name)}.`, { prefix: "[CMD]", color: "magenta" });
 
     if (cmd.perms && guildId) { // permission checking :)
-      const permsToCheck: {[permission: string]: CommandSetPerm} = typeof cmd.perms === "string" ?
+      const permsToCheck = typeof cmd.perms === "string" ? // a single perm or...
       {} :
-      cloneObject(cmd.perms);
+      cloneObject(cmd.perms); // ...multiple perms?
       if (typeof cmd.perms === "string") {
-        permsToCheck[cmd.perms] = Boolean(cmd.default);
+        permsToCheck[cmd.perms] = Boolean(cmd.default); // (treat it like multiple but add it to object)
       }
 
       const parsedPerms = {};
@@ -127,11 +134,11 @@ module.exports = async (msg: Message) => {
         if (!permsToCheck.hasOwnProperty(permission)) {
           continue;
         }
-        const isDefault = Boolean(permsToCheck[permission]);
+        const isDefault = Boolean(permsToCheck[permission]); // if perm is default
         try {
-          const permsResult = perms.hasPerm(msg.member, guildId, permission, isDefault);
-          parsedPerms[permission] = Boolean(permsResult.hasPerm);
-          setPerms[permission] = Boolean(permsResult.setPerm);
+          const permsResult = perms.hasPerm(msg.member, guildId, permission, isDefault); // execute hasPerm to check perm
+          parsedPerms[permission] = Boolean(permsResult.hasPerm); // add if has perm
+          setPerms[permission] = Boolean(permsResult.setPerm); // add if perm was set or is it default
         } catch (err) {
           parsedPerms[permission] = false; // ¯\_(ツ)_/¯
           setPerms[permission] = false;
@@ -141,17 +148,17 @@ module.exports = async (msg: Message) => {
 
       subContext.perms = parsedPerms;
       subContext.setPerms = setPerms;
-    } else {
+    } else { // no perms to check...
       subContext.perms = null;
       subContext.setPerms = null;
     }
 
-    const cmdRegex = new RegExp(`^${_.escapeRegExp(cmd.name)}\\s*`, "i");
-    const args: string = subContext.args = instruction.replace(cmdRegex, "").length < 1 ? // arguments given...?
+    const cmdRegex = new RegExp(`^${_.escapeRegExp(cmd.name)}\\s*`, "i"); // regex for fetching/replacing command name
+    const args = subContext.args = instruction.replace(cmdRegex, "").length < 1 ? // arguments given...?
     null : // no
     instruction.replace(cmdRegex, ""); // yes
-    subContext.arrArgs = args ? args.split(" ") : []; // array form of arguments.
-    subContext.self = subContext; // The context itself.
+    subContext.arrArgs = args ? args.split(/\s+/) : []; // array form of arguments.
+    subContext.self = subContext; // The context itself. (can be useful)
     // and finally... we execute the command.
     try {
       const result = await descCmd.func(message, subContext);

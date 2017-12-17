@@ -1,14 +1,14 @@
-import { combineRegex } from "../util/funcs";
+const { combineRegex } = require("../util/funcs");
 
-export const sql = {
+exports.sql = {
   UNIQUE_CONSTRAINT: "SequelizeUniqueConstraintError",
 };
 
-export const times = {
+exports.times = {
   AMBIGUITY_EXPIRE: 30000,
 };
 
-export const regex = {
+exports.regex = {
   HAS_DECIMAL: /\.(?!0+$)/,
   NAME_AND_DISCRIM: /^([^]{1,32})#(\d{4})$/,
   BAN_MATCH: /^([^]+?(?:#\d{4})?)(?:\s+([^]*))?$/,
@@ -127,16 +127,16 @@ export const regex = {
     IS_NOTHING: /^(?:|\s+|(?:"|'|'')\s*(?:"|'|''))$/,
     TIME_MATCH:
     /\d+\s*(?:(?:mo(?:nths?)?)|s(?:ec(?:ond)s?)|m(?:in(?:ute)?s?)?|(?:h(?:ours?)?)|(?:d(?:ays?)?)|(?:w(?:eeks?)?))/g,
-    SINGLE_TIME_MATCH: (isNumber: boolean): RegExp => {
+    SINGLE_TIME_MATCH: isNumber => {
       return isNumber ? /^(\d+)\s*\w+$/ : /^\d+\s*(\w+)$/;
     },
   },
 };
 
-export const numbers = {
+exports.numbers = {
   MAX_PROMPT: 5,
 };
 
-export const identifiers = {
+exports.identifiers = {
   OWNER: "180813971853410305",
 };

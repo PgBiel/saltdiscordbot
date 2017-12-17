@@ -1,9 +1,9 @@
-import { Message } from "discord.js";
-import Command from "../../classes/command";
-import { cmdFunc } from "../../commandHandler";
-import { _, bot, ownerID } from "../../util/deps";
+const { Message } = require("discord.js");
+const Command = require("../../classes/command");
+const { cmdFunc } = require("../../commandHandler");
+const { _, bot, ownerID } = require("../../util/deps");
 
-const func: cmdFunc = async (msg: Message, { args, doEval, send, self }) => {
+const func = async (msg, { args, doEval, send, self }) => {
   if (msg.author.id !== ownerID || args.length < 1) {
     return;
   }
@@ -28,7 +28,7 @@ ${resultStr}
 \`\`\``);
   }
 };
-export const evaler = new Command({
+module.exports = new Command({
   func,
   name: "eval",
   description: "Evaluate some text.",

@@ -1,17 +1,17 @@
-import { GuildMember, Message, TextChannel } from "discord.js";
-import Command from "../../classes/command";
-import { cmdFunc } from "../../commandHandler";
+const { GuildMember, Message, TextChannel } = require("discord.js");
+const Command = require("../../classes/command");
+const { cmdFunc } = require("../../commandHandler");
 
-const func: cmdFunc = async (msg: Message, { args, send, channel, member, author, guild }) => {
-  let ripContent: string = "";
+const func = async (msg, { args, send, channel, member, author, guild }) => {
+  let ripContent = "";
   if (!args) {
     ripContent = member ?
     member.displayName :
     author.username;
   } else if (channel instanceof TextChannel) {
-    ripContent = args.replace(/<@!?\d+>/g, (mention: string) => {
-      const id: string = mention.match(/^<@!?(\d+)>$/)[1];
-      const memberToUse: GuildMember = guild.members.get(id);
+    ripContent = args.replace(/<@!?\d+>/g, mention => {
+      const id = mention.match(/^<@!?(\d+)>$/)[1];
+      const memberToUse = guild.members.get(id);
       if (!memberToUse) {
         return mention;
       }
@@ -22,7 +22,7 @@ const func: cmdFunc = async (msg: Message, { args, send, channel, member, author
   }
   return send(`http://ripme.xyz/#${encodeURIComponent(ripContent)}`);
 };
-export const rip = new Command({
+module.exports = new Command({
   func,
   name: "rip",
   perms: "rip",

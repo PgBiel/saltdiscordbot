@@ -29,7 +29,7 @@ export interface IMuteParseResults {
  */
 exports.rejct = function rejct(rejection, prefix) {
   logger.custom(prefix + rejection, { prefix: "[ERR/REJECT]", color: "red", type: "error" });
-}
+};
 
 /**
  * Require without being on cache
@@ -39,7 +39,7 @@ exports.rejct = function rejct(rejection, prefix) {
 exports.ncrequire = function ncrequire(fpath) {
   delete require.cache[require.resolve(fpath)];
   return require(fpath);
-}
+};
 
 /**
  * Factory function for event function for doEval on messager
@@ -52,7 +52,7 @@ exports.messagerDoEval = function messagerDoEval(evaler) {
    * @param {*} data Data
    * @returns {void}
    */
-  return (data) => {
+  return data => {
     // tslint:disable:no-shadowed-variable
     const { bot, message, msg, input, channel, guild, deps, funcs, guildId, send, reply, db, context } = data.vars;
     const { _, Storage, util } = deps;
@@ -71,25 +71,25 @@ exports.messagerDoEval = function messagerDoEval(evaler) {
       });
     }
   };
-}
+};
 exports.djsDebug = function djsDebug(info) {
   logger.custom(info, {
       prefix: `[${/heartbeat/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`,
       color: "magenta",
   });
-}
+};
 exports.djsWarn = function djsWarn(info) {
   logger.custom(info, { prefix: `[DJS WARN]`, color: "yellow" });
-}
+};
 exports.botMessage = function botMessage(msg) {
   const thingy = commandHandler(msg);
   if (thingy.catch) {
     thingy.catch(rejct);
   }
-}
+};
 exports.processMessage = function processMessage(data) {
   logger.debug("Received message");
-}
+};
 /**
  * Clone an object.
  * @param {*} objec The object.
@@ -97,7 +97,7 @@ exports.processMessage = function processMessage(data) {
  */
 exports.cloneObject = function cloneObject (objec) {
   return Object.assign(Object.create(objec), objec);
-}
+};
 /**
  * Loads commands.
  * @returns {void}
@@ -119,18 +119,18 @@ exports.loadCmds = function loadCmds() {
       // }
     }
   }
-}
+};
 // tslint:disable-next-line:prefer-const
 let isUnique = err => err == null ? false : err.name === Constants.sql.UNIQUE_CONSTRAINT;
 exports.SQLLogger = function SQLLogger(...stuff) {
   return logger.custom(stuff.join(" "), { prefix: "[SQL]", color: "yellow" });
-}
+};
 exports.doError = function doError(...stuff) {
   return logger.error.apply(logger, [...stuff]);
-}
+};
 exports.bcEval = function bcEval() {
   return bot.shard.broadcastEval.apply(bot.shard, Array.from(arguments));
-}
+};
 /**
  * Get a random value between two numbers.
  * @param {number} min The minimum number.
@@ -146,17 +146,17 @@ exports.random = function random(min, max) {
     [min, max] = [max, min];
   }
   return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+};
 /**
  * Escape Discord markdown in a string.
  * @param {string} str The string.
  * @param {boolean} [escaper=false] If backslash should be escaped.
  * @returns {string} The newly escaped string.
  */
-exports.escMarkdown = function escMarkdown(str: string, escaper: boolean = false) {
+exports.escMarkdown = function escMarkdown(str, escaper = false) {
   const regex = new RegExp(`[\`*_~${escaper ? "\\\\" : ""}]`, "g");
-  return str.replace(regex, (piece: string) => "\\" + piece);
-}
+  return str.replace(regex, piece => "\\" + piece);
+};
 /**
  * Abstract strings if it is too long.
  * @param {string} text The string to abstract.
@@ -181,7 +181,7 @@ exports.textAbstract = function textAbstract(text, length) {
     }
     const newText = text.substring(0, length).replace(/[^]{0,3}$/, "...");
     return newText || "...";
-}
+};
 /**
  * Combine regexs into one.
  * @param {RegExp[]|string[]} regs The RegExp expressions or strings.
@@ -194,7 +194,7 @@ exports.combineRegex = function combineRegex(regs, options) {
     regexStr += match instanceof RegExp ? match.source : match;
   }
   return new RegExp(regexStr, options);
-}
+};
 
 /**
  * Parse a time string. (Used for mute command)
@@ -222,14 +222,14 @@ exports.parseTimeStr = function parseTimeStr(str) {
     }
   }
   return time.units;
-}
+};
 
 /**
  * Make a mute role.
  * @param {Guild} guild The guild to create the mute role at.
  * @returns {Promise<Role>} The created role.
  */
-exports.createdMutedRole = async function createMutedRole(guild: Guild) {
+exports.createdMutedRole = async function createMutedRole(guild) {
   const newRole = await guild.createRole({
     name: "SaltMuted",
     permissions: [],
@@ -238,7 +238,7 @@ exports.createdMutedRole = async function createMutedRole(guild: Guild) {
     channel.overwritePermissions(newRole, { SEND_MESSAGES: false }).catch(rejct);
   }
   return newRole;
-}
+};
 
 /**
  * Convert a string to binary.
@@ -251,36 +251,32 @@ exports.createdMutedRole = async function createMutedRole(guild: Guild) {
 exports.toBin = function toBin(str, joinChar = " ", unicodeJoinChar = "") {
   const PADDING = "0".repeat(8);
 
-  const resultArr: string[] = [];
+  const resultArr = [];
 
   if (typeof str !== "string") {
-    try {
-      str = (str as any).toString();
-    } catch (err) {
-      str = String(str);
-    }
+    str = String(str);
   }
 
   for (const i of Object.keys(str)) {
     if (isNaN(Number(i))) {
       return;
     }
-    const compact: string = str.charCodeAt(Number(i)).toString(2);
+    const compact = str.charCodeAt(Number(i)).toString(2);
     if (compact.length / 8 > 1) {
-      const el: string[] = [];
-      compact.match(/[^]{8}/g).forEach((byte: string) => {
-        const padded2: string = PADDING.substring(0, PADDING.length - byte.length) + byte;
+      const el = [];
+      compact.match(/[^]{8}/g).forEach(byte => {
+        const padded2 = PADDING.substring(0, PADDING.length - byte.length) + byte;
         el.push(padded2);
       });
       resultArr.push(el.join(unicodeJoinChar || ""));
       continue;
     }
-    const padded: string = PADDING.substring(0, PADDING.length - compact.length) + compact;
+    const padded = PADDING.substring(0, PADDING.length - compact.length) + compact;
     resultArr.push(padded);
   }
-  const result: string = resultArr.join(joinChar);
+  const result = resultArr.join(joinChar);
   return result;
-}
+};
 
 /**
  * Parse arguments for the mute command.
@@ -300,7 +296,7 @@ exports.parseMute = function parseMute(str) {
     obj.ok = false;
     return obj;
   }
-  results.forEach((piece: string, index: number) => {
+  results.forEach((piece, index) => {
     if (index < 1 || index > 7 || !piece) { return; }
     if (!obj.user) {
       obj.user = piece;
@@ -322,7 +318,7 @@ exports.parseMute = function parseMute(str) {
   });
   obj.reason = results[8] || "";
   return obj;
-}
+};
 /**
  * Check all mutes and unmute / add muted role if needed.
  * @returns {Promise<void>}
@@ -331,7 +327,7 @@ exports.checkMutes = async function checkMutes() {
   if (!bot.readyTimestamp) { return; }
   const mutesForShard = _.flatten(
     db.table("activemutes").storage.filter((mute, guildId) => bot.guilds.has(guildId.toString())).array()
-    .map(([guildId, vals]) => _.flatten(vals.map((value) => Object.assign({ serverid: guildId }, value, { old: value })))),
+    .map(([guildId, vals]) => _.flatten(vals.map(value => Object.assign({ serverid: guildId }, value, { old: value })))),
   );
   for (const mute of mutesForShard) {
     const guild = bot.guilds.get(mute.serverid);
@@ -356,7 +352,7 @@ exports.checkMutes = async function checkMutes() {
         member.removeRole(muteRole).then(() => {
           member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
           .catch(rejct);
-        }).catch((err: any) => {
+        }).catch(err => {
           if (!botmember.hasPermission(["MANAGE_ROLES"])) {
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
 However, I was unable to take the role away from you due to having no \`Manage Roles\` permission. :frowning:`).catch(rejct);
@@ -382,7 +378,7 @@ However, I was unable to take the role away from you for an yet unknown reason. 
       .catch(rejct);
     }
   }
-}
+};
 
 /**
  * Capitalize the first letter in a string.
@@ -395,4 +391,4 @@ exports.capitalize = function capitalize(str, all = false) {
     return str.replace(/(?:^|\s+)([\s\S])/g, char => char.toUpperCase());
   }
   return str.replace(/^([\s\S])/, char => char.toUpperCase());
-}
+};

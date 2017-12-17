@@ -1,10 +1,10 @@
-import { Message } from "discord.js";
-import Command from "../../classes/command";
-import { TcmdFunc } from "../../commandHandler";
-import { _, db, Time } from "../../util/deps";
+const { Message } = require("discord.js");
+const Command = require("../../classes/command");
+const { TcmdFunc } = require("../../commandHandler");
+const { _, db, Time } = require("../../util/deps");
 
-const func: TcmdFunc = async (
-  msg: Message, { guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms },
+const func = async (
+  msg, { guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms },
 ) => {
   const steps = db.table("warnsteps").get(guildId);
   if (arrArgs.length < 1) {
@@ -37,9 +37,9 @@ the \`Moderator\` SaltRole or a permission overwrite.`);
       return reply(`Please tell me which warn limit should I get!`);
     }
     const num = Number(isNaN(Number(action)) ? action : subArg);
-    const step = steps.find((s) => s.amount === Number(num));
+    const step = steps.find(s => s.amount === Number(num));
     if (!step) return send(`There is no warn punishment for reaching ${num} total warns. :wink:`);
     return send(`Upon reaching ${num} total warns, the member receives a **${step.punishment}**\
 ${step.time ? ` for **${new Time(Number(step.time) || Time.minutes(10)).toString()}**` : ""}.`);
-  } else if (/^(?:set|unset|add|remove)$/i.test(action))
+  } else if (/^(?:set|unset|add|remove)$/i.test(action)) { /* WIP */ }
 };

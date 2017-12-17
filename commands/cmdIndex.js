@@ -14,10 +14,10 @@ export * from "./prefix";
 export * from "./random";
 export * from "./rip";
 export * from "./unban"; */
-import { Command, klaw } from "../util/deps";
-import { ncrequire } from "../util/funcs";
+const { Command, klaw } = require("../util/deps");
+const { ncrequire } = require("../util/funcs");
 
-export const commands: {[name: string]: Command} = {};
+const commands = {};
 const options = { nodir: true };
 const files = klaw("./commands", options);
 for (const file of files) {
@@ -25,8 +25,12 @@ for (const file of files) {
   if (!/cmdIndex\.\w+$/i.test(filePath) && /\.js$/i.test(filePath)) {
     const exported = ncrequire(filePath);
     const value = exported[Object.keys(exported)[0]];
-    if (value instanceof Command) {
+    if (exported instanceof Command) {
+      commands[exported.name] = exported;
+    } else if (value instanceof Command) {
       commands[value.name] = value;
     }
   }
 }
+
+exports.commands = commands;

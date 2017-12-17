@@ -1,15 +1,15 @@
-import { GuildMember, Message, RichEmbed, Role } from "discord.js";
-import { TcmdFunc } from "../../commandHandler";
-// import { activemutes, mutes } from "../../sequelize/sequelize";
-import { _, Command, Constants, db, logger, Time } from "../../util/deps";
-import { createMutedRole, escMarkdown, parseMute, rejct } from "../../util/funcs";
+const { GuildMember, Message, RichEmbed, Role } = require("discord.js");
+const { TcmdFunc } = require("../../commandHandler");
+// const { activemutes, mutes } = require("../../sequelize/sequelize");
+const { _, Command, Constants, db, logger, Time } = require("../../util/deps");
+const { createMutedRole, escMarkdown, parseMute, rejct } = require("../../util/funcs");
 
-const func: TcmdFunc = async (msg: Message, {
+const func = async (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy,
   checkRole,
 }) => {
-  let hasPerm: boolean = false;
+  let hasPerm = false;
   if (hasPermission(["MANAGE_ROLES"])) {
     hasPerm = true;
   }
@@ -36,19 +36,17 @@ const func: TcmdFunc = async (msg: Message, {
   if (!args) {
     return reply("Please tell me who to unmute!");
   }
-  const [user, reason]: string[] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
-  let memberToUse: GuildMember;
-  let membersMatched: GuildMember[];
+  let memberToUse;
+  let membersMatched;
   if (/[^]#\d{4}$/.test(user)) {
     const split = user.split("#");
     const discrim = split.pop();
     const username = split.join("#");
-    memberToUse = guild.members.find((
-      m: GuildMember,
-    ) => m.user.username === username && m.user.discriminator === discrim);
+    memberToUse = guild.members.find(m => m.user.username === username && m.user.discriminator === discrim);
   } else if (/^<@!?\d+>$/.test(user)) {
     memberToUse = guild.members.get(user.match(/^<@!?(\d+)>$/)[1]);
   }
@@ -72,14 +70,14 @@ const func: TcmdFunc = async (msg: Message, {
     return;
   }
   const muteInfo = db.table("mutes").get(guild.id);
-  let muteRole: Role;
+  let muteRole;
   if (muteInfo) {
     muteRole = guild.roles.get(muteInfo.muteRoleID);
   }
   if (!muteRole) {
     return reply("That member is not muted!");
   }
-  const activeMute = db.table("activemutes").get(guild.id, []).find((item) => item.userid === memberToUse.id);
+  const activeMute = db.table("activemutes").get(guild.id, []).find(item => item.userid === memberToUse.id);
 
   if (!activeMute) {
     return reply("That member is not muted!");
@@ -106,7 +104,7 @@ const func: TcmdFunc = async (msg: Message, {
       reason: reason || "None",
     }).catch(rejct);
   };
-  const fail = (err: any) => {
+  const fail = err => {
     rejct(err);
     sentMuteMsg.edit(`The unmute failed! :frowning:`).catch(rejct);
   };
@@ -115,8 +113,8 @@ const func: TcmdFunc = async (msg: Message, {
       memberToUse.removeRole(muteRole).then(finish).catch(fail);
     }).catch(fail);
   };
-  let sent: boolean = false;
-  let timeoutRan: boolean = false;
+  let sent = false;
+  let timeoutRan = false;
   memberToUse.send(
     `Your mute at the server **${escMarkdown(guild.name)}** was lifted for the reason of:`,
     { embed: reasonEmbed },
@@ -127,7 +125,7 @@ const func: TcmdFunc = async (msg: Message, {
     sent = true;
     sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Sent. Removing muting role...)`).catch(rejct);
     executeUnmute();
-  }).catch((err) => {
+  }).catch(err => {
     rejct(err);
     if (timeoutRan) {
       return;
@@ -144,7 +142,7 @@ const func: TcmdFunc = async (msg: Message, {
   }, Time.seconds(2.8));
 };
 
-export const unmute = new Command({
+module.exports = new Command({
   func,
   name: "unmute",
   perms: "unmute",

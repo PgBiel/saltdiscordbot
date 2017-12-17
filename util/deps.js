@@ -1,24 +1,22 @@
-import * as assert from "assert";
-import * as chalk from "chalk";
-import * as Discord from "discord.js";
-import msgEmbedToRich from "discordjs-embed-converter";
-import * as fs from "fs";
-import * as klawSync from "klaw-sync";
-const klaw: typeof klawSync.klawSync = (klawSync as any);
-import * as _ from "lodash";
-import * as querystring from "querystring";
-// import * as Sequelize from "sequelize";
-import * as rethink from "rethinkdb";
-import * as toml from "toml";
-// import rethinkSetup from "../misc/rethinkSetup";
-import xreg = require("xregexp");
-export const data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
+const assert = require("assert");
+const chalk = require("chalk");
+const Discord = require("discord.js");
+const msgEmbedToRich = require("discordjs-embed-converter");
+const fs = require("fs");
+const klaw = require("klaw-sync");
+const _ = require("lodash");
+const querystring = require("querystring");
+// const Sequelize = require("sequelize");
+const rethink = require("rethinkdb");
+const toml = require("toml");
+// const rethinkSetup = require("../misc/rethinkSetup");
+const xreg = require("xregexp");
+exports.data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
 /* export const sql = new Sequelize("botdata", data.sql.user || null, data.sql.pass || null, {
   host: "localhost",
   dialect: "postgres",
   logging: false,
 }); */
-export let conn: rethink.Connection;
 const a = 1;
 /* export let r: rethink.Db;
 rethink.connect({ host: "localhost", port: 28015 }).then((c) => {
@@ -26,44 +24,44 @@ rethink.connect({ host: "localhost", port: 28015 }).then((c) => {
   r = rethink.db("saltbot");
   rethinkSetup(r, c);
 }).catch((err) => { throw err; }); */
-import * as util from "util";
+const util = require("util");
 
-import * as Constants from "../misc/constants";
-import decodeT from "../misc/decodeT";
+const Constants = require("../misc/constants");
+const decodeT = require("../misc/decodeT");
 
-import Command from "../classes/command";
-import CommandClient from "../classes/commandClient";
-import logger from "../classes/logger";
-import messager from "../classes/messager";
-import perms from "../classes/permissions";
-import Searcher from "../classes/searcher";
-import Time from "../classes/time";
+const Command = require("../classes/command");
+const CommandClient = require("../classes/commandClient");
+const logger = require("../classes/logger");
+const messager = require("../classes/messager");
+const perms = require("../classes/permissions");
+const Searcher = require("../classes/searcher");
+const Time = require("../classes/time");
 
-// import * as models from "../sequelize/sequelize";
+// const models = require("../sequelize/sequelize");
 
 // declare const decodeT: (...a) => any;
-const commandParse: any = 1; // unused
+const commandParse = 1; // unused
 
 // let obj: {[prop: string]: any} = {};
-export * from "./bot";
+exports.bot = require("./bot").bot;
 
-export { Storage } from "saltjs";
+exports.Storage = require("saltjs").Storage;
 // export * from "./db";
 
-export const ownerID: string = "180813971853410305";
+exports.ownerID = "180813971853410305";
 
-export const colors = chalk;
+exports.colors = chalk;
 
-import commandHandler from "../commandHandler";
+const commandHandler = require("../commandHandler");
 
-export const commandHandle = commandHandler;
-export const commandParser = commandParse;
+exports.commandHandle = commandHandler;
+exports.commandParser = commandParse;
 
-export { db } from "../classes/database";
+exports.db = require("../classes/database").db;
 
 /* tslint:disable:object-literal-sort-keys */
 // obj = Object.assign(obj, {
-export {
+Object.entries({
   _,
   assert,
   Command,
@@ -88,5 +86,7 @@ export {
 
   decodeT,
   msgEmbedToRich,
-}; // );
+}).forEach(([key, val]) => {
+  exports[key] = val;
+}); // );
 /* tslint:enable:object-literal-sort-keys */

@@ -1,12 +1,12 @@
-import { GuildMember, Message, RichEmbed, TextChannel, User } from "discord.js";
-import { BaseContext, DjsChannel } from "../misc/contextType";
-import { db, logger, Time, util } from "../util/deps";
-import { escMarkdown, rejct, textAbstract } from "../util/funcs";
-import { Punishment } from "./punishment";
+const { GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
+const { BaseContext, DjsChannel } = require("../misc/contextType");
+const { db, logger, Time, util } = require("../util/deps");
+const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
+const Punishment = require("./punishment");
 
-import banP from "./ban";
-import kickP from "./kick";
-import muteP from "./mute";
+const banP = require("./ban");
+const kickP = require("./kick");
+const muteP = require("./mute");
 
 class Warn extends Punishment {
 
@@ -21,20 +21,18 @@ class Warn extends Punishment {
    * @param {boolean} [options.automatic] If this was an automatic warn.
    * @returns {Promise<void>}
    */
-  public async punish(
-    member: GuildMember, { author, reason, auctPrefix, context, automatic }: {
-      author?: GuildMember, reason?: string, auctPrefix?: string, context?: BaseContext<DjsChannel | TextChannel>,
-      automatic?: boolean,
-    } = { author: null, reason: null, auctPrefix: null, context: null, automatic: false },
-  ): Promise<void> {
+  async punish(
+    member, { author, reason, auctPrefix, context, automatic } = { author: null, reason: null, auctPrefix: null, context: null,
+      automatic: false },
+  ) {
     const guild = member.guild;
     const botmember = guild.me;
-    const def = (...args: any[]) => Promise.resolve(null);
+    const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def } = context;
     const sentWarnMsg = await send(`Warning ${member.user.tag}... (Sending DM...)`);
-    const warns = db.table("warns").get(guild.id, []).filter((u) => u.userid === member.id);
+    const warns = db.table("warns").get(guild.id, []).filter(u => u.userid === member.id);
     const warnSteps = db.table("warnsteps").get(guild.id, []).sort((step1, step2) => step1.amount - step2.amount);
-    const warnStep = warnSteps.find((step) => step.amount === warns.length + 1);
+    const warnStep = warnSteps.find(step => step.amount === warns.length + 1);
     const reasonEmbed = new RichEmbed();
     reasonEmbed
       .setColor("AQUA")
@@ -51,7 +49,7 @@ class Warn extends Punishment {
         reason: reason || "None",
       }).catch(rejct);
     };
-    const fail = (err: any) => {
+    const fail = err => {
       rejct(err ? (err.err || err) : err);
       sentWarnMsg.edit(`The warn failed! :frowning:`).catch(rejct);
     };
@@ -62,7 +60,7 @@ class Warn extends Punishment {
           const timeNum = Number(warnStep.time);
           const time = new Time(isNaN(timeNum) ? Time.minutes(10) : timeNum);
           if (punishment === "kick" || punishment === "ban" || punishment === "softban") {
-            let reasonStr: string;
+            let reasonStr;
             const ableName = punishment === "kick" ? "kick" : "bann";
             if (member.highestRole.position > botmember.highestRole.position) {
               reasonStr = "that member's highest role is higher in position than mine!";
@@ -97,7 +95,7 @@ a **${punishment}** (as says this server's current setup).`);
             });
           }
           if (warnStep.amount >= warnSteps[warnSteps.length - 1].amount) {
-            warns.forEach((warn) => {
+            warns.forEach(warn => {
               db.table("warns").remArr(guild.id, warn);
             });
           }
@@ -115,13 +113,13 @@ a **${punishment}** (as says this server's current setup).`);
       }
     };
     const executeWarn = () => {
-      executeWarnAsync().catch((err: any) => { throw err; });
+      executeWarnAsync().catch(err => { throw err; });
     };
     if (warnStep) {
       executeWarn();
     } else {
-      let sent: boolean = false;
-      let timeoutRan: boolean = false;
+      let sent = false;
+      let timeoutRan = false;
       member.send(
         `You were ${automatic ? "automatically " : ""}warned at the server **${escMarkdown(guild.name)}** for the \
 reason of:`,
@@ -133,7 +131,7 @@ reason of:`,
         sent = true;
         sentWarnMsg.edit(`Warning ${member.user.tag}... (DM Sent. Executing the warn...)`).catch(rejct);
         executeWarn();
-      }).catch((err) => {
+      }).catch(err => {
         rejct(err);
         if (timeoutRan) {
           return;
@@ -152,4 +150,4 @@ reason of:`,
   }
 }
 
-export default new Warn();
+module.exports = new Warn();

@@ -1,15 +1,15 @@
-import { GuildMember, Message, RichEmbed, Role } from "discord.js";
-import { TcmdFunc } from "../../commandHandler";
-import muteP from "../../punishments/mute";
-import { Command, Constants, db, logger, Time } from "../../util/deps";
-import { createMutedRole, escMarkdown, parseMute, rejct } from "../../util/funcs";
+const { GuildMember, Message, RichEmbed, Role } = require("discord.js");
+const { TcmdFunc } = require("../../commandHandler");
+const muteP = require("../../punishments/mute");
+const { Command, Constants, db, logger, Time } = require("../../util/deps");
+const { createMutedRole, escMarkdown, parseMute, rejct } = require("../../util/funcs");
 
-const func: TcmdFunc = async (msg: Message, {
+const func = async (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy,
   checkRole, self,
 }) => {
-  let hasPerm: boolean = false;
+  let hasPerm = false;
   if (hasPermission(["MANAGE_ROLES"])) {
     hasPerm = true;
   }
@@ -46,15 +46,13 @@ const func: TcmdFunc = async (msg: Message, {
   if (!user) {
     return;
   }
-  let memberToUse: GuildMember;
-  let membersMatched: GuildMember[];
+  let memberToUse;
+  let membersMatched;
   if (/[^]#\d{4}$/.test(user)) {
     const split = user.split("#");
     const discrim = split.pop();
     const username = split.join("#");
-    memberToUse = guild.members.find((
-      m: GuildMember,
-    ) => m.user.username === username && m.user.discriminator === discrim);
+    memberToUse = guild.members.find(m => m.user.username === username && m.user.discriminator === discrim);
   } else if (/^<@!?\d+>$/.test(user)) {
     memberToUse = guild.members.get(user.match(/^<@!?(\d+)>$/)[1]);
   }
@@ -92,7 +90,7 @@ const func: TcmdFunc = async (msg: Message, {
       }
     }
   } */
-  if (db.table("activemutes").get(guildId, []).findIndex((item) => item.userid === memberToUse.id) > -1) {
+  if (db.table("activemutes").get(guildId, []).findIndex(item => item.userid === memberToUse.id) > -1) {
     return reply("That member is already muted!");
   }
   muteP.punish(memberToUse, {
@@ -101,7 +99,7 @@ const func: TcmdFunc = async (msg: Message, {
   });
 };
 
-export const mute = new Command({
+module.exports = new Command({
   func,
   name: "mute",
   perms: "mute",

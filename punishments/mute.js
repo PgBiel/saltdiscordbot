@@ -1,8 +1,8 @@
-import { GuildMember, Message, RichEmbed, Role, TextChannel, User } from "discord.js";
-import { BaseContext, DjsChannel } from "../misc/contextType";
-import { db, logger, Time } from "../util/deps";
-import { createMutedRole, escMarkdown, rejct, textAbstract } from "../util/funcs";
-import { Punishment } from "./punishment";
+const { GuildMember, Message, RichEmbed, Role, TextChannel, User } = require("discord.js");
+const { BaseContext, DjsChannel } = require("../misc/contextType");
+const { db, logger, Time } = require("../util/deps");
+const { createMutedRole, escMarkdown, rejct, textAbstract } = require("../util/funcs");
+const Punishment = require("./punishment");
 
 class Mute extends Punishment {
 
@@ -18,19 +18,17 @@ class Mute extends Punishment {
    * @param {boolean} [options.permanent] If the member is permanently muted.
    * @returns {Promise<void>}
    */
-  public async punish(
-    member: GuildMember, { author, reason, auctPrefix, context, time, permanent }: {
-      author?: GuildMember, reason?: string, auctPrefix?: string, context?: BaseContext<DjsChannel | TextChannel>,
-      time?: Time, permanent?: boolean,
-    } = { author: null, reason: null, auctPrefix: null, context: null, time: new Time(["m", 10]), permanent: false },
-  ): Promise<void> {
+  async punish(
+    member, { author, reason, auctPrefix, context, time, permanent } = { author: null, reason: null, auctPrefix: null, context: null,
+      time: new Time(["m", 10]), permanent: false },
+  ) {
     const guild = member.guild;
     const botmember = guild.me;
-    const def = (...args: any[]) => Promise.resolve(null);
+    const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def } = context;
     if (!time) time = new Time(["m", 10]);
     const muteInfo = db.table("mutes").get(guild.id);
-    let muteRole: Role;
+    let muteRole;
     if (muteInfo) {
       muteRole = guild.roles.get(muteInfo.muteRoleID);
     }
@@ -74,7 +72,7 @@ class Mute extends Punishment {
         reason: reason || "None",
       }).catch(rejct);
     };
-    const fail = (err: any) => {
+    const fail = err => {
       rejct(err ? (err.err || err) : err);
       sentMuteMsg.edit(`The mute failed! :frowning:`).catch(rejct);
     };
@@ -90,8 +88,8 @@ class Mute extends Punishment {
         member.addRole(muteRole).then(finish).catch(fail);
       }).catch(fail);
     };
-    let sent: boolean = false;
-    let timeoutRan: boolean = false;
+    let sent = false;
+    let timeoutRan = false;
     member.send(
       `You were muted at the server **${escMarkdown(guild.name)}** for **${time}** for the reason of:`,
       { embed: reasonEmbed },
@@ -102,7 +100,7 @@ class Mute extends Punishment {
       sent = true;
       sentMuteMsg.edit(`Muting ${member.user.tag}... (DM Sent. Adding role for muting...)`).catch(rejct);
       executeMute();
-    }).catch((err) => {
+    }).catch(err => {
       rejct(err);
       if (timeoutRan) {
         return;
@@ -120,5 +118,5 @@ class Mute extends Punishment {
   }
 }
 
-export default new Mute();
+module.exports = new Mute();
 

@@ -8,12 +8,13 @@
     "node": true
   },
   "rules": {
-    "no-undef": 0,
+    "no-undef": "error",
     "semi": "warn",
     "spaced-comment": "warn",
     "arrow-parens": ["error", "as-needed"],
     "arrow-spacing": "error",
     "prefer-arrow-callback": "error",
     "no-console": 0,
+    "no-unused-vars": 0
   }
 }

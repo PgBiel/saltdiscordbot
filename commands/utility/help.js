@@ -1,20 +1,20 @@
-import { Message, RichEmbed } from "discord.js";
-import Command from "../../classes/command";
-import { cmdFunc } from "../../commandHandler";
-import { _, bot } from "../../util/deps";
-import { rejct } from "../../util/funcs";
+const { Message, RichEmbed } = require("discord.js");
+const Command = require("../../classes/command");
+const { cmdFunc } = require("../../commandHandler");
+const { _, bot } = require("../../util/deps");
+const { rejct } = require("../../util/funcs");
 
-const func: cmdFunc = async (msg: Message, { args, send, reply, prefix, botmember }) => {
-  const sendIt = (emb: RichEmbed) => {
-    return send({ embed: emb, autocatch: false }).catch((err: any) => err.status === 403 ?
+const func = async (msg, { args, send, reply, prefix, botmember }) => {
+  const sendIt = (emb => {
+    return send({ embed: emb, autocatch: false }).catch(err => err.status === 403 ?
       send("Please make sure I can send embeds in this channel.") :
       void(rejct(err)));
-  };
-  const categories: {[category: string]: {[cmdName: string]: Command}} = {};
+  });
+  const categories = {};
   Object.entries(bot.commands).forEach(([k, v]) => {
     let category = "Uncategorized";
     if (v.category) {
-      category = v.category.replace(/^\w/, (m: string) => m.toUpperCase());
+      category = v.category.replace(/^\w/, m => m.toUpperCase());
     }
     if (!categories[category]) {
       categories[category] = {};
@@ -29,21 +29,21 @@ const func: cmdFunc = async (msg: Message, { args, send, reply, prefix, botmembe
       .setDescription("Commands available.");
     Object.entries(categories).forEach(([k, v]) => {
       let str = "";
-      Object.keys(v).forEach((k2: string) => {
+      Object.keys(v).forEach(k2 => {
         str += k2 + "\n";
       });
       embed.addField(k, _.trim(str), true);
     });
     sendIt(embed);
-  } else if (_.trim(args.toLowerCase().replace(/^\w/, (m: string) => m.toUpperCase())) in categories) {
-    const category = _.trim(args.toLowerCase().replace(/^\w/, (m: string) => m.toUpperCase()));
+  } else if (_.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase())) in categories) {
+    const category = _.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase()));
     const embed = new RichEmbed();
     embed
       .setColor("RANDOM")
       .setTitle(`List of commands in category "${category}"`)
       .setDescription("All commands available in that category.");
     let str = "";
-    Object.values(categories[category]).forEach((cmd: Command) => {
+    Object.values(categories[category]).forEach(cmd => {
       str += cmd.name + "\n";
     });
     str = _.trim(str);
@@ -76,7 +76,7 @@ const func: cmdFunc = async (msg: Message, { args, send, reply, prefix, botmembe
     sendIt(cmdToUse.help(prefix, true)); */
   }
 };
-export const help = new Command({
+module.exports = new Command({
   func,
   name: "help",
   default: true,

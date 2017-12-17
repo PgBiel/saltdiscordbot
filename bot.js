@@ -1,27 +1,27 @@
-import * as colors from "chalk";
-import changeConsole from "./changeConsole";
-process.on("unhandledRejection", (rejection: any) => {
+const colors = require("chalk");
+const changeConsole = require("./changeConsole");
+process.on("unhandledRejection", rejection => {
   console.log(colors.red("[ERR/REJCTUNH]"), rejection);
 });
 const setShards = { id: null };
 changeConsole(false, setShards);
 console.log("Initializing...");
-import "./misc/events";
-import { bot, data, decodeT, Discord, fs, logger, messager, /* sql, */ Time, toml } from "./util/deps";
+require("./misc/events");
+const { bot, data, decodeT, Discord, fs, logger, messager, /* sql, */ Time, toml } = require("./util/deps");
 setShards.id = bot.shard.id;
-import {
+const {
   botMessage, checkMutes, IMessagerEvalData, loadCmds, messagerDoEval, processMessage, rejct,
-} from "./util/funcs";
+} = require("./util/funcs");
 const { Collection, Message } = Discord;
-process.on("message", (mdata: any) => {
+process.on("message", mdata => {
   processMessage(mdata);
 });
-bot.on("message", (m: any) => {
+bot.on("message", m => {
   botMessage(m);
 });
 loadCmds();
-messager.on("doEval", (edata: IMessagerEvalData) => {
-  messagerDoEval((thing: any) => eval(thing))(edata); // tslint:disable-line:no-eval
+messager.on("doEval", edata => {
+  messagerDoEval(thing => eval(thing))(edata);
 });
 // sql.sync().catch(rejct);
 bot.login(decodeT(data.bot.token_beta)).catch(rejct);

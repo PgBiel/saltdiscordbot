@@ -1,4 +1,5 @@
-export type TableName = "coins"
+// Typescript-based file
+/* export type TableName = "coins"
   | "coinRewards"
   | "economys"
   | "customcommands"
@@ -22,4 +23,4 @@ export type TableName = "coins"
   | "warnsteps"
   | "welcomes";
 
-export default TableName;
+export default TableName; */

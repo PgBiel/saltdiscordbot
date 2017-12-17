@@ -1,8 +1,8 @@
-import { ban } from "./ban";
+const { ban } = require("./ban");
 
-import Command from "../../classes/command";
+const Command = require("../../classes/command");
 
-export const nodelban = Command.aliasFrom(ban, "nodelban", {
+module.exports = Command.aliasFrom(ban, "nodelban", {
   perms: "ban",
   default: false,
   description: "Ban someone, but without deleting any of their messages with it.",

@@ -1,11 +1,11 @@
-import { Collection, GuildMember, Message, RichEmbed, TextChannel, User } from "discord.js";
-import Command from "../../classes/command";
-import Searcher from "../../classes/searcher";
-import { cmdFunc } from "../../commandHandler";
-import { bot, logger, util } from "../../util/deps";
-import { rejct } from "../../util/funcs";
+const { Collection, GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
+const Command = require("../../classes/command");
+const Searcher = require("../../classes/searcher");
+const { cmdFunc } = require("../../commandHandler");
+const { bot, logger, util } = require("../../util/deps");
+const { rejct } = require("../../util/funcs");
 
-function getAvatarEmb(author: User) {
+function getAvatarEmb(author) {
   const avatarRegex = /^((?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpe?g|png|gif|webp))\?size=\d+$/;
   const embed = new RichEmbed();
   const tag = `${author.username}#${author.discriminator}`;
@@ -20,7 +20,7 @@ function getAvatarEmb(author: User) {
   return embed;
 }
 
-const func: cmdFunc = async (msg: Message, {
+const func = async (msg, {
   channel, guildId, author, args, arrArgs, send, reply, searcher, promptAmbig,
 }) => {
   if (arrArgs.length < 1 || !(channel instanceof TextChannel)) {
@@ -33,7 +33,7 @@ const func: cmdFunc = async (msg: Message, {
       ""}`, { embed });
   } else {
     if (/^<@\d+>$/.test(args)) {
-      const user: User = bot.users.get(args.match(/^<@(\d+)>$/)[1]);
+      const user = bot.users.get(args.match(/^<@(\d+)>$/)[1]);
       if (!user) {
         return reply("Invalid member given!");
       }
@@ -65,7 +65,7 @@ const func: cmdFunc = async (msg: Message, {
     return reply("Multiple members were found in your search. Please be more specific.");
   }
 };
-export const avatar = new Command({
+module.exports = new Command({
   func,
   name: "avatar",
   perms: "avatar",

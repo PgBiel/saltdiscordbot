@@ -1,6 +1,9 @@
-import { GuildMember } from "discord.js";
+const { GuildMember } = require("discord.js");
 
-export abstract class Punishment {
+module.exports = class Punishment {
 
-  public abstract punish(member: GuildMember, ...args: any[]): any;
-}
+  punish(member, ...args) {
+    console.log("Implement me");
+    return null;
+  }
+};

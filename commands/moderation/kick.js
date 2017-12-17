@@ -1,10 +1,10 @@
-import { GuildMember, Message, RichEmbed } from "discord.js";
-import { TcmdFunc } from "../../commandHandler";
-import kickP from "../../punishments/kick";
-import { _, Command, Constants, logger, querystring, Time } from "../../util/deps";
-import { escMarkdown, rejct, textAbstract } from "../../util/funcs";
+const { GuildMember, Message, RichEmbed } = require("discord.js");
+const { TcmdFunc } = require("../../commandHandler");
+const kickP = require("../../punishments/kick");
+const { _, Command, Constants, logger, querystring, Time } = require("../../util/deps");
+const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
 
-const func: TcmdFunc = async (msg: Message, {
+const func = async (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   searcher, promptAmbig, author, botmember, member, actionLog, dummy, self,
 }) => {
@@ -16,19 +16,17 @@ const func: TcmdFunc = async (msg: Message, {
   if (!args) {
     return reply("Please tell me who to kick!");
   }
-  const [user, reason]: string[] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
-  let memberToUse: GuildMember;
-  let membersMatched: GuildMember[];
+  let memberToUse;
+  let membersMatched;
   if (/[^]#\d{4}$/.test(user)) {
     const split = user.split("#");
     const discrim = split.pop();
     const username = split.join("#");
-    memberToUse = guild.members.find((
-      m: GuildMember,
-    ) => m.user.username === username && m.user.discriminator === discrim);
+    memberToUse = guild.members.find(m => m.user.username === username && m.user.discriminator === discrim);
   } else if (/^<@!?\d+>$/.test(user)) {
     memberToUse = guild.members.get(user.match(/^<@!?(\d+)>$/)[1]);
   }
@@ -58,7 +56,7 @@ const func: TcmdFunc = async (msg: Message, {
     memberToUse, { author: member, reason, auctPrefix: `[Kick command executed by ${author.tag}]`, context: self },
   );
 };
-export const kick = new Command({
+module.exports = new Command({
   func,
   name: "kick",
   perms: "kick",

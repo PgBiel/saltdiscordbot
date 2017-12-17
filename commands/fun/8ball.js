@@ -1,9 +1,9 @@
-import { Message } from "discord.js";
-import Command from "../../classes/command";
-import { cmdFunc } from "../../commandHandler";
-import { random } from "../../util/funcs";
+const { Message } = require("discord.js");
+const Command = require("../../classes/command");
+const { cmdFunc } = require("../../commandHandler");
+const { random } = require("../../util/funcs");
 
-const func: cmdFunc = async (msg: Message, { args, reply }) => {
+const func = async (msg, { args, reply }) => {
   if (!args) {
     return reply("Please say a question!");
   }
@@ -20,7 +20,7 @@ const func: cmdFunc = async (msg: Message, { args, reply }) => {
     answers[random(0, answers.length - 1)],
     );
 };
-export const eightball = new Command({
+module.exports = new Command({
   func,
   name: "8ball",
   perms: "8ball",

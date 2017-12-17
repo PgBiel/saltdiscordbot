@@ -24,4 +24,4 @@ module.exports = function editConsole(isMng, shardIDObj) {
     };
     Object.defineProperty(console.error, "__wasChanged", { value: true });
   }
-}
+};

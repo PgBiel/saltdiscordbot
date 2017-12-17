@@ -1,12 +1,12 @@
-import { Message } from "discord.js";
-import Command from "../../classes/command";
-import db from "../../classes/database";
-import { TcmdFunc } from "../../commandHandler";
-// import { prefixes } from "../../sequelize/sequelize";
-import { Constants, logger } from "../../util/deps";
+const { Message } = require("discord.js");
+const Command = require("../../classes/command");
+const db = require("../../classes/database");
+const { TcmdFunc } = require("../../commandHandler");
+// const { prefixes } = require("../../sequelize/sequelize");
+const { Constants, logger } = require("../../util/deps");
 
-const func: TcmdFunc = async (
-  msg: Message, { guildId, reply, send, args, arrArgs, prefix: p, hasPermission, perms },
+const func = async (
+  msg, { guildId, reply, send, args, arrArgs, prefix: p, hasPermission, perms },
 ) => {
   if (arrArgs.length < 1) {
     const prefixUsed = db.table("prefixes").get(guildId) || "+";
@@ -21,7 +21,7 @@ const func: TcmdFunc = async (
   db.table("prefixes").set(guildId, args);
   send(`Prefix set to \`${args}\`!`);
 };
-export const prefix = new Command({
+module.exports = new Command({
   func,
   name: "prefix",
   perms: "prefix",

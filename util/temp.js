@@ -1,6 +1,5 @@
 // this file is for keeping an "universal" data object
-import { Storage } from "saltjs";
+const { Storage } = require("saltjs");
 
-export const temp = new Storage<any, any>();
-
-export default temp;
+module.exports = new Storage();
+Object.defineProperty(module.exports, "temp", { value: module.exports });

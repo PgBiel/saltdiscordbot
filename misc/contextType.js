@@ -1,12 +1,13 @@
-import {
+// this whole file is typescript stuff
+/* const {
   DMChannel, GroupDMChannel, Guild, GuildMember, Message, PermissionResolvable, TextChannel, User,
-} from "discord.js";
-import Searcher from "../classes/Searcher";
-import {
+} = require("discord.js");
+const Searcher = require("../classes/Searcher");
+const {
   ExtendedActionLogOptions, ExtendedMsgOptions, ExtendedSend, IAmbigResult, IDoEvalResult, IPromptOptions, SaltRole,
-} from "../commandHandler";
+} = require("../commandHandler");
 
-export type DjsChannel = DMChannel | GroupDMChannel | TextChannel;
+// export type DjsChannel = DMChannel | GroupDMChannel | TextChannel;
 
 interface IBaseContext<ChannelType> {
   args?: string;
@@ -56,4 +57,4 @@ export type Context = BaseContext<DjsChannel>;
 export type TContext = BaseContext<TextChannel>;
 
 export type cmdFunc = (msg: Message, context: Context) => any;
-export type TcmdFunc = (msg: Message, context: TContext) => any;
+export type TcmdFunc = (msg: Message, context: TContext) => any; */

@@ -1,8 +1,8 @@
-import { ban } from "./ban";
+const { ban } = require("./ban");
 
-import Command from "../../classes/command";
+const Command = require("../../classes/command");
 
-export const softban = Command.aliasFrom(ban, "softban", {
+module.exports = Command.aliasFrom(ban, "softban", {
   perms: "softban",
   default: false,
   description: "Softban someone. (Ban and unban)",

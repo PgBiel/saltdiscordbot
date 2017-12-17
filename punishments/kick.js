@@ -1,8 +1,8 @@
-import { GuildMember, Message, RichEmbed, TextChannel, User } from "discord.js";
-import { BaseContext, DjsChannel } from "../misc/contextType";
-import { querystring, Time } from "../util/deps";
-import { escMarkdown, rejct, textAbstract } from "../util/funcs";
-import { Punishment } from "./punishment";
+const { GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
+const { BaseContext, DjsChannel } = require("../misc/contextType");
+const { querystring, Time } = require("../util/deps");
+const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
+const Punishment = require("./punishment");
 
 class Kick extends Punishment {
 
@@ -16,13 +16,12 @@ class Kick extends Punishment {
    * @param {BaseContext<GuildChannel>} [options.context] The context of the command.
    * @returns {Promise<void>}
    */
-  public async punish(
-    member: GuildMember, { author, reason, auctPrefix, context }: { author?: GuildMember, reason?: string, auctPrefix?: string,
-    context?: BaseContext<DjsChannel | TextChannel> } = { author: null, reason: null, auctPrefix: null, context: null },
-  ): Promise<void> {
+  async punish(
+    member, { author, reason, auctPrefix, context } = { author: null, reason: null, auctPrefix: null, context: null },
+  ) {
     const guild = member.guild;
     const botmember = guild.me;
-    const def = (...args: any[]) => Promise.resolve(null);
+    const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def } = context;
     if (author) {
       if (member.highestRole.position > botmember.highestRole.position) {
@@ -41,7 +40,7 @@ class Kick extends Punishment {
       }
     }
     const sentKickMsg = await send(`Kicking ${member.user.tag}... (Sending DM...)`);
-    const edit = (text: string) => sentKickMsg instanceof Message ? sentKickMsg.edit(text) : Promise.resolve(null);
+    const edit = text => sentKickMsg instanceof Message ? sentKickMsg.edit(text) : Promise.resolve(null);
     const reasonEmbed = new RichEmbed();
     reasonEmbed
       .setColor("ORANGE")
@@ -58,7 +57,7 @@ class Kick extends Punishment {
         reason: reason || "None",
       }).catch(rejct);
     };
-    const fail = (err: any) => {
+    const fail = err => {
       rejct(err);
       edit(`The kick failed! :frowning:`).catch(rejct);
     };
@@ -67,9 +66,9 @@ class Kick extends Punishment {
       const compressedText = textAbstract(auctPrefix + " " + (reason || "No reason given"), 512);
       member.kick(querystring.escape(compressedText)).then(finish).catch(fail);
     };
-    let sent: boolean = false;
-    let timeoutRan: boolean = false;
-    const escapedName: string = escMarkdown(guild.name);
+    let sent = false;
+    let timeoutRan = false;
+    const escapedName = escMarkdown(guild.name);
     member.send(`You were kicked at the server **${escapedName}** for the reason of:`, { embed: reasonEmbed })
       .then(() => {
         if (timeoutRan) {
@@ -96,4 +95,4 @@ class Kick extends Punishment {
   }
 }
 
-export default new Kick();
+module.exports = new Kick();

@@ -1,6 +1,6 @@
-import CommandClient from "../classes/commandClient";
+const CommandClient = require("../classes/commandClient");
 
-export const bot = new CommandClient({
+exports.bot = new CommandClient({
   disableEveryone: true,
   disabledEvents: ["TYPING_START"],
   fetchAllMembers: true,

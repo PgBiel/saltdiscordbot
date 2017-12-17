@@ -1,8 +1,8 @@
-import { Message } from "discord.js";
-import Command from "../../classes/command";
-import { TcmdFunc } from "../../commandHandler";
+const { Message } = require("discord.js");
+const Command = require("../../classes/command");
+const { TcmdFunc } = require("../../commandHandler");
 
-const func: TcmdFunc = async (msg: Message, { send }) => {
+const func = async (msg, { send }) => {
   const now = Date.now();
   const sentmsg = await send("Calculating ping...");
   const ping = Date.now() - now; // tslint:disable-line:no-shadowed-variable
@@ -31,7 +31,7 @@ const func: TcmdFunc = async (msg: Message, { send }) => {
   sentmsg.edit(`Pong! The ping is ${Date.now() - now}ms.
 I'd rate the speed as${pingRate}.`);
 };
-export const ping = new Command({
+module.exports = new Command({
   func,
   name: "ping",
   perms: "ping",

@@ -1,3 +1,5 @@
+// typescript based file
+/*
 // tslint:disable:interface-name
 import TableName from "./tableNames";
 
@@ -21,7 +23,7 @@ interface TableValsDraft {
     serverid: string;
     userid: string;
     amount?: number;
-  }; */
+  }; * /
   customcommands: Array<HelperVals["customcommands"]>; // index: $
   invites: boolean; // index: $
   triggers: Array<HelperVals["triggers"]>;
@@ -156,4 +158,4 @@ export type TableName = keyof TableValsDraft;
 
 export type TableVals = TableValsDraft;
 
-export default TableVals;
+export default TableVals; */

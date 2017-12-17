@@ -1,15 +1,15 @@
-import { GuildMember, Message, RichEmbed, User } from "discord.js";
-import { TcmdFunc } from "../../commandHandler";
-import banP from "../../punishments/ban";
-import { _, bot, Command, Constants, logger, Time } from "../../util/deps";
-import { escMarkdown, rejct, textAbstract } from "../../util/funcs";
+const { GuildMember, Message, RichEmbed, User } = require("discord.js");
+const { TcmdFunc } = require("../../commandHandler");
+const banP = require("../../punishments/ban");
+const { _, bot, Command, Constants, logger, Time } = require("../../util/deps");
+const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
 
-const func: TcmdFunc = async (msg: Message, {
+const func = async (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   searcher, promptAmbig, author, botmember, member, actionLog, dummy,
   self,
 }) => {
-  const actions: [string, string, string, string, string] = [
+  const actions = [
     (dummy.actions && dummy.actions[0]) || "Banning",
     (dummy.actions && dummy.actions[1]) || "Banned",
     (dummy.actions && dummy.actions[2]) || "banned",
@@ -24,23 +24,21 @@ const func: TcmdFunc = async (msg: Message, {
   if (!args) {
     return reply(`Please tell me who to ${actions[4]}!`);
   }
-  let memberToUse: GuildMember | User;
+  let memberToUse;
   const getUser = () => memberToUse instanceof GuildMember ? memberToUse.user : memberToUse;
-  const [user, reason]: string[] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
   // logger.debug(user, reason);
-  let id: string;
+  let id;
   if (dummy.banType !== "idban") {
-    let membersMatched: GuildMember[];
+    let membersMatched;
     if (/[^]#\d{4}$/.test(user)) {
       const split = user.split("#");
       const discrim = split.pop();
       const username = split.join("#");
-      memberToUse = guild.members.find((
-        m: GuildMember,
-      ) => m.user.username === username && m.user.discriminator === discrim);
+      memberToUse = guild.members.find(m => m.user.username === username && m.user.discriminator === discrim);
     } else if (/^<@!?\d+>$/.test(user)) {
       memberToUse = guild.members.get(user.match(/^<@!?(\d+)>$/)[1]);
     }
@@ -91,7 +89,7 @@ const func: TcmdFunc = async (msg: Message, {
     isSoft: dummy.banType === "softban",
   });
 };
-export const ban = new Command({
+module.exports = new Command({
   func,
   name: "ban",
   perms: "ban",

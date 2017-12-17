@@ -1,8 +1,8 @@
-import { Guild, GuildMember, Message, RichEmbed, TextChannel, User } from "discord.js";
-import { BaseContext, DjsChannel } from "../misc/contextType";
-import { Time } from "../util/deps";
-import { escMarkdown, rejct, textAbstract } from "../util/funcs";
-import { Punishment } from "./punishment";
+const { Guild, GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
+const { BaseContext, DjsChannel } = require("../misc/contextType");
+const { Time } = require("../util/deps");
+const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
+const Punishment = require("./punishment");
 
 class Ban extends Punishment {
 
@@ -22,20 +22,17 @@ class Ban extends Punishment {
    * @param {boolean} [options.isSoft] If it is a soft ban or not.
    * @returns {Promise<void>}
    */
-  public async punish(
-    member: GuildMember | User | string, guild: Guild, context?: BaseContext<DjsChannel | TextChannel>,
-    { author, reason, auctPrefix, actions, usePrompt, color, days, isSoft }: {
-      author?: GuildMember, reason?: string, auctPrefix?: string, actions?: [string, string, string, string, string],
-      usePrompt?: boolean, color?: string, days?: number, isSoft?: boolean,
-    } = {
+  async punish(
+    member, guild, context,
+    { author, reason, auctPrefix, actions, usePrompt, color, days, isSoft } = {
       author: null, reason: null, auctPrefix: "", actions: ["Banning", "Banned", "banned", "Ban", "ban"], usePrompt: true,
       color: "RED", days: 1, isSoft: false,
     },
-  ): Promise<void> {
+  ) {
     const id = typeof member === "string" ? member : null;
     const user = member instanceof GuildMember ? member.user : (member instanceof User ? member : null);
     const botmember = guild.me;
-    const def = (...args: any[]) => Promise.resolve(null);
+    const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def, prompt } = context;
     if (author && member instanceof GuildMember) {
       if (member.highestRole.position > botmember.highestRole.position) {
@@ -65,7 +62,7 @@ class Ban extends Punishment {
         question: `Are you sure you want to ${actions[4]} this ${id ? "user ID" : "member"}? \
   This will expire in 15 seconds. Type __y__es or __n__o.`,
         invalidMsg: "__Y__es or __n__o?",
-        filter: (msg2) => {
+        filter: msg2 => {
           return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
         },
         timeout: Time.seconds(15),
@@ -88,8 +85,8 @@ class Ban extends Punishment {
       .setColor(color || "RED")
       .setDescription(reason || "None")
       .setTimestamp(new Date());
-    const finishAsync = async (target: GuildMember | User | string) => {
-      let targetToUse: typeof target;
+    const finishAsync = async target => {
+      let targetToUse;
       if (typeof target === "string") {
         sentBanMsg
         .edit(`${actions[0]} ${id || user.tag}... (Banned successfully. Fetching username...)`)
@@ -120,10 +117,10 @@ class Ban extends Punishment {
       };
       actionLog(logObj).catch(rejct);
     };
-    const finish = (target: GuildMember | User | string) => {
-      finishAsync(target).catch((err: any) => { throw err; });
+    const finish = target => {
+      finishAsync(target).catch(err => { throw err; });
     };
-    const fail = (err: any) => {
+    const fail = err => {
       if (/Unknown ?User/i.test(err.toString()) && id) {
         sentBanMsg.edit(`A user with that ID does not exist!`).catch(rejct);
       } else {
@@ -137,7 +134,7 @@ class Ban extends Punishment {
       guild.ban(
         member,
         { days: days == null ? 1 : days, reason: compressedText },
-      ).then((result) => {
+      ).then(result => {
           if (isSoft) {
             sentBanMsg.edit(`${actions[0]} ${user.tag}... (Waiting for unban...)`).catch(rejct);
             guild.unban(user).then(finish).catch(fail);
@@ -146,8 +143,8 @@ class Ban extends Punishment {
           }
       }).catch(fail);
     };
-    let sent: boolean = false;
-    let timeoutRan: boolean = false;
+    let sent = false;
+    let timeoutRan = false;
     if (typeof member !== "string") {
       member.send(
         `You were ${actions[2]} at the server **${escMarkdown(guild.name)}** for the reason of:`, { embed: reasonEmbed },
@@ -160,7 +157,7 @@ class Ban extends Punishment {
           `${actions[0]} ${user.tag}... (DM Sent. Swinging ban hammer...)`,
         ).catch(rejct);
         executeBan();
-      }).catch((err) => {
+      }).catch(err => {
         rejct(err);
         if (timeoutRan) {
           return;
@@ -182,4 +179,4 @@ class Ban extends Punishment {
   }
 }
 
-export default new Ban();
+module.exports = new Ban();

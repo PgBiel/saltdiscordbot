@@ -1,6 +1,6 @@
-import { Connection, Db } from "rethinkdb";
+const { Connection, Db } = require("rethinkdb");
 
-export const tables = [
+exports.tables = [
   "coins",
   "customcommands",
   "detects",
@@ -17,11 +17,11 @@ export const tables = [
   "welcfarew",
 ];
 
-export default async function setup(r: Db, conn: Connection) {
+exports.setup = async function setup(r, conn) {
     const tableNames = await r.tableList().run(conn);
     for (const table of tables) {
       if (!tableNames.includes(table)) {
         r.tableCreate(table);
       }
     }
-}
+};
