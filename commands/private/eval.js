@@ -1,6 +1,5 @@
 const { Message } = require("discord.js");
 const Command = require("../../classes/command");
-const { cmdFunc } = require("../../commandHandler");
 const { _, bot, ownerID } = require("../../util/deps");
 
 const func = async (msg, { args, doEval, send, self }) => {

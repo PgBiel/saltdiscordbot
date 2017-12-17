@@ -1,5 +1,4 @@
 const { GuildMember, Message, RichEmbed, Role } = require("discord.js");
-const { TcmdFunc } = require("../../commandHandler");
 const muteP = require("../../punishments/mute");
 const { Command, Constants, db, logger, Time } = require("../../util/deps");
 const { createMutedRole, escMarkdown, parseMute, rejct } = require("../../util/funcs");

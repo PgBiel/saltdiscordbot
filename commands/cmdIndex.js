@@ -24,11 +24,13 @@ for (const file of files) {
   const filePath = file.path;
   if (!/cmdIndex\.\w+$/i.test(filePath) && /\.js$/i.test(filePath)) {
     const exported = ncrequire(filePath);
-    const value = exported[Object.keys(exported)[0]];
     if (exported instanceof Command) {
       commands[exported.name] = exported;
-    } else if (value instanceof Command) {
+    } else {
+      const value = exported[Object.keys(exported)[0]];
+      if (value instanceof Command) {
       commands[value.name] = value;
+      }
     }
   }
 }

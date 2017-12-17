@@ -1,7 +1,6 @@
 const { GuildMember, Message, RichEmbed } = require("discord.js");
-const { TcmdFunc } = require("../../commandHandler");
 const kickP = require("../../punishments/kick");
-const { _, Command, Constants, logger, querystring, Time } = require("../../util/deps");
+const { _, Command, Constants, logger, Time } = require("../../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
 
 const func = async (msg, {

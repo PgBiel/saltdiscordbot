@@ -1,73 +1,73 @@
-import { ColorResolvable, Guild, GuildChannel, GuildMember, Message, RichEmbed, TextChannel, User } from "discord.js";
-// import { cases, moderation } from "../sequelize/sequelize";
-import { db, logger, msgEmbedToRich, Time } from "../util/deps";
-import { rejct } from "../util/funcs";
+const { ColorResolvable, Guild, GuildChannel, GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
+// const { cases, moderation } = require("../sequelize/sequelize");
+const { db, logger, msgEmbedToRich, Time } = require("../util/deps");
+const { rejct } = require("../util/funcs");
 
 /**
- * Options for editing a case.
+ * Options for editing a case. (TypeScript remainder)
  */
-export interface ICaseEditOptions {
+/* export interface ICaseEditOptions {
   /**
    * A new reason.
    * @type {string}
-   */
+   * /
   reason?: string;
   /**
    * To toggle thumbnail.
    * @type {string}
-   */
+   * /
   toggleThumbnail?: boolean;
-}
+} */
 
 /**
- * Options for action logging.
+ * Options for action logging. (Typescript Remainder)
  */
-export interface ILogOption {
+/* export interface ILogOption {
   /**
    * Describes the action. Replaces {target} by action target
    * @type {string}
-   */
+   * /
   action_desc: string;
   /**
    * Whatever is targeted by the action.
    * @type {*}
-   */
+   * /
   target: any;
   /**
    * ID of the target.
    * @type {?string}
-   */
+   * /
   targetId?: string;
   /**
    * A thumbnail.
    * @type {?string}
-   */
+   * /
   thumbnail?: string;
   /**
    * The type (i.e. punishment).
-   */
+   * /
   type: string;
   /**
    * The author of the action.
    * @type {User|GuildMember}
-   */
+   * /
   author: User | GuildMember;
   /**
    * The reason that the action was done.
    * @type {?string}
-   */
+   * /
   reason?: string;
   /**
    * The color to use.
    * @type {ColorResolvable}
-   */
+   * /
   color: ColorResolvable;
   /**
    * Any extra fields that appear next to the author field.
    * @type {?Array<Array<string, string | Date | Time | number>>}
-   */
+   * /
   extraFields?: Array<[string, string | Date | Time | number]>;
-}
+} */
 
 /**
  * Main class for action logging.
@@ -78,7 +78,7 @@ class ActionLog {
    * @param {LogOptions} options The options.
    * @returns {Promise<?Message>} The sent message.
    */
-  public async log(options: ILogOption & { guild: Guild }): Promise<Message> {
+  async log(options) {
     const {
       action_desc, guild, author, reason, color, extraFields, target, type,
       targetId, thumbnail,
@@ -87,7 +87,7 @@ class ActionLog {
     if (!logChannel) {
       return null;
     }
-    const authorToUse: string = typeof author === "string" ?
+    const authorToUse = typeof author === "string" ?
     author :
     `<@${author.id}>`;
     let targetString;
@@ -96,18 +96,18 @@ class ActionLog {
     } catch (err) {
       targetString = String(target);
     }
-    const descToUse: string = action_desc.replace(
+    const descToUse = action_desc.replace(
       /{target}/g, target instanceof GuildMember ?
       target.user.username :
       target instanceof User ?
         target.username :
         targetString);
-    const embed: RichEmbed = new RichEmbed();
-    const caseNum: string | number = await this._getCase(guild);
+    const embed = new RichEmbed();
+    const caseNum = await this._getCase(guild);
     if (typeof caseNum === "string" || isNaN(caseNum) || caseNum == null) {
       return;
     }
-    let time: Time = new Time(1);
+    let time = new Time(1);
     const at = new Date();
     embed
       .setTitle(`Action Log ${caseNum + 1}`)
@@ -136,7 +136,7 @@ class ActionLog {
             && (possibleDate instanceof Date || possibleDate instanceof Time)
           ) {
             time = possibleDate instanceof Date ? new Time(possibleDate) : possibleDate;
-            const obj: {[prop: string]: any} = {time};
+            const obj = { time };
             console.log(obj.time);
             break;
           }
@@ -144,7 +144,7 @@ class ActionLog {
       }
     }
     embed.addField("Reason", reason, false);
-    let msgSent: Message;
+    let msgSent;
     try {
       const semiMsgSent = await logChannel.send({ embed });
       if (Array.isArray(semiMsgSent)) {
@@ -184,8 +184,8 @@ class ActionLog {
    * @param {Guild} guild The guild to delete at.
    * @returns {Promise<boolean>} If it was deleted or not.
    */
-  public async delCase(caseN: number, guild: Guild): Promise<boolean> {
-    let id: number;
+  async delCase(caseN, guild) {
+    let id;
     const cases = db.table("punishments");
     const caseToLook = cases
       .get(guild.id)
@@ -223,8 +223,8 @@ class ActionLog {
    * @param {Guild} guild The guild to edit at.
    * @returns {Promise<boolean>} If it was edited or not.
    */
-  public async editCase(caseN: number, options: ICaseEditOptions, guild: Guild): Promise<boolean> {
-    let id: number;
+  async editCase(caseN, options, guild) {
+    let id;
     const cases = db.table("punishments");
     const caseToLook = cases
       .get(guild.id)
@@ -246,7 +246,7 @@ class ActionLog {
     try {
       const logged = await logChannel.fetchMessage(caseToLook.messageid);
       const oldEmbed = logged.embeds[0];
-      const newEmbed: RichEmbed = msgEmbedToRich(oldEmbed);
+      const newEmbed = msgEmbedToRich(oldEmbed);
       if (options.reason) {
         newEmbed.fields.forEach((field, i) => {
           if (field.name === "Reason") {
@@ -276,8 +276,8 @@ class ActionLog {
    * @returns {Promise<?TextChannel>} The channel.
    * @private
    */
-  private async _getLog(guild: Guild): Promise<TextChannel> {
-    const logChannel: string = db.table("mods").prop(guild.id, "logs");
+  async _getLog(guild) {
+    const logChannel = db.table("mods").prop(guild.id, "logs");
     if (logChannel) {
       const returnVal = guild.channels.get(logChannel);
       if (returnVal && returnVal instanceof TextChannel) {
@@ -293,7 +293,7 @@ class ActionLog {
    * @returns {Promise<?string|number>} The case number.
    * @private
    */
-  private async _getCase(guild: Guild): Promise<string | number> {
+  async _getCase(guild) {
     const logCase = db.table("mods").prop(guild.id, "latestCase");
     if (logCase) {
       const returnVal = isNaN(logCase) ? logCase : Number(logCase);
@@ -304,4 +304,4 @@ class ActionLog {
     return null;
   }
 }
-export default new ActionLog();
+module.exports = new ActionLog();

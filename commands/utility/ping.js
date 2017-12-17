@@ -1,6 +1,5 @@
 const { Message } = require("discord.js");
 const Command = require("../../classes/command");
-const { TcmdFunc } = require("../../commandHandler");
 
 const func = async (msg, { send }) => {
   const now = Date.now();

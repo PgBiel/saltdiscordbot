@@ -1,8 +1,6 @@
 const { Message } = require("discord.js");
 const Command = require("../../classes/command");
 const db = require("../../classes/database");
-const { TcmdFunc } = require("../../commandHandler");
-// const { prefixes } = require("../../sequelize/sequelize");
 const { Constants, logger } = require("../../util/deps");
 
 const func = async (

@@ -1,16 +1,17 @@
-import { GuildMember } from "discord.js";
-import * as _ from "lodash";
+const { GuildMember } = require("discord.js");
+const _ = require("lodash");
 
-// import { disabledcmds, permissions } from "../sequelize/sequelize";
-import { bot } from "../util/bot";
-import { Constants, db } from "../util/deps";
+// const { disabledcmds, permissions } = require("../sequelize/sequelize");
+const { bot } = require("../util/bot");
+const { Constants, db } = require("../util/deps");
 
-interface IPermsResult {
+/* interface IPermsResult {
   hasPerm: boolean;
   setPerm: boolean;
-}
+} */
 
-export const immune = [Constants.identifiers.OWNER];
+const immune = [Constants.identifiers.OWNER];
+exports.immune = immune;
 
 class Permz {
   get permlist() {
@@ -48,26 +49,24 @@ class Permz {
    * @param {boolean} [isDefault=false] If it is a default permission
    * @returns {Object}
    */
-  public checkPerm(
-    member: GuildMember, guildId: string, perm: string, isDefault: boolean = false,
-  ): IPermsResult {
+  checkPerm(member, guildId, perm, isDefault = false) {
     const [cmdname, extra] = _.toPath(perm);
     // if (extra1) whereobj.extra1 = extra1;
     // if (extra2) whereobj.extra2 = extra2;
     // if (extra3) whereobj.extra3 = extra3;
-    const perms = db.table("perms").get(guildId, []).filter((item) => item.type === "member" && item.id === member.id);
+    const perms = db.table("perms").get(guildId, []).filter(item => item.type === "member" && item.id === member.id);
     let hasPerm = false;
     let setPerm = false;
-    const filtered = perms.find((item) => item.command === "any" || item.command
+    const filtered = perms.find(item => item.command === "any" || item.command
      === cmdname);
     if (!filtered) { // no user perm that could influence the execution. Proceeding to role perms.
       const roles = member.roles.sort((a, b) => b.position - a.position).array();
       for (const role of roles) {
-        const roleperms = db.table("perms").get(guildId, []).filter((it) => it.type === "role" && it.id === role.id);
+        const roleperms = db.table("perms").get(guildId, []).filter(it => it.type === "role" && it.id === role.id);
         if (roleperms.length < 1) {
           continue;
         }
-        const item = roleperms.find((it) => it.command === "any" || it.command === cmdname);
+        const item = roleperms.find(it => it.command === "any" || it.command === cmdname);
         if (!item) { // nothing that could influence the command execution. Check if is default.
           hasPerm = !!isDefault;
         } else { // yay there's a role perm. Let's check if it's negated.
@@ -110,10 +109,10 @@ class Permz {
    * @param {string} name The command name
    * @returns {string}
    */
-  public isDisabled(guildId: string, channelid: string, name: string): string {
+  isDisabled(guildId, channelid, name) {
     const disabled = db.table("perms").get(guildId, [])
       .find(
-        (item) => (item.command === "any" || item.command === name)
+        item => (item.command === "any" || item.command === name)
         && (item.type === "channel" || item.type === "guild")
         && item.negated,
         );
@@ -135,9 +134,9 @@ class Permz {
    * @param {boolean} [isDefault=false] If it is a default permission
    * @returns {Promise<Object>}
    */
-  public hasPerm(member: GuildMember, guildId: string, perm: string, isDefault: boolean = false) {
+  hasPerm(member, guildId, perm, isDefault = false) {
     return this.checkPerm(member, guildId, perm, isDefault);
   }
 }
 
-export default new Permz();
+module.exports = new Permz();

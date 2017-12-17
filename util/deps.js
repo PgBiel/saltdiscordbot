@@ -57,7 +57,7 @@ const commandHandler = require("../commandHandler");
 exports.commandHandle = commandHandler;
 exports.commandParser = commandParse;
 
-exports.db = require("../classes/database").db;
+exports.db = require("../classes/database");
 
 /* tslint:disable:object-literal-sort-keys */
 // obj = Object.assign(obj, {

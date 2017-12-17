@@ -1,6 +1,8 @@
-import { Collection, Guild, GuildChannel, GuildMember, Role, TextChannel, User, VoiceChannel } from "discord.js";
-import { _, bot, Constants, logger } from "../util/deps";
+const { Collection, Guild, GuildChannel, GuildMember, Role, TextChannel, User, VoiceChannel } = require("discord.js");
+const { _, bot, Constants, logger } = require("../util/deps");
 
+// TypeScript Remainder
+/*
 export type GuildResolvable = Guild | string;
 export type SearchChannelType = "text" | "voice" | "all";
 export type SearchChannelResult = GuildChannel[];
@@ -10,51 +12,52 @@ export interface ISearcherOptions<MemberColl> {
   members?: Collection<string, MemberColl> | MemberColl[];
   roles?: Collection<string, Role> | Role[];
   channels?: Collection<string, GuildChannel> | GuildChannel[];
-}
+} */
 
 /**
  * Utility class for searching for members,
  * channels, and roles.
  */
-export default class Searcher<MemberColl> {
+module.exports = class Searcher {
+  /* props -
   /**
    * The guild that this instance looks in.
    * @type {?Guild}
-   */
+   * /
   public guild?: Guild;
 
   /**
    * The member collection to look members in.
    * @type {Collection<string, MemberColl>}
-   */
+   * /
   public members: Collection<string, MemberColl>;
 
   /**
    * The channel collection to look channels in.
    * @type {Collection<string, GuildChannel>}
-   */
+   * /
   public channels: Collection<string, GuildChannel>;
 
   /**
    * The role collection to look roles in.
    * @type {Collection<string, Role>}
-   */
+   * /
   public roles: Collection<string, Role>;
-
+  */
   /**
    * @param {SearcherOptions} options The options
    */
-  constructor(options: ISearcherOptions<MemberColl>) {
+  constructor(options) {
     const { guild, members, roles, channels } = options;
     if (guild) {
       this.guild = guild;
       this.roles = guild.roles;
       this.channels = guild.channels;
-      this.members = (guild.members as any);
+      this.members = guild.members;
     }
     if (roles) {
       if (roles instanceof Array) {
-        const rolesToUse = new Collection<string, Role>();
+        const rolesToUse = new Collection();
         for (const role of roles) {
           rolesToUse.set(role.id, role);
         }
@@ -65,7 +68,7 @@ export default class Searcher<MemberColl> {
     }
     if (channels) {
       if (channels instanceof Array) {
-        const channelsToUse = new Collection<string, GuildChannel>();
+        const channelsToUse = new Collection();
         for (const channel of channels) {
           channelsToUse.set(channel.id, channel);
         }
@@ -76,7 +79,7 @@ export default class Searcher<MemberColl> {
     }
     if (members) {
       if (members instanceof Array) {
-        const membersToUse = new Collection<string, MemberColl>();
+        const membersToUse = new Collection();
         for (const member of members) {
           membersToUse.set(
             (member instanceof GuildMember || member instanceof User) ?
@@ -96,13 +99,13 @@ export default class Searcher<MemberColl> {
    * @param {string|RegExp} nameOrPattern The name/nickname to look for or pattern to test for
    * @returns {Array<MemberColl>} The result(s)
    */
-  public searchMember(nameOrPattern: string | RegExp): MemberColl[] {
+  searchMember(nameOrPattern) {
     const pattern = nameOrPattern instanceof RegExp ?
     nameOrPattern :
     new RegExp(_.escapeRegExp(nameOrPattern), "i");
-    const match: MemberColl[] = [];
-    const getUser = (member: MemberColl): User => {
-      const userToUse: User = member instanceof GuildMember ?
+    const match = [];
+    const getUser = member => {
+      const userToUse = member instanceof GuildMember ?
       member.user :
       member instanceof User ?
       member :
@@ -111,14 +114,14 @@ export default class Searcher<MemberColl> {
       return userToUse;
     };
     if (typeof nameOrPattern === "string" && Constants.regex.NAME_AND_DISCRIM.test(nameOrPattern)) {
-      const result = this.members.find((memb: MemberColl) => getUser(memb).tag === nameOrPattern);
+      const result = this.members.find(memb => getUser(memb).tag === nameOrPattern);
       if (result) {
         match.push(result);
         return match;
       }
     }
     for (const [id, member] of this.members) {
-      const userToUse: User = getUser(member);
+      const userToUse = getUser(member);
       if (
         (typeof nameOrPattern === "string" && userToUse.username === nameOrPattern)
         || (typeof nameOrPattern !== "string" && pattern.test(userToUse.username))
@@ -137,8 +140,8 @@ export default class Searcher<MemberColl> {
     // if (match.length < 1) {
     for (const [id, member] of this.members) {
       if (pattern.test(member instanceof GuildMember ? member.nickname : getUser(member).username)) {
-        let shouldContinue: boolean = false;
-        match.forEach((m: MemberColl) => {
+        let shouldContinue = false;
+        match.forEach(m => {
           if (shouldContinue) {
             return;
           }
@@ -168,21 +171,21 @@ export default class Searcher<MemberColl> {
    * @param {string} [type="text"] The channel type to look for. One of "text", "voice" and "all"
    * @returns {Array<TextChannel>|Array<VoiceChannel>|Array<TextChannel|VoiceChannel>} The result(s)
    */
-  public searchChannel(nameOrPattern: string | RegExp, type: "text"): TextChannel[];
+  /* public searchChannel(nameOrPattern: string | RegExp, type: "text"): TextChannel[];
   public searchChannel(nameOrPattern: string | RegExp, type: "voice"): VoiceChannel[];
-  public searchChannel(nameOrPattern: string | RegExp, type: "all"): Array<TextChannel|VoiceChannel>;
-  public searchChannel(nameOrPattern: string | RegExp, type: SearchChannelType): SearchChannelResult {
+  public searchChannel(nameOrPattern: string | RegExp, type: "all"): Array<TextChannel|VoiceChannel>; */
+  searchChannel(nameOrPattern, type) {
     const pattern = nameOrPattern instanceof RegExp ?
     nameOrPattern :
     new RegExp(_.escapeRegExp(nameOrPattern), "i");
-    const match: SearchChannelResult = [];
-    let toLook: Collection<string, GuildChannel>;
+    const match = [];
+    let toLook;
     switch (type) {
       case "text":
-        toLook = this.channels.filter((c) => c.type === "text");
+        toLook = this.channels.filter(c => c.type === "text");
         break;
       case "voice":
-        toLook = this.channels.filter((c) => c.type === "voice");
+        toLook = this.channels.filter(c => c.type === "voice");
         break;
       default:
         toLook = this.channels;
@@ -213,11 +216,11 @@ export default class Searcher<MemberColl> {
    * @param {string|RegExp} nameOrPattern The name to look for or pattern to test for
    * @returns {Array<Role>} The result(s)
    */
-  public searchRole(nameOrPattern: string | RegExp): Role[] {
+  searchRole(nameOrPattern) {
     const pattern = nameOrPattern instanceof RegExp ?
     nameOrPattern :
     new RegExp(_.escapeRegExp(nameOrPattern), "i");
-    const match: Role[] = [];
+    const match = [];
     for (const [id, role] of this.roles) {
       if (
         (typeof nameOrPattern === "string" && role.name === nameOrPattern)
@@ -240,4 +243,4 @@ export default class Searcher<MemberColl> {
     }
     return match;
   }
-}
+};

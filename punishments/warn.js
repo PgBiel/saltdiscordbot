@@ -1,5 +1,4 @@
 const { GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
-const { BaseContext, DjsChannel } = require("../misc/contextType");
 const { db, logger, Time, util } = require("../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
 const Punishment = require("./punishment");

@@ -1,7 +1,6 @@
 const { Collection, GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
 const Command = require("../../classes/command");
 const Searcher = require("../../classes/searcher");
-const { cmdFunc } = require("../../commandHandler");
 const { bot, logger, util } = require("../../util/deps");
 const { rejct } = require("../../util/funcs");
 

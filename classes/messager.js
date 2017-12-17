@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+const { EventEmitter } = require("events");
 
 class Messager extends EventEmitter {
 
@@ -8,10 +8,10 @@ class Messager extends EventEmitter {
    * @param {number} [timeLimit=null] Max time limit otherwise rejection
    * @returns {Promise<*>}
    */
-  public awaitFor(event: any, timeLimit: number = null): Promise<any> {
+  awaitFor(event, timeLimit = null) {
     return new Promise((res, rej) => {
       let successfull = false;
-      const funcToThing = (stuff: any) => {
+      const funcToThing = stuff => {
         successfull = true;
         res(stuff);
       };
@@ -36,10 +36,10 @@ class Messager extends EventEmitter {
    * @param {number} [timeLimit=null] Max time limit otherwise rejection
    * @returns {Promise<*>}
    */
-  public awaitForThenEmit(emev: any, emdata: any, event: any, timeLimit: number = null): Promise<any> {
+  awaitForThenEmit(emev, emdata, event, timeLimit = null) {
     return new Promise((res, rej) => {
       let successfull = false;
-      const funcToThing = (stuff: any) => {
+      const funcToThing = stuff => {
         successfull = true;
         res(stuff);
       };
@@ -58,4 +58,4 @@ class Messager extends EventEmitter {
   }
 }
 
-export default new Messager();
+module.exports = new Messager();

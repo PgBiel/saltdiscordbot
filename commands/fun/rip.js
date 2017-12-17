@@ -1,6 +1,5 @@
 const { GuildMember, Message, TextChannel } = require("discord.js");
 const Command = require("../../classes/command");
-const { cmdFunc } = require("../../commandHandler");
 
 const func = async (msg, { args, send, channel, member, author, guild }) => {
   let ripContent = "";

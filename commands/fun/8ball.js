@@ -1,6 +1,5 @@
 const { Message } = require("discord.js");
 const Command = require("../../classes/command");
-const { cmdFunc } = require("../../commandHandler");
 const { random } = require("../../util/funcs");
 
 const func = async (msg, { args, reply }) => {

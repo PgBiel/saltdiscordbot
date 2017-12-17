@@ -1,6 +1,5 @@
 const { Message, RichEmbed } = require("discord.js");
 const Command = require("../../classes/command");
-const { cmdFunc } = require("../../commandHandler");
 const { _, bot } = require("../../util/deps");
 const { rejct } = require("../../util/funcs");
 

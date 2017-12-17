@@ -1,11 +1,11 @@
-import * as re from "rethinkdbdash";
-import { HelperVals, TableName, TableVals } from "../misc/tableValues";
-import { bot, Constants, logger, Storage, Time } from "../util/deps";
-import { rejct } from "../util/funcs";
+const re = require("rethinkdbdash");
+// const { HelperVals, TableName, TableVals } = require("../misc/tableValues");
+const { bot, Constants, logger, Storage, Time } = require("../util/deps");
+const { rejct } = require("../util/funcs");
 
-const r: any = re({ db: "saltbot" });
+const r = re({ db: "saltbot" });
 
-export interface IEntry {
+/* export interface IEntry {
   id: string;
   data: any;
 }
@@ -13,9 +13,9 @@ export interface IEntry {
 export interface ISetRes {
   success: boolean;
   err?: any;
-}
+} */
 
-export const tables: TableName[] = [
+const tables = [
   "coins",
   "coinRewards",
   "customcommands",
@@ -38,6 +38,7 @@ export const tables: TableName[] = [
   "warnsteps",
   "welcomes",
 ];
+exports.tables = tables;
 
 tables.forEach((table) => {
   r.tableList().contains(table)
@@ -52,14 +53,16 @@ tables.forEach((table) => {
 });
 
 class Database {
+  /* props:
   public cache: { [prop in TableName]: Storage<string, TableVals[prop]> };
   private loop: NodeJS.Timer;
+  */
 
   constructor() {
-    this.cache = {} as any;
+    this.cache = {};
     (async () => {
       for (const table of tables) {
-        const cacheSpot = this.cache[table] = new Storage<string, any>();
+        const cacheSpot = this.cache[table] = new Storage();
         let list;
         try {
           list = await r.tableList().run();
@@ -76,7 +79,7 @@ class Database {
             if (err) { return rejct(err); }
             if (!row || !row.new_val) { return logger.error("stuff#each: Invalid row"); }
             const newVal = row.new_val;
-            (this.cache[table] as any).set(newVal.id, newVal.data);
+            this.cache[table].set(newVal.id, newVal.data);
           });
         });
       }
@@ -88,7 +91,7 @@ class Database {
    * @param {string} name The table name.
    * @returns {Table}
    */
-  public table <T extends TableName>(name: T): Table<T> {
+  table(name) {
     const tableStor = this.cache[name];
     if (tableStor) return new Table(name, tableStor);
   }
@@ -100,9 +103,9 @@ class Database {
    * @param {string} table The table
    * @returns {Database} this
    */
-  public set<T extends TableName>(id: string, val: TableVals[T], table: T): Promise<ISetRes> {
+  set(id, val, table) {
     if (!this.cache[table]) { return; }
-    (this.cache[table] as any).set(id, val);
+    this.cache[table].set(id, val);
     return this.insert(table, id, val);
   }
 
@@ -112,12 +115,12 @@ class Database {
    * @param {string} table The table
    * @returns {*} Possibly the value
    */
-  public get<T extends TableName>(id: string, table: T): TableVals[T] {
+  get(id, table) {
     if (!this.cache[table]) { return; }
     return this.cache[table].get(id);
   }
 
-  private async insert<T extends TableName>(table: T, id: any, val: TableVals[T]): Promise<ISetRes> {
+  async insert(table, id, val) {
     if (id == null || val == null) return { success: false, err: new TypeError("Invalid ID or value.") };
     const statement = { id, data: val };
     try {
@@ -144,39 +147,69 @@ class Database {
   } */
 }
 
-export const db = new Database();
+const db = new Database();
 
 // tslint:disable-next-line:max-classes-per-file
-class Table<T extends TableName> extends Storage<string, TableVals[T]> {
+class Table extends Storage {
+  /* props:
   public db: Database;
   public name: TableName;
+  */
 
-  constructor(name: T, content: Storage<string, TableVals[T]>) {
+  constructor(name, content) {
     super(content);
     this.name = name;
   }
 
   /* public add <B extends keyof HelperVals>(key: string, val: HelperVals[B], table: B): Promise<ISetRes>;
   public add(key: string, val: any): Promise<ISetRes>; */
-  public add(key: string, val: HelperVals[T], reject: boolean = false): Promise<ISetRes> {
+  /**
+   * Add to an array.
+   * @param {string} key The key
+   * @param {*} val Value to add
+   * @param {boolean} [reject=false] If should reject on promise
+   * @returns {Promise<Object>}
+   */
+  add(key, val, reject = false) {
     const arr = this.get(key) || [];
     if (!Array.isArray(arr)) return Promise.resolve({ success: false, err: new TypeError("Non-array value.") });
     return (reject ? this.setRejct : this.set).call(this, key, arr.concat([val]));
   }
 
-  public remArr(key: string, obj: HelperVals[T], reject?: boolean): Promise<ISetRes> {
+  /**
+   * Remove from an array.
+   * @param {string} key The key
+   * @param {*} obj Object to remove
+   * @param {boolean} [reject] If should reject on promise
+   * @returns {Promise<Object>}
+   */
+  remArr(key, obj, reject) {
     const arr = this.get(key) || [];
     if (!Array.isArray(arr)) return Promise.resolve({ success: false, err: new TypeError("Non-array value.") });
     return this.spliceArr(key, this.indexOf(key, obj), 1, reject);
   }
 
-  public prop <K extends keyof TableVals[T]>(key: string, prop: K): TableVals[T][K] {
+  /**
+   * Get the property of an object.
+   * @param {string} key The key
+   * @param {string} prop The property
+   * @returns {*}
+   */
+  prop (key, prop) {
     const val = this.get(key);
     if (val == null) return;
     return val[prop];
   }
 
-  public spliceArr(key: string, ind: number, amount?: number, reject: boolean = false): Promise<ISetRes> {
+  /**
+   * Splice an array.
+   * @param {string} key The key
+   * @param {number} ind The index
+   * @param {number} [amount] Amount to splice (default 1)
+   * @param {boolean} [reject=false] If should reject on promise
+   * @returns {Promise<Object>}
+   */
+  spliceArr(key, ind, amount, reject = false) {
     const arr = this.get(key) || [];
     if (Array.isArray(arr)) {
       const modify = arr.slice();
@@ -186,21 +219,41 @@ class Table<T extends TableName> extends Storage<string, TableVals[T]> {
     return Promise.resolve({ success: false, err: new TypeError("Non-array value.") });
   }
 
-  public indexOf(key: string, obj: HelperVals[T], fromIndex: number = 0): number {
+  /**
+   * Get the index of an object in an array.
+   * @param {string} key The key
+   * @param {*} obj The object
+   * @param {number} [fromIndex=0] From which index to start
+   * @returns {number}
+   */
+  indexOf(key, obj, fromIndex = 0) {
     const arr = this.get(key) || [];
     if (!Array.isArray(arr)) return -1;
     return arr.indexOf(obj, fromIndex);
   }
 
-  public assign(key: string, val: {[K in keyof TableVals[T]]: TableVals[T]}, reject: boolean = false): Promise<ISetRes> {
+  /**
+   * Assign a property/multiple properties to an object.
+   * @param {string} key The key
+   * @param {Object} val An object to merge props with
+   * @param {boolean} [reject=false] If should reject on promise
+   * @returns {Promise<Object>}
+   */
+  assign(key, val, reject = false) {
     const obj = this.get(key) || {};
     if (typeof obj !== "object") return Promise.resolve({ success: false, err: new TypeError("Non-object value.") });
     return (reject ? this.setRejct : this.set).call(this, key, Object.assign(obj, val));
   }
 
-  public assignF(
-    key: string, val: {[K in keyof TableVals[T]]: (oldVal: TableVals[T][K]) => TableVals[T][K]}, reject: boolean = false,
-  ): Promise<ISetRes> {
+  /**
+   * Assign a property/multiple properties using functions.
+   * @param {string} key The key
+   * @param {Object} val An object to merge props with, each value must be a function fed with old value. 
+     The return value of it will be used
+   * @param {boolean} [reject=false] If should reject on promise
+   * @returns {Promise<Object>}
+   */
+  assignF(key, val, reject = false) {
     if (typeof val !== "object") return Promise.resolve({ success: false, err: new TypeError("Non-object second argument.") });
     const obj = this.get(key) || {};
     if (typeof obj !== "object") return Promise.resolve({ success: false, err: new TypeError("Non-object value.") });
@@ -211,20 +264,38 @@ class Table<T extends TableName> extends Storage<string, TableVals[T]> {
     return (reject ? this.setRejct : this.set).call(this, key, Object.assign(obj, newObj));
   }
 
-  public set(key: "\u202E\u202E\u200B<", val: TableVals[T]): this; // totally not attempting to bypass typescript yelling at me
-  public set(key: string, val: TableVals[T]): Promise<ISetRes>;
-  public set(key: string, val: TableVals[T]) {
-    if (NaN) return this; // also totally not attempting to bypass typescript yelling at me
-    if (typeof key !== "object") return db.set(key, val, this.name);
+  /* public set(key: "\u202E\u202E\u200B<", val: TableVals[T]): this; // totally not attempting to bypass typescript yelling at me
+  public set(key: string, val: TableVals[T]): Promise<ISetRes>; */
+  /**
+   * Set a value.
+   * @param {string} key The key
+   * @param {*} val The value
+   * @returns {Promise<Object>}
+   */
+  set(key, val) {
+    // if (NaN) return this; // also totally not attempting to bypass typescript yelling at me
+    return db.set(key, val, this.name);
   }
 
-  public async setRejct(key: string, val: TableVals[T]): Promise<ISetRes> {
+  /**
+   * Set a value with reject on promise.
+   * @param {string} key The key
+   * @param {*} val The value
+   * @returns {Promise<Object>}
+   */
+  async setRejct(key, val) {
     const res = await this.set(key, val);
     if (!res.success) throw res.err;
     return res;
   }
 
-  public get(key: string, defaultVal?: TableVals[T]): TableVals[T] {
+  /**
+   * Get a value.
+   * @param {string} key The key
+   * @param {*} [defaultVal] A default value to be returned (and set) when none is present
+   * @returns {*}
+   */
+  get(key, defaultVal) {
     const val = db.get(key, this.name);
     if (defaultVal && !val) db.set(key, defaultVal, this.name);
     const defaulted = defaultVal ? (val || defaultVal) : val;
@@ -232,44 +303,61 @@ class Table<T extends TableName> extends Storage<string, TableVals[T]> {
     return defaulted;
   }
 
-  public valuesArray(): Array<TableVals[T]> {
+  /**
+   * Array of values
+   * @returns {Array<*>}
+   */
+  valuesArray() {
     return super.valuesArray.call(this.cache);
   }
 
-  public keysArray(): string[] {
+  /**
+   * Array of keys
+   * @returns {string[]}
+   */
+  keysArray() {
     return super.keysArray.call(this.cache);
   }
 
-  public keyArray(): string[] {
+  /**
+   * Array of keys (alias)
+   * @returns {string[]}
+   */
+  keyArray() {
     return super.keyArray.call(this.cache);
   }
 
-  public array(): Array<[string, TableVals[T]]> {
+  /**
+   * Array representation of this Table
+   * @returns {Array<string, *>}
+   */
+  array() {
     return super.array.call(this.cache);
   }
 
+  /**
+   * Storage representing this Table, otherwise make new
+   */
   get cache() {
-    return db.cache[this.name] || new Storage <string, TableVals[T]>();
+    return db.cache[this.name] || new Storage();
   }
 
+  /**
+   * Alias of cache()
+   */
   get storage() {
     return this.cache;
   }
 }
 
-process.on("message", (message: any) => {
+process.on("message", message => {
   if (message && message.type === "dbUpdate" && message.table && message.statements) {
-    const msg: {
-      type: "dbUpdate",
-      table: TableName,
-      statement: IEntry,
-      id: number,
-    } = message;
+    const msg = message;
     const { table, statement, id } = msg;
     const cacheSpot = db.cache[table];
     if (cacheSpot) {
       if (statement && statement.id && statement.data) {
-        (cacheSpot as any).set(statement.id, statement.data);
+        cacheSpot.set(statement.id, statement.data);
       }
     } else {
       logger.warn(`Got unknown table name from shard ID ${id}: ${table}`);
@@ -277,4 +365,4 @@ process.on("message", (message: any) => {
   }
 });
 
-export default db;
+module.exports = db;

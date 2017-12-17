@@ -1,6 +1,6 @@
 // old Time file
 
-export type timeUnit = "year" | "years"
+/* export type timeUnit = "year" | "years"
   | "month"  | "months"
   | "week"   | "weeks"
   | "day"    | "days"
@@ -9,7 +9,7 @@ export type timeUnit = "year" | "years"
   | "second" | "seconds";
 /**
  * Helper class for representing timespans.
- */
+ * /
 class Time {
   public static years: typeof years;
   public static months: typeof months;
@@ -21,12 +21,12 @@ class Time {
   /**
    * Time stored.
    * @type {number}
-   */
+   * /
   public time: number;
   /**
    * @param {Date|number|Time} [dateOrMsOrTime=0] An optional date to get its time since Jan 1, 1970;
    * an initial amount of milliseconds or a Time instance.
-   */
+   * /
   constructor(dateOrMsOrTime: Date | number | Time = 0) {
     this.time = dateOrMsOrTime instanceof Date ?
     dateOrMsOrTime.getTime() :
@@ -41,7 +41,7 @@ class Time {
    * (years, months, weeks, days, hours, minutes or seconds) or a Time instance.
    * @param {number} [amount] An amount of the unit (ONLY in case the first one is a time unit string).
    * @returns {number} The old total time.
-   */
+   * /
   public add(unit: timeUnit, amount: number): number;
   public add(msOrTime: number | Time): number;
   public add(unitOrMsOrTime: timeUnit | number | Time, amount?: number): number {
@@ -73,7 +73,7 @@ class Time {
    * (years, months, weeks, days, hours, minutes or seconds) or a Time instance.
    * @param {number} [amount] An amount of the unit (ONLY in case the first one is a time unit string).
    * @returns {number} The old total time.
-   */
+   * /
   public remove(unit: timeUnit, amount: number): number;
   public remove(msOrTime: number | Time): number;
   public remove(unitOrMsOrTime: timeUnit | number | Time, amount?: number): number {
@@ -89,7 +89,7 @@ class Time {
   /**
    * Clear this timespan.
    * @returns {number} The old time.
-   */
+   * /
   public clear(): number {
     const oldSpan = this.time;
     this.time = 0;
@@ -99,7 +99,7 @@ class Time {
   /**
    * When concatenated with a string, this returns the units and their respective
    * amounts, separated by comma. E.g.: "1 year, 2 months and 4 seconds".
-   */
+   * /
   public toString(): string {
     const unitObj: {[method: string]: number} = this.units;
     let result = "";
@@ -125,7 +125,7 @@ class Time {
   /**
    * This timespan separated in units.
    * @type {Object<timeUnit, number>}
-   */
+   * /
   get units() {
     let diff: number = this.time;
     const years: number = Math.floor(diff / (1000 * 60 * 60 * 24 * 7 * 4 * 12));
@@ -153,49 +153,49 @@ class Time {
   /**
    * How many years this timespan holds.
    * @type {number}
-   */
+   * /
   get years(): number {
     return this.units.years;
   }
   /**
    * How many months this timespan holds.
    * @type {number}
-   */
+   * /
   get months(): number {
     return this.units.months;
   }
   /**
    * How many weeks this timespan holds.
    * @type {number}
-   */
+   * /
   get weeks(): number {
     return this.units.weeks;
   }
   /**
    * How many days this timespan holds.
    * @type {number}
-   */
+   * /
   get days(): number {
     return this.units.days;
   }
   /**
    * How many hours this timespan holds.
    * @type {number}
-   */
+   * /
   get hours(): number {
     return this.units.hours;
   }
   /**
    * How many minutes this timespan holds.
    * @type {number}
-   */
+   * /
   get minutes(): number {
     return this.units.minutes;
   }
   /**
    * How many seconds this timespan holds.
    * @type {number}
-   */
+   * /
   get seconds(): number {
     return this.units.seconds;
   }
@@ -237,4 +237,4 @@ Time.hours = hours;
 Time.minutes = minutes;
 Time.seconds = seconds;
 
-export default Time;
+export default Time; */

@@ -1,7 +1,7 @@
-import * as colors from "chalk";
-import { EventEmitter } from "events";
+const colors = require("chalk");
+const { EventEmitter } = require("events");
 
-type StringResolvable = string | any;
+// type StringResolvable = string | any;
 
 class Logger extends EventEmitter {
   /**
@@ -9,7 +9,7 @@ class Logger extends EventEmitter {
    * @param {...string} text The text to print in console
    * @returns {void}
    */
-  public info(...text: StringResolvable[]) {
+ info(...text) {
     console.log.apply(this, [colors.blue("[INFO]"), ...text]);
     this.emit("info", text);
   }
@@ -19,7 +19,7 @@ class Logger extends EventEmitter {
    * @param {...string} text The text to print in console
    * @returns {void}
    */
-  public debug(...text: StringResolvable[]) {
+  debug(...text) {
     console.log.apply(this, [colors.green("[DEBUG]"), ...text]);
     this.emit("debug", text);
   }
@@ -29,7 +29,7 @@ class Logger extends EventEmitter {
    * @param {...string} text The text to print in console
    * @returns {void}
    */
-  public error(...text: StringResolvable[]) {
+  error(...text) {
     console.error.apply(this, [colors.red("[ERROR]"), ...text]);
     this.emit("info", text);
   }
@@ -39,7 +39,7 @@ class Logger extends EventEmitter {
    * @param {...string} text The text to print in console
    * @returns {void}
    */
-  public warn(...text: StringResolvable[]) {
+  warn(...text) {
     console.log.apply(this, [colors.yellow("[WARN]"), ...text]);
     this.emit("warn", text);
   }
@@ -49,22 +49,19 @@ class Logger extends EventEmitter {
    * @param {string} text The text to print in console
    * @param {Object} options The options
    */
-  public custom(
-    text: string,
-    { prefix = "[GENERIC]", color = "cyan", type = "log" }:
-    { prefix?: string, color?: string, type?: "log" | "error" }) {
+  custom(text, { prefix = "[GENERIC]", color = "cyan", type = "log" } = { prefix: "[GENERIC]", color: "cyan", type: "log" }) {
     console[type].apply(this, [colors[color](prefix), text]);
     this.emit("custom", { text, prefix, color, type });
   }
 
   /**
-   * Print information
+   * Print information (Alias of info())
    * @param {...string} text The text to print in console
    * @returns {void}
    */
-  public log(...text: StringResolvable[]) {
+  log(...text) {
     return this.info.apply(this, text);
   }
 }
 
-export default new Logger();
+module.exports = new Logger();

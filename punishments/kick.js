@@ -1,6 +1,5 @@
 const { GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
-const { BaseContext, DjsChannel } = require("../misc/contextType");
-const { querystring, Time } = require("../util/deps");
+const { Time } = require("../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
 const Punishment = require("./punishment");
 
@@ -77,7 +76,7 @@ class Kick extends Punishment {
         sent = true;
         edit(`Kicking ${member.user.tag}... (DM Sent. Kicking...)`).catch(rejct);
         executeKick();
-      }).catch((err) => {
+      }).catch(err => {
         rejct(err);
         if (timeoutRan) {
           return;

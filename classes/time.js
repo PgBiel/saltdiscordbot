@@ -1,3 +1,3 @@
-import { Time } from "ztimespan";
+const { Time } = require("ztimespan");
 
-export default Time;
+module.exports = Time;
