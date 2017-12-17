@@ -1,6 +1,4 @@
 const { GuildMember, Message, RichEmbed } = require("discord.js");
-const { TcmdFunc } = require("../../commandHandler");
-// const { warns as warnsModel, warnsteps } = require("../../sequelize/sequelize");
 const warnP = require("../../punishments/warn");
 const { _, bot, Command, Constants, db, logger, Time } = require("../../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");

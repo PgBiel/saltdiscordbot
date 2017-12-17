@@ -40,9 +40,9 @@ const tables = [
 ];
 exports.tables = tables;
 
-tables.forEach((table) => {
+tables.forEach(table => {
   r.tableList().contains(table)
-    .do((tableExists) => {
+    .do(tableExists => {
       return r.branch(
         tableExists,
         { tables_created: 0 },
@@ -70,11 +70,11 @@ class Database {
           rejct(err, "at tablelist:");
           list = [];
         }
-        r.table(table).run().then((res) => {
-          res.forEach((obj) => cacheSpot.set(obj.id, obj.data));
+        r.table(table).run().then(res => {
+          res.forEach(obj => cacheSpot.set(obj.id, obj.data));
         }).catch(rejct);
 
-        r.table(table).changes().run().then((stuff) => {
+        r.table(table).changes().run().then(stuff => {
           stuff.each((err, row) => {
             if (err) { return rejct(err); }
             if (!row || !row.new_val) { return logger.error("stuff#each: Invalid row"); }
@@ -129,7 +129,7 @@ class Database {
       }).run();
       const { shard } = bot;
       shard.send({ type: "dbUpdate", table, statement, id: shard.id })
-        .catch((err) => logger.error(`Failed to send DB update message to master process: ${err}`));
+        .catch(err => logger.error(`Failed to send DB update message to master process: ${err}`));
       return { success: true, err: null };
     } catch (err) {
       rejct(err, `Table ${table}:`);

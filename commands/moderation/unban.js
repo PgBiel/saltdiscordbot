@@ -1,5 +1,4 @@
 const { GuildMember, Message, RichEmbed, User } = require("discord.js");
-const { TcmdFunc } = require("../../commandHandler");
 const { _, Command, Constants, logger, Searcher, Time } = require("../../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
 

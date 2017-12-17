@@ -1,6 +1,4 @@
 const { GuildMember, Message, RichEmbed, Role } = require("discord.js");
-const { TcmdFunc } = require("../../commandHandler");
-// const { activemutes, mutes } = require("../../sequelize/sequelize");
 const { _, Command, Constants, db, logger, Time } = require("../../util/deps");
 const { createMutedRole, escMarkdown, parseMute, rejct } = require("../../util/funcs");
 
