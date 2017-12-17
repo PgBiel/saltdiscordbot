@@ -1,36 +1,37 @@
-import {
+const {
   Channel, Collection, DMChannel, GroupDMChannel, GuildMember, Message, MessageOptions, StringResolvable,
   TextChannel, User,
-} from "discord.js";
-import * as _ from "lodash";
-import { CommandSetPerm } from "./classes/command";
-import logger from "./classes/logger";
-import perms from "./classes/permissions";
-import Searcher from "./classes/searcher";
-import funcs, { TextBasedChannel } from "./commandHandlerFuncs";
-// import { moderation, prefixes } from "./sequelize/sequelize";
-import { bot } from "./util/bot";
-import { chalk, conn, Constants, db } from "./util/deps";
-import { cloneObject, rejct } from "./util/funcs";
+} = require("discord.js");
+const _ = require("lodash");
+const { CommandSetPerm } = require("./classes/command");
+const logger = require("./classes/logger");
+const perms = require("./classes/permissions");
+const Searcher = require("./classes/searcher");
+const funcs = require("./commandHandlerFuncs");
+// const { moderation, prefixes } = require("./sequelize/sequelize");
+const { bot } = require("./util/bot");
+const { chalk, conn, Constants, db } = require("./util/deps");
+const { cloneObject, rejct } = require("./util/funcs");
 
-export * from "./misc/contextType";
+/* export * from "./misc/contextType";
 
-export * from "./commandHandlerFuncs";
+export * from "./commandHandlerFuncs"; */
 
 const doError = logger.error;
 
-export default async (msg: Message) => {
-  const input: string = msg.content;
-  const channel: TextBasedChannel = msg.channel;
-  const message: Message = msg;
-  const guildId: string = msg.guild ? msg.guild.id : null;
+module.exports = async (msg: Message) => {
+  // initialize some vars
+  const input = msg.content;
+  const channel = msg.channel;
+  const message = msg;
+  const guildId = msg.guild ? msg.guild.id : null;
 
   const {
     hasPermission, userError, promptAmbig, checkRole,
     send, reply, doEval, prompt, actionLog,
   } = funcs(msg);
 
-  const context: {[prop: string]: any} = {
+  const context = {
     input, channel, message, msg, guildId,
     author: msg.author, member: msg.member,
     tag: `${msg.author.username}#${msg.author.discriminator}`,
@@ -38,23 +39,29 @@ export default async (msg: Message) => {
 
     reply, send, hasPermission, hasPermissions: hasPermission,
     botmember: msg.guild ? msg.guild.member(bot.user) : null,
-    searcher: msg.guild ? new Searcher<GuildMember>({ guild: msg.guild }) : null,
+    searcher: msg.guild ? new Searcher({ guild: msg.guild }) : null,
     checkRole, promptAmbig, userError, doEval, prompt, actionLog,
   };
+  // fetch prefix from db
   const dbPrefix = msg.guild ? db.table("prefixes").get(guildId) : null;
-  const possiblePrefix: string = dbPrefix || "+";
+  const possiblePrefix = dbPrefix || "+";
+  // loop commands to find a match
   for (const cmdn in bot.commands) {
+    // safety thing
     if (!bot.commands.hasOwnProperty(cmdn)) {
       continue;
     }
+    // make our own copy of context to modify safely (otherwise it would repeat for all tests)
     const subContext = cloneObject(context);
     subContext.dummy = {};
     const cmd = bot.commands[cmdn];
     const descCmd = cmd.aliasData && cmd.aliasData.__aliasOf ? cmd.aliasData.__aliasOf : cmd;
+    // if the command doesn't exist or doesn't do anything... Ignore it
     if (!cmd.name || !descCmd.func) {
       continue;
     }
-    let prefix: string;
+    let prefix;
+    // aliasData is data to be given for aliases, e.g. do this operation instead of the other.
     if (cmd.aliasData) {
       for (const key in cmd.aliasData) {
         if (!cmd.aliasData.hasOwnProperty(key)) {
@@ -63,6 +70,7 @@ export default async (msg: Message) => {
         subContext.dummy[key] = cmd.aliasData[key];
       }
     }
+    // if the command has a required prefix (instead of the configurable one) then use it
     if (descCmd.customPrefix) {
       prefix = descCmd.customPrefix;
     } else {

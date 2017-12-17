@@ -1,8 +1,8 @@
-import * as colors from "chalk";
-import * as cmd from "commander";
-import * as Discord from "discord.js";
-import { inspect } from "util";
-import changeConsole from "./changeConsole";
+const colors = require("chalk");
+const cmd = require("commander");
+const Discord = require("discord.js");
+const { inspect } = require("util");
+const changeConsole = require("./changeConsole");
 changeConsole(true);
 cmd
   .option("-d, --default", "Use current directory")
@@ -10,11 +10,17 @@ cmd
   .option("-g, --github", "Use github directory")
   .parse(process.argv);
 if (!cmd.default) {
-  const dir = cmd.github || cmd.beta ? `${process.env.HOME}/${cmd.github ?
-      "GitHub/saltdiscordbot" :
-      `Documents/Bot Stuff/${cmd.beta ?
-        "Beta " :
-        ""}Salt`}/build` : "./build";
+  let dir;
+  if (cmd.github || cmd.beta) {
+    dir = process.env.HOME + "/";
+    if (cmd.github) {
+      dir += "Github/saltdiscordbot";
+    } else {
+      dir += `Documents/Bot Stuff/${cmd.beta ? "Beta " : ""}Salt`;
+    }
+  } else {
+    dir = ".";
+  }
   // console.log(dir, inspect(cmd));
   process.chdir(dir);
 }
@@ -22,9 +28,9 @@ const Manager = new Discord.ShardingManager("./bot.js", {
   totalShards: 2,
 });
 
-Manager.spawn().then((shards: Discord.Collection<number, Discord.Shard>) => {
+Manager.spawn().then(shards => {
   console.log("Spawned", colors.cyan(shards.size.toString()), "shards!");
-  Manager.on("message", (message: any) => {
+  Manager.on("message", message => {
     if (message && message.type === "dbUpdate" && message.table && message.statement) {
       Manager.broadcast(message);
     }

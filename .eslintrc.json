@@ -13,6 +13,7 @@
     "spaced-comment": "warn",
     "arrow-parens": ["error", "as-needed"],
     "arrow-spacing": "error",
-    "prefer-arrow-callback": "error"
+    "prefer-arrow-callback": "error",
+    "no-console": 0,
   }
 }

@@ -1,14 +1,14 @@
-import { Guild } from "discord.js";
-import Command from "../classes/command";
-import * as cmds from "../commands/cmdIndex";
-import {
+const { Guild } = require("discord.js");
+const Command = require("../classes/command");
+const cmds = require("../commands/cmdIndex");
+const {
   _, bot, commandHandler, commandParse, Constants, db, Discord, fs, logger, messager, rethink, Time, util,
   xreg,
-} from "./deps";
+} = require("./deps");
 
-import { HelperVals } from "../misc/tableValues";
+const { HelperVals } = require("../misc/tableValues");
 
-export interface IMessagerEvalData {
+/* export interface IMessagerEvalData {
   content: string;
   vars: {[prop: string]: any};
   id: number;
@@ -19,7 +19,7 @@ export interface IMuteParseResults {
   user: string;
   time: Time;
   reason: string;
-}
+} */
 
 /**
  * Handle a rejection
@@ -27,7 +27,7 @@ export interface IMuteParseResults {
  * @param {*} [prefix] Text to use before the error message
  * @returns {void}
  */
-export function rejct(rejection: any, prefix?: string): void {
+exports.rejct = function rejct(rejection, prefix) {
   logger.custom(prefix + rejection, { prefix: "[ERR/REJECT]", color: "red", type: "error" });
 }
 
@@ -36,7 +36,7 @@ export function rejct(rejection: any, prefix?: string): void {
  * @param {string} fpath The path to require
  * @returns {*} The required value
  */
-export function ncrequire(fpath: string) {
+exports.ncrequire = function ncrequire(fpath) {
   delete require.cache[require.resolve(fpath)];
   return require(fpath);
 }
@@ -46,13 +46,13 @@ export function ncrequire(fpath: string) {
  * @param {*} evaler The eval function
  * @returns {Function} The generated function
  */
-export function messagerDoEval(evaler: any) {
+exports.messagerDoEval = function messagerDoEval(evaler) {
   /**
    * Event function for doEval on messager
    * @param {*} data Data
    * @returns {void}
    */
-  return (data: IMessagerEvalData) => {
+  return (data) => {
     // tslint:disable:no-shadowed-variable
     const { bot, message, msg, input, channel, guild, deps, funcs, guildId, send, reply, db, context } = data.vars;
     const { _, Storage, util } = deps;
@@ -72,22 +72,22 @@ export function messagerDoEval(evaler: any) {
     }
   };
 }
-export function djsDebug(info: string) {
+exports.djsDebug = function djsDebug(info) {
   logger.custom(info, {
       prefix: `[${/heartbeat/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`,
       color: "magenta",
   });
 }
-export function djsWarn(info: string) {
+exports.djsWarn = function djsWarn(info) {
   logger.custom(info, { prefix: `[DJS WARN]`, color: "yellow" });
 }
-export function botMessage(msg: Discord.Message) {
+exports.botMessage = function botMessage(msg) {
   const thingy = commandHandler(msg);
   if (thingy.catch) {
     thingy.catch(rejct);
   }
 }
-export function processMessage(data: any) {
+exports.processMessage = function processMessage(data) {
   logger.debug("Received message");
 }
 /**
@@ -95,14 +95,14 @@ export function processMessage(data: any) {
  * @param {*} objec The object.
  * @returns {*} The cloned object.
  */
-export function cloneObject <T>(objec: T): T {
-  return Object.assign(Object.create((objec as any)), objec);
+exports.cloneObject = function cloneObject (objec) {
+  return Object.assign(Object.create(objec), objec);
 }
 /**
  * Loads commands.
  * @returns {void}
  */
-export function loadCmds(): void {
+exports.loadCmds = function loadCmds() {
   /* const loadedCmds = [];
   fs.readdirSync("./commands").map((f: string) => {
     if (/\.js$/.test(f)) {
@@ -112,7 +112,7 @@ export function loadCmds(): void {
   const loadedCmds = ncrequire("../commands/cmdIndex").commands;
   for (const cmdn in loadedCmds) {
     if (loadedCmds.hasOwnProperty(cmdn)) {
-      const cmd: Command = loadedCmds[cmdn];
+      const cmd = loadedCmds[cmdn];
       // const parsed = commandParse(loadedCmds[cmd]);
       // if (parsed) {
       bot.commands[cmd.name] = cmd;
@@ -121,14 +121,14 @@ export function loadCmds(): void {
   }
 }
 // tslint:disable-next-line:prefer-const
-let isUnique = (err: Error) => err == null ? false : err.name === Constants.sql.UNIQUE_CONSTRAINT;
-export function SQLLogger(...stuff: string[]) {
+let isUnique = err => err == null ? false : err.name === Constants.sql.UNIQUE_CONSTRAINT;
+exports.SQLLogger = function SQLLogger(...stuff) {
   return logger.custom(stuff.join(" "), { prefix: "[SQL]", color: "yellow" });
 }
-export function doError(...stuff: string[]): void {
+exports.doError = function doError(...stuff) {
   return logger.error.apply(logger, [...stuff]);
 }
-export function bcEval() {
+exports.bcEval = function bcEval() {
   return bot.shard.broadcastEval.apply(bot.shard, Array.from(arguments));
 }
 /**
@@ -137,7 +137,7 @@ export function bcEval() {
  * @param {number} max The maximum number.
  * @returns {number}
  */
-export function random(min: number, max: number): number {
+exports.random = function random(min, max) {
   if (isNaN(min) || isNaN(max)) {
     return;
   }
@@ -153,7 +153,7 @@ export function random(min: number, max: number): number {
  * @param {boolean} [escaper=false] If backslash should be escaped.
  * @returns {string} The newly escaped string.
  */
-export function escMarkdown(str: string, escaper: boolean = false): string {
+exports.escMarkdown = function escMarkdown(str: string, escaper: boolean = false) {
   const regex = new RegExp(`[\`*_~${escaper ? "\\\\" : ""}]`, "g");
   return str.replace(regex, (piece: string) => "\\" + piece);
 }
@@ -163,16 +163,12 @@ export function escMarkdown(str: string, escaper: boolean = false): string {
  * @param {number} length The max length.
  * @returns {string} The abstracted string.
  */
-export function textAbstract(text: string, length: number): string {
+exports.textAbstract = function textAbstract(text, length) {
     if (text == null) {
-        return "";
+      return "";
     }
     if (typeof text !== "string") {
-      try {
-        text = (text as any).toString();
-      } catch (err) {
-        text = String(text);
-      }
+      text = String(text);
     }
     if (typeof length !== "number") {
       if (isNaN(length)) {
@@ -181,7 +177,7 @@ export function textAbstract(text: string, length: number): string {
       length = Number(length);
     }
     if (text.length <= length) {
-        return text;
+      return text;
     }
     const newText = text.substring(0, length).replace(/[^]{0,3}$/, "...");
     return newText || "...";
@@ -192,7 +188,7 @@ export function textAbstract(text: string, length: number): string {
  * @param {string} [options] The flags.
  * @returns {RegExp} The combined regex.
  */
-export function combineRegex(regs: Array<string | RegExp>, options: string = ""): RegExp {
+exports.combineRegex = function combineRegex(regs, options) {
   let regexStr = "";
   for (const match of regs) {
     regexStr += match instanceof RegExp ? match.source : match;
@@ -205,7 +201,7 @@ export function combineRegex(regs: Array<string | RegExp>, options: string = "")
  * @param {string} str The time string.
  * @returns {?Object} The parsed time, with all units as a property.
  */
-export function parseTimeStr(str: string): typeof Time.prototype.units {
+exports.parseTimeStr = function parseTimeStr(str) {
   logger.debug(str);
   const time = new Time();
   if (typeof str !== "string") {
@@ -233,7 +229,7 @@ export function parseTimeStr(str: string): typeof Time.prototype.units {
  * @param {Guild} guild The guild to create the mute role at.
  * @returns {Promise<Role>} The created role.
  */
-export async function createMutedRole(guild: Guild) {
+exports.createdMutedRole = async function createMutedRole(guild: Guild) {
   const newRole = await guild.createRole({
     name: "SaltMuted",
     permissions: [],
@@ -252,7 +248,7 @@ export async function createMutedRole(guild: Guild) {
  * Nothing by default.
  * @returns {string} The converted string.
  */
-export function toBin(str: string, joinChar: string = " ", unicodeJoinChar: string = ""): string {
+exports.toBin = function toBin(str, joinChar = " ", unicodeJoinChar = "") {
   const PADDING = "0".repeat(8);
 
   const resultArr: string[] = [];
@@ -291,7 +287,7 @@ export function toBin(str: string, joinChar: string = " ", unicodeJoinChar: stri
  * @param {string} str The arguments.
  * @returns {Object} The result.
  */
-export function parseMute(str: string): IMuteParseResults {
+exports.parseMute = function parseMute(str) {
   const obj = {
     ok: true,
     user: "",
@@ -331,7 +327,7 @@ export function parseMute(str: string): IMuteParseResults {
  * Check all mutes and unmute / add muted role if needed.
  * @returns {Promise<void>}
  */
-export async function checkMutes(): Promise<void> {
+exports.checkMutes = async function checkMutes() {
   if (!bot.readyTimestamp) { return; }
   const mutesForShard = _.flatten(
     db.table("activemutes").storage.filter((mute, guildId) => bot.guilds.has(guildId.toString())).array()
@@ -386,4 +382,17 @@ However, I was unable to take the role away from you for an yet unknown reason. 
       .catch(rejct);
     }
   }
+}
+
+/**
+ * Capitalize the first letter in a string.
+ * @param {string} str The string
+ * @param {boolean} all If all initial letters (each space) should be capitalized
+ * @returns {string} The modified string
+ */
+exports.capitalize = function capitalize(str, all = false) {
+  if (all) {
+    return str.replace(/(?:^|\s+)([\s\S])/g, char => char.toUpperCase());
+  }
+  return str.replace(/^([\s\S])/, char => char.toUpperCase());
 }

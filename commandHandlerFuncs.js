@@ -1,19 +1,19 @@
-import {
+const {
   Collection, DMChannel, GroupDMChannel, Guild, GuildMember, Message, MessageOptions, StringResolvable,
   TextChannel, User,
-} from "discord.js";
-import actionLog, { ILogOption } from "./classes/actionlogger";
-import messager from "./classes/messager";
-import Searcher from "./classes/searcher";
-import * as deps from "./util/deps";
-import { bot, Constants, db, logger } from "./util/deps";
-import * as funcs from "./util/funcs";
-import { cloneObject, rejct } from "./util/funcs";
+} = require("discord.js");
+const actionLog = require("./classes/actionlogger");
+const messager = require("./classes/messager");
+const Searcher = require("./classes/searcher");
+const deps = require("./util/deps");
+const { bot, Constants, db, logger } = require("./util/deps");
+const funcs = require("./util/funcs");
+const { capitalize, cloneObject, rejct } = require("./util/funcs");
 
 // const { bot, Constants, logger } = deps;
 // const { cloneObject, rejct } = funcs;
 
-export type ExtendedActionLogOptions = ILogOption & {
+/* export type ExtendedActionLogOptions = ILogOption & {
   guild?: any,
 };
 
@@ -55,16 +55,16 @@ export type SaltRole = "moderator"
   | "administrator"
   | "admin";
 
-export type TextBasedChannel = DMChannel | TextChannel | GroupDMChannel;
+export type TextBasedChannel = DMChannel | TextChannel | GroupDMChannel; */
 
-export default function returnFuncs(msg: Message) {
-  const input: string = msg.content;
-  const channel: TextBasedChannel = msg.channel;
-  const message: Message = msg;
-  const guildId: string = msg.guild ? msg.guild.id : null;
-  const guild: Guild = msg.guild || null;
+module.exports = function returnFuncs(msg: Message) {
+  const input = msg.content;
+  const channel = msg.channel;
+  const message = msg;
+  const guildId = msg.guild ? msg.guild.id : null;
+  const guild = msg.guild || null;
 
-  const sendingFunc = (func: (...args: any[]) => any): ExtendedSend => { // factory for sending functions
+  const sendingFunc = func => { // factory for sending functions
     return (content: StringResolvable | ExtendedMsgOptions, options?: ExtendedMsgOptions) => {
       if (typeof content === "object" && !options && !(content instanceof Array)) {
         options = content;
@@ -82,7 +82,7 @@ export default function returnFuncs(msg: Message) {
   const reply = sendingFunc(msg.reply.bind(msg));
   const send = sendingFunc(channel.send.bind(channel));
 
-  const checkRole = (role: SaltRole, member: GuildMember): boolean => {
+  const checkRole = (role, member) => {
     if (["mod", "admin"].includes(role)) {
       role = role === "mod" ? "moderator" : "administrator";
     }
@@ -101,12 +101,12 @@ export default function returnFuncs(msg: Message) {
       return member.roles.has(result[role]);
     }
   };
-  const promptAmbig = async <T> (members: T[], pluralName: string = "members"): Promise<IAmbigResult<T>> => {
+  const promptAmbig = (members, pluralName = "members") => {
     let satisfied: boolean = false;
     let cancelled: boolean = false;
-    let currentOptions: T[] = [];
+    let currentOptions = [];
 
-    const getTag = (gm: T): string => {
+    const getTag = (gm): string => {
       if (gm instanceof User) {
         return gm.tag;
       } else if (gm instanceof GuildMember) {
@@ -116,7 +116,7 @@ export default function returnFuncs(msg: Message) {
       }
     };
 
-    members.forEach((gm: T) => currentOptions.push(gm));
+    members.forEach(gm => currentOptions.push(gm));
     const filter = (msg2: Message) => {
       const options = currentOptions;
       if (msg2.author.id !== msg.author.id) {
@@ -126,7 +126,7 @@ export default function returnFuncs(msg: Message) {
         cancelled = true;
         return true;
       }
-      const tagOptions: string[] = options.map((gm: T) => getTag(gm));
+      const tagOptions = options.map((gm: T) => getTag(gm));
       if (tagOptions.includes(msg2.content)) {
         satisfied = true;
         currentOptions = [options[tagOptions.indexOf(msg2.content)]];
@@ -136,8 +136,8 @@ export default function returnFuncs(msg: Message) {
       options.forEach((gm: T) => {
         collOptions.set((gm instanceof GuildMember || gm instanceof User) ? gm.id : gm.toString(), gm);
       });
-      const searcher2: Searcher<T> = new Searcher<T>({ members: collOptions });
-      const resultingMembers: T[] = searcher2.searchMember(msg2.content);
+      const searcher2 = new Searcher({ members: collOptions });
+      const resultingMembers = searcher2.searchMember(msg2.content);
       if (resultingMembers.length < 1) {
         return true;
       }
@@ -151,7 +151,7 @@ export default function returnFuncs(msg: Message) {
     };
     reply(`Multiple ${pluralName} have matched that search. Please specify one.
 This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
-**Members Matched**:
+**${capitalize(pluralName)} Matched**:
 \`${currentOptions.map((gm) => getTag(gm)).join("`,`")}\``);
     for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
       try {
@@ -206,9 +206,9 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
       question, invalidMsg, filter,
       timeout = Constants.times.AMBIGUITY_EXPIRE, cancel = true,
       options = {} }: IPromptOptions,
-  ): Promise<string> => {
-    let cancelled: boolean = false;
-    let satisfied: Message = null;
+  ) => {
+    let cancelled = false;
+    let satisfied = null;
     const filterToUse = (msg2: Message) => {
       if (msg2.content === "cancel" && cancel) {
         return (cancelled = true);
@@ -252,12 +252,12 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     return actionLog.log(newOptions);
   };
 
-  const oldObj = {
+  const obj = {
     hasPermission, userError, promptAmbig, checkRole,
     send, reply, prompt, actionLog: actionLog2,
   };
 
-  let obj: typeof oldObj & { doEval: (content: string, subC?: {[prop: string]: any}) => Promise<any> };
+  // let obj: typeof oldObj & { doEval: (content: string, subC?: {[prop: string]: any}) => Promise<any> };
 
   const doEval = (content: string, subC: {[prop: string]: any} = {}) => {
     const objectToUse = Object.assign({}, obj, {
@@ -273,7 +273,7 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     };
     return messager.awaitForThenEmit("doEval", data, data.id + "eval");
   };
-  obj = Object.assign(oldObj, { doEval });
+  obj = Object.assign(obj, { doEval });
 
   return obj;
 }
