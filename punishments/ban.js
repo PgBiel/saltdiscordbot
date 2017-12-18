@@ -46,7 +46,7 @@ class Ban extends Punishment {
         return void reply("That member is the owner!");
       } else if (!member.bannable) {
         return void reply("That member is not bannable (being generic here). \
-    Check the conditions for being banned (e.g. must not be owner, etc)!");
+Check the conditions for being banned (e.g. must not be owner, etc)!");
       }
     }
 
@@ -59,7 +59,7 @@ class Ban extends Punishment {
         .setTimestamp(new Date());
       const result = await prompt({
         question: `Are you sure you want to ${actions[4]} this ${id ? "user ID" : "member"}? \
-  This will expire in 15 seconds. Type __y__es or __n__o.`,
+This will expire in 15 seconds. Type __y__es or __n__o.`,
         invalidMsg: "__Y__es or __n__o?",
         filter: msg2 => {
           return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);

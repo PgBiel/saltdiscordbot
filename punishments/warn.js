@@ -69,7 +69,7 @@ class Warn extends Punishment {
               reasonStr = "that member is the owner!";
             } else if (!member[ableName + "able"]) {
               reasonStr = `that member is not ${ableName}able (being generic here). \
-          Check the conditions for being ${ableName}ed (e.g. must not be owner, etc)!`;
+Check the conditions for being ${ableName}ed (e.g. must not be owner, etc)!`;
             }
             if (reasonStr) {
               return reply(`That member has reached a limit of ${warnStep.amount} warnings which implies \

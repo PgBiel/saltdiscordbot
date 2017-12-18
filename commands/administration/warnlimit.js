@@ -55,7 +55,7 @@ Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
     } else {
       if (arrArgs.length < 3) {
         return reply(`Please tell me which punishment should I give on reaching that limit! \
-          (Either ban, softban, kick, or mute + minutes muted)`);
+(Either ban, softban, kick, or mute + minutes muted)`);
       }
       if (!/^(?:kick|ban|mute)$/i.test(subSubArg)) {
         return reply(`The punishment must be either kick, ban, softban or mute (+ minutes muted, default is 10 mins).`);
@@ -92,8 +92,8 @@ module.exports = new Command({
   func,
   name: "warnlimit",
   perms: { "warnlimit": false, "warnlimit.get": true },
-  description: `Set or view warn punishments for reaching a certain (or multiple) warn count(s). For the "get" action, \
-you specify a number after it which is the warn count punishment you want to view. For a list of them, don't specify an action.\n\
+  description: `Set or view warn punishments for reaching a certain (or multiple) warn count(s). For a list of them, \
+don't specify an action. For the "get" action, you specify a number after it which is the warn count punishment you want to view.\n\
 For the "set", "unset", "add" (same as "set") and "remove" (same as "unset") actions, specify a number after it which is the \
 warn count punishment to set/unset. That's all you need if unsetting. If setting, specify a punishment after it (one of kick, \
 ban, softban, mute). For mute, specify amount of minutes after it; if you don't specify an amount of minutes it defaults to 10. \

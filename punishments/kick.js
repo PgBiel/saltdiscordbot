@@ -35,7 +35,7 @@ class Kick extends Punishment {
         return void reply("That member is the owner!");
       } else if (!member.kickable) {
         return void reply("That member is not kickable (being generic here). \
-    Check the conditions for being kicked (e.g. must not be owner, etc)!");
+Check the conditions for being kicked (e.g. must not be owner, etc)!");
       }
     }
     const sentKickMsg = await send(`Kicking ${member.user.tag}... (Sending DM...)`);

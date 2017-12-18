@@ -20,7 +20,7 @@ const func = async (msg, {
     hasPerm = setPerms.warn;
   }
   if (!hasPerm) {
-    return reply(`You do not have sufficient permissions! To use this command, you need the \`Moderator\` SaltRole (or have a\
+    return reply(`You do not have sufficient permissions! To use this command, you need the \`Moderator\` SaltRole (or have a \
 permission overwrite).`);
   }
   if (!args) {

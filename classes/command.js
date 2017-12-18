@@ -253,7 +253,7 @@ ${this.customPrefix || p}${this.name}${this.private ?
     ""}
 ${this.description}
 Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
-  `\n\nExample: ${_.trim(this.example).replace(/{p}/g, p)}` :
+  `\n\nExample(s): ${_.trim(this.example).replace(/{p}/g, p)}` :
   ``}
 \`\`\``;
     }

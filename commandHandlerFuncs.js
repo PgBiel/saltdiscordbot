@@ -198,8 +198,8 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
   const hasPermission = msg.member ? msg.member.hasPermission.bind(msg.member) : null;
 
   const userError = data => reply(
-    `Sorry, but it seems there was an error while executing this command.\
-    If you want to contact the bot devs, please tell them this information: \`${data}\`. Thanks!`);
+    `Sorry, but it seems there was an error while executing this command. \
+If you want to contact the bot devs, please tell them this information: \`${data}\`. Thanks!`);
 
   const prompt = async (
     {
@@ -223,7 +223,7 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     const sentmsg = await send(question, options || {});
     for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
       try {
-        const msgs = await msg.channel.awaitMessages(filterToUse, { time: timeout, maxMatches: 1, errors: ["time"] });
+        const msgs = await msg.channel.awaitMessages(filterToUse, { time: timeout, ma: 1, errors: ["time"] });
         if (!satisfied) {
           if (i < 5) {
             send(invalidMsg);
