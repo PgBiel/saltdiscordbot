@@ -137,6 +137,7 @@ module.exports = async msg => {
         const isDefault = Boolean(permsToCheck[permission]); // if perm is default
         try {
           const permsResult = perms.hasPerm(msg.member, guildId, permission, isDefault); // execute hasPerm to check perm
+          console.log("Result: " + require("util").inspect(permsResult) + " . Permission: " + permission);
           parsedPerms[permission] = Boolean(permsResult.hasPerm); // add if has perm
           setPerms[permission] = Boolean(permsResult.setPerm); // add if perm was set or is it default
         } catch (err) {

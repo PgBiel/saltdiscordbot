@@ -1,14 +1,16 @@
 const { combineRegex } = require("../util/funcs");
+const obj = {};
+module.exports = obj;
 
-exports.sql = {
+obj.sql = {
   UNIQUE_CONSTRAINT: "SequelizeUniqueConstraintError",
 };
 
-exports.times = {
+obj.times = {
   AMBIGUITY_EXPIRE: 30000,
 };
 
-exports.regex = {
+obj.regex = {
   HAS_DECIMAL: /\.(?!0+$)/,
   NAME_AND_DISCRIM: /^([^]{1,32})#(\d{4})$/,
   BAN_MATCH: /^([^]+?(?:#\d{4})?)(?:\s+([^]*))?$/,
@@ -133,10 +135,10 @@ exports.regex = {
   },
 };
 
-exports.numbers = {
+obj.numbers = {
   MAX_PROMPT: 5,
 };
 
-exports.identifiers = {
+obj.identifiers = {
   OWNER: "180813971853410305",
 };

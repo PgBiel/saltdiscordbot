@@ -1,4 +1,4 @@
-const { GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
+const { GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
 const { db, logger, Time, util } = require("../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
 const Punishment = require("./punishment");
@@ -32,7 +32,7 @@ class Warn extends Punishment {
     const warns = db.table("warns").get(guild.id, []).filter(u => u.userid === member.id);
     const warnSteps = db.table("warnsteps").get(guild.id, []).sort((step1, step2) => step1.amount - step2.amount);
     const warnStep = warnSteps.find(step => step.amount === warns.length + 1);
-    const reasonEmbed = new RichEmbed();
+    const reasonEmbed = new MessageEmbed();
     reasonEmbed
       .setColor("AQUA")
       .setDescription(reason || "None")

@@ -1,4 +1,4 @@
-const { Collection, GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
+const { Collection, GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
 const Command = require("../../classes/command");
 const Searcher = require("../../classes/searcher");
 const { bot, logger, util } = require("../../util/deps");
@@ -6,11 +6,12 @@ const { rejct } = require("../../util/funcs");
 
 function getAvatarEmb(author) {
   const avatarRegex = /^((?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpe?g|png|gif|webp))\?size=\d+$/;
-  const embed = new RichEmbed();
+  const embed = new MessageEmbed();
   const tag = `${author.username}#${author.discriminator}`;
-  const avatarUrl = avatarRegex.test(author.displayAvatarURL) ?
-  author.displayAvatarURL.match(avatarRegex)[1]
-  : author.displayAvatarURL;
+  const urlz = author.displayAvatarURL();
+  const avatarUrl = avatarRegex.test(urlz) ?
+  urlz.match(avatarRegex)[1]
+  : urlz;
 
   embed.setAuthor(`${tag}'s Avatar`, avatarUrl, avatarUrl)
     .setImage(avatarUrl)

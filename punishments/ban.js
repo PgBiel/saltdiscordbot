@@ -1,4 +1,4 @@
-const { Guild, GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
+const { Guild, GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
 const { Time } = require("../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
 const Punishment = require("./punishment");
@@ -51,9 +51,9 @@ class Ban extends Punishment {
     }
 
     if (usePrompt) {
-      const embed = new RichEmbed();
+      const embed = new MessageEmbed();
       embed
-        .setAuthor(`${actions[3]} confirmation - ${id || user.tag}`, id ? undefined : user.displayAvatarURL)
+        .setAuthor(`${actions[3]} confirmation - ${id || user.tag}`, id ? undefined : user.displayAvatarURL())
         .setColor("RED")
         .setDescription(reason || "No reason")
         .setTimestamp(new Date());
@@ -79,7 +79,7 @@ class Ban extends Punishment {
     const sentBanMsg = await send(`${actions[0]} ${id || user.tag}... (${id ?
     "Swinging ban hammer..." :
     "Sending DM..."})`);
-    const reasonEmbed = new RichEmbed();
+    const reasonEmbed = new MessageEmbed();
     reasonEmbed
       .setColor(color || "RED")
       .setDescription(reason || "None")

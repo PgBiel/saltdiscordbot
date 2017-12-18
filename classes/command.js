@@ -4,9 +4,9 @@
  * @property {boolean} optional If this argument is optional or not
  */
 
-const { Message, RichEmbed } = require("discord.js");
-const { logger } = require("../util/deps");
-const { cloneObject } = require("../util/funcs");
+const { Message, MessageEmbed } = require("discord.js");
+// const { logger } = require("../util/deps");
+// const { cloneObject } = require("../util/funcs");
 
 const assert = require("assert");
 const _ = require("lodash");
@@ -44,6 +44,15 @@ interface ICommandOptions {
   guildOnly?: boolean;
   customPrefix?: string;
 } */
+
+// avoid some loops 'n stuff with those functions
+function debug(...text) {
+  console.log.apply(console.log, [require("chalk").green("[DEBUG]"), ...text]);
+}
+
+function cloneObject (objec) {
+  return Object.assign(Object.create(objec), objec);
+}
 
 module.exports = class Command {
   /**
@@ -217,7 +226,7 @@ module.exports = class Command {
    * Get the help embed or string.
    * @param {string} p The prefix to use
    * @param {boolean} [useEmbed=false] If it should use embed or not
-   * @returns {string|RichEmbed} The result
+   * @returns {string|MessageEmbed} The result
    */
   help(p, useEmbed = false) {
     if (!p) {
@@ -248,7 +257,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
   ``}
 \`\`\``;
     }
-    const embed = new RichEmbed();
+    const embed = new MessageEmbed();
     embed
       .setColor("RANDOM")
       .setTitle(`\`${this.customPrefix || p}${this.name}\`${this.private ?

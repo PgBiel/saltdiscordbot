@@ -1,4 +1,4 @@
-const { GuildMember, Message, RichEmbed } = require("discord.js");
+const { GuildMember, Message, MessageEmbed } = require("discord.js");
 const warnP = require("../../punishments/warn");
 const { _, bot, Command, Constants, db, logger, Time } = require("../../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");

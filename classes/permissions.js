@@ -3,7 +3,8 @@ const _ = require("lodash");
 
 // const { disabledcmds, permissions } = require("../sequelize/sequelize");
 const { bot } = require("../util/bot");
-const { Constants, db } = require("../util/deps");
+const Constants = require("../misc/Constants");
+const { db } = require("../util/deps");
 
 /* interface IPermsResult {
   hasPerm: boolean;
@@ -51,11 +52,12 @@ class Permz {
    */
   checkPerm(member, guildId, perm, isDefault = false) {
     const [cmdname, extra] = _.toPath(perm);
+    console.log(member.id, guildId, perm, isDefault);
     // if (extra1) whereobj.extra1 = extra1;
     // if (extra2) whereobj.extra2 = extra2;
     // if (extra3) whereobj.extra3 = extra3;
     const perms = db.table("perms").get(guildId, []).filter(item => item.type === "member" && item.id === member.id);
-    let hasPerm = false;
+    let hasPerm = isDefault;
     let setPerm = false;
     const filtered = perms.find(item => item.command === "any" || item.command
      === cmdname);

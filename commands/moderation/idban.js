@@ -1,4 +1,4 @@
-const { ban } = require("./ban");
+const ban = require("./ban");
 
 const Command = require("../../classes/command");
 

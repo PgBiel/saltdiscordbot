@@ -1,17 +1,24 @@
-const assert = require("assert");
-const chalk = require("chalk");
-const Discord = require("discord.js");
-const msgEmbedToRich = require("discordjs-embed-converter");
-const fs = require("fs");
-const klaw = require("klaw-sync");
-const _ = require("lodash");
-const querystring = require("querystring");
+const obj = {};
+module.exports = obj;
+obj.Storage = require("saltjs").Storage;
+obj._ = require("lodash");
+obj.logger = require("../classes/logger");
+obj.bot = require("./bot").bot;
+obj.db = require("../classes/database");
+obj.assert = require("assert");
+obj.util = require("util");
+obj.chalk = require("chalk");
+obj.rethink = require("rethinkdb");
+obj.toml = require("toml");
+obj.msgEmbedToRich = require("discordjs-embed-converter");
+obj.fs = require("fs");
+obj.klaw = require("klaw-sync");
+obj.querystring = require("querystring");
+obj.Discord = require("discord.js");
+obj.xreg = require("xregexp");
 // const Sequelize = require("sequelize");
-const rethink = require("rethinkdb");
-const toml = require("toml");
 // const rethinkSetup = require("../misc/rethinkSetup");
-const xreg = require("xregexp");
-exports.data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
+obj.data = obj.toml.parse(obj.fs.readFileSync("./data.toml", "utf8"));
 /* export const sql = new Sequelize("botdata", data.sql.user || null, data.sql.pass || null, {
   host: "localhost",
   dialect: "postgres",
@@ -24,69 +31,31 @@ rethink.connect({ host: "localhost", port: 28015 }).then((c) => {
   r = rethink.db("saltbot");
   rethinkSetup(r, c);
 }).catch((err) => { throw err; }); */
-const util = require("util");
-
-const Constants = require("../misc/constants");
-const decodeT = require("../misc/decodeT");
-
-const Command = require("../classes/command");
-const CommandClient = require("../classes/commandClient");
-const logger = require("../classes/logger");
-const messager = require("../classes/messager");
-const perms = require("../classes/permissions");
-const Searcher = require("../classes/searcher");
-const Time = require("../classes/time");
-
 // const models = require("../sequelize/sequelize");
 
 // declare const decodeT: (...a) => any;
-const commandParse = 1; // unused
+// const commandParse = 1; // unused
 
 // let obj: {[prop: string]: any} = {};
-exports.bot = require("./bot").bot;
-
-exports.Storage = require("saltjs").Storage;
 // export * from "./db";
 
-exports.ownerID = "180813971853410305";
+obj.ownerID = "180813971853410305";
 
-exports.colors = chalk;
+obj.colors = obj.chalk;
 
-const commandHandler = require("../commandHandler");
+// obj.commandHandler = require("../commandHandler");
 
-exports.commandHandle = commandHandler;
-exports.commandParser = commandParse;
-
-exports.db = require("../classes/database");
+// obj.commandHandle = obj.commandHandler;
 
 /* tslint:disable:object-literal-sort-keys */
 // obj = Object.assign(obj, {
-Object.entries({
-  _,
-  assert,
-  Command,
-  commandHandler,
-  commandParse,
-  Constants,
-  Discord,
-  fs,
-  toml,
-  klaw,
-  // Sequelize,
-  util,
-  messager,
-  perms,
-  logger,
-  chalk,
-  querystring,
-  Searcher,
-  Time,
-  xreg,
-  rethink,
+obj.Constants = require("../misc/constants");
+obj.decodeT = require("../misc/decodeT");
 
-  decodeT,
-  msgEmbedToRich,
-}).forEach(([key, val]) => {
-  exports[key] = val;
-}); // );
+obj.Command = require("../classes/command");
+obj.CommandClient = require("../classes/commandClient");
+obj.messager = require("../classes/messager");
+obj.perms = require("../classes/permissions");
+obj.Searcher = require("../classes/searcher");
+obj.Time = require("../classes/time");
 /* tslint:enable:object-literal-sort-keys */

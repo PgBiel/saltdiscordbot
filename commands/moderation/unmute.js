@@ -1,4 +1,4 @@
-const { GuildMember, Message, RichEmbed, Role } = require("discord.js");
+const { GuildMember, Message, MessageEmbed, Role } = require("discord.js");
 const { _, Command, Constants, db, logger, Time } = require("../../util/deps");
 const { createMutedRole, escMarkdown, parseMute, rejct } = require("../../util/funcs");
 
@@ -86,7 +86,7 @@ const func = async (msg, {
     return reply("The role used for muting is my highest role!");
   }
   const sentMuteMsg = await send(`Unmuting ${memberToUse.user.tag}... (Sending DM...)`);
-  const reasonEmbed = new RichEmbed();
+  const reasonEmbed = new MessageEmbed();
   reasonEmbed
     .setColor("GREEN")
     .setDescription(reason || "None")

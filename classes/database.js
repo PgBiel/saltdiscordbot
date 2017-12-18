@@ -1,7 +1,11 @@
 const re = require("rethinkdbdash");
 // const { HelperVals, TableName, TableVals } = require("../misc/tableValues");
-const { bot, Constants, logger, Storage, Time } = require("../util/deps");
+const { bot } = require("../util/bot");
+const Constants = require("../misc/Constants");
+const logger = require("./logger");
+const { Storage } = require("saltjs");
 const { rejct } = require("../util/funcs");
+const Time = require("./time");
 
 const r = re({ db: "saltbot" });
 

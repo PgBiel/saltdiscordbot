@@ -18,11 +18,9 @@ if (!cmd.default) {
     } else {
       dir += `Documents/Bot Stuff/${cmd.beta ? "Beta " : ""}Salt`;
     }
-  } else {
-    dir = ".";
+    process.chdir(dir);
   }
   // console.log(dir, inspect(cmd));
-  process.chdir(dir);
 }
 const Manager = new Discord.ShardingManager("./bot.js", {
   totalShards: 2,

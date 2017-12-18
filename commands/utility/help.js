@@ -1,4 +1,4 @@
-const { Message, RichEmbed } = require("discord.js");
+const { Message, MessageEmbed } = require("discord.js");
 const Command = require("../../classes/command");
 const { _, bot } = require("../../util/deps");
 const { rejct } = require("../../util/funcs");
@@ -21,7 +21,7 @@ const func = async (msg, { args, send, reply, prefix, botmember }) => {
     categories[category][v.name] = v;
   });
   if (!args || _.trim(args.toLowerCase()) === "all") {
-    const embed = new RichEmbed();
+    const embed = new MessageEmbed();
     embed
       .setColor("RANDOM")
       .setTitle("List of commands")
@@ -36,7 +36,7 @@ const func = async (msg, { args, send, reply, prefix, botmember }) => {
     sendIt(embed);
   } else if (_.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase())) in categories) {
     const category = _.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase()));
-    const embed = new RichEmbed();
+    const embed = new MessageEmbed();
     embed
       .setColor("RANDOM")
       .setTitle(`List of commands in category "${category}"`)

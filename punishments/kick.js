@@ -1,4 +1,4 @@
-const { GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
+const { GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
 const { Time } = require("../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
 const Punishment = require("./punishment");
@@ -40,7 +40,7 @@ class Kick extends Punishment {
     }
     const sentKickMsg = await send(`Kicking ${member.user.tag}... (Sending DM...)`);
     const edit = text => sentKickMsg instanceof Message ? sentKickMsg.edit(text) : Promise.resolve(null);
-    const reasonEmbed = new RichEmbed();
+    const reasonEmbed = new MessageEmbed();
     reasonEmbed
       .setColor("ORANGE")
       .setDescription(reason || "None")
@@ -63,7 +63,7 @@ class Kick extends Punishment {
     const executeKick = () => {
       // const kickPrefix = origin ? `[Kick command executed by ${origin.tag}] ` : "";
       const compressedText = textAbstract(auctPrefix + " " + (reason || "No reason given"), 512);
-      member.kick(querystring.escape(compressedText)).then(finish).catch(fail);
+      member.kick(compressedText).then(finish).catch(fail);
     };
     let sent = false;
     let timeoutRan = false;

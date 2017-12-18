@@ -1,4 +1,4 @@
-const { ColorResolvable, Guild, GuildChannel, GuildMember, Message, RichEmbed, TextChannel, User } = require("discord.js");
+const { ColorResolvable, Guild, GuildChannel, GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
 // const { cases, moderation } = require("../sequelize/sequelize");
 const { db, logger, msgEmbedToRich, Time } = require("../util/deps");
 const { rejct } = require("../util/funcs");
@@ -102,7 +102,7 @@ class ActionLog {
       target instanceof User ?
         target.username :
         targetString);
-    const embed = new RichEmbed();
+    const embed = new MessageEmbed();
     const caseNum = await this._getCase(guild);
     if (typeof caseNum === "string" || isNaN(caseNum) || caseNum == null) {
       return;
@@ -118,7 +118,7 @@ class ActionLog {
     if (target instanceof GuildMember || target instanceof User) {
       const targetUser = target instanceof GuildMember ? target.user : target;
       embed
-        .setThumbnail(targetUser.displayAvatarURL)
+        .setThumbnail(targetUser.displayAvatarURL())
         .setFooter(`Target Member's ID: ${targetUser.id}`);
     } else {
       embed

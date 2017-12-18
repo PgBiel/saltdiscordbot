@@ -6,12 +6,13 @@ process.on("unhandledRejection", rejection => {
 const setShards = { id: null };
 changeConsole(false, setShards);
 console.log("Initializing...");
-require("./misc/events");
-const { bot, data, decodeT, Discord, fs, logger, messager, /* sql, */ Time, toml } = require("./util/deps");
-setShards.id = bot.shard.id;
 const {
   botMessage, checkMutes, IMessagerEvalData, loadCmds, messagerDoEval, processMessage, rejct,
 } = require("./util/funcs");
+const { bot, data, decodeT, Discord, fs, logger, messager, /* sql, */ Time, toml } = require("./util/deps");
+require("./misc/events");
+setShards.id = bot.shard.id;
+const cmds = require("./commands/cmdIndex");
 const { Collection, Message } = Discord;
 process.on("message", mdata => {
   processMessage(mdata);

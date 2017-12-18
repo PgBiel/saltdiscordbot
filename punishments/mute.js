@@ -1,4 +1,4 @@
-const { GuildMember, Message, RichEmbed, Role, TextChannel, User } = require("discord.js");
+const { GuildMember, Message, MessageEmbed, Role, TextChannel, User } = require("discord.js");
 const { db, logger, Time } = require("../util/deps");
 const { createMutedRole, escMarkdown, rejct, textAbstract } = require("../util/funcs");
 const Punishment = require("./punishment");
@@ -52,7 +52,7 @@ class Mute extends Punishment {
       return void reply("The role used for muting is my highest role!");
     }
     const sentMuteMsg = await send(`Muting ${member.user.tag}... (Sending DM...)`);
-    const reasonEmbed = new RichEmbed();
+    const reasonEmbed = new MessageEmbed();
     reasonEmbed
       .setColor("GOLD")
       .setDescription(reason || "None")

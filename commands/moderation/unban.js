@@ -1,4 +1,4 @@
-const { GuildMember, Message, RichEmbed, User } = require("discord.js");
+const { GuildMember, Message, MessageEmbed, User } = require("discord.js");
 const { _, Command, Constants, logger, Searcher, Time } = require("../../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
 
@@ -49,9 +49,9 @@ const func = async (msg, {
   if (!memberToUse) {
     return;
   }
-  const embed = new RichEmbed();
+  const embed = new MessageEmbed();
   embed
-    .setAuthor(`Unban confirmation - ${memberToUse.tag}`, memberToUse.displayAvatarURL)
+    .setAuthor(`Unban confirmation - ${memberToUse.tag}`, memberToUse.displayAvatarURL())
     .setColor("DARK_GREEN")
     .setDescription(reason || "No reason")
     .setTimestamp(new Date());
@@ -74,7 +74,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     return;
   }
   const sentUnbanMsg = await send(`Unbanning ${memberToUse.tag}... (Sending DM...)`);
-  const reasonEmbed = new RichEmbed();
+  const reasonEmbed = new MessageEmbed();
   reasonEmbed
     .setColor("DARK_GREEN")
     .setDescription(reason || "None")

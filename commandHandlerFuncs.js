@@ -6,7 +6,7 @@ const actionLog = require("./classes/actionlogger");
 const messager = require("./classes/messager");
 const Searcher = require("./classes/searcher");
 const deps = require("./util/deps");
-const { bot, Constants, db, logger } = require("./util/deps");
+const { bot, Constants, db, logger, util } = require("./util/deps");
 const funcs = require("./util/funcs");
 const { capitalize, cloneObject, rejct } = require("./util/funcs");
 
@@ -57,7 +57,7 @@ export type SaltRole = "moderator"
 
 export type TextBasedChannel = DMChannel | TextChannel | GroupDMChannel; */
 
-module.exports = function returnFuncs(msg: Message) {
+module.exports = function returnFuncs(msg) {
   const input = msg.content;
   const channel = msg.channel;
   const message = msg;
@@ -65,7 +65,7 @@ module.exports = function returnFuncs(msg: Message) {
   const guild = msg.guild || null;
 
   const sendingFunc = func => { // factory for sending functions
-    return (content: StringResolvable | ExtendedMsgOptions, options?: ExtendedMsgOptions) => {
+    return (content, options) => {
       if (typeof content === "object" && !options && !(content instanceof Array)) {
         options = content;
         content = "";
@@ -101,12 +101,12 @@ module.exports = function returnFuncs(msg: Message) {
       return member.roles.has(result[role]);
     }
   };
-  const promptAmbig = (members, pluralName = "members") => {
-    let satisfied: boolean = false;
-    let cancelled: boolean = false;
+  const promptAmbig = async (members, pluralName = "members") => {
+    let satisfied = false;
+    let cancelled = false;
     let currentOptions = [];
 
-    const getTag = (gm): string => {
+    const getTag = gm => {
       if (gm instanceof User) {
         return gm.tag;
       } else if (gm instanceof GuildMember) {
@@ -117,7 +117,7 @@ module.exports = function returnFuncs(msg: Message) {
     };
 
     members.forEach(gm => currentOptions.push(gm));
-    const filter = (msg2: Message) => {
+    const filter = msg2 => {
       const options = currentOptions;
       if (msg2.author.id !== msg.author.id) {
         return false;
@@ -126,14 +126,14 @@ module.exports = function returnFuncs(msg: Message) {
         cancelled = true;
         return true;
       }
-      const tagOptions = options.map((gm: T) => getTag(gm));
+      const tagOptions = options.map(gm => getTag(gm));
       if (tagOptions.includes(msg2.content)) {
         satisfied = true;
         currentOptions = [options[tagOptions.indexOf(msg2.content)]];
         return true;
       }
-      const collOptions = new Collection<string, T>();
-      options.forEach((gm: T) => {
+      const collOptions = new Collection();
+      options.forEach(gm => {
         collOptions.set((gm instanceof GuildMember || gm instanceof User) ? gm.id : gm.toString(), gm);
       });
       const searcher2 = new Searcher({ members: collOptions });
@@ -152,15 +152,15 @@ module.exports = function returnFuncs(msg: Message) {
     reply(`Multiple ${pluralName} have matched that search. Please specify one.
 This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
 **${capitalize(pluralName)} Matched**:
-\`${currentOptions.map((gm) => getTag(gm)).join("`,`")}\``);
+\`${currentOptions.map(gm => getTag(gm)).join("`, `")}\``);
     for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
       try {
         const result = await channel.awaitMessages(
           filter, {
-            time: Constants.times.AMBIGUITY_EXPIRE, maxMatches: 1,
+            time: Constants.times.AMBIGUITY_EXPIRE, max: 1,
             errors: ["time"],
           },
-          );
+        );
         if (satisfied) {
           return {
             member: currentOptions[0],
@@ -178,7 +178,7 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
           reply(`Multiple ${pluralName} have matched that search. Please specify one.
 This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
 **Members Matched**:
-\`${currentOptions.map((gm) => getTag(gm)).join("`,`")}\``);
+\`${currentOptions.map(gm => getTag(gm)).join("`,`")}\``);
         }
       } catch (err) {
         logger.error(`At PromptAmbig: ${err}`);
@@ -195,9 +195,9 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
       cancelled: true,
     };
   };
-  const hasPermission: typeof msg.member.hasPermission = msg.member ? msg.member.hasPermission.bind(msg.member) : null;
+  const hasPermission = msg.member ? msg.member.hasPermission.bind(msg.member) : null;
 
-  const userError = (data: string) => reply(
+  const userError = data => reply(
     `Sorry, but it seems there was an error while executing this command.\
     If you want to contact the bot devs, please tell them this information: \`${data}\`. Thanks!`);
 
@@ -205,11 +205,11 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     {
       question, invalidMsg, filter,
       timeout = Constants.times.AMBIGUITY_EXPIRE, cancel = true,
-      options = {} }: IPromptOptions,
+      options = {} },
   ) => {
     let cancelled = false;
     let satisfied = null;
-    const filterToUse = (msg2: Message) => {
+    const filterToUse = msg2 => {
       if (msg2.content === "cancel" && cancel) {
         return (cancelled = true);
       }
@@ -244,22 +244,22 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
     return "";
   };
 
-  const actionLog2 = (options: ExtendedActionLogOptions) => {
+  const actionLog2 = options => {
     if (!msg.guild) {
       return;
     }
-    const newOptions: typeof options & {guild: Guild} = Object.assign({ guild: msg.guild }, options);
+    const newOptions = Object.assign({ guild: msg.guild }, options);
     return actionLog.log(newOptions);
   };
 
-  const obj = {
+  let obj = {
     hasPermission, userError, promptAmbig, checkRole,
     send, reply, prompt, actionLog: actionLog2,
   };
 
   // let obj: typeof oldObj & { doEval: (content: string, subC?: {[prop: string]: any}) => Promise<any> };
 
-  const doEval = (content: string, subC: {[prop: string]: any} = {}) => {
+  const doEval = (content, subC = {}) => {
     const objectToUse = Object.assign({}, obj, {
       bot, msg, message: msg,
       channel, guildId, deps,
@@ -276,4 +276,4 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
   obj = Object.assign(obj, { doEval });
 
   return obj;
-}
+};

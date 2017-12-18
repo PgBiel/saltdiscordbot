@@ -1,9 +1,8 @@
 const { Guild } = require("discord.js");
 const Command = require("../classes/command");
-const cmds = require("../commands/cmdIndex");
 const {
-  _, bot, commandHandler, commandParse, Constants, db, Discord, fs, logger, messager, rethink, Time, util,
-  xreg,
+  _, bot, commandParse, Constants, db, Discord, fs, logger, messager, rethink, Time, util,
+  xreg
 } = require("./deps");
 
 const { HelperVals } = require("../misc/tableValues");
@@ -28,6 +27,7 @@ export interface IMuteParseResults {
  * @returns {void}
  */
 function rejct(rejection, prefix) {
+  // console.log(require("util").inspect(require("./deps")));
   logger.custom(prefix + rejection, { prefix: "[ERR/REJECT]", color: "red", type: "error" });
 }
 exports.rejct = rejct;
@@ -86,13 +86,6 @@ function djsWarn(info) {
   logger.custom(info, { prefix: `[DJS WARN]`, color: "yellow" });
 }
 exports.djsWarn = djsWarn;
-function botMessage(msg) {
-  const thingy = commandHandler(msg);
-  if (thingy.catch) {
-    thingy.catch(rejct);
-  }
-}
-exports.botMessage = botMessage;
 function processMessage(data) {
   logger.debug("Received message");
 }
@@ -412,3 +405,11 @@ exports.capitalize = function capitalize(str, all = false) {
   }
   return str.replace(/^([\s\S])/, char => char.toUpperCase());
 };
+
+function botMessage(msg) {
+  const thingy = require("../commandHandler")(msg);
+  if (thingy.catch) {
+    thingy.catch(rejct);
+  }
+}
+exports.botMessage = botMessage;
