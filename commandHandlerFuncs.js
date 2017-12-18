@@ -223,7 +223,7 @@ If you want to contact the bot devs, please tell them this information: \`${data
     const sentmsg = await send(question, options || {});
     for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
       try {
-        const msgs = await msg.channel.awaitMessages(filterToUse, { time: timeout, ma: 1, errors: ["time"] });
+        const msgs = await msg.channel.awaitMessages(filterToUse, { time: timeout, max: 1, errors: ["time"] });
         if (!satisfied) {
           if (i < 5) {
             send(invalidMsg);
