@@ -1,7 +1,4 @@
-const { GuildMember, Message, MessageEmbed } = require("discord.js");
-const warnP = require("../../punishments/warn");
-const { _, bot, Command, Constants, db, logger, Time } = require("../../util/deps");
-const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
+const Command = require("../../classes/command");
 
 const func = async (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
@@ -14,7 +11,7 @@ const func = async (msg, {
       hasPerm = true;
     }
   } catch (err) {
-    logger.error(`At check role: ${err}`);
+    this.logger.error(`At check role: ${err}`);
   }
   if (setPerms.warn) {
     hasPerm = setPerms.warn;
@@ -26,7 +23,7 @@ permission overwrite).`);
   if (!args) {
     return reply("Please tell me who to warn!");
   }
-  const [user, reason] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason] = this._.tail((args.match(this.Constants.regex.BANthis._MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
@@ -60,7 +57,7 @@ permission overwrite).`);
     return;
   }
 
-  await warnP.punish(memberToUse, {
+  await this.warnP.punish(memberToUse, {
     author: member, reason, auctPrefix: `[Warn command executed by ${author.tag}] `, context: self, automatic: false,
   });
 };

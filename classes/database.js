@@ -4,8 +4,13 @@ const { bot } = require("../util/bot");
 const Constants = require("../misc/Constants");
 const logger = require("./logger");
 const { Storage } = require("saltjs");
-const { rejct } = require("../util/funcs");
+// const { rejct } = require("../util/funcs");
 const Time = require("./time");
+
+function rejct(rejection, prefix) {
+  // console.log(require("util").inspect(require("./deps")));
+  logger.custom(prefix + rejection, { prefix: "[ERR/REJECT]", color: "red", type: "error" });
+}
 
 const r = re({ db: "saltbot" });
 

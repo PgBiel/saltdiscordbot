@@ -1,6 +1,5 @@
 const { GuildMember, Message, MessageEmbed, User } = require("discord.js");
-const banP = require("../../punishments/ban");
-const { _, bot, Command, Constants, logger, Time } = require("../../util/deps");
+const Command = require("../../classes/command");
 const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
 
 const func = async (msg, {
@@ -25,11 +24,11 @@ const func = async (msg, {
   }
   let memberToUse;
   const getUser = () => memberToUse instanceof GuildMember ? memberToUse.user : memberToUse;
-  const [user, reason] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason] = this._.tail((args.match(this.Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
-  // logger.debug(user, reason);
+  // this.logger.debug(user, reason);
   let id;
   if (dummy.banType !== "idban") {
     let membersMatched;
@@ -66,11 +65,11 @@ const func = async (msg, {
     }
     if (guild.members.has(user)) {
       memberToUse = guild.members.get(user);
-    } else if (bot.users.has(user)) {
-      memberToUse = bot.users.get(user);
+    } else if (this.bot.users.has(user)) {
+      memberToUse = this.bot.users.get(user);
     } else {
       try {
-        memberToUse = await bot.fetchUser(user);
+        memberToUse = await this.bot.users.fetch(user);
       } catch (err) {
         // User not found.
       }
@@ -82,7 +81,7 @@ const func = async (msg, {
   if (!id && memberToUse.id === member.id) {
     return reply(`You cannot ${actions[4]} yourself!`);
   }
-  banP.punish(id || memberToUse, guild, self, {
+  this.banP.punish(id || memberToUse, guild, self, {
     author: member, reason, auctPrefix: `[${actions[3]} command executed by ${author.tag}] `, actions,
     usePrompt: dummy.usePrompt == null ? true : dummy.usePrompt, color: dummy.color, days: dummy.days,
     isSoft: dummy.banType === "softban",

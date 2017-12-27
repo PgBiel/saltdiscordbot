@@ -1,5 +1,4 @@
 const { GuildMember, Message, MessageEmbed, Role } = require("discord.js");
-const muteP = require("../../punishments/mute");
 const { Command, Constants, db, logger, Time } = require("../../util/deps");
 const { createMutedRole, escMarkdown, parseMute, rejct } = require("../../util/funcs");
 
@@ -92,7 +91,7 @@ const func = async (msg, {
   if (db.table("activemutes").get(guildId, []).findIndex(item => item.userid === memberToUse.id) > -1) {
     return reply("That member is already muted!");
   }
-  muteP.punish(memberToUse, {
+  this.muteP.punish(memberToUse, {
     author: member, reason, auctPrefix: `[Mute command executed by ${author.tag}] `, context: self,
     time, permanent: dummy.permanent,
   });

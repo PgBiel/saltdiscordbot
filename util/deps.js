@@ -1,10 +1,14 @@
 const obj = {};
 module.exports = obj;
+obj.applyDeps = function applyDeps() {
+  Object.entries(obj).forEach(([k, v]) => this[k] = v);
+};
+// dependencies
+obj.db = require("../classes/database");
 obj.Storage = require("saltjs").Storage;
 obj._ = require("lodash");
 obj.logger = require("../classes/logger");
 obj.bot = require("./bot").bot;
-obj.db = require("../classes/database");
 obj.assert = require("assert");
 obj.util = require("util");
 obj.chalk = require("chalk");
@@ -15,6 +19,18 @@ obj.fs = require("fs");
 obj.klaw = require("klaw-sync");
 obj.querystring = require("querystring");
 obj.Discord = require("discord.js");
+// punishments
+obj.banP = require("../punishments/ban");
+obj.muteP = require("../punishments/mute");
+obj.kickP = require("../punishments/kick");
+obj.warnP = require("../punishments/warn");
+// some Discord utils
+obj.Embed = obj.Discord.MessageEmbed;
+obj.Message = obj.Discord.Message;
+obj.Guild = obj.Discord.Guild;
+obj.GuildMember = obj.Discord.GuildMember;
+obj.TextChannel = obj.Discord.TextChannel;
+// ---
 obj.xreg = require("xregexp");
 // const Sequelize = require("sequelize");
 // const rethinkSetup = require("../misc/rethinkSetup");
@@ -52,10 +68,11 @@ obj.colors = obj.chalk;
 obj.Constants = require("../misc/constants");
 obj.decodeT = require("../misc/decodeT");
 
-obj.Command = require("../classes/command");
 obj.CommandClient = require("../classes/commandClient");
 obj.messager = require("../classes/messager");
 obj.perms = require("../classes/permissions");
 obj.Searcher = require("../classes/searcher");
 obj.Time = require("../classes/time");
+
+obj.Command = require("../classes/command");
 /* tslint:enable:object-literal-sort-keys */

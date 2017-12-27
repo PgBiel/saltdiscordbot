@@ -1,11 +1,9 @@
-const { Message } = require("discord.js");
 const Command = require("../../classes/command");
-const { _, db, Time } = require("../../util/deps");
 
 const func = async (
   msg, { guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms },
 ) => {
-  const steps = db.table("warnsteps").get(guildId);
+  const steps = this.db.table("warnsteps").get(guildId);
   if (arrArgs.length < 1) {
     if (perms["warnlimit.get"]) {
       if (!steps || steps.length < 1) {
@@ -14,9 +12,9 @@ const func = async (
       let str = "";
       for (const step of steps) {
         str += `At **${step.amount} warns**, the member gets a ${step.punishment}\
-${step.time ? ` for **${new Time(Number(step.time) || Time.minutes(10)).toString()}**` : ""}.\n`;
+${step.time ? ` for **${new this.Time(Number(step.time) || this.Time.minutes(10)).toString()}**` : ""}.\n`;
       }
-      return send(`Here's the list of the current set warn punishments for this server:\n\n${_.trim(str)}`, { split: true });
+      return send(`Here's the list of the current set warn punishments for this server:\n\n${this._.trim(str)}`, { split: true });
     }
     return reply(`Uh-oh, it seems that you don't have permissions to get warn punishments, so I'm not listing them. \
 Try an action (like setting)! (Use the \`help\` command for help.)`);
@@ -28,7 +26,7 @@ Try an action (like setting)! (Use the \`help\` command for help.)`);
   if (!isNaN(Number(action)) || /^get$/i.test(action)) {
     if (!perms["warnlimit.get"]) {
       return reply(`Uh-oh, it seems that you don't have permissions to get warn punishments. \
-Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
+Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
     }
     if (/^get$/i.test(action) && (arrArgs.length < 2 || isNaN(subArg)) || isNaN(action)) {
       return reply(`Please tell me which warn limit should I get! `);
@@ -37,11 +35,11 @@ Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
     const step = steps.find(s => s.amount === num);
     if (!step) return send(`There is no warn punishment for reaching ${num} total warns. :wink:`);
     return send(`Upon reaching ${num} total warns, the member receives a **${step.punishment}**\
-${step.time ? ` for **${new Time(Number(step.time) || Time.minutes(10)).toString()}**` : ""}.`);
+${step.time ? ` for **${new this.Time(Number(step.time) || this.Time.minutes(10)).toString()}**` : ""}.`);
   } else if (/^(?:set|unset|add|remove)$/i.test(action)) {
     if ((!setPerms["warnlimit"] && !checkRole("admin", member)) || (setPerms["warnlimit"] && !perms["warnlimit"])) {
       return reply(`Uh-oh, it seems that you don't have permissions to set or unset warn punishments. \
-Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
+Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
     }
     if (arrArgs.length < 2 || isNaN(subArg)) {
       return reply(`Please tell me which warn limit should I add/remove!`);
@@ -50,7 +48,7 @@ Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
     if (/^(unset|remove)$/i.test(action)) {
       const step = steps.find(s => s.amount === num);
       if (!step) return send(`There is no warn punishment for reaching ${num} total warns already. :wink:`);
-      db.table("warnsteps").remArr(guildId, step);
+      this.db.table("warnsteps").remArr(guildId, step);
       return send(`Successfully removed the punishment for reaching **${num}** total warns! :wink:`);
     } else {
       if (arrArgs.length < 3) {
@@ -64,9 +62,9 @@ Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
       let timeDefault = false;
       if (isNaN(subSubSubArg)) {
         timeDefault = true;
-        time = new Time(["m", 10]);
+        time = new this.Time(["m", 10]);
       } else {
-        time = new Time(["m", Number(subSubSubArg)]);
+        time = new this.Time(["m", Number(subSubSubArg)]);
       }
       const punish = subSubArg.toLowerCase();
       const objToUse = {
@@ -76,9 +74,9 @@ Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
       };
       const step = steps.find(s => s.amount === num);
       if (step) {
-        db.table("warnsteps").assign(guildId, { [db.table("warnsteps").indexOf(guildId, step)]: objToUse });
+        this.db.table("warnsteps").assign(guildId, { [this.db.table("warnsteps").indexOf(guildId, step)]: objToUse });
       } else {
-        db.table("warnsteps").add(guildId, objToUse);
+        this.db.table("warnsteps").add(guildId, objToUse);
       }
       const punishment = subSubArg.toLowerCase() === "mute" ?
       `mute for ${timeDefault ? "10 minutes (default)" : time.toString()}`

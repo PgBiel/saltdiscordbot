@@ -54,7 +54,7 @@ module.exports = async msg => {
     // make our own copy of context to modify safely (otherwise it would repeat for all tests)
     const subContext = cloneObject(context);
     subContext.dummy = {};
-    const cmd = bot.commands[cmdn];
+    const cmd = typeof bot.commands[cmdn] === "function" ? new (bot.commands[cmdn]) : bot.commands[cmdn];
     const descCmd = cmd.aliasData && cmd.aliasData.__aliasOf ? cmd.aliasData.__aliasOf : cmd;
     // if the command doesn't exist or doesn't do anything... Ignore it
     if (!cmd.name || !descCmd.func) {
@@ -162,9 +162,9 @@ module.exports = async msg => {
     subContext.self = subContext; // The context itself. (can be useful)
     // and finally... we execute the command.
     try {
-      const result = await descCmd.func(message, subContext);
+      const result = await descCmd.exec(message, subContext);
     } catch (err) {
-      logger.error(`At Execution: ${err}`);
+      logger.error(`At Execution: ${err.stack}`);
       return userError("AT EXECUTION");
     }
     break;

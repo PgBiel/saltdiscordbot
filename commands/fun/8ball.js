@@ -1,6 +1,4 @@
-const { Message } = require("discord.js");
 const Command = require("../../classes/command");
-const { random } = require("../../util/funcs");
 
 const func = async (msg, { args, reply }) => {
   if (!args) {
@@ -16,7 +14,7 @@ const func = async (msg, { args, reply }) => {
     "Very unlikely.",
   ];
   reply(
-    answers[random(0, answers.length - 1)],
+    answers[this.random(0, answers.length - 1)],
     );
 };
 module.exports = new Command({

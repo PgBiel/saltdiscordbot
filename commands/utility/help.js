@@ -1,16 +1,13 @@
-const { Message, MessageEmbed } = require("discord.js");
 const Command = require("../../classes/command");
-const { _, bot } = require("../../util/deps");
-const { rejct } = require("../../util/funcs");
 
 const func = async (msg, { args, send, reply, prefix, botmember }) => {
   const sendIt = (emb => {
     return send({ embed: emb, autocatch: false }).catch(err => err.status === 403 ?
       send("Please make sure I can send embeds in this channel.") :
-      void(rejct(err)));
+      void(this.rejct(err)));
   });
   const categories = {};
-  Object.entries(bot.commands).forEach(([k, v]) => {
+  Object.entries(this.bot.commands).forEach(([k, v]) => {
     let category = "Uncategorized";
     if (v.category) {
       category = v.category.replace(/^\w/, m => m.toUpperCase());
@@ -20,23 +17,26 @@ const func = async (msg, { args, send, reply, prefix, botmember }) => {
     }
     categories[category][v.name] = v;
   });
-  if (!args || _.trim(args.toLowerCase()) === "all") {
-    const embed = new MessageEmbed();
+  if (!args /* || this._.trim(args.toLowerCase()) === "all" */) {
+    const embed = new this.Embed();
     embed
       .setColor("RANDOM")
-      .setTitle("List of commands")
-      .setDescription("Commands available.");
-    Object.entries(categories).forEach(([k, v]) => {
+      .setTitle("List of categories")
+      .setDescription(`Categories of commands available: (Type \`${prefix}help <category>\` to view its commands)`);
+    /* Object.entries(categories).forEach(([k, v]) => {
       let str = "";
       Object.keys(v).forEach(k2 => {
         str += k2 + "\n";
       });
-      embed.addField(k, _.trim(str), true);
+      embed.addField(k, this._.trim(str), true);
+    }); */
+    Object.getOwnPropertyNames(categories).forEach(cat => {
+
     });
     sendIt(embed);
-  } else if (_.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase())) in categories) {
-    const category = _.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase()));
-    const embed = new MessageEmbed();
+  } else if (this._.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase())) in categories) {
+    const category = this._.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase()));
+    const embed = new this.Embed();
     embed
       .setColor("RANDOM")
       .setTitle(`List of commands in category "${category}"`)
@@ -45,17 +45,17 @@ const func = async (msg, { args, send, reply, prefix, botmember }) => {
     Object.values(categories[category]).forEach(cmd => {
       str += cmd.name + "\n";
     });
-    str = _.trim(str);
+    str = this._.trim(str);
     embed.addField("Commands", str);
     sendIt(embed);
-  } else if (_.trim(args.toLowerCase()) in bot.commands) {
-    const cmdn = _.trim(args.toLowerCase());
-    const embed = bot.commands[cmdn].help(prefix, true);
+  } else if (this._.trim(args.toLowerCase()) in this.bot.commands) {
+    const cmdn = this._.trim(args.toLowerCase());
+    const embed = this.bot.commands[cmdn].help(prefix, true);
     sendIt(embed);
   } else {
     return reply("Unknown command/category!");
     /* let cmdToUse = null;
-    Object.values(bot.commands).forEach((cmd: Command) => {
+    Object.values(this.bot.commands).forEach((cmd: Command) => {
       if (cmdToUse) {
         return;
       }
@@ -64,7 +64,7 @@ const func = async (msg, { args, send, reply, prefix, botmember }) => {
           if (cmdToUse) {
             return;
           }
-          if (alias.name.toLowerCase() === _.trim(args).toLowerCase()) {
+          if (alias.name.toLowerCase() === this._.trim(args).toLowerCase()) {
             cmdToUse = alias;
           }
         });

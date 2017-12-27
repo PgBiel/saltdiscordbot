@@ -5,8 +5,8 @@
  */
 
 const { Message, MessageEmbed } = require("discord.js");
-// const { logger } = require("../util/deps");
-// const { cloneObject } = require("../util/funcs");
+const { applyDeps, logger } = require("../util/deps");
+const { applyFuncs } = require("../util/funcs");
 
 const assert = require("assert");
 const _ = require("lodash");
@@ -166,6 +166,12 @@ module.exports = class Command {
   */
 
   constructor(options) {
+    applyDeps.apply(this);
+    applyFuncs.apply(this);
+    this.config(options);
+  }
+
+  config(options) {
     if (!options.name) {
       throw new Error("No name given.");
     }
@@ -205,11 +211,22 @@ module.exports = class Command {
   }
 
   /**
+   * Execute the command!
+   * @param {Message} msg The message
+   * @param {Object} options The options
+   * @returns {*} The result.
+   */
+  exec(msg, options) {
+    // Object.entries(options).forEach(([k, v]) => this[k] = v);
+    return this.func.call(this, msg, options);
+  }
+
+  /**
    * Set what command this command is alias of.
    * @param {Command} cmd The command.
    * @returns {Command} This command.
    */
-  setAlias(cmd) {
+  alias(cmd) {
     if (!this.aliasData) {
       this.aliasData = {};
     }

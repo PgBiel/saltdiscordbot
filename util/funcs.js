@@ -1,7 +1,11 @@
+function applyFuncs() { // this is first to fix resolving issue
+  Object.entries(module.exports).forEach(([k, v]) => this[k] = v);
+}
+exports.applyFuncs = applyFuncs;
+
 const { Guild } = require("discord.js");
-const Command = require("../classes/command");
 const {
-  _, bot, commandParse, Constants, db, Discord, fs, logger, messager, rethink, Time, util,
+  _, bot, Command, commandParse, Constants, db, Discord, fs, logger, messager, rethink, Time, util,
   xreg
 } = require("./deps");
 
