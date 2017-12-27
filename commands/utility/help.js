@@ -1,6 +1,6 @@
 const Command = require("../../classes/command");
 
-const func = async function (msg, { args, send, reply, prefix, botmember }) {
+const func = async function (msg, { args, send, reply, prefix, botmember, dummy }) {
   const sendIt = (emb => {
     return send({ embed: emb, autocatch: false }).catch(err => err.status === 403 ?
       send("Please make sure I can send embeds in this channel.") :
@@ -8,21 +8,22 @@ const func = async function (msg, { args, send, reply, prefix, botmember }) {
   });
   const categories = {};
   Object.entries(this.bot.commands).forEach(([k, v]) => {
-    let category = "Uncategorized";
-    if (v.category) {
-      category = v.category.replace(/^\w/, m => m.toUpperCase());
+    if (v.category !== "Private") {
+      let category = "Uncategorized";
+      if (v.category) {
+        category = v.category.replace(/^\w/, m => m.toUpperCase());
+      }
+      if (!categories[category]) {
+        categories[category] = {};
+      }
+      categories[category][v.name] = v;
     }
-    if (!categories[category]) {
-      categories[category] = {};
-    }
-    categories[category][v.name] = v;
   });
   if (!args /* || this._.trim(args.toLowerCase()) === "all" */) {
     const embed = new this.Embed();
     embed
       .setColor("RANDOM")
-      .setTitle("List of categories")
-      .setDescription(`Categories of commands available: (Type \`${prefix}help <category>\` to view its commands)`);
+      .setTitle("List of categories");
     /* Object.entries(categories).forEach(([k, v]) => {
       let str = "";
       Object.keys(v).forEach(k2 => {
@@ -30,9 +31,26 @@ const func = async function (msg, { args, send, reply, prefix, botmember }) {
       });
       embed.addField(k, this._.trim(str), true);
     }); */
-    Object.getOwnPropertyNames(categories).forEach(cat => {
-
+    const arrCat = [];
+    const arrCmd = [];
+    Object.entries(categories).forEach(([cat, cmds]) => {
+      const size = Object.getOwnPropertyNames(cmds).length;
+      arrCat.push(cat);
+      arrCmd.push(`${size}${dummy.mobile ? "" : ` command${size === 1 ? "" : "s"}`}`);
     });
+    let table = "";
+    if (dummy.mobile) {
+      for (let i = 0; i < arrCat.length; i++) {
+        table += `• **${arrCat[i]}**: **${arrCmd[i]}** commands${i === arrCat.length - 1 ? "." : ";\n"}`;
+      }
+    } else {
+      table = `\`\`\`css
+${this.tables.horizontal2x2({ size: arrCat.length, header: arrCat, input: arrCmd })}\`\`\``;
+      embed.setFooter(`If the table appears broken, try \`${prefix}mhelp\`.`);
+    }
+    embed.setDescription(`Categories of commands available (Type \`${prefix}help <category>\` to view its commands):
+
+${table}`);
     sendIt(embed);
   } else if (this._.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase())) in categories) {
     const category = this._.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase()));

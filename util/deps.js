@@ -9,6 +9,7 @@ obj.Storage = require("saltjs").Storage;
 obj._ = require("lodash");
 obj.logger = require("../classes/logger");
 obj.bot = require("./bot").bot;
+obj.tables = require("tables.js");
 obj.assert = require("assert");
 obj.util = require("util");
 obj.chalk = require("chalk");

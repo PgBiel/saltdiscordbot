@@ -101,7 +101,7 @@ for setting/unsetting and the \`warnlimit get\` permission for seeing/listing th
 {p}warnlimit set 13 kick (on 13 warns, kick)\n\
 {p}warnlimit set 10 mute 15 (on 10 warns, mute for 15 mins)\n\
 {p}warnlimit unset 10 (remove punishment on 10 warns)`,
-  category: "Moderation",
+  category: "Administration",
   args: { action: true, "warn count": true, "action args": true, "mute minutes (if setting)": true },
   guildOnly: true
 });
