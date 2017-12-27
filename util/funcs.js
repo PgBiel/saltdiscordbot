@@ -340,7 +340,7 @@ exports.parseMute = parseMute;
  * Check all mutes and unmute / add muted role if needed.
  * @returns {Promise<void>}
  */
-exports.checkMutes = async function checkMutes() {
+async function checkMutes() {
   if (!bot.readyTimestamp) { return; }
   const mutesForShard = _.flatten(
     db.table("activemutes").storage.filter((mute, guildId) => bot.guilds.has(guildId.toString())).array()
@@ -395,7 +395,8 @@ However, I was unable to take the role away from you for an yet unknown reason. 
       .catch(rejct);
     }
   }
-};
+}
+exports.checkMutes = checkMutes;
 
 /**
  * Capitalize the first letter in a string.
@@ -403,12 +404,36 @@ However, I was unable to take the role away from you for an yet unknown reason. 
  * @param {boolean} all If all initial letters (each space) should be capitalized
  * @returns {string} The modified string
  */
-exports.capitalize = function capitalize(str, all = false) {
+function capitalize(str, all = false) {
   if (all) {
     return str.replace(/(?:^|\s+)([\s\S])/g, char => char.toUpperCase());
   }
   return str.replace(/^([\s\S])/, char => char.toUpperCase());
-};
+}
+exports.capitalize = capitalize;
+
+/**
+ * Paginate text.
+ * @param {string} text The text
+ * @param {number} [wordCount=10] Amount of words per page
+ * @param {regex} [split=/(?:([\w;,..")(\-\d]+)\s*){n}/ig] The string/regex to split by, replaces {n} by wordCount
+ * @returns {string[]}
+ */
+function paginate(text, wordCount = 10, regex = /(?:([\w;,..\")(\-\d]+)\s*){n}/ig) {
+  /* *** old version *** */
+  /* const words = text.split(split);
+  const arr = [[]];
+  for (let i = 1, ii = 0; i < words.length + 1; i++) {
+    const ind = i - 1;
+    arr[ii].push(words[ind]);
+    if (i % wordCount === 0 && i < words.length) arr[++ii] = [];
+  }
+  return arr.map(a => a.join(join)); */
+  /* *** new version *** */
+  const regexToUse = new RegExp(regex.toString().replace(/^\/|(\/[a-z]+)$/g, "").replace(/{n}/, `{${wordCount}}`), regex.flags);
+  return text.match(regexToUse);
+}
+exports.paginate = paginate;
 
 function botMessage(msg) {
   const thingy = require("../commandHandler")(msg);

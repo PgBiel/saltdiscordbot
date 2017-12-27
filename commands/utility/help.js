@@ -1,6 +1,6 @@
 const Command = require("../../classes/command");
 
-const func = async function (msg, { args, send, reply, prefix, botmember, dummy }) {
+const func = async function (msg, { args, arrArgs, send, reply, prefix, botmember, dummy }) {
   const sendIt = (emb => {
     return send({ embed: emb, autocatch: false }).catch(err => err.status === 403 ?
       send("Please make sure I can send embeds in this channel.") :
@@ -23,7 +23,8 @@ const func = async function (msg, { args, send, reply, prefix, botmember, dummy 
     const embed = new this.Embed();
     embed
       .setColor("RANDOM")
-      .setTitle("List of categories");
+      .setTitle("List of categories")
+      .setFooter(`There is a total of ${Object.values(this.bot.commands).filter(c => c.category !== "Private").length} commands.`);
     /* Object.entries(categories).forEach(([k, v]) => {
       let str = "";
       Object.keys(v).forEach(k2 => {
@@ -45,19 +46,44 @@ const func = async function (msg, { args, send, reply, prefix, botmember, dummy 
 
 ${table}`);
     sendIt(embed);
-  } else if (this._.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase())) in categories) {
-    const category = this._.trim(args.toLowerCase().replace(/^\w/, m => m.toUpperCase()));
+  } else if (arrArgs[0].toLowerCase().replace(/^\w/, m => m.toUpperCase()) in categories) {
+    const category = arrArgs[0].toLowerCase().replace(/^\w/, m => m.toUpperCase());
     const embed = new this.Embed();
-    embed
-      .setColor("RANDOM")
-      .setTitle(`List of commands in category "${category}"`)
-      .setDescription("All commands available in that category.");
+    const page = Number(arrArgs[1] || 1);
+    if (isNaN(page) || page < 1 || /\./.test(page.toString())) return reply(`Please provide a valid page (the second parameter)! \
+It must be a number that is higher than or equal to 1, and not have decimals.`);
     let str = "";
     Object.values(categories[category]).forEach(cmd => {
       str += cmd.name + "\n";
     });
-    str = this._.trim(str);
-    embed.addField("Commands", str);
+    str = this._.trim(str).split("\n").sort().join("\n");
+    const pages = this.paginate(str);
+    if (pages.length > 1) embed.setFooter(`Use \`${prefix}help ${category} <page>\` to go to a certain page.`);
+    if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
+    embed
+      .setColor("RANDOM")
+      .setTitle(`List of commands in category "${category}" - Page ${page}/${pages.length}`)
+      .setDescription("All commands available in that category.")
+      .addField("Commands", pages[page - 1]);
+    sendIt(embed);
+  } else if (arrArgs[0].toLowerCase() === "all") {
+    const embed = new this.Embed();
+    const page = Number(arrArgs[1] || 1);
+    if (isNaN(page) || page < 1 || /\./.test(page.toString())) return reply(`Please provide a valid page (the second parameter)! \
+It must be a number that is higher than or equal to 1, and not have decimals.`);
+    let str = "";
+    Object.values(this.bot.commands).forEach(cmd => {
+      if (cmd.category !== "Private") str += cmd.name + "\n";
+    });
+    str = this._.trim(str).split("\n").sort().join("\n");
+    const pages = this.paginate(str);
+    if (pages.length > 1) embed.setFooter(`Use \`${prefix}help all <page>\` to go to a certain page.`);
+    if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
+    embed
+      .setColor("RANDOM")
+      .setTitle(`List of all commands - Page ${page}/${pages.length}`)
+      .setDescription("All commands available.")
+      .addField("Commands", pages[page - 1]);
     sendIt(embed);
   } else if (this._.trim(args.toLowerCase()) in this.bot.commands) {
     const cmdn = this._.trim(args.toLowerCase());
@@ -93,6 +119,6 @@ module.exports = new Command({
   description: "Show information about commands/a command/a category of commands.",
   example: "{p}help\n{p}help 8ball\n{p}help fun",
   category: "Utility",
-  args: {"command or category": true},
+  args: {"command or category": true, "page (Default: 1)": true},
   guildOnly: false,
 });

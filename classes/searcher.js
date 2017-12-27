@@ -1,4 +1,4 @@
-const { Collection, Guild, GuildChannel, GuildMember, Role, TextChannel, User, VoiceChannel } = require("discord.js");
+const { Collection, GuildMember, User } = require("discord.js");
 const { _, bot, Constants, logger } = require("../util/deps");
 
 // TypeScript Remainder
