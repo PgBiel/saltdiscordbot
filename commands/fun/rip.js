@@ -1,7 +1,7 @@
 const { GuildMember, Message, TextChannel } = require("discord.js");
 const Command = require("../../classes/command");
 
-const func = async (msg, { args, send, channel, member, author, guild }) => {
+const func = async function (msg, { args, send, channel, member, author, guild }) {
   let ripContent = "";
   if (!args) {
     ripContent = member ?

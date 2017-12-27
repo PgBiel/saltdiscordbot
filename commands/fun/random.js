@@ -2,7 +2,7 @@ const { Message } = require("discord.js");
 const Command = require("../../classes/command");
 const { random } = require("../../util/funcs");
 
-const func = async (msg, { arrArgs, reply }) => {
+const func = async function (msg, { arrArgs, reply }) {
   if (arrArgs.length < 2) {
     reply("Please specify two numbers.");
     return;

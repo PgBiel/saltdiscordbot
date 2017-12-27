@@ -1,6 +1,6 @@
 const Command = require("../../classes/command");
 
-const func = async (msg, { args, send, reply, prefix, botmember }) => {
+const func = async function (msg, { args, send, reply, prefix, botmember }) {
   const sendIt = (emb => {
     return send({ embed: emb, autocatch: false }).catch(err => err.status === 403 ?
       send("Please make sure I can send embeds in this channel.") :

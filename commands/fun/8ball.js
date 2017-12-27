@@ -1,6 +1,6 @@
 const Command = require("../../classes/command");
 
-const func = async (msg, { args, reply }) => {
+const func = async function (msg, { args, reply }) {
   if (!args) {
     return reply("Please say a question!");
   }

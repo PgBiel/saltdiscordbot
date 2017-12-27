@@ -2,11 +2,11 @@ const { GuildMember, Message, MessageEmbed, User } = require("discord.js");
 const Command = require("../../classes/command");
 const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
 
-const func = async (msg, {
+const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   searcher, promptAmbig, author, botmember, member, actionLog, dummy,
   self,
-}) => {
+}) {
   const actions = [
     (dummy.actions && dummy.actions[0]) || "Banning",
     (dummy.actions && dummy.actions[1]) || "Banned",

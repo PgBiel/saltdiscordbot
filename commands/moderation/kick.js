@@ -2,10 +2,10 @@ const { GuildMember, Message, MessageEmbed } = require("discord.js");
 const { _, Command, Constants, logger, Time } = require("../../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
 
-const func = async (msg, {
+const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   searcher, promptAmbig, author, botmember, member, actionLog, dummy, self,
-}) => {
+}) {
   if (!perms.kick && !hasPermission(["KICK_MEMBERS"])) {
     return reply("You do not have sufficient permissions! :frowning:");
   } else if (!botmember.hasPermission(["KICK_MEMBERS"])) {

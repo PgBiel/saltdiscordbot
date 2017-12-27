@@ -2,7 +2,7 @@ const { Message } = require("discord.js");
 const Command = require("../../classes/command");
 const { _, bot, ownerID } = require("../../util/deps");
 
-const func = async (msg, { args, doEval, send, self }) => {
+const func = async function (msg, { args, doEval, send, self }) {
   if (msg.author.id !== ownerID || args.length < 1) {
     return;
   }

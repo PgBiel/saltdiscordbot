@@ -20,9 +20,9 @@ function getAvatarEmb(author) {
   return embed;
 }
 
-const func = async (msg, {
+const func = async function (msg, {
   channel, guildId, author, args, arrArgs, send, reply, searcher, promptAmbig,
-}) => {
+}) {
   if (arrArgs.length < 1 || !(channel instanceof TextChannel)) {
     if (!(channel instanceof TextChannel)) {
       author = bot.user;

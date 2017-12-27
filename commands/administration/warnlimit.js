@@ -1,8 +1,8 @@
 const Command = require("../../classes/command");
 
-const func = async (
+const func = async function (
   msg, { guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms },
-) => {
+) {
   const steps = this.db.table("warnsteps").get(guildId);
   if (arrArgs.length < 1) {
     if (perms["warnlimit.get"]) {

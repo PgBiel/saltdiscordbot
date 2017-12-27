@@ -1,7 +1,7 @@
 const { Message } = require("discord.js");
 const Command = require("../../classes/command");
 
-const func = async (msg, { send }) => {
+const func = async function (msg, { send }) {
   const now = Date.now();
   const sentmsg = await send("Calculating ping...");
   const ping = Date.now() - now; // tslint:disable-line:no-shadowed-variable

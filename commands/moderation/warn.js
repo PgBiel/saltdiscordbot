@@ -1,10 +1,10 @@
 const Command = require("../../classes/command");
 
-const func = async (msg, {
+const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   searcher, promptAmbig, author, botmember, member, actionLog, dummy, checkRole,
   setPerms, self,
-}) => {
+}) {
   let hasPerm = false;
   try {
     if (checkRole("mod", member)) {

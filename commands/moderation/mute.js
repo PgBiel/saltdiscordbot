@@ -2,11 +2,11 @@ const { GuildMember, Message, MessageEmbed, Role } = require("discord.js");
 const { Command, Constants, db, logger, Time } = require("../../util/deps");
 const { createMutedRole, escMarkdown, parseMute, rejct } = require("../../util/funcs");
 
-const func = async (msg, {
+const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy,
   checkRole, self,
-}) => {
+}) {
   let hasPerm = false;
   if (hasPermission(["MANAGE_ROLES"])) {
     hasPerm = true;
