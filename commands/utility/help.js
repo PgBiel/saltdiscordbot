@@ -31,23 +31,16 @@ const func = async function (msg, { args, send, reply, prefix, botmember, dummy 
       });
       embed.addField(k, this._.trim(str), true);
     }); */
-    const arrCat = [];
-    const arrCmd = [];
+    let arr = [];
     Object.entries(categories).forEach(([cat, cmds]) => {
       const size = Object.getOwnPropertyNames(cmds).length;
-      arrCat.push(cat);
-      arrCmd.push(`${size}${dummy.mobile ? "" : ` command${size === 1 ? "" : "s"}`}`);
+      arr.push([cat, size]);
     });
     let table = "";
-    if (dummy.mobile) {
-      for (let i = 0; i < arrCat.length; i++) {
-        table += `• **${arrCat[i]}**: **${arrCmd[i]}** commands${i === arrCat.length - 1 ? "." : ";\n"}`;
-      }
-    } else {
-      table = `\`\`\`css
-${this.tables.horizontal2x2({ size: arrCat.length, header: arrCat, input: arrCmd })}\`\`\``;
-      embed.setFooter(`If the table appears broken, try \`${prefix}mhelp\`.`);
+    for (const obj of arr.sort((a, b) => b[1] - a[1])) {
+      table += `• **${obj[0]}**: **${obj[1]}** commands\n`;
     }
+    table = this._.trim(table);
     embed.setDescription(`Categories of commands available (Type \`${prefix}help <category>\` to view its commands):
 
 ${table}`);
