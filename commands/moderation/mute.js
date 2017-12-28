@@ -1,6 +1,4 @@
-const { GuildMember, Message, MessageEmbed, Role } = require("discord.js");
-const { Command, Constants, db, logger, Time } = require("../../util/deps");
-const { createMutedRole, escMarkdown, parseMute, rejct } = require("../../util/funcs");
+const Command = require("../../classes/command");
 const muteP = require("../../punishments/mute");
 
 const func = async function (msg, {
@@ -17,7 +15,7 @@ const func = async function (msg, {
       hasPerm = true;
     }
   } catch (err) {
-    logger.error(`At check role: ${err}`);
+    this.logger.error(`At check role: ${err}`);
   }
   if (setPerms.mute) {
     if (!perms.mute) {
@@ -37,8 +35,8 @@ const func = async function (msg, {
   if (!args) {
     return reply("Please tell me who to mute!");
   }
-  const { user, time, reason, ok: parseOk } = parseMute(args);
-  logger.debug("Mute Debug:", user, time, reason);
+  const { user, time, reason, ok: parseOk } = this.parseMute(args);
+  this.logger.debug("Mute Debug:", user, time, reason);
   if (!parseOk) {
     return reply("Member not found!");
   }
@@ -89,7 +87,7 @@ const func = async function (msg, {
       }
     }
   } */
-  if (db.table("activemutes").get(guildId, []).findIndex(item => item.userid === memberToUse.id) > -1) {
+  if (this.db.table("activemutes").get(guildId, []).findIndex(item => item.userid === memberToUse.id) > -1) {
     return reply("That member is already muted!");
   }
   muteP.punish(memberToUse, {

@@ -1,4 +1,3 @@
-const { GuildMember, Message, TextChannel } = require("discord.js");
 const Command = require("../../classes/command");
 
 const func = async function (msg, { args, send, channel, member, author, guild }) {
@@ -7,7 +6,7 @@ const func = async function (msg, { args, send, channel, member, author, guild }
     ripContent = member ?
     member.displayName :
     author.username;
-  } else if (channel instanceof TextChannel) {
+  } else if (channel instanceof this.TextChannel) {
     ripContent = args.replace(/<@!?\d+>/g, mention => {
       const id = mention.match(/^<@!?(\d+)>$/)[1];
       const memberToUse = guild.members.get(id);

@@ -1,4 +1,3 @@
-const { Message } = require("discord.js");
 const Command = require("../../classes/command");
 
 const func = async function (msg, { send }) {

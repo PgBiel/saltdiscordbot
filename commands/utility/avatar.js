@@ -1,12 +1,8 @@
-const { Collection, GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
 const Command = require("../../classes/command");
-const Searcher = require("../../classes/searcher");
-const { bot, logger, util } = require("../../util/deps");
-const { rejct } = require("../../util/funcs");
 
 function getAvatarEmb(author) {
   const avatarRegex = /^((?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpe?g|png|gif|webp))\?size=\d+$/;
-  const embed = new MessageEmbed();
+  const embed = new this.Embed();
   const tag = `${author.username}#${author.discriminator}`;
   const urlz = author.displayAvatarURL();
   const avatarUrl = avatarRegex.test(urlz) ?
@@ -23,9 +19,9 @@ function getAvatarEmb(author) {
 const func = async function (msg, {
   channel, guildId, author, args, arrArgs, send, reply, searcher, promptAmbig,
 }) {
-  if (arrArgs.length < 1 || !(channel instanceof TextChannel)) {
-    if (!(channel instanceof TextChannel)) {
-      author = bot.user;
+  if (arrArgs.length < 1 || !(channel instanceof this.TextChannel)) {
+    if (!(channel instanceof this.TextChannel)) {
+      author = this.bot.user;
     }
     const embed = getAvatarEmb(author);
     send(`${arrArgs.length > 0 ?
@@ -33,7 +29,7 @@ const func = async function (msg, {
       ""}`, { embed });
   } else {
     if (/^<@\d+>$/.test(args)) {
-      const user = bot.users.get(args.match(/^<@(\d+)>$/)[1]);
+      const user = this.bot.users.get(args.match(/^<@(\d+)>$/)[1]);
       if (!user) {
         return reply("Invalid member given!");
       }
@@ -41,7 +37,7 @@ const func = async function (msg, {
       return send({ embed });
     }
     const members = searcher.searchMember(args);
-    logger.debug(args);
+    this.logger.debug(args);
     if (members.length < 1) {
       return reply("Member not found!");
     }

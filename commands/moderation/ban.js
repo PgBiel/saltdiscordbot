@@ -1,6 +1,4 @@
-const { GuildMember, Message, MessageEmbed, User } = require("discord.js");
 const Command = require("../../classes/command");
-const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
 const banP = require("../../punishments/ban");
 
 const func = async function (msg, {
@@ -24,7 +22,7 @@ const func = async function (msg, {
     return reply(`Please tell me who to ${actions[4]}!`);
   }
   let memberToUse;
-  const getUser = () => memberToUse instanceof GuildMember ? memberToUse.user : memberToUse;
+  const getUser = () => memberToUse instanceof this.GuildMember ? memberToUse.user : memberToUse;
   const [user, reason] = this._.tail((args.match(this.Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;

@@ -1,6 +1,4 @@
-const { GuildMember, Message, MessageEmbed } = require("discord.js");
-const { _, Command, Constants, logger, Time } = require("../../util/deps");
-const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
+const Command = require("../../classes/commnd");
 const kickP = require("../../punishments/kick");
 
 const func = async function (msg, {
@@ -15,7 +13,7 @@ const func = async function (msg, {
   if (!args) {
     return reply("Please tell me who to kick!");
   }
-  const [user, reason] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason] = this._.tail((args.match(this.Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }

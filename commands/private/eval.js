@@ -1,14 +1,12 @@
-const { Message } = require("discord.js");
 const Command = require("../../classes/command");
-const { _, bot, ownerID } = require("../../util/deps");
 
 const func = async function (msg, { args, doEval, send, self }) {
-  if (msg.author.id !== ownerID || args.length < 1) {
+  if (msg.author.id !== this.ownerID || args.length < 1) {
     return;
   }
   const results = await doEval(args, self);
   const resultStr = String(results.result).replace(
-    new RegExp(_.escapeRegExp(bot.token), "ig"), "shaker");
+    new RegExp(this._.escapeRegExp(this.bot.token), "ig"), "shaker");
   if (results.success) {
     send(`\`\`\`js
 Input
