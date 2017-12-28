@@ -19,14 +19,10 @@ function getAvatarEmb(author) {
 const func = async function (msg, {
   channel, guildId, author, args, arrArgs, send, reply, searcher, promptAmbig,
 }) {
-  if (arrArgs.length < 1 || !(channel instanceof this.TextChannel)) {
-    if (!(channel instanceof this.TextChannel)) {
-      author = this.bot.user;
-    }
-    const embed = getAvatarEmb(author);
-    send(`${arrArgs.length > 0 ?
-      "This is a DM and there is nobody here other than me and you, so here's my avatar." :
-      ""}`, { embed });
+  if (!args) {
+    send({ embed: getAvatarEmb(author) });
+  } else if (!(channel instanceof this.TextChannel)) {
+    send("This is a DM and there is nobody here other than me and you, so here's my avatar.", { embed: getAvatarEmb(this.bot.user) });
   } else {
     if (/^<@\d+>$/.test(args)) {
       const user = this.bot.users.get(args.match(/^<@(\d+)>$/)[1]);

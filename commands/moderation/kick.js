@@ -1,4 +1,4 @@
-const Command = require("../../classes/commnd");
+const Command = require("../../classes/command");
 const kickP = require("../../punishments/kick");
 
 const func = async function (msg, {
