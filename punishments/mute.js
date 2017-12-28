@@ -18,8 +18,9 @@ class Mute extends Punishment {
    * @returns {Promise<void>}
    */
   async punish(
-    member, { author, reason, auctPrefix, context, time, permanent } = { author: null, reason: null, auctPrefix: null, context: null,
-      time: new Time(["m", 10]), permanent: false },
+    member, {
+      author = null, reason = null, auctPrefix = null, context = null, time = new Time(["m", 10]), permanent = false } = {
+      author: null, reason: null, auctPrefix: null, context: null, time: new Time(["m", 10]), permanent: false },
   ) {
     const guild = member.guild;
     const botmember = guild.me;

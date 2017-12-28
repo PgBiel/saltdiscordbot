@@ -23,7 +23,10 @@ class Ban extends Punishment {
    */
   async punish(
     member, guild, context,
-    { author, reason, auctPrefix, actions, usePrompt, color, days, isSoft } = {
+    {
+      author = null, reason = null, auctPrefix = "", actions = ["Banning", "Banned", "banned", "Ban", "ban"], usePrompt = true,
+      color = "RED", days = 1, isSoft = false
+    } = {
       author: null, reason: null, auctPrefix: "", actions: ["Banning", "Banned", "banned", "Ban", "ban"], usePrompt: true,
       color: "RED", days: 1, isSoft: false,
     },

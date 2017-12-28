@@ -1,4 +1,4 @@
-const { GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
+const { MessageEmbed } = require("discord.js");
 const { db, logger, Time, util } = require("../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
 const Punishment = require("./punishment");
@@ -21,8 +21,8 @@ class Warn extends Punishment {
    * @returns {Promise<void>}
    */
   async punish(
-    member, { author, reason, auctPrefix, context, automatic } = { author: null, reason: null, auctPrefix: null, context: null,
-      automatic: false },
+    member, { author = null, reason = null, auctPrefix = null, context = null, automatic = false } = {
+      author: null, reason: null, auctPrefix: null, context: null, automatic: false },
   ) {
     const guild = member.guild;
     const botmember = guild.me;
@@ -84,6 +84,9 @@ a **${punishment}** (as says this server's current setup).`);
             } else {
               banP.punish(member, guild, context, {
                 author, reason, auctPrefix, usePrompt: false, days: 1, isSoft: punishment === "softban",
+                actions: punishment === "softban" ?
+                ["Softbanning", "Softbanned", "softbanned", "Softban", "softban"] :
+                ["Banning", "Banned", "banned", "Ban", "ban"]
               });
             }
           } else if (punishment === "mute") {
@@ -93,10 +96,19 @@ a **${punishment}** (as says this server's current setup).`);
               author, reason, auctPrefix, context, time, permanent: false,
             });
           }
-          if (warnStep.amount >= warnSteps[warnSteps.length - 1].amount) {
+          if (warnStep.amount >= warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount) {
+            // logger.debug("YEa", warnStep.amount, warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount);
             warns.forEach(warn => {
               db.table("warns").remArr(guild.id, warn);
             });
+          } else {
+            // logger.debug("Boi", warnStep.amount, warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount);
+            await db.table("warns").add(guild.id, {
+              userid: member.id,
+              reason: reason || "None",
+              moderatorid: author.id,
+              warnedat: Date.now().toString(),
+            }, true);
           }
         } else {
           await db.table("warns").add(guild.id, {

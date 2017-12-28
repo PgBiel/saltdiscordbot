@@ -24,7 +24,7 @@ permission overwrite).`);
   if (!args) {
     return reply("Please tell me who to warn!");
   }
-  const [user, reason] = this._.tail((args.match(this.Constants.regex.BANthis._MATCH) || Array(3)));
+  const [user, reason] = this._.tail((args.match(this.Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }

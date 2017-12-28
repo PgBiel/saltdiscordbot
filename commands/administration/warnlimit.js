@@ -9,6 +9,7 @@ const func = async function (
       if (!steps || steps.length < 1) {
         return reply(`There are no set warn punishments for this server.`);
       }
+      steps.sort((a, b) => a.amount - b.amount);
       let str = "";
       for (const step of steps) {
         str += `At **${step.amount} warns**, the member gets a ${step.punishment}\
@@ -47,7 +48,7 @@ Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
     const num = Number(subArg);
     if (/^(unset|remove)$/i.test(action)) {
       const step = steps.find(s => s.amount === num);
-      if (!step) return send(`There is no warn punishment for reaching ${num} total warns already. :wink:`);
+      if (!step) return send(`There is no warn punishment for reaching ${num} total warns. :wink:`);
       this.db.table("warnsteps").remArr(guildId, step);
       return send(`Successfully removed the punishment for reaching **${num}** total warns! :wink:`);
     } else {
@@ -55,7 +56,7 @@ Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
         return reply(`Please tell me which punishment should I give on reaching that limit! \
 (Either ban, softban, kick, or mute + minutes muted)`);
       }
-      if (!/^(?:kick|ban|mute)$/i.test(subSubArg)) {
+      if (!/^(?:kick|(?:soft)?ban|mute)$/i.test(subSubArg)) {
         return reply(`The punishment must be either kick, ban, softban or mute (+ minutes muted, default is 10 mins).`);
       }
       let time;

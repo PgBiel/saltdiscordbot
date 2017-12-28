@@ -1,4 +1,4 @@
-const Command = require("../../classes/Command");
+const Command = require("../../classes/command");
 
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
@@ -95,7 +95,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
   };
   const executeUnban = () => {
     const compressedText = this.textAbstract(`[Unban command executed by ${author.tag}] ${reason || "No reason given"}`, 512);
-    guild.unban(memberToUse).then(finish).catch(fail);
+    guild.unban(memberToUse, compressedText).then(finish).catch(fail);
   };
   let sent = false;
   let timeoutRan = false;

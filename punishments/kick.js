@@ -16,7 +16,8 @@ class Kick extends Punishment {
    * @returns {Promise<void>}
    */
   async punish(
-    member, { author, reason, auctPrefix, context } = { author: null, reason: null, auctPrefix: null, context: null },
+    member, { author = null, reason = null, auctPrefix = null, context = null } = {
+      author: null, reason: null, auctPrefix: null, context: null },
   ) {
     const guild = member.guild;
     const botmember = guild.me;
