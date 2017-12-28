@@ -1,6 +1,6 @@
 const { Guild, GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
-const { Time } = require("../util/deps");
-const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
+const { Time } = require("ztimespan");
+const { endChar, escMarkdown, rejct, textAbstract } = require("../util/funcs");
 const Punishment = require("./punishment");
 
 class Ban extends Punishment {
@@ -91,8 +91,8 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         .edit(`${actions[0]} ${id || user.tag}... (Banned successfully. Fetching username...)`)
         .catch(rejct);
         try {
-          const bans = await guild.fetchBans();
-          targetToUse = bans.get(target) || target;
+          let bans = await guild.fetchBans();
+          targetToUse = (bans.get(target) || { user: target }).user;
         } catch (err) {
           targetToUse = target;
         }
@@ -129,7 +129,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     };
     const executeBan = () => {
       // const availableLength = 512 - (reason.length + banPrefix.length);
-      const compressedText = textAbstract(auctPrefix + (reason || "No reason given"), 512);
+      const compressedText = textAbstract(endChar(auctPrefix) + (reason || "No reason given"), 512);
       guild.ban(
         member,
         { days: days == null ? 1 : days, reason: compressedText },

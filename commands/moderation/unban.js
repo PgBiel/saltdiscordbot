@@ -1,6 +1,4 @@
-const { GuildMember, Message, MessageEmbed, User } = require("discord.js");
-const { _, Command, Constants, logger, Searcher, Time } = require("../../util/deps");
-const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
+const Command = require("../../classes/Command");
 
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
@@ -14,11 +12,12 @@ const func = async function (msg, {
   if (!args) {
     return reply("Please tell me who to unban!");
   }
-  const [user, reason] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason] = this._.tail((args.match(this.Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
-  const bans = await guild.fetchBans();
+  let bans = await guild.fetchBans();
+  bans = bans.map(info => info.user);
   let memberToUse;
   let membersMatched;
   if (/[^]#\d{4}$/.test(user)) {
@@ -29,7 +28,7 @@ const func = async function (msg, {
   } else if (/^<@!?\d+>$/.test(user)) {
     memberToUse = bans.get(user.match(/^<@!?(\d+)>$/)[1]);
   }
-  const searcher = new Searcher<User>({ members: bans });
+  const searcher = new this.Searcher({ members: bans });
   if (!memberToUse) {
     membersMatched = searcher.searchMember(user);
   }
@@ -49,7 +48,7 @@ const func = async function (msg, {
   if (!memberToUse) {
     return;
   }
-  const embed = new MessageEmbed();
+  const embed = new this.Embed();
   embed
     .setAuthor(`Unban confirmation - ${memberToUse.tag}`, memberToUse.displayAvatarURL())
     .setColor("DARK_GREEN")
@@ -62,7 +61,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     filter: msg2 => {
       return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
     },
-    timeout: Time.seconds(15),
+    timeout: this.Time.seconds(15),
     cancel: false,
     options: { embed },
   });
@@ -74,13 +73,13 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     return;
   }
   const sentUnbanMsg = await send(`Unbanning ${memberToUse.tag}... (Sending DM...)`);
-  const reasonEmbed = new MessageEmbed();
+  const reasonEmbed = new this.Embed();
   reasonEmbed
     .setColor("DARK_GREEN")
     .setDescription(reason || "None")
     .setTimestamp(new Date());
   const finish = () => {
-    sentUnbanMsg.edit(`Unbanned ${memberToUse.tag} successfully.`).catch(rejct);
+    sentUnbanMsg.edit(`Unbanned ${memberToUse.tag} successfully.`).catch(this.rejct);
     actionLog({
       action_desc: `**{target}** was unbanned`,
       target: memberToUse,
@@ -88,33 +87,34 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
       author: member,
       color: "DARK_GREEN",
       reason: reason || "None",
-    }).catch(rejct);
+    }).catch(this.rejct);
   };
   const fail = err => {
-    rejct(err);
-    sentUnbanMsg.edit(`The unban failed! :frowning:`).catch(rejct);
+    this.rejct(err);
+    sentUnbanMsg.edit(`The unban failed! :frowning:`).catch(this.rejct);
   };
   const executeUnban = () => {
+    const compressedText = this.textAbstract(`[Unban command executed by ${author.tag}] ${reason || "No reason given"}`, 512);
     guild.unban(memberToUse).then(finish).catch(fail);
   };
   let sent = false;
   let timeoutRan = false;
   memberToUse.send(
-    `You were unbanned at the server **${escMarkdown(guild.name)}** for the reason of:`, { embed: reasonEmbed },
+    `You were unbanned at the server **${this.escMarkdown(guild.name)}** for the reason of:`, { embed: reasonEmbed },
   ).then(() => {
     if (timeoutRan) {
       return;
     }
     sent = true;
-    sentUnbanMsg.edit(`Unbanning ${memberToUse.tag}... (DM Sent. Unbanning user...)`).catch(rejct);
+    sentUnbanMsg.edit(`Unbanning ${memberToUse.tag}... (DM Sent. Unbanning user...)`).catch(this.rejct);
     executeUnban();
   }).catch(err => {
-    rejct(err);
+    this.rejct(err);
     if (timeoutRan) {
       return;
     }
     sent = true;
-    sentUnbanMsg.edit(`Unbanning ${memberToUse.tag}... (DM Failed. Unbanning anyway...)`).catch(rejct);
+    sentUnbanMsg.edit(`Unbanning ${memberToUse.tag}... (DM Failed. Unbanning anyway...)`).catch(this.rejct);
     executeUnban();
   });
   setTimeout(() => {
@@ -122,7 +122,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
       timeoutRan = true;
       executeUnban();
     }
-  }, Time.seconds(2.8));
+  }, this.Time.seconds(2.8));
 };
 
 module.exports = new Command({

@@ -435,6 +435,17 @@ function paginate(text, wordCount = 10, regex = /(?:([\w;,..\")(\-\d]+)\s*){n}/i
 }
 exports.paginate = paginate;
 
+/**
+ * Add specified char if not present.
+ * @param {string} text The text
+ * @param {string} [char=" "] The character to ensure it ends with
+ * @returns {string} The modified text
+ */
+function endChar(text, char = " ") {
+  return text.endsWith(char) ? text + char : text;
+}
+exports.endChar = endChar;
+
 function botMessage(msg) {
   const thingy = require("../commandHandler")(msg);
   if (thingy.catch) {

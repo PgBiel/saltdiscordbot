@@ -20,11 +20,6 @@ obj.fs = require("fs");
 obj.klaw = require("klaw-sync");
 obj.querystring = require("querystring");
 obj.Discord = require("discord.js");
-// punishments
-obj.banP = require("../punishments/ban");
-obj.muteP = require("../punishments/mute");
-obj.kickP = require("../punishments/kick");
-obj.warnP = require("../punishments/warn");
 // some Discord utils
 obj.Embed = obj.Discord.MessageEmbed;
 obj.Message = obj.Discord.Message;

@@ -104,15 +104,7 @@ module.exports = class Searcher {
     nameOrPattern :
     new RegExp(_.escapeRegExp(nameOrPattern), "i");
     const match = [];
-    const getUser = member => {
-      const userToUse = member instanceof GuildMember ?
-      member.user :
-      member instanceof User ?
-      member :
-      null;
-
-      return userToUse;
-    };
+    const getUser = member => member ? (member.user || member) : null;
     if (typeof nameOrPattern === "string" && Constants.regex.NAME_AND_DISCRIM.test(nameOrPattern)) {
       const result = this.members.find(memb => getUser(memb).tag === nameOrPattern);
       if (result) {
@@ -180,17 +172,14 @@ module.exports = class Searcher {
     new RegExp(_.escapeRegExp(nameOrPattern), "i");
     const match = [];
     let toLook;
-    switch (type) {
+    switch (type.toLowerCase()) {
       case "text":
-        toLook = this.channels.filter(c => c.type === "text");
-        break;
       case "voice":
-        toLook = this.channels.filter(c => c.type === "voice");
-        break;
-      default:
-        toLook = this.channels;
+      case "category":
+        toLook = type.toLowerCase();
         break;
     }
+    toLook = toLook ? this.channels.filter(c => c.type === toLook) : this.channels;
     for (const [id, channel] of toLook) {
       if (
         (typeof nameOrPattern === "string" && channel.name === nameOrPattern)

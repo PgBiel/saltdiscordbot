@@ -1,6 +1,6 @@
 const { GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
-const { Time } = require("../util/deps");
-const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
+const { Time } = require("ztimespan");
+const { endChar, escMarkdown, rejct, textAbstract } = require("../util/funcs");
 const Punishment = require("./punishment");
 
 class Kick extends Punishment {
@@ -62,7 +62,7 @@ Check the conditions for being kicked (e.g. must not be owner, etc)!");
     };
     const executeKick = () => {
       // const kickPrefix = origin ? `[Kick command executed by ${origin.tag}] ` : "";
-      const compressedText = textAbstract(auctPrefix + " " + (reason || "No reason given"), 512);
+      const compressedText = textAbstract(endChar(auctPrefix) + (reason || "No reason given"), 512);
       member.kick(compressedText).then(finish).catch(fail);
     };
     let sent = false;

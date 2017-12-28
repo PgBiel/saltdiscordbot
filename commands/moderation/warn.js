@@ -1,4 +1,5 @@
 const Command = require("../../classes/command");
+const warnP = require("../../punishments/warn");
 
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
@@ -57,7 +58,7 @@ permission overwrite).`);
     return;
   }
 
-  await this.warnP.punish(memberToUse, {
+  await warnP.punish(memberToUse, {
     author: member, reason, auctPrefix: `[Warn command executed by ${author.tag}] `, context: self, automatic: false,
   });
 };

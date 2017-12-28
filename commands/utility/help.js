@@ -24,7 +24,8 @@ const func = async function (msg, { args, arrArgs, send, reply, prefix, botmembe
     embed
       .setColor("RANDOM")
       .setTitle("List of categories")
-      .setFooter(`There is a total of ${Object.values(this.bot.commands).filter(c => c.category !== "Private").length} commands.`);
+      .setFooter(`There is a total of ${Object.values(this.bot.commands).filter(c => c.category !== "Private").length} commands. \
+Type \`${prefix}help all\` to view all commands.`);
     /* Object.entries(categories).forEach(([k, v]) => {
       let str = "";
       Object.keys(v).forEach(k2 => {
@@ -117,7 +118,7 @@ module.exports = new Command({
   name: "help",
   default: true,
   description: "Show information about commands/a command/a category of commands.",
-  example: "{p}help\n{p}help 8ball\n{p}help fun",
+  example: "{p}help\n{p}help 8ball\n{p}help Fun\n{p}help All",
   category: "Utility",
   args: {"command or category": true, "page (Default: 1)": true},
   guildOnly: false,

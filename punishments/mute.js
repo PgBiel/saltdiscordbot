@@ -1,6 +1,6 @@
 const { GuildMember, Message, MessageEmbed, Role, TextChannel, User } = require("discord.js");
 const { db, logger, Time } = require("../util/deps");
-const { createMutedRole, escMarkdown, rejct, textAbstract } = require("../util/funcs");
+const { createMutedRole, endChar, escMarkdown, rejct, textAbstract } = require("../util/funcs");
 const Punishment = require("./punishment");
 
 class Mute extends Punishment {
@@ -84,7 +84,8 @@ class Mute extends Punishment {
         timestamp,
         permanent: Boolean(permanent),
       }).then(() => {
-        member.addRole(muteRole).then(finish).catch(fail);
+        const compressedText = textAbstract(endChar(auctPrefix) + (reason || "No reason given"), 512);
+        member.addRole(muteRole, compressedText).then(finish).catch(fail);
       }).catch(fail);
     };
     let sent = false;

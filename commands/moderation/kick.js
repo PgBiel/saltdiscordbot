@@ -1,6 +1,7 @@
 const { GuildMember, Message, MessageEmbed } = require("discord.js");
 const { _, Command, Constants, logger, Time } = require("../../util/deps");
 const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
+const kickP = require("../../punishments/kick");
 
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
@@ -50,7 +51,7 @@ const func = async function (msg, {
   if (memberToUse.id === member.id) {
     return reply(`You cannot kick yourself!`);
   }
-  await this.kickP.punish(
+  await kickP.punish(
     memberToUse, { author: member, reason, auctPrefix: `[Kick command executed by ${author.tag}]`, context: self },
   );
 };

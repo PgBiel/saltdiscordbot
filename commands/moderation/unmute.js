@@ -108,6 +108,7 @@ const func = async function (msg, {
   };
   const executeUnmute = () => {
     db.table("activemutes").remArr(guild.id, activeMute).then(() => {
+      const compressedText = this.textAbstract(`[Unmute command executed by ${author.tag}] ${reason || "No reason given"}`, 512);
       memberToUse.removeRole(muteRole).then(finish).catch(fail);
     }).catch(fail);
   };

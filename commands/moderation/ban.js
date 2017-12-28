@@ -1,6 +1,7 @@
 const { GuildMember, Message, MessageEmbed, User } = require("discord.js");
 const Command = require("../../classes/command");
 const { escMarkdown, rejct, textAbstract } = require("../../util/funcs");
+const banP = require("../../punishments/ban");
 
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
@@ -81,7 +82,7 @@ const func = async function (msg, {
   if (!id && memberToUse.id === member.id) {
     return reply(`You cannot ${actions[4]} yourself!`);
   }
-  this.banP.punish(id || memberToUse, guild, self, {
+  banP.punish(id || memberToUse, guild, self, {
     author: member, reason, auctPrefix: `[${actions[3]} command executed by ${author.tag}] `, actions,
     usePrompt: dummy.usePrompt == null ? true : dummy.usePrompt, color: dummy.color, days: dummy.days,
     isSoft: dummy.banType === "softban",

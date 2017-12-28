@@ -106,15 +106,7 @@ module.exports = function returnFuncs(msg) {
     let cancelled = false;
     let currentOptions = [];
 
-    const getTag = gm => {
-      if (gm instanceof User) {
-        return gm.tag;
-      } else if (gm instanceof GuildMember) {
-        return gm.user.tag;
-      } else {
-        return gm.toString();
-      }
-    };
+    const getTag = gm => gm.user ? gm.user.tag : (gm.tag || gm.toString());
 
     members.forEach(gm => currentOptions.push(gm));
     const filter = msg2 => {
@@ -134,7 +126,7 @@ module.exports = function returnFuncs(msg) {
       }
       const collOptions = new Collection();
       options.forEach(gm => {
-        collOptions.set((gm instanceof GuildMember || gm instanceof User) ? gm.id : gm.toString(), gm);
+        collOptions.set(gm.id || gm.toString(), gm);
       });
       const searcher2 = new Searcher({ members: collOptions });
       const resultingMembers = searcher2.searchMember(msg2.content);
