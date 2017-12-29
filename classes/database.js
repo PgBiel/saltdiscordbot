@@ -114,7 +114,6 @@ class Database {
    */
   set(id, val, table) {
     if (!this.cache[table]) { return; }
-    this.cache[table].set(id, val);
     return this.insert(table, id, val);
   }
 
@@ -131,6 +130,7 @@ class Database {
 
   async insert(table, id, val) {
     if (id == null || val == null) return { success: false, err: new TypeError("Invalid ID or value.") };
+    this.cache[table].set(id, val);
     const statement = { id, data: val };
     try {
       await r.table(table).insert(statement, {
@@ -360,7 +360,7 @@ class Table extends Storage {
 }
 
 process.on("message", message => {
-  if (message && message.type === "dbUpdate" && message.table && message.statements) {
+  if (message && message.type === "dbUpdate" && message.table && message.statement) {
     const msg = message;
     const { table, statement, id } = msg;
     const cacheSpot = db.cache[table];

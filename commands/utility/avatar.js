@@ -1,8 +1,9 @@
 const Command = require("../../classes/command");
+const { MessageEmbed } = require("discord.js");
 
 function getAvatarEmb(author) {
   const avatarRegex = /^((?:https?:\/\/)cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpe?g|png|gif|webp))\?size=\d+$/;
-  const embed = new this.Embed();
+  const embed = new MessageEmbed();
   const tag = `${author.username}#${author.discriminator}`;
   const urlz = author.displayAvatarURL();
   const avatarUrl = avatarRegex.test(urlz) ?

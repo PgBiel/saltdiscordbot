@@ -62,6 +62,9 @@ interface TableValsDraft {
   };
   warns: Array<HelperVals["warns"]>; // index by: $
   warnsteps: Array<HelperVals["warnsteps"]>; // index by: $
+  warnexpire: { // index by: $
+    time: string;
+  }
   welcomes: { // index by: $
     welcome?: string;
     welcomechannel?: string;

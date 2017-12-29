@@ -270,6 +270,7 @@ class ActionLog {
     }
   }
 
+
   /**
    * Get the log channel for a guild.
    * @param {Guild} guild The guild to get the log channel for.
@@ -280,7 +281,7 @@ class ActionLog {
     const logChannel = db.table("mods").prop(guild.id, "logs");
     if (logChannel) {
       const returnVal = guild.channels.get(logChannel);
-      if (returnVal && returnVal instanceof TextChannel) {
+      if (returnVal && returnVal.type === "text") {
         return returnVal;
       }
     }
