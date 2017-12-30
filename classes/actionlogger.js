@@ -83,7 +83,7 @@ class ActionLog {
       action_desc, guild, author, reason, color, extraFields, target, type,
       targetId, thumbnail,
     } = options;
-    const logChannel = await this._getLog(guild);
+    const logChannel = this._getLog(guild);
     if (!logChannel) {
       return null;
     }
@@ -103,7 +103,7 @@ class ActionLog {
         target.username :
         targetString);
     const embed = new MessageEmbed();
-    const caseNum = await this._getCase(guild);
+    const caseNum = this._getCase(guild);
     if (typeof caseNum === "string" || isNaN(caseNum) || caseNum == null) {
       return;
     }
@@ -277,7 +277,7 @@ class ActionLog {
    * @returns {Promise<?TextChannel>} The channel.
    * @private
    */
-  async _getLog(guild) {
+  _getLog(guild) {
     const logChannel = db.table("mods").prop(guild.id, "logs");
     if (logChannel) {
       const returnVal = guild.channels.get(logChannel);
@@ -291,10 +291,10 @@ class ActionLog {
   /**
    * Get the latest case for a guild.
    * @param {Guild} guild The guild to get the case for.
-   * @returns {Promise<?string|number>} The case number.
+   * @returns {?string|number} The case number.
    * @private
    */
-  async _getCase(guild) {
+  _getCase(guild) {
     const logCase = db.table("mods").prop(guild.id, "latestCase");
     if (logCase) {
       const returnVal = isNaN(logCase) ? logCase : Number(logCase);
@@ -302,7 +302,7 @@ class ActionLog {
         return returnVal;
       }
     }
-    return null;
+    return 0;
   }
 }
 module.exports = new ActionLog();

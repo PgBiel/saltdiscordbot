@@ -1,7 +1,7 @@
 const Command = require("../../classes/command");
 
 const func = async function (
-  msg, { guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms },
+  msg, { prompt, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms },
 ) {
   const steps = this.db.table("warnsteps").get(guildId);
   if (arrArgs.length < 1) {
@@ -37,7 +37,7 @@ Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
     if (!step) return send(`There is no warn punishment for reaching ${num} total warns. :wink:`);
     return send(`Upon reaching ${num} total warns, the member receives a **${step.punishment}**\
 ${step.time ? ` for **${new this.Time(Number(step.time) || this.Time.minutes(10)).toString()}**` : ""}.`);
-  } else if (/^(?:set|unset|add|remove)$/i.test(action)) {
+  } else if (/^(?:set|unset|add|remove|clear)$/i.test(action)) {
     if ((!setPerms["warnlimit"] && !checkRole("admin", member)) || (setPerms["warnlimit"] && !perms["warnlimit"])) {
       return reply(`Uh-oh, it seems that you don't have permissions to set or unset warn punishments. \
 Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
@@ -49,8 +49,24 @@ Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
     if (/^(unset|remove)$/i.test(action)) {
       const step = steps.find(s => s.amount === num);
       if (!step) return send(`There is no warn punishment for reaching ${num} total warns. :wink:`);
-      this.db.table("warnsteps").remArr(guildId, step);
+      await this.db.table("warnsteps").remArr(guildId, step, true);
       return send(`Successfully removed the punishment for reaching **${num}** total warns! :wink:`);
+    } else if (/^clear$/i.test(action)) {
+      if (steps.length < 1) return send(`There are no warn punishments.`);
+      const result = await prompt({
+        question: `Are you sure you want to remove ${steps.length < 2 ?
+          "the only warn punishment" :
+          `all the **${steps.length}** warn punishments`}? Type __y__es or __n__o.`,
+        invalidMsg: "__Y__es or __n__o?",
+        filter: msg2 => {
+          return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
+        },
+        timeout: this.Time.seconds(15),
+      });
+      if (!result) return;
+      if (/^[nc]/.test(result)) return send("Command cancelled.");
+      await this.db.table("warnsteps").setRejct(guildId, []);
+      return send(`Successfully removed all **${steps.length}** warn punishments! :wink:`);
     } else {
       if (arrArgs.length < 3) {
         return reply(`Please tell me which punishment should I give on reaching that limit! \
@@ -71,13 +87,13 @@ Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
       const objToUse = {
         amount: num,
         punishment: punish,
-        time: punish === "mute" ? time : 0
+        time: punish === "mute" ? time.time : 0
       };
       const step = steps.find(s => s.amount === num);
       if (step) {
-        this.db.table("warnsteps").assign(guildId, { [this.db.table("warnsteps").indexOf(guildId, step)]: objToUse });
+        await this.db.table("warnsteps").assign(guildId, { [this.db.table("warnsteps").indexOf(guildId, step)]: objToUse }, true);
       } else {
-        this.db.table("warnsteps").add(guildId, objToUse);
+        await this.db.table("warnsteps").add(guildId, objToUse, true);
       }
       const punishment = subSubArg.toLowerCase() === "mute" ?
       `mute for ${timeDefault ? "10 minutes (default)" : time.toString()}`

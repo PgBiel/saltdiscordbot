@@ -30,9 +30,9 @@ export interface IMuteParseResults {
  * @param {*} [prefix] Text to use before the error message
  * @returns {void}
  */
-function rejct(rejection, prefix) {
+function rejct(reject, prefix) {
   // console.log(require("util").inspect(require("./deps")));
-  logger.custom(prefix + rejection, { prefix: "[ERR/REJECT]", color: "red", type: "error" });
+  logger.custom(prefix + (reject && reject.stack ? reject.stack : reject), { prefix: "[ERR/REJECT]", color: "red", type: "error" });
 }
 exports.rejct = rejct;
 
