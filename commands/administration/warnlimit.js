@@ -42,7 +42,7 @@ ${step.time ? ` for **${new this.Time(Number(step.time) || this.Time.minutes(10)
       return reply(`Uh-oh, it seems that you don't have permissions to set or unset warn punishments. \
 Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
     }
-    if (arrArgs.length < 2 || isNaN(subArg)) {
+    if (!/^clear$/i.test(action) && (arrArgs.length < 2 || isNaN(subArg))) {
       return reply(`Please tell me which warn limit should I add/remove!`);
     }
     const num = Number(subArg);
@@ -66,7 +66,7 @@ Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
       if (!result) return;
       if (/^[nc]/.test(result)) return send("Command cancelled.");
       await this.db.table("warnsteps").setRejct(guildId, []);
-      return send(`Successfully removed all **${steps.length}** warn punishments! :wink:`);
+      return send(`Successfully removed all warn punishments! :wink:`);
     } else {
       if (arrArgs.length < 3) {
         return reply(`Please tell me which punishment should I give on reaching that limit! \
