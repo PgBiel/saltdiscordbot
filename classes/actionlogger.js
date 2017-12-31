@@ -215,6 +215,16 @@ class ActionLog {
   }
 
   /**
+   * Get a specific case.
+   * @param {number} caseN The case number.
+   * @param {Guild|string} The guild to look at (or its id).
+   * @returns {Promise<Object>} The result.
+   */
+  async fetchCase(caseN, guild) {
+    // wip
+  }
+
+  /**
    * Edit a case.
    * @param {number} caseN The case number.
    * @param {Object} options The options.
@@ -239,7 +249,7 @@ class ActionLog {
     if (!caseToLook) {
       return false;
     }
-    const logChannel = await this._getLog(guild);
+    const logChannel = this._getLog(guild);
     if (!logChannel) {
       return false;
     }
@@ -278,7 +288,7 @@ class ActionLog {
    * @private
    */
   _getLog(guild) {
-    const logChannel = db.table("mods").prop(guild.id, "logs");
+    const logChannel = db.table("mods").prop(guild.id || guild, "logs");
     if (logChannel) {
       const returnVal = guild.channels.get(logChannel);
       if (returnVal && returnVal.type === "text") {
