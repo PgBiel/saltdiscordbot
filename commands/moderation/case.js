@@ -11,26 +11,31 @@ const func = async function (
   const action = part1.toLowerCase();
   const arg = Number(part2);
   const arg2 = part3;
+  const length = punishments.length;
   if (action === "get" || !isNaN(action)) {
     if (!perms["case.get"]) return reply(`Missing permission \`cases get\`! :(`);
     if (isNaN(arg) && isNaN(action)) return reply(`Please specify a case number to get!`);
     const number = Number(isNaN(action) ? arg : action);
-    if (number > punishments.length) return reply(`Invalid case number! There are ${punishments.length} cases.`);
+    if (number > punishments.length) return reply(`Invalid case number! There ${length === 1 ?
+      "is only 1 case" :
+      `are ${length} cases`}.`);
     const { case: punish, embed } = await actionLog.fetchCase(number, guild);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
     return reply(`Here's the case with number ${punish.case}:`, { embed });
   } else if (["edit", "delete", "togglethumb"].includes(action)) {
     const permSecondPart = action === "delete" ? "delete" : "edit";
     if (!perms[`case.${permSecondPart}`]) return reply(`Missing permission \`cases ${permSecondPart}\`! :(`);
-    if (isNaN(arg)) return reply(`Please specify a case number to edit its reason!`);
-    if (arg > punishments.length) return reply(`Invalid case number! There are ${punishments.length} cases.`);
+    if (isNaN(arg)) return reply(`Please specify a case number to modify it!`);
+    if (arg > punishments.length) return reply(`Invalid case number! There ${length === 1 ?
+      "is only 1 case" :
+      `are ${length} cases`}.`);
     const { case: punish } = await actionLog.fetchCase(arg, guild);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
     const isYours = punish.moderator === author.id;
     if (
       !isYours
       && (setPerms["case.others"] ?
-        !perms["cases.others"] :
+        !perms["case.others"] :
         checkRole("Administrator"))
       ) return reply(`That case is not yours. You need the permission
 \`cases others\` or the Administrator saltrole to edit them!`);
@@ -93,13 +98,16 @@ you will become the author of the case. This will expire in 15 seconds. Type __y
         } else {
           options.toggleThumbnail = true;
         }
-        const { case: cResult, message: mResult, resultCase } = await actionLog.editCase(arg, options, guild);
+        const { case: cResult, message: mResult } = await actionLog.editCase(arg, options, guild);
+        const { thumbOn } = this.db.table("punishments").get(guildId).find(c => c.case === arg);
         if (!cResult) return reply("Uh oh! There was an error modifying the case. Sorry!");
-        if (!mResult) return reply(`The case numbered ${arg} ${action === "edit" ? "was modified" : "had its thumbnail \
-toggled " + resultCase.thumbOn ? "on" : "off"} successfully, however its message at Action Logs wasn't able to be modified. \
-If Action Logs are disabled for this guild, you can ignore this.`);
-        return reply(`The case numbered ${arg} ${action === "edit" ? "was modified successfully" : "successfully had its thumbnail \
-toggled " + resultCase.thumbOn ? "on" : "off"}!`);
+        if (!mResult) return reply(`The case numbered ${arg} ${action === "edit" ?
+          "was modified" :
+          ("had its thumbnail toggled " + (thumbOn ? "on" : "off"))} successfully, however its message at Action Logs wasn't able to \
+          be modified. If Action Logs are disabled for this guild, you can ignore this.`);
+        return reply(`The case numbered ${arg} ${action === "edit" ?
+          "was modified successfully" :
+          ("successfully had its thumbnail toggled " + (thumbOn ? "on" : "off"))}!`);
       } catch (err) {
         this.rejct(err);
         return reply("Uh oh! There was an error modifying the case. Sorry!");

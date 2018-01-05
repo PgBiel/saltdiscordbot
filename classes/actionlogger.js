@@ -169,7 +169,7 @@ class ActionLog {
       return obj;
     }
     try {
-      const logged = await logChannel.fetchMessage(caseToLook.messageid);
+      const logged = await logChannel.messages.fetch(caseToLook.messageid);
       await logged.delete();
       obj.message = true;
     } catch (err) {
@@ -200,7 +200,7 @@ class ActionLog {
       return obj;
     }
     try {
-      const logged = await logChannel.fetchMessage(caseToLook.messageid);
+      const logged = await logChannel.messages.fetch(caseToLook.messageid);
       obj.message = logged;
       return obj;
     } catch (err) {
@@ -229,20 +229,19 @@ class ActionLog {
     }
     const newCaseToLook = cloneObject(caseToLook);
     if (options.reason) {
-      caseToLook.reason = options.reason;
+      newCaseToLook.reason = options.reason;
     }
     if (options.moderator) {
-      caseToLook.moderator = options.moderator;
+      newCaseToLook.moderator = options.moderator;
     }
     if (options.toggleThumbnail) {
-      caseToLook.thumbOn = !caseToLook.thumbOn;
+      newCaseToLook.thumbOn = !caseToLook.thumbOn;
     }
     try {
       await (db
         .table("punishments")
         .assign(guild.id, { [db.table("punishments").indexOf(guild.id, caseToLook)]: newCaseToLook }, true));
       obj.case = true;
-      obj.resultCase = newCaseToLook;
     } catch (err) {
       rejct(err);
       return obj;
@@ -252,7 +251,7 @@ class ActionLog {
       return obj;
     }
     try {
-      const logged = await logChannel.fetchMessage(caseToLook.messageid);
+      const logged = await logChannel.messages.fetch(caseToLook.messageid);
       const oldEmbed = logged.embeds[0];
       const newEmbed = await this.embedAction(newCaseToLook);
       await logged.edit({ embed: newEmbed });
@@ -267,7 +266,7 @@ class ActionLog {
   async embedAction(action) {
     const embed = new MessageEmbed();
     const {
-      case: num, target, description, color, time, moderator, reason, thumbnail, thumbnailOn,
+      case: num, target, description, color, time, moderator, reason, thumbnail, thumbOn,
       extraFields
     } = action;
     let text;
@@ -293,7 +292,7 @@ class ActionLog {
       .addField("Author", `<@${moderator || "1"}>`, true)
       .setFooter(`Target Member's ID: ${target || "666"}`);
     if (extraFields) for (const field of extraFields) embed.addField(field[0], field[1], true);
-    if (thumbnailOn) embed.setThumbnail(thumbnail || bot.user.defaultAvatarURL);
+    if (thumbOn) embed.setThumbnail(thumbnail || bot.user.defaultAvatarURL);
     embed.addField("Reason", reason || "None", false);
     return embed;
   }
