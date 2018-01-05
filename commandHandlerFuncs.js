@@ -81,7 +81,6 @@ module.exports = function returnFuncs(msg) {
   };
   const reply = sendingFunc(msg.reply.bind(msg));
   const send = sendingFunc(channel.send.bind(channel));
-
   const checkRole = (role, member) => {
     if (["mod", "admin"].includes(role)) {
       role = role === "mod" ? "moderator" : "administrator";

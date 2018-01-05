@@ -14,6 +14,7 @@ obj.regex = {
   HAS_DECIMAL: /\.(?!0+$)/,
   NAME_AND_DISCRIM: /^([^]{1,32})#(\d{4})$/,
   BAN_MATCH: /^([^]+?(?:#\d{4})?)(?:\s+([^]*))?$/,
+  CASE_MATCH: /^(?:([^]+)\s+([^]+)\s+([^]+)|([^]+)\s+([^]+)|([^]+))/,
   MUTE: {
     /**
      * Mute regex.
@@ -60,7 +61,7 @@ obj.regex = {
           \\d+ # Amount of it.
           \\s* # Whitespace if you desire.
           (?: # Entering valid time units.
-            s(?:ec(?:ond)s?) # s, sec, secs, second, seconds
+            s(?:ec(?:ond)?s?)? # s, sec, secs, second, seconds
             |m(?:in(?:ute)?s?)? # m, min, mins, minute, minutes
             |(?:h(?:ours?)?) # h, hour, hours
             |(?:d(?:ays?)?) # d, day, days
@@ -73,7 +74,7 @@ obj.regex = {
           \\d+ # Amount of time unit.
           \\s* # Optional Whitespace.
           (?: # Once again, entering valid time units.
-            s(?:ec(?:ond)s?) # s, sec, secs, second, seconds
+            s(?:ec(?:ond)?s?)? # s, sec, secs, second, seconds
             |m(?:in(?:ute)?s?)? # m, min, mins, minute, minutes
             |(?:h(?:ours?)?) # h, hour, hours
             |(?:d(?:ays?)?) # d, day, days
