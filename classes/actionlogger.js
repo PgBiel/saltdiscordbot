@@ -231,6 +231,9 @@ class ActionLog {
     if (options.reason) {
       caseToLook.reason = options.reason;
     }
+    if (options.moderator) {
+      caseToLook.moderator = options.moderator;
+    }
     if (options.toggleThumbnail) {
       caseToLook.thumbOn = !caseToLook.thumbOn;
     }

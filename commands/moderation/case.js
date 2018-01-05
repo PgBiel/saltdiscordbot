@@ -87,6 +87,9 @@ you will become the author of the case. This will expire in 15 seconds. Type __y
         const options = {};
         if (action === "edit") {
           options.reason = arg2;
+          if (!isYours) {
+            options.moderator = author.id;
+          }
         } else {
           options.toggleThumbnail = true;
         }
@@ -106,3 +109,37 @@ toggled " + resultCase.thumbOn ? "on" : "off"}!`);
     return reply(`Action must be either \`get\`, \`edit\` or \`delete\`.`);
   }
 };
+
+module.exports = new Command({
+  func,
+  name: "case",
+  perms: {"case.get": true, "case.edit": true, "case.delete": true, "case.others": false},
+  description: `Get or modify a case. Specify just a number to fetch that case and see it's information. Otherwise, specify an \
+action. The actions are listed below. After it, specify a number which will be the case to interact with.
+
+The \`get\` action works pretty much as if you just specified a number: It retrieves a case by the number specified.
+The rest of the actions can be only applied to your own cases by default and require a special permission to apply to others. For \
+\`edit\` and only it, if you attempt to apply it to someone else's case, you will be prompted for confirmation because you will \
+become the punisher.
+
+The \`edit\` action lets you change a case's reason. You must specify the new reason after the case number.
+
+The \`togglethumb\` action lets you toggle if a thumbnail will be displayed on the case's embed or not.
+
+And finally, the \`delete\` action lets you delete a case. You will always be asked for confirmation.
+
+Permissions: \`case \` and the action name. For interacting with others' cases, use \`case others\`.`,
+  example: `{p}case 5
+{p}case get 5
+{p}case edit 10 New reason
+{p}case togglethumb 16
+{p}case delete 6`,
+  category: "Moderation",
+  args: {
+    "action or case number": false,
+    "case number (only when using an action)": true,
+    "new reason (only when using edit)": true
+  },
+  guildOnly: true,
+  default: false,
+});
