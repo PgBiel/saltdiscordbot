@@ -12,7 +12,7 @@ const func = async function (
   const arg = Number(part2);
   const arg2 = part3;
   if (action === "get" || !isNaN(action)) {
-    if (!perms["cases.get"]) return reply(`Missing permission \`cases get\`! :(`);
+    if (!perms["case.get"]) return reply(`Missing permission \`cases get\`! :(`);
     if (isNaN(arg) && isNaN(action)) return reply(`Please specify a case number to get!`);
     const number = Number(isNaN(action) ? arg : action);
     if (number > punishments.length) return reply(`Invalid case number! There are ${punishments.length} cases.`);
@@ -21,7 +21,7 @@ const func = async function (
     return reply(`Here's the case with number ${punish.case}:`, { embed });
   } else if (["edit", "delete", "togglethumb"].includes(action)) {
     const permSecondPart = action === "delete" ? "delete" : "edit";
-    if (!perms[`cases.${permSecondPart}`]) return reply(`Missing permission \`cases ${permSecondPart}\`! :(`);
+    if (!perms[`case.${permSecondPart}`]) return reply(`Missing permission \`cases ${permSecondPart}\`! :(`);
     if (isNaN(arg)) return reply(`Please specify a case number to edit its reason!`);
     if (arg > punishments.length) return reply(`Invalid case number! There are ${punishments.length} cases.`);
     const { case: punish } = await actionLog.fetchCase(arg, guild);
@@ -29,7 +29,7 @@ const func = async function (
     const isYours = punish.moderator === author.id;
     if (
       !isYours
-      && (setPerms["cases.others"] ?
+      && (setPerms["case.others"] ?
         !perms["cases.others"] :
         checkRole("Administrator"))
       ) return reply(`That case is not yours. You need the permission
