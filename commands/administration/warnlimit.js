@@ -112,8 +112,8 @@ don't specify an action. For the "get" action, you specify a number after it whi
 For the "set", "unset", "add" (same as "set") and "remove" (same as "unset") actions, specify a number after it which is the \
 warn count punishment to set/unset. That's all you need if unsetting. If setting, specify a punishment after it (one of kick, \
 ban, softban, mute). For mute, specify amount of minutes after it; if you don't specify an amount of minutes it defaults to 10. \
-Otherwise, the punishment will set.\n\nMax warn count (for punishments) is 20. For permissions, use the \`warnlimit\` permission \
-for setting/unsetting and the \`warnlimit get\` permission for seeing/listing them. :wink:`,
+Otherwise, the punishment will set.\n\nMax warn count (for punishments) is 20. For permissions, use the \`warnlimit set\` \
+permission for setting/unsetting and the \`warnlimit get\` permission for seeing/listing them. :wink:`,
   example: `{p}warnlimit get 5 (see punishment on 5 warns)\n\
 {p}warnlimit set 13 kick (on 13 warns, kick)\n\
 {p}warnlimit set 10 mute 15 (on 10 warns, mute for 15 mins)\n\

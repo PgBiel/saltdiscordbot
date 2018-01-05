@@ -65,7 +65,8 @@ class Mute extends Punishment {
       actionLog({
         action_desc: `**{target}** was muted`,
         target: member,
-        extraFields: [["Muted For", time]],
+        extraFields: [["Muted For", time.toString()]],
+        time,
         type: "mute",
         author: member,
         color: "GOLD",

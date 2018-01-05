@@ -95,12 +95,18 @@ export interface HelperVals {
   // non array ones - end
   punishments: {
     type: string;
+    target: string;
+    color?: string;
     moderator: string;
+    description?: string;
     time?: string;
+    extraFields?: [[string, string]];
     reason?: string;
     duration?: string;
     messageid?: string;
-    case?: number;
+    case: number;
+    deleted?: boolean;
+    thumbOn: boolean;
     thumbnail?: string;
   };
   autoroles: string; // role id

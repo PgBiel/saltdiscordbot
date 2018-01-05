@@ -8,6 +8,7 @@ obj.db = require("../classes/database");
 obj.Storage = require("saltjs").Storage;
 obj._ = require("lodash");
 obj.logger = require("../classes/logger");
+obj.moment = require("moment");
 obj.bot = require("./bot").bot;
 obj.tables = require("tables.js");
 obj.assert = require("assert");
