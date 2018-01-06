@@ -96,11 +96,8 @@ export interface HelperVals {
   punishments: {
     type: string;
     target: string;
-    color?: string;
     moderator: string;
-    description?: string;
     time?: string;
-    extraFields?: [[string, string]];
     reason?: string;
     duration?: string;
     messageid?: string;

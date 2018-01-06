@@ -269,8 +269,8 @@ class ActionLog {
       case: num, target, time, moderator, reason, thumbnail, thumbOn, type,
       duration,
     } = action;
-    const uncTarget = uncompress(target);
-    const [, description, color, extraFields] = Constants.maps.PUNISHMENTS[type];
+    const uncTarget = uncompress(target || compress("666"));
+    const [, description, color, extraFields] = Constants.maps.PUNISHMENTS[type] || [];
     let text;
     if (target instanceof GuildMember) {
       text = target.user.username;
@@ -296,14 +296,14 @@ class ActionLog {
       .setDescription(descToUse)
       .setColor(color || "RANDOM")
       .setTimestamp(numTime || new Date())
-      .addField("Author", `<@${uncompress(moderator) || "1"}>`, true)
+      .addField("Author", `<@${uncompress(moderator || compress("1")) || "1"}>`, true)
       .setFooter(`Target Member's ID: ${uncTarget || "666"}`);
     if (extraFields) {
       for (const field of extraFields) {
-        embed.addField(field[0], field[1] === "<d>" ? Time(Number(duration)).toString() : field[1], true);
+        embed.addField(field[0], field[1] === "<d>" ? Time(Number(uncompress(duration || "0"))).toString() : field[1], true);
       }
     }
-    if (thumbOn) embed.setThumbnail(avatarUncompress(thumbnail) || bot.user.defaultAvatarURL);
+    if (thumbOn) embed.setThumbnail(avatarUncompress(thumbnail, uncTarget) || bot.user.defaultAvatarURL);
     embed.addField("Reason", reason || "None", false);
     return embed;
   }

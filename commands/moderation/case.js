@@ -52,20 +52,20 @@ There ${latest === 1 ? "is only 1 case" : `are ${latest} cases`}.`);
     if (arg.length && arg.length > 11) return reply(`Invalid case number! There ${latest === 1 ?
       "is only 1 case" :
       `are ${latest} cases`}.`);
-    if (arg > punishments.length) return reply(`Invalid case number! There ${latest === 1 ?
+    if (arg > latest) return reply(`Invalid case number! There ${latest === 1 ?
       "is only 1 case" :
       `are ${latest} cases`}.`);
     const { case: punish } = await actionLog.fetchCase(arg, guild);
     if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest 500 cases are kept stored.)`);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
-    const isYours = punish.moderator === author.id;
+    const isYours = this.uncompress(punish.moderator) === author.id;
     if (
       !isYours
       && (setPerms["case.others"] ?
         !perms["case.others"] :
         !checkRole("administrator"))
       ) return reply(`That case is not yours. You need the permission
-\`cases others\` or the Administrator saltrole to edit others' cases!`);
+\`case others\` or the Administrator saltrole to edit others' cases!`);
     if (action === "delete") {
       const result = await prompt({
         question: `Are you sure you want to delete the case numbered ${arg}?${isYours ? " **It isn't yours.**" : ""} \
