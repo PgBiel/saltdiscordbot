@@ -47,6 +47,30 @@ function ncrequire(fpath) {
 }
 exports.ncrequire = ncrequire;
 
+function datecomp(num = Date.now()) {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul","Aug", "Sep", "Oct", "Nov", "Dec"];
+    var curTime = new Date(num).toUTCString().split` `;
+    curTime.shift();
+    var day = Number(curTime.shift()).toString(32);
+    var month = months.indexOf(curTime.shift()).toString(13);
+    var year = (Number(curTime.shift()) - 2018).toString(36);
+    var rest = curTime.shift().split`:`;
+    var hour = Number(rest.shift()).toString(24);
+    var minute = Number(rest.shift()).toString(36);
+    return day + month + year + hour + minute;
+}
+function dateuncomp(str) {
+    var ret = new Date(0);
+    var stuff = str.split``;
+    ret.setUTCDate(parseInt(stuff.shift(), 32));
+    ret.setUTCMonth(parseInt(stuff.shift(), 13));
+    ret.setUTCFullYear(parseInt(stuff.shift(), 36) + 2018);
+    ret.setUTCHours(parseInt(stuff.shift(), 24), parseInt(stuff.join``, 36));
+    return ret;
+}
+exports.datecomp = datecomp;
+exports.dateuncomp = dateuncomp;
+
 /**
  * Factory function for event function for doEval on messager
  * @param {*} evaler The eval function
@@ -453,3 +477,54 @@ function botMessage(msg) {
   }
 }
 exports.botMessage = botMessage;
+
+function compress(str) {
+    return Buffer.from(str, "hex").toString("base64").replace(/=/g, "");
+}
+function uncompress(str) {
+    return Buffer.from(str + "=".repeat(str.length % 4), "base64").toString("hex");
+}
+exports.compress = compress;
+exports.uncompress = uncompress;
+
+function avatarCompress(url) {
+    var end;
+    if (url.match("embed")) {
+        end = "-" + url.match(/(\w+).[a-z]+?$/)[1];
+    } else {
+        end = url.match(/(\w+)\.[a-z]+?$/)[1];
+    }
+    return url.match(/\.([a-z])[a-z]*?$/)[1] + compress(end);
+}
+
+function avatarUncompress(end, id) {
+    if (end[0] == "-") {
+        return `https://cdn.discordapp.com/embed/avatars/${end[1]}.png`;
+    }
+    if (end[0] == "g") {
+        return `https://cdn.discordapp.com/avatars/${id}/${uncompress(end.substr(1))}.gif`;
+    } else {
+        return `https://cdn.discordapp.com/avatars/${id}/${uncompress(end.substr(1))}.webp`;
+    }
+}
+
+/* function avatarCompress(link) {
+  const avatarPart = /^(?:https?:\/\/)?cdn\.discordapp\.com\/avatars\/\d+\/(\w+\.(?:jpe?g|png|gif|webp))(?:\?size=\d+)?$/i;
+  const defAvatar = /^(?:https:\/\/)?cdn\.discordapp\.com\/embed\/avatars\/(\d+)\.(?:jpe?g|png|gif|webp)(?:\?size=\d+)?$/i;
+  if (link.match(avatarPart)) {
+    return link.match(avatarPart)[1];
+  } else if (link.match(defAvatar)) {
+    return "-" + link.match(defAvatar)[1];
+  } else {
+    return link;
+  }
+}
+function avatarUncompress(compressed, id) {
+  if (/^(?:https:\/\/)?cdn\.discordapp\.com/i.test(_.trim(compressed))) {
+    return compressed;
+  } else if (/^\-\d+$/.test(_.trim(compressed))) {
+    return `https://cdn.discordapp.com/embed/avatars/${_.trim(compressed).match(/^\-(\d+)$/)[1]}.png`;
+  } else {
+    return `https://cdn.discordapp.com/avatars/${id}/${_.trim(compressed)}`;
+  }
+} */

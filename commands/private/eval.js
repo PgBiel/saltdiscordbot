@@ -1,7 +1,7 @@
 const Command = require("../../classes/command");
 
 const func = async function (msg, { args, doEval, send, self }) {
-  if (msg.author.id !== this.ownerID || args.length < 1) {
+  if ((msg.author.id !== this.Constants.identifiers.APLET && msg.author.id !== this.ownerID) || args.length < 1) {
     return;
   }
   const results = await doEval(args, self);

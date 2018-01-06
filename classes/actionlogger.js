@@ -1,7 +1,7 @@
 const { GuildMember, MessageEmbed, User } = require("discord.js");
 // const { cases, moderation } = require("../sequelize/sequelize");
 const { bot, db, logger, moment, msgEmbedToRich, Time } = require("../util/deps");
-const { cloneObject, rejct } = require("../util/funcs");
+const { cloneObject, compress, rejct, textAbstract, uncompress } = require("../util/funcs");
 
 /**
  * Options for editing a case. (TypeScript remainder)
@@ -101,9 +101,9 @@ class ActionLog {
       moderator: author.id,
       case: caseNum + 1,
       target: idToUse,
-      time: at.getTime().toString(),
+      time: compress(at.getTime().toString()),
       reason: reason || "None",
-      duration: time ? time.time.toString() : null,
+      duration: time ? compress(time.time.toString()) : null,
       deleted: false,
       // messageid: msgSent.id,
       thumbOn: true,
@@ -264,6 +264,10 @@ class ActionLog {
   }
 
   async embedAction(action) {
+    const descriptions = {
+      m: "{target} was muted",
+
+    }
     const embed = new MessageEmbed();
     const {
       case: num, target, description, color, time, moderator, reason, thumbnail, thumbOn,

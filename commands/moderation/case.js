@@ -20,7 +20,12 @@ const func = async function (
     part3 = match[3];
   }
   const action = part1.toLowerCase();
-  const arg = part2 === "???" && action === "get" ? part2 : Number(part2);
+  let arg;
+  if ((part2 === "???" && action === "get") || (part2 && part2.length > 11)) {
+    arg = part2;
+  } else {
+    arg = Number(part2);
+  }
   const arg2 = part3;
   const length = punishments.length;
   if (action === "get" || !isNaN(action) || action === "???") {
@@ -30,17 +35,23 @@ const func = async function (
       return reply(`Spooky! :ghost:`, { embed: spook });
     }
     if (isNaN(arg) && isNaN(action)) return reply(`Please specify a case number to get!`);
+    if ((arg.length && arg.length > 11) || (action.length && action.length > 11)) return reply(`Invalid case number! \
+There ${length === 1 ? "is only 1 case" : `are ${length} cases`}.`);
     const number = Number(isNaN(action) ? arg : action);
     if (number > punishments.length) return reply(`Invalid case number! There ${length === 1 ?
       "is only 1 case" :
       `are ${length} cases`}.`);
     const { case: punish, embed } = await actionLog.fetchCase(number, guild);
+    if (!punish) return reply(`Unknown case number! :(`);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
     return reply(`Here's Case #${punish.case}:`, { embed });
   } else if (["edit", "delete", "togglethumb"].includes(action)) {
     const permSecondPart = action === "delete" ? "delete" : "edit";
     if (!perms[`case.${permSecondPart}`]) return reply(`Missing permission \`cases ${permSecondPart}\`! :(`);
     if (isNaN(arg)) return reply(`Please specify a case number to modify it!`);
+    if (arg.length && arg.length > 11) return reply(`Invalid case number! There ${length === 1 ?
+      "is only 1 case" :
+      `are ${length} cases`}.`);
     if (arg > punishments.length) return reply(`Invalid case number! There ${length === 1 ?
       "is only 1 case" :
       `are ${length} cases`}.`);
@@ -56,7 +67,7 @@ const func = async function (
 \`cases others\` or the Administrator saltrole to edit others' cases!`);
     if (action === "delete") {
       const result = await prompt({
-        question: `Are you sure you want to delete the case numbered ${arg}?${isYours ? " It isn't yours." : ""} \
+        question: `Are you sure you want to delete the case numbered ${arg}?${isYours ? " **It isn't yours.**" : ""} \
 This will expire in 15 seconds. Type __y__es or __n__o.`,
         invalidMsg: "__Y__es or __n__o?",
         filter: msg2 => {
