@@ -24,30 +24,6 @@ export interface IMuteParseResults {
   reason: string;
 } */
 
-function avatarCompress(url) {
-    var end;
-    if (url.match("embed")) {
-        end = "-" + url.match(/(\w+).[a-z]+?$/)[1];
-    } else {
-        end = url.match(/(\w+)\.[a-z]+?$/)[1];
-    }
-    if (end.match(/^a_/)) {
-        return "g" + compress(end.substr(2));
-    }
-    return compress(end);
-}
-
-function avatarUncompress(end, id) {
-    if (end[0] == "-") {
-        return `https://cdn.discordapp.com/embed/avatars/${end[1]}.png`;
-    }
-    if (end[0] == "g") {
-        return `https://cdn.discordapp.com/avatars/${id}/a_${uncompress(end.substr(1))}.gif`;
-    } else {
-        return `https://cdn.discordapp.com/avatars/${id}/${uncompress(end)}.webp`;
-    }
-}
-
 /**
  * Handle a rejection
  * @param {*} rejection The rejection to handle
@@ -510,6 +486,33 @@ function uncompress(str) {
 }
 exports.compress = compress;
 exports.uncompress = uncompress;
+
+function avatarCompress(url) {
+    var end;
+    if (url.match("embed")) {
+        end = "-" + url.match(/(\w+).[a-z]+?$/)[1];
+    } else {
+        end = url.match(/(\w+)\.[a-z]+?$/)[1];
+    }
+    if (end.match(/^a_/)) {
+        return "g" + compress(end.substr(2));
+    }
+    return compress(end);
+}
+
+function avatarUncompress(end, id) {
+    if (end[0] == "-") {
+        return `https://cdn.discordapp.com/embed/avatars/${end[1]}.png`;
+    }
+    if (end[0] == "g") {
+        return `https://cdn.discordapp.com/avatars/${id}/a_${uncompress(end.substr(1))}.gif`;
+    } else {
+        return `https://cdn.discordapp.com/avatars/${id}/${uncompress(end)}.webp`;
+    }
+}
+
+exports.avatarCompress = avatarCompress;
+exports.avatarUncompress = avatarUncompress;
 
 /* function avatarCompress(link) {
   const avatarPart = /^(?:https?:\/\/)?cdn\.discordapp\.com\/avatars\/\d+\/(\w+\.(?:jpe?g|png|gif|webp))(?:\?size=\d+)?$/i;
