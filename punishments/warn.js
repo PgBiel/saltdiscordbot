@@ -40,9 +40,8 @@ class Warn extends Punishment {
     const finish = () => {
       sentWarnMsg.edit(`Warned ${member.user.tag} successfully.`).catch(rejct);
       actionLog({
-        action_desc: `**{target}** was warned`,
         target: member,
-        type: "warn",
+        type: "w",
         author,
         color: "AQUA",
         reason: reason || "None",

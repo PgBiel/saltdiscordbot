@@ -494,7 +494,10 @@ function avatarCompress(url) {
     } else {
         end = url.match(/(\w+)\.[a-z]+?$/)[1];
     }
-    return url.match(/\.([a-z])[a-z]*?$/)[1] + compress(end);
+    if (end.match(/^a_/)) {
+        return "g" + compress(end.substr(2));
+    }
+    return compress(end);
 }
 
 function avatarUncompress(end, id) {
@@ -502,9 +505,9 @@ function avatarUncompress(end, id) {
         return `https://cdn.discordapp.com/embed/avatars/${end[1]}.png`;
     }
     if (end[0] == "g") {
-        return `https://cdn.discordapp.com/avatars/${id}/${uncompress(end.substr(1))}.gif`;
+        return `https://cdn.discordapp.com/avatars/${id}/a_${uncompress(end.substr(1))}.gif`;
     } else {
-        return `https://cdn.discordapp.com/avatars/${id}/${uncompress(end.substr(1))}.webp`;
+        return `https://cdn.discordapp.com/avatars/${id}/${uncompress(end)}.webp`;
     }
 }
 

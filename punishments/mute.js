@@ -63,13 +63,10 @@ class Mute extends Punishment {
         `Muted ${member.user.tag} for **${time.toString()}** ${time ? "" : "(default) "}successfully.`,
       ).catch(rejct);
       actionLog({
-        action_desc: `**{target}** was muted`,
         target: member,
-        extraFields: [["Muted For", time.toString()]],
         time,
-        type: "mute",
+        type: "m",
         author: member,
-        color: "GOLD",
         reason: reason || "None",
       }).catch(rejct);
     };

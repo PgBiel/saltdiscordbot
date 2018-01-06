@@ -1,7 +1,9 @@
 const { GuildMember, MessageEmbed, User } = require("discord.js");
 // const { cases, moderation } = require("../sequelize/sequelize");
-const { bot, db, logger, moment, msgEmbedToRich, Time } = require("../util/deps");
-const { cloneObject, compress, rejct, textAbstract, uncompress } = require("../util/funcs");
+const { bot, Constants, db, logger, moment, msgEmbedToRich, Time } = require("../util/deps");
+const {
+  avatarCompress, avatarUncompress, cloneObject, compress, datecomp, dateuncomp, rejct, textAbstract, uncompress
+} = require("../util/funcs");
 
 /**
  * Options for editing a case. (TypeScript remainder)
@@ -80,7 +82,7 @@ class ActionLog {
    */
   async log(options) {
     const {
-      action_desc, guild, author, reason, color, extraFields, target, type,
+      guild, author, reason, target, type,
       targetId, thumbnail, time
     } = options;
     const caseNum = Number(this._getCase(guild)) || 0;
@@ -98,19 +100,16 @@ class ActionLog {
     }
     const caseObj = {
       type,
-      moderator: author.id,
+      moderator: compress(author.id),
       case: caseNum + 1,
-      target: idToUse,
-      time: compress(at.getTime().toString()),
-      reason: reason || "None",
+      target: compress(idToUse),
+      time: datecomp(at),
+      reason: textAbstract(reason, 500) || "None",
       duration: time ? compress(time.time.toString()) : null,
       deleted: false,
       // messageid: msgSent.id,
       thumbOn: true,
-      thumbnail: thumbnailToUse,
-      description: action_desc,
-      color,
-      extraFields
+      thumbnail: avatarCompress(thumbnailToUse),
     };
     const embed = await this.embedAction(caseObj);
     let msgSent;
@@ -128,8 +127,9 @@ class ActionLog {
       rejct(err);
       return null;
     }
-    caseObj.messageid = msgSent.id;
+    caseObj.messageid = compress(msgSent.id);
     db.table("punishments").add(guild.id, caseObj);
+    if (db.table("punishments").get(guild.id, []).length > 500) db.table("punishments").spliceArr(guild.id, 0, 1);
     try {
       db.table("mods").assign(guild.id, { latestCase: caseNum + 1 }, true);
     } catch (err) {
@@ -169,7 +169,7 @@ class ActionLog {
       return obj;
     }
     try {
-      const logged = await logChannel.messages.fetch(caseToLook.messageid);
+      const logged = await logChannel.messages.fetch(uncompress(caseToLook.messageid));
       await logged.delete();
       obj.message = true;
     } catch (err) {
@@ -200,7 +200,7 @@ class ActionLog {
       return obj;
     }
     try {
-      const logged = await logChannel.messages.fetch(caseToLook.messageid);
+      const logged = await logChannel.messages.fetch(uncompress(caseToLook.messageid));
       obj.message = logged;
       return obj;
     } catch (err) {
@@ -229,10 +229,10 @@ class ActionLog {
     }
     const newCaseToLook = cloneObject(caseToLook);
     if (options.reason) {
-      newCaseToLook.reason = options.reason;
+      newCaseToLook.reason = textAbstract(options.reason, 500);
     }
     if (options.moderator) {
-      newCaseToLook.moderator = options.moderator;
+      newCaseToLook.moderator = compress(options.moderator);
     }
     if (options.toggleThumbnail) {
       newCaseToLook.thumbOn = !caseToLook.thumbOn;
@@ -251,7 +251,7 @@ class ActionLog {
       return obj;
     }
     try {
-      const logged = await logChannel.messages.fetch(caseToLook.messageid);
+      const logged = await logChannel.messages.fetch(uncompress(caseToLook.messageid));
       const oldEmbed = logged.embeds[0];
       const newEmbed = await this.embedAction(newCaseToLook);
       await logged.edit({ embed: newEmbed });
@@ -264,15 +264,13 @@ class ActionLog {
   }
 
   async embedAction(action) {
-    const descriptions = {
-      m: "{target} was muted",
-
-    }
     const embed = new MessageEmbed();
     const {
-      case: num, target, description, color, time, moderator, reason, thumbnail, thumbOn,
-      extraFields
+      case: num, target, time, moderator, reason, thumbnail, thumbOn, type,
+      duration,
     } = action;
+    const uncTarget = uncompress(target);
+    const [, description, color, extraFields] = Constants.maps.PUNISHMENTS[type];
     let text;
     if (target instanceof GuildMember) {
       text = target.user.username;
@@ -280,23 +278,32 @@ class ActionLog {
       text = target.username;
     } else {
       try {
-        const awaited = bot.users.get(target) || (await bot.users.fetch(target));
+        const awaited = bot.users.get(uncTarget) || (await bot.users.fetch(uncTarget));
         text = awaited.username;
       } catch (_err) {
         text = String(target || "Clyde");
       }
     }
     const descToUse = (description || "Something happened to {target}").replace(/{target}/g, text || "Clyde");
-    const numTime = Number(time);
+    let numTime;
+    try {
+      numTime = dateuncomp(time);
+    } catch(err) {
+      numTime = new Date();
+    }
     embed
       .setTitle(`Action Log ${num || "???"}`)
       .setDescription(descToUse)
       .setColor(color || "RANDOM")
-      .setTimestamp(isNaN(numTime) ? new Date() : new Date(numTime))
-      .addField("Author", `<@${moderator || "1"}>`, true)
-      .setFooter(`Target Member's ID: ${target || "666"}`);
-    if (extraFields) for (const field of extraFields) embed.addField(field[0], field[1], true);
-    if (thumbOn) embed.setThumbnail(thumbnail || bot.user.defaultAvatarURL);
+      .setTimestamp(numTime || new Date())
+      .addField("Author", `<@${uncompress(moderator) || "1"}>`, true)
+      .setFooter(`Target Member's ID: ${uncTarget || "666"}`);
+    if (extraFields) {
+      for (const field of extraFields) {
+        embed.addField(field[0], field[1] === "<d>" ? Time(Number(duration)).toString() : field[1], true);
+      }
+    }
+    if (thumbOn) embed.setThumbnail(avatarUncompress(thumbnail) || bot.user.defaultAvatarURL);
     embed.addField("Reason", reason || "None", false);
     return embed;
   }

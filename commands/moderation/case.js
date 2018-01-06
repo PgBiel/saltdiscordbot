@@ -27,35 +27,36 @@ const func = async function (
     arg = Number(part2);
   }
   const arg2 = part3;
-  const length = punishments.length;
+  const latest = (punishments[punishments.length - 1] || { case: 0 }).case;
   if (action === "get" || !isNaN(action) || action === "???") {
-    if (!perms["case.get"]) return reply(`Missing permission \`cases get\`! :(`);
+    if (!perms["case.get"]) return reply(`Missing permission \`case get\`! :(`);
     if (action === "???" || arg === "???") {
       const spook = await actionLog.embedAction({});
       return reply(`Spooky! :ghost:`, { embed: spook });
     }
     if (isNaN(arg) && isNaN(action)) return reply(`Please specify a case number to get!`);
     if ((arg.length && arg.length > 11) || (action.length && action.length > 11)) return reply(`Invalid case number! \
-There ${length === 1 ? "is only 1 case" : `are ${length} cases`}.`);
+There ${latest === 1 ? "is only 1 case" : `are ${latest} cases`}.`);
     const number = Number(isNaN(action) ? arg : action);
-    if (number > punishments.length) return reply(`Invalid case number! There ${length === 1 ?
+    if (number > latest) return reply(`Invalid case number! There ${latest === 1 ?
       "is only 1 case" :
-      `are ${length} cases`}.`);
+      `are ${latest} cases`}.`);
     const { case: punish, embed } = await actionLog.fetchCase(number, guild);
-    if (!punish) return reply(`Unknown case number! :(`);
+    if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest 500 cases are kept stored.)`);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
     return reply(`Here's Case #${punish.case}:`, { embed });
   } else if (["edit", "delete", "togglethumb"].includes(action)) {
     const permSecondPart = action === "delete" ? "delete" : "edit";
-    if (!perms[`case.${permSecondPart}`]) return reply(`Missing permission \`cases ${permSecondPart}\`! :(`);
+    if (!perms[`case.${permSecondPart}`]) return reply(`Missing permission \`case ${permSecondPart}\`! :(`);
     if (isNaN(arg)) return reply(`Please specify a case number to modify it!`);
-    if (arg.length && arg.length > 11) return reply(`Invalid case number! There ${length === 1 ?
+    if (arg.length && arg.length > 11) return reply(`Invalid case number! There ${latest === 1 ?
       "is only 1 case" :
-      `are ${length} cases`}.`);
-    if (arg > punishments.length) return reply(`Invalid case number! There ${length === 1 ?
+      `are ${latest} cases`}.`);
+    if (arg > punishments.length) return reply(`Invalid case number! There ${latest === 1 ?
       "is only 1 case" :
-      `are ${length} cases`}.`);
+      `are ${latest} cases`}.`);
     const { case: punish } = await actionLog.fetchCase(arg, guild);
+    if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest 500 cases are kept stored.)`);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
     const isYours = punish.moderator === author.id;
     if (

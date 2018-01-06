@@ -49,11 +49,9 @@ Check the conditions for being kicked (e.g. must not be owner, etc)!");
     const finish = () => {
       edit(`Kicked ${member.user.tag} successfully.`).catch(rejct);
       actionLog({
-        action_desc: `**{target}** was kicked`,
         target: member,
-        type: "kick",
+        type: "k",
         author: member,
-        color: "ORANGE",
         reason: reason || "None",
       }).catch(rejct);
     };

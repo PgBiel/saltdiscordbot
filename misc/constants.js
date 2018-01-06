@@ -10,6 +10,18 @@ obj.times = {
   AMBIGUITY_EXPIRE: 30000,
 };
 
+obj.maps = {
+  PUNISHMENTS: {
+    m: ["mute", "**{target}** was muted", "GOLD", [["Muted For", "<d>"]]],
+    w: ["warn", "**{target}** was warned", "AQUA"],
+    u: ["unmute", "**{target}** was unmuted", "GREEN"],
+    U: ["unban", "**{target}** was unbanned", "DARK_GREEN"],
+    k: ["kick", "**{target}** was kicked", "ORANGE"],
+    s: ["softban", "**{target}** was softbanned", "ORANGE"],
+    b: ["ban", "**{target}** was banned", "RED"]
+  }
+};
+
 obj.regex = {
   HAS_DECIMAL: /\.(?!0+$)/,
   NAME_AND_DISCRIM: /^([^]{1,32})#(\d{4})$/,

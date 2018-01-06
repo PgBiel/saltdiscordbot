@@ -25,10 +25,10 @@ class Ban extends Punishment {
     member, guild, context,
     {
       author = null, reason = null, auctPrefix = "", actions = ["Banning", "Banned", "banned", "Ban", "ban"], usePrompt = true,
-      color = "RED", days = 1, isSoft = false
+      days = 1, isSoft = false
     } = {
       author: null, reason: null, auctPrefix: "", actions: ["Banning", "Banned", "banned", "Ban", "ban"], usePrompt: true,
-      color: "RED", days: 1, isSoft: false,
+      days: 1, isSoft: false,
     },
   ) {
     const id = typeof member === "string" ? member : null;
@@ -84,7 +84,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     "Sending DM..."})`);
     const reasonEmbed = new MessageEmbed();
     reasonEmbed
-      .setColor(color || "RED")
+      .setColor(isSoft ? "ORANGE" : "RED")
       .setDescription(reason || "None")
       .setTimestamp(new Date());
     const finishAsync = async target => {
@@ -110,10 +110,8 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
       sentBanMsg.edit(`${actions[1]} ${name} successfully.`).catch(rejct);
       const userTarget = targetToUse instanceof GuildMember ? targetToUse.user : targetToUse;
       const logObj = {
-        action_desc: `**{target}** was ${actions[2]}`,
-        type: actions[3],
+        type: isSoft ? "s" : "b",
         author,
-        color: color || "RED",
         reason: reason || "None",
         target: userTarget,
       };
