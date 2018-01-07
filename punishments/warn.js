@@ -1,6 +1,6 @@
 const { MessageEmbed } = require("discord.js");
-const { db, logger, Time, util } = require("../util/deps");
-const { escMarkdown, rejct, textAbstract } = require("../util/funcs");
+const { Constants, db, logger, Time, util } = require("../util/deps");
+const { compress, datecomp, dateuncomp, escMarkdown, rejct, textAbstract, uncompress } = require("../util/funcs");
 const Punishment = require("./punishment");
 
 const banP = require("./ban");
@@ -54,8 +54,8 @@ class Warn extends Punishment {
     const executeWarnAsync = async () => {
       try {
         if (warnStep) {
-          const punishment = warnStep.punishment;
-          const timeNum = Number(warnStep.time);
+          const punishment = (Constants.maps.PUNISHMENTS[warnStep.punishment] || ["none"])[0];
+          const timeNum = Number(uncompress(warnStep.time)) * 1000;
           const time = new Time(isNaN(timeNum) ? Time.minutes(10) : timeNum);
           if (punishment === "kick" || punishment === "ban" || punishment === "softban") {
             let reasonStr;
@@ -103,18 +103,18 @@ a **${punishment}** (as says this server's current setup).`);
           } else {
             // logger.debug("Boi", warnStep.amount, warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount);
             await db.table("warns").add(guild.id, {
-              userid: member.id,
+              userid: compress(member.id),
               reason: reason || "None",
-              moderatorid: author.id,
-              warnedat: Date.now().toString(),
+              moderatorid: compress(author.id),
+              warnedat: datecomp(),
             }, true);
           }
         } else {
           await db.table("warns").add(guild.id, {
-            userid: member.id,
+            userid: compress(member.id),
             reason: reason || "None",
-            moderatorid: author.id,
-            warnedat: Date.now().toString(),
+            moderatorid: compress(author.id),
+            warnedat: datecomp(),
           }, true);
           finish();
         }

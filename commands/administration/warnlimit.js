@@ -72,6 +72,7 @@ Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
         return reply(`Please tell me which punishment should I give on reaching that limit! \
 (Either ban, softban, kick, or mute + minutes muted)`);
       }
+      if (num > 25) return reply(`The max warn limit is 25!`);
       if (!/^(?:kick|(?:soft)?ban|mute)$/i.test(subSubArg)) {
         return reply(`The punishment must be either kick, ban, softban or mute (+ minutes muted, default is 10 mins).`);
       }
@@ -86,8 +87,8 @@ Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
       const punish = subSubArg.toLowerCase();
       const objToUse = {
         amount: num,
-        punishment: punish,
-        time: punish === "mute" ? time.time : 0
+        punishment: punish[0].toLowerCase(),
+        time: punish === "mute" ? this.compress(Math.floor(time.time / 1000).toString()) : "0"
       };
       const step = steps.find(s => s.amount === num);
       if (step) {

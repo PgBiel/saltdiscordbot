@@ -80,11 +80,9 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
   const finish = () => {
     sentUnbanMsg.edit(`Unbanned ${memberToUse.tag} successfully.`).catch(this.rejct);
     actionLog({
-      action_desc: `**{target}** was unbanned`,
       target: memberToUse,
-      type: "unban",
+      type: "U",
       author: member,
-      color: "DARK_GREEN",
       reason: reason || "None",
     }).catch(this.rejct);
   };

@@ -105,7 +105,7 @@ class ActionLog {
       target: compress(idToUse),
       time: datecomp(at),
       reason: textAbstract(reason, 500) || "None",
-      duration: time ? compress(time.time.toString()) : null,
+      duration: time ? compress(Math.floor(time.time / 1000).toString()) : null,
       deleted: false,
       // messageid: msgSent.id,
       thumbOn: true,
@@ -267,8 +267,9 @@ class ActionLog {
     const embed = new MessageEmbed();
     const {
       case: num, target, time, moderator, reason, thumbnail, thumbOn, type,
-      duration,
+      duration: oDuration,
     } = action;
+    const duration = oDuration ? String(Number(uncompress(oDuration)) * 1000) : "0";
     const uncTarget = uncompress(target || compress("666"));
     const [, description, color, extraFields] = Constants.maps.PUNISHMENTS[type] || [];
     let text;
@@ -300,7 +301,7 @@ class ActionLog {
       .setFooter(`Target Member's ID: ${uncTarget || "666"}`);
     if (extraFields) {
       for (const field of extraFields) {
-        embed.addField(field[0], field[1] === "<d>" ? Time(Number(uncompress(duration || "0"))).toString() : field[1], true);
+        embed.addField(field[0], field[1] === "<d>" ? Time(Number(duration || "0")).toString() : field[1], true);
       }
     }
     if (thumbOn) embed.setThumbnail(avatarUncompress(thumbnail, uncTarget) || bot.user.defaultAvatarURL);

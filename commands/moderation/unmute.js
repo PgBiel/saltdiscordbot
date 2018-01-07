@@ -92,11 +92,9 @@ const func = async function (msg, {
   const finish = () => {
     sentMuteMsg.edit(`Unmuted ${memberToUse.user.tag} successfully.`).catch(this.rejct);
     actionLog({
-      action_desc: `**{target}** was unmuted`,
       target: memberToUse,
-      type: "unmute",
+      type: "u",
       author: member,
-      color: "GREEN",
       reason: reason || "None",
     }).catch(this.rejct);
   };
