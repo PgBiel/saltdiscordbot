@@ -33,7 +33,7 @@ obj.regex = {
     ( # Possibility 1 starts here. This group is user name
       [^\\s]{1,32} # Any character up to 32 chars (name)
       |[^\\s]{1,32} # Or, that and...
-      \\#\\d{4}) # A discrim.
+      \\#\\d{4} # A discrim.
     )
     \\s+ # Any whitespaces
     ["']* # Optional quotes (idk why I add this here but)

@@ -25,13 +25,15 @@ function exampleCases(punishes, init = " ") {
     const initCases = punishes.slice(0, 4).map(c => c.case.toString()).join(", ");
     const otherCases = punishes.slice();
     otherCases.splice(0, 4);
-    return `${init}[Cases ${initCases}... (+${otherCases.length})]`;
+    return `${init}[Cases ${initCases}... (and ${otherCases.length} more)]`;
   }
 }
 
-function authorMain({ Embed, author, punishments, p, reply, send, uncompress, _ }) {
-  const filtered = filterPunishes(punishments, author.id, uncompress);
-    if (!filtered.all || filtered.all.length < 1) return reply(`You haven't ever been punished! :smiley:`);
+function main({ Embed, user, isAuthor, punishments, p, reply, send, uncompress, _ }) {
+  const filtered = filterPunishes(punishments, user.id, uncompress);
+    if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
+      "You haven't" :
+      "That user hasn't"} ever been punished! :smiley:`);
     let text = `Punishments available (Type \`${p}listpunish <punishment>\` to a view a list):
 
 `;
@@ -44,17 +46,26 @@ function authorMain({ Embed, author, punishments, p, reply, send, uncompress, _ 
       .setTitle("List of punishments")
       .setDescription(_.trim(text))
       .setColor("RANDOM")
-      .setFooter(`You have been punished ${filtered.all.length} times. Type \`${p}listpunish all\` to see all of your punishments.`);
-    reply("Here's your punishment list:", { embed });
+      .setFooter(`${isAuthor ?
+        "You have" :
+        "That user"} been punished ${filtered.all.length} times. Type \`${p}listpunish all\` to see all of your punishments.`);
+    if (isAuthor) {
+      reply("Here's your punishment list:", { embed });
+    } else {
+      send(`Here's the punishment list for ${user.tag}:`, { embed });
+    }
 }
 
 const func = async function (
-  msg, { prompt, guildId, guild, reply, checkRole, author, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms },
+  msg, {
+    prompt, guildId, guild, reply, checkRole, author, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms, searcher,
+    promptAmbig,
+  },
 ) {
   const punishments = this.db.table("punishments").get(guildId);
   if (!punishments || punishments.length < 1) return reply(`Nobody has been punished in this guild!`);
   if (!args) {
-    authorMain({ Embed: this.Embed, author, punishments, p, reply, send, uncompress: this.uncompress, _: this._ });
+    main({ Embed: this.Embed, user: author, isAuthor: true, punishments, p, reply, send, uncompress: this.uncompress, _: this._ });
   } else {
     const matchObj = args.match(this.xreg(this.Constants.regex.LIST_PUNISH_MATCH, "xi"));
     let user, name, page;
@@ -66,7 +77,41 @@ const func = async function (
     }
     if (!user && !name) return reply(`Please specify an user to check their punishments!`);
     page = matchObj[4] && matchObj[4].length < 5 && /^\d+$/.test(matchObj[4]) ? (Number(matchObj[4]) || 1) : NaN;
-    
+    let memberToUse;
+    let membersMatched;
+    if (/[^]#\d{4}$/.test(user)) {
+      const split = user.split("#");
+      const discrim = split.pop();
+      const username = split.join("#");
+      memberToUse = guild.members.find(m => m.user.username === username && m.user.discriminator === discrim);
+    } else if (/^<@!?\d+>$/.test(user)) {
+      memberToUse = guild.members.get(user.match(/^<@!?(\d+)>$/)[1]);
+    }
+    if (!memberToUse) {
+      membersMatched = searcher.searchMember(user);
+    }
+    if (membersMatched && membersMatched.length < 1) {
+      return reply("Member not found!");
+    } else if (membersMatched && membersMatched.length === 1) {
+      memberToUse = membersMatched[0];
+    } else if (membersMatched && membersMatched.length > 1 && membersMatched.length < 10) {
+      const result = await promptAmbig(membersMatched);
+      if (result.cancelled) {
+        return;
+      }
+      memberToUse = result.member;
+    } else if (membersMatched) {
+      return reply("Multiple members have matched your search. Please be more specific.");
+    }
+    if (!memberToUse) {
+      return;
+    }
+    if (!name) {
+      main({
+        Embed: this.Embed, user: memberToUse.user, isAuthor: memberToUse.user.id === author.id, punishments, p, reply, send,
+        uncompress: this.uncompress, _: this._
+      });
+    }
   }
 };
 
