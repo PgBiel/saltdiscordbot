@@ -13,7 +13,7 @@ Input
 ${args}
 
 Output
-${resultStr}
+${this.textAbstract(resultStr, 1900)}
 \`\`\``);
   } else {
     send(`\`\`\`js
@@ -21,7 +21,7 @@ Input
 ${args}
 
 Error
-${resultStr}
+${this.textAbstract(resultStr, 1900)}
 \`\`\``);
   }
 };

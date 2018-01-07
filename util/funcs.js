@@ -330,7 +330,7 @@ function parseMute(str) {
     time: null,
     reason: "",
   };
-  const reg = xreg(Constants.regex.MUTE.MATCH_REG, "x");
+  const reg = xreg(Constants.regex.MUTE.MATCH_REG, "xi");
   const results = str.match(reg);
   if (!results) {
     obj.ok = false;
