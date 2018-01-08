@@ -28,43 +28,8 @@ obj.regex = {
   BAN_MATCH: /^([^]+?(?:#\d{4})?)(?:\s+([^]*))?$/,
   CASE_MATCH: /^(?:([\s\S]+)\s+([\s\S]+)\s+([\s\S]+)|([\s\S]+)\s+([\s\S]+)|([\s\S]+))/,
   LIST_PUNISH_MATCH: `
-  ^ # Start of string.
-  (?: # User & Punishment.
-    ["']* # Optional quotes (idk why I add this here but)
-    ( # Possibility 1 starts here. Just punishment
-      (?: # Singular name
-        all|kick|ban|unban|unmute|softban|mute|warn # Punishments
-      )s? # Optional S for plural
-    )
-    ["']* # optional quotes
-    |
-    ( # Possibility 2 starts here. This group is user name
-      [\\s\\S]{1,32} # Any character up to 32 chars (name)
-      |[\\s\\S]{1,32} # Or, that and...
-      \\#\\d{4} # A discrim.
-    )
-    \\s+ # Any whitespaces
-    ["']* # Optional quotes (idk why I add this here but)
-    ( # The group of the punishment.
-      (?: # Singular name
-        all|kick|ban|unban|unmute|softban|mute|warn # Punishments
-      )s? # Optional S for plural
-    ) # End punishment group
-    ["']* # optional quotes
-    (?! # Do not match if there's anything other than whitespace after this
-      [^\\s]
-    )
-    | # End of possibility 2. Start possibility 3
-    ( # user name
-      [^\\s]{1,32} # any char up to 32 chars (name)
-      |[^\\s]{1,32} # or that and a discrim
-      \\#\\d{4})
-    )
-    (?: # page number
-      \\s+ # space
-      ([\\s\\S]+) # number (matches anything so that user knows why it fails)
-    )? # optional (default: 1)
-    $ # end of string`,
+  ^(?:((?:all|kick|ban|unban|unmute|softban|mute|warn)s?)|(?:([\s\S]{1,32}|[\s\S]{1,32}\#\d{4})\s+["']*
+  ((?:all|kick|ban|unban|unmute|softban|mute|warn)s?)["']*(?![^\s])(?:\s+(\d+))?)|([\s\S]{1,32}|[\s\S]{1,32}\#\d{4}))$`,
   MUTE: {
     /**
      * Mute regex.

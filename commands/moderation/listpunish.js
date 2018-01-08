@@ -121,10 +121,10 @@ const func = async function (
       user = matchObj[2];
       name = matchObj[3];
     } else {
-      user = matchObj[4];
+      user = matchObj[5];
     }
-    if (!user && !name) return reply(`Please specify an user to check their punishments!`);
-    page = matchObj[5] && matchObj[5].length < 5 && /^\d+$/.test(this._.trim(matchObj[5])) ? (Number(matchObj[5]) || 1) : 1;
+    if (!user && !name) return reply(`Please specify a valid user to check their punishments!`);
+    page = matchObj[4] && matchObj[4].length < 5 && /^\d+$/.test(this._.trim(matchObj[5])) ? (Number(matchObj[5]) || 1) : 1;
     name = name ? this._.trim(name) : name;
     if (user) {
       let memberToUse;
