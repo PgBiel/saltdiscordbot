@@ -28,8 +28,8 @@ obj.regex = {
   BAN_MATCH: /^([^]+?(?:#\d{4})?)(?:\s+([^]*))?$/,
   CASE_MATCH: /^(?:([\s\S]+)\s+([\s\S]+)\s+([\s\S]+)|([\s\S]+)\s+([\s\S]+)|([\s\S]+))/,
   LIST_PUNISH_MATCH: `
-  ^(?:((?:all|kick|ban|unban|unmute|softban|mute|warn)s?)|(?:([\s\S]{1,32}|[\s\S]{1,32}\#\d{4})\s+["']*
-  ((?:all|kick|ban|unban|unmute|softban|mute|warn)s?)["']*(?![^\s])(?:\s+(\d+))?)|([\s\S]{1,32}|[\s\S]{1,32}\#\d{4}))$`,
+  ^(?:((?:all|kick|ban|unban|unmute|softban|mute|warn)s?)(?:\\s+(\\d+))?)|(?:([\\s\\S]{1,32}|[\\s\\S]{1,32}\\#\\d{4})\\s+["']*
+  ((?:all|kick|ban|unban|unmute|softban|mute|warn)s?)["']*(?![^\\s])(?:\\s+(\\d+))?)|([\\s\\S]{1,32}|[\\s\\S]{1,32}\\#\\d{4})$`,
   MUTE: {
     /**
      * Mute regex.

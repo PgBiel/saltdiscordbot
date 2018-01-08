@@ -150,7 +150,7 @@ module.exports = new Command({
   func,
   name: "case",
   perms: {"case.get": true, "case.edit": true, "case.delete": true, "case.others": false},
-  description: `Get or modify a case. Specify just a number to fetch that case and see it's information. Otherwise, specify an \
+  description: `Get or modify a case. Specify just a number to fetch that case and see its information. Otherwise, specify an \
 action. The actions are listed below. After it, specify a number which will be the case to interact with.
 
 The \`get\` action works pretty much as if you just specified a number: It retrieves a case by the number specified.

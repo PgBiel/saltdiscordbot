@@ -35,7 +35,7 @@ function main({ Embed, user, isAuthor, punishments, p, reply, send, uncompress, 
   if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
     "You haven't" :
     "That user hasn't"} ever been punished! :smiley:`);
-  let text = `Punishments available (Type \`${p}listpunish <punishment>\` to a view a list):
+  let text = `Punishments available (Type \`${p}listpunish ${isAuthor ? "" : "<user> "}<punishment>\` to a view a list):
 
 `;
   for (const [type, filt] of Object.entries(filtered).sort(([, a], [, b]) => b.length - a.length)) {
@@ -49,7 +49,8 @@ function main({ Embed, user, isAuthor, punishments, p, reply, send, uncompress, 
     .setColor("RANDOM")
     .setFooter(`${isAuthor ?
       "You have" :
-      "That user"} been punished ${filtered.all.length} times. Type \`${p}listpunish all\` to see all of your punishments.`);
+      "That user"} been punished ${filtered.all.length} times. To see all of ${isAuthor ? "your" : "their"} punishments, \
+  type ${p}listpunish ${isAuthor ? "" : "<user> "}all.`);
   if (isAuthor) {
     reply("Here's your punishment list:", { embed });
   } else {
@@ -75,27 +76,35 @@ async function specific({
   const page = ogPage - 1;
   if (page < 0) return reply(`That page doesn't exist!`);
   if (page > pages.length - 1) return reply(`Invalid page! The max page is **${pages.length}**.`);
+  let color;
+  if (/^all/i.test(type)) {
+    color = "RANDOM";
+  } else if (/^unban/i.test(type)) {
+    color = Constants.maps.PUNISHMENTS["U"][2];
+  } else {
+    color = (Constants.maps.PUNISHMENTS[type[0].toLowerCase()] || [0, 0, "RANDOM"])[2];
+  }
   const embed = new Embed();
   embed
     .setTitle(`List of ${/^all/.test(type) ? "punishments" : type} for ${user.tag} (last 500 cases) - \
 Page ${page + 1}/${pages.length}`)
-    .setColor(/^all/i.test(type) ? "RANDOM" : (Constants.maps.PUNISHMENTS[type[0].toLowerCase()] || [0, 0, "RANDOM"])[2]);
-  if (pages.length > 1) embed.setFooter(`Type \`${p}listpunish ${isAuthor ? "" : "<user> "}${type} <page>\` to go to a \
-certain page.`);
+    .setColor(color);
+  if (pages.length > 1) embed.setFooter(`To go to a certain page, type \`${p}listpunish ${isAuthor ? "" : "<user> "}${type} \
+<page>.`);
   for (const pagee of pages[page].split(" ")) {
     if (isNaN(pagee) || !_.trim(pagee)) continue;
     const punish = filtered.all.find(c => c.case === Number(_.trim(pagee)));
     const [name, _desc, color, extraFields] = Constants.maps.PUNISHMENTS[punish.type];
     const extra = extraFields ?
       ` - ${extraFields[0][0]} ${extraFields[0][1].replace("<d>", Time(Number(uncompress(punish.duration)) * 1000))}` :
-      "";
+      (punish.type !== "m" && /^all/i.test(type) ? ` - ${_.capitalize(name)}` : "");
     const field = [
       `Case ${punish.case} by ${((await bot.users.fetch(uncompress(punish.moderator))) || { tag: "Unknown" }).tag}${extra}`,
       `${punish.reason || "No reason"}`
     ];
     embed.addField(field[0], field[1]);
   }
-  if (isAuthor) {
+  if (isAuthor && page < 1) {
     reply(`Here is a list of your ${/^all/.test(type) ? "punishments" : type}:`, { embed });
   } else {
     send({ embed });
@@ -117,14 +126,16 @@ const func = async function (
     let user, name, page;
     if (matchObj[1]) {
       name = matchObj[1];
-    } else if (matchObj[2]) {
-      user = matchObj[2];
-      name = matchObj[3];
+      page = matchObj[2];
+    } else if (matchObj[3]) {
+      user = matchObj[3];
+      name = matchObj[4];
+      page = matchObj[5];
     } else {
-      user = matchObj[5];
+      user = matchObj[6];
     }
     if (!user && !name) return reply(`Please specify a valid user to check their punishments!`);
-    page = matchObj[4] && matchObj[4].length < 5 && /^\d+$/.test(this._.trim(matchObj[5])) ? (Number(matchObj[5]) || 1) : 1;
+    page = page && page.length < 5 && /^\d+$/.test(this._.trim(page)) ? (Number(page) || 1) : 1;
     name = name ? this._.trim(name) : name;
     if (user) {
       let memberToUse;
@@ -180,33 +191,26 @@ const func = async function (
 module.exports = new Command({
   func,
   name: "listpunish",
-  perms: {"case.get": true, "case.edit": true, "case.delete": true, "case.others": false},
-  description: `Get or modify a case. Specify just a number to fetch that case and see it's information. Otherwise, specify an \
-action. The actions are listed below. After it, specify a number which will be the case to interact with.
+  perms: "listpunish",
+  description: `List punishments of you or someone else. (Note: This only shows from the last 500 cases.)
 
-The \`get\` action works pretty much as if you just specified a number: It retrieves a case by the number specified.
-The rest of the actions can be only applied to your own cases by default and require a special permission to apply to others. For \
-\`edit\` and only it, if you attempt to apply it to someone else's case, you will be prompted for confirmation because you will \
-become the punisher.
+Run the command without specifying anything to display your list of punishments. Specify a name (or mention) to see someone \
+else's instead.
 
-The \`edit\` action lets you change a case's reason. You must specify the new reason after the case number.
-
-The \`togglethumb\` action lets you toggle if a thumbnail will be displayed on the case's embed or not.
-
-And finally, the \`delete\` action lets you delete a case. You will always be asked for confirmation.
-
-Permissions: \`case \` and the action name. For interacting with others' cases, use \`case others\`.`,
-  example: `{p}case 5
-{p}case get 5
-{p}case edit 10 New reason
-{p}case togglethumb 16
-{p}case delete 6`,
+Specify a punishment (i.e. ban) or "all" to display its respective list. Specify a name (or mention) before that to see that list \
+for someone else instead. To switch pages, just specify a number (the page number) after the punishment name.`,
+  example: `{p}listpunish
+{p}listpunish bans
+{p}listpunish all 2
+{p}listpunish @GuyGuy#0000
+{p}listpunish @GuyGuy#0000 kicks
+{p}listpunish @GuyGuy#000 softbans 3`,
   category: "Moderation",
   args: {
-    "action or case number": false,
-    "case number (only when using an action)": true,
-    "new reason (only when using edit)": true
+    "punishment name (if no user is specified) or user": true,
+    "punishment name (if an user is specified) or page (if it isn't)": true,
+    "page (if an user is specified)": true
   },
   guildOnly: true,
-  default: false
+  default: true
 });

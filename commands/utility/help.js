@@ -24,8 +24,8 @@ const func = async function (msg, { args, arrArgs, send, reply, prefix, botmembe
     embed
       .setColor("RANDOM")
       .setTitle("List of categories")
-      .setFooter(`There is a total of ${Object.values(this.bot.commands).filter(c => c.category !== "Private").length} commands. \
-Type \`${prefix}help all\` to view all commands.`);
+      .setFooter(`To view all ${Object.values(this.bot.commands).filter(c => c.category !== "Private").length} commands, \
+type ${prefix}help all.`);
     /* Object.entries(categories).forEach(([k, v]) => {
       let str = "";
       Object.keys(v).forEach(k2 => {
@@ -59,7 +59,7 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
     });
     str = this._.trim(str).split("\n").sort().join("\n");
     const pages = this.paginate(str);
-    if (pages.length > 1) embed.setFooter(`Use \`${prefix}help ${category} <page>\` to go to a certain page.`);
+    if (pages.length > 1) embed.setFooter(`To go to a certain page, use ${prefix}help ${category} <page>.`);
     if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
     embed
       .setColor("RANDOM")
@@ -78,7 +78,7 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
     });
     str = this._.trim(str).split("\n").sort().join("\n");
     const pages = this.paginate(str);
-    if (pages.length > 1) embed.setFooter(`Use \`${prefix}help all <page>\` to go to a certain page.`);
+    if (pages.length > 1) embed.setFooter(`To go to a certain page, use ${prefix}help all <page>.`);
     if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
     embed
       .setColor("RANDOM")
@@ -121,5 +121,5 @@ module.exports = new Command({
   example: "{p}help\n{p}help 8ball\n{p}help Fun\n{p}help All",
   category: "Utility",
   args: {"command or category": true, "page (Default: 1)": true},
-  guildOnly: false,
+  guildOnly: false
 });
