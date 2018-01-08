@@ -92,7 +92,7 @@ const func = async function (msg, {
   }
   muteP.punish(memberToUse, {
     author: member, reason, auctPrefix: `[Mute command executed by ${author.tag}] `, context: self,
-    time, permanent: dummy.permanent,
+    time, permanent: dummy.permanent
   });
 };
 

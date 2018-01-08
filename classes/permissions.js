@@ -6,6 +6,10 @@ const { bot } = require("../util/bot");
 const Constants = require("../misc/Constants");
 const { db } = require("../util/deps");
 
+function uncompress(str) {
+    return Buffer.from(str + "=".repeat(str.length % 4), "base64").toString("hex");
+}
+
 /* interface IPermsResult {
   hasPerm: boolean;
   setPerm: boolean;
@@ -56,7 +60,7 @@ class Permz {
     // if (extra1) whereobj.extra1 = extra1;
     // if (extra2) whereobj.extra2 = extra2;
     // if (extra3) whereobj.extra3 = extra3;
-    const perms = db.table("perms").get(guildId, []).filter(item => item.type === "member" && item.id === member.id);
+    const perms = db.table("perms").get(guildId, []).filter(item => item.type.startsWith("m") && uncompress(item.id) === member.id);
     let hasPerm = isDefault;
     let setPerm = false;
     const filtered = perms.find(item => item.command === "any" || item.command
@@ -64,7 +68,7 @@ class Permz {
     if (!filtered) { // no user perm that could influence the execution. Proceeding to role perms.
       const roles = member.roles.sort((a, b) => b.position - a.position).array();
       for (const role of roles) {
-        const roleperms = db.table("perms").get(guildId, []).filter(it => it.type === "role" && it.id === role.id);
+        const roleperms = db.table("perms").get(guildId, []).filter(it => it.type.startsWith("r") && it.id === role.id);
         if (roleperms.length < 1) {
           continue;
         }
@@ -100,7 +104,7 @@ class Permz {
     // hasPerm = immune.includes(member.id) ? true : hasPerm; // commented for testing permissions
     return {
       hasPerm,
-      setPerm,
+      setPerm
     };
   }
 

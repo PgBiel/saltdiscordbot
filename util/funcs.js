@@ -466,7 +466,7 @@ exports.paginate = paginate;
  * @returns {string} The modified text
  */
 function endChar(text, char = " ") {
-  return text.endsWith(char) ? text + char : text;
+  return text.endsWith(char) ? text : text + char;
 }
 exports.endChar = endChar;
 

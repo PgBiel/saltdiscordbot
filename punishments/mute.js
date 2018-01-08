@@ -66,8 +66,8 @@ class Mute extends Punishment {
         target: member,
         time,
         type: "m",
-        author: member,
-        reason: reason || "None",
+        author,
+        reason: reason || "None"
       }).catch(rejct);
     };
     const fail = err => {
@@ -81,7 +81,7 @@ class Mute extends Punishment {
       db.table("activemutes").add(guild.id, {
         userid: member.id,
         timestamp,
-        permanent: Boolean(permanent),
+        permanent: Boolean(permanent)
       }).then(() => {
         const compressedText = textAbstract(endChar(auctPrefix) + (reason || "No reason given"), 512);
         member.addRole(muteRole, compressedText).then(finish).catch(fail);

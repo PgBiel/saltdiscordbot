@@ -2,7 +2,7 @@ const Command = require("../../classes/command");
 const actionLog = require("../../classes/actionlogger");
 
 const func = async function (
-  msg, { prompt, guildId, guild, reply, checkRole, author, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms },
+  msg, { prompt, guildId, guild, reply, checkRole, author, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms }
 ) {
   if (!args) return reply(`Please specify an action (or a case number to get)! (See the help command for details.)`);
   const punishments = this.db.table("punishments").get(guildId);
@@ -68,13 +68,13 @@ There ${latest === 1 ? "is only 1 case" : `are ${latest} cases`}.`);
 \`case others\` or the Administrator saltrole to edit others' cases!`);
     if (action === "delete") {
       const result = await prompt({
-        question: `Are you sure you want to delete the case numbered ${arg}?${isYours ? " **It isn't yours.**" : ""} \
+        question: `Are you sure you want to delete the case numbered ${arg}?${isYours ? "" : " **It isn't yours.**"} \
 This will expire in 15 seconds. Type __y__es or __n__o.`,
         invalidMsg: "__Y__es or __n__o?",
         filter: msg2 => {
           return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
         },
-        timeout: this.Time.seconds(15),
+        timeout: this.Time.seconds(15)
       });
       if (!result) {
         return;
@@ -104,7 +104,7 @@ you will become the author of the case. This will expire in 15 seconds. Type __y
             filter: msg2 => {
               return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
             },
-            timeout: this.Time.seconds(15),
+            timeout: this.Time.seconds(15)
           });
           if (!result) {
             return;
@@ -177,5 +177,5 @@ Permissions: \`case \` and the action name. For interacting with others' cases, 
     "new reason (only when using edit)": true
   },
   guildOnly: true,
-  default: false,
+  default: false
 });

@@ -13,6 +13,7 @@
     "spaced-comment": "warn",
     "arrow-parens": ["error", "as-needed"],
     "arrow-spacing": "error",
+    "comma-dangle": "warn",
     "prefer-arrow-callback": "error",
     "no-console": 0,
     "no-unused-vars": 0
