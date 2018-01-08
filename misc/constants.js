@@ -3,11 +3,11 @@ const obj = {};
 module.exports = obj;
 
 obj.sql = {
-  UNIQUE_CONSTRAINT: "SequelizeUniqueConstraintError",
+  UNIQUE_CONSTRAINT: "SequelizeUniqueConstraintError"
 };
 
 obj.times = {
-  AMBIGUITY_EXPIRE: 30000,
+  AMBIGUITY_EXPIRE: 30000
 };
 
 obj.maps = {
@@ -39,8 +39,8 @@ obj.regex = {
     ["']* # optional quotes
     |
     ( # Possibility 2 starts here. This group is user name
-      [^\\s]{1,32} # Any character up to 32 chars (name)
-      |[^\\s]{1,32} # Or, that and...
+      [\\s\\S]{1,32} # Any character up to 32 chars (name)
+      |[\\s\\S]{1,32} # Or, that and...
       \\#\\d{4} # A discrim.
     )
     \\s+ # Any whitespaces
@@ -100,8 +100,8 @@ obj.regex = {
     ^ # Start of string.
     (?: # User & Time.
       ( # Possibility 1 starts here. This group is the user name
-        [^\\s]{1,32} # Any character other than whitespace up to 32 times
-        |[^\\s]{1,32} # Or, up to 32 times...
+        [\\s\\S]{1,32} # Any character up to 32 times
+        |[\\s\\S]{1,32} # Or, up to 32 times...
         \\#\\d{4} # ...and a discrim.
       )
       \\s+ # Any whitespace
@@ -182,12 +182,12 @@ obj.regex = {
     /\d+\s*(?:(?:mo(?:nths?)?)|s(?:ec(?:ond)?s?)?|m(?:in(?:ute)?s?)?|(?:h(?:ours?)?)|(?:d(?:ays?)?)|(?:w(?:eeks?)?))/g,
     SINGLE_TIME_MATCH: isNumber => {
       return isNumber ? /^(\d+)\s*\w+$/ : /^\d+\s*(\w+)$/;
-    },
-  },
+    }
+  }
 };
 
 obj.numbers = {
-  MAX_PROMPT: 5,
+  MAX_PROMPT: 5
 };
 
 obj.identifiers = {

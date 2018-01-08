@@ -443,7 +443,7 @@ exports.capitalize = capitalize;
  * @param {regex} [split=/(?:([\w;,..")(\-\d]+)\s*){n}/ig] The string/regex to split by, replaces {n} by wordCount
  * @returns {string[]}
  */
-function paginate(text, wordCount = 10, regex = /(?:([\w;,..\")(\-\d]+)\s*){n}/ig) {
+function paginate(text, wordCount = 10, regex = /((?:(?:[\w;,..\")(\-\d]+)\s+){1,[n]})([\w;,..\")(\-\d]+)|([\w;,..\")(\-\d]+)/ig) {
   /* *** old version *** */
   /* const words = text.split(split);
   const arr = [[]];
@@ -454,7 +454,7 @@ function paginate(text, wordCount = 10, regex = /(?:([\w;,..\")(\-\d]+)\s*){n}/i
   }
   return arr.map(a => a.join(join)); */
   /* *** new version *** */
-  const regexToUse = new RegExp(regex.toString().replace(/^\/|(\/[a-z]+)$/g, "").replace(/{n}/, `{${wordCount}}`), regex.flags);
+  const regexToUse = new RegExp(regex.toString().replace(/^\/|(\/[a-z]+)$/g, "").replace(/[n]/, `${wordCount - 1}`), regex.flags);
   return text.match(regexToUse);
 }
 exports.paginate = paginate;

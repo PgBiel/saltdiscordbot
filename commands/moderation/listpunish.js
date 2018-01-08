@@ -80,7 +80,8 @@ async function specific({
     .setTitle(`List of ${/^all/.test(type) ? "punishments" : type} for ${user.tag} (last 500 cases) - \
 Page ${page + 1}/${pages.length}`)
     .setColor(/^all/i.test(type) ? "RANDOM" : (Constants.maps.PUNISHMENTS[type[0].toLowerCase()] || [0, 0, "RANDOM"])[2]);
-  if (pages.length > 1) embed.setFooter(`Type \`${p}listpunish ${type} <page>\` to go to a certain page.`);
+  if (pages.length > 1) embed.setFooter(`Type \`${p}listpunish ${isAuthor ? "" : "<user> "}${type} <page>\` to go to a \
+certain page.`);
   for (const pagee of pages[page].split(" ")) {
     if (isNaN(pagee) || !_.trim(pagee)) continue;
     const punish = filtered.all.find(c => c.case === Number(_.trim(pagee)));
