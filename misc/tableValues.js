@@ -10,6 +10,7 @@ export type oneOrMany<T> = T | T[];
 interface TableValsDraft {
   coins: Array<HelperVals["coins"]>;
   coinRewards: Array<HelperVals["coinRewards"]>; // index: $
+  warnexpire: string; // index: $
   economys: { // index: $
     eco_name?: string;
     eco_on?: boolean;

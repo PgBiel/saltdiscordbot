@@ -59,8 +59,8 @@ function main({ Embed, user, isAuthor, punishments, p, reply, send, uncompress, 
 }
 
 async function specific({
-  Embed, user, Constants, isAuthor, punishments, p, type: aType, reply, send, uncompress, _, page: ogPage, paginate, endChar,
-  bot, Time
+  Embed, user, Constants, isAuthor, punishments, p, type: aType, reply, send, uncompress, _, page: ogPage, paginate,
+  endChar, bot, Time
 }) {
   const filtered = filterPunishes(punishments, user.id, uncompress);
   if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
@@ -68,7 +68,8 @@ async function specific({
     "That user hasn't"} ever been punished! :smiley:`);
   const typed = filtered[endChar((aType || "").toLowerCase(), "s")];
   if (!typed) return reply(`Unknown punishment.`);
-  if (typed.length < 1) return reply(`${isAuthor ? "You haven't" : "That user hasn't"} ever received that punishment! :smiley:`);
+  if (typed.length < 1)
+    return reply(`${isAuthor ? "You haven't" : "That user hasn't"} ever received that punishment! :smiley:`);
   const type = /^all/i.test(aType) ? "all" : endChar(aType.toLowerCase(), "s");
 
   const pages = typed.length === 1 ? [typed[0].case.toString()] : paginate(typed.map(c => c.case.toString()).join(" "), 4);
@@ -89,8 +90,8 @@ async function specific({
     .setTitle(`List of ${/^all/.test(type) ? "punishments" : type} for ${user.tag} (last 500 cases) - \
 Page ${page + 1}/${pages.length}`)
     .setColor(color);
-  if (pages.length > 1) embed.setFooter(`To go to a certain page, type \`${p}listpunish ${isAuthor ? "" : "<user> "}${type} \
-<page>.`);
+  if (pages.length > 1) embed.setFooter(`To go to a certain page, type \`${p}listpunish \
+  ${isAuthor ? "" : "<user> "}${type} <page>.`);
   for (const pagee of pages[page].split(" ")) {
     if (isNaN(pagee) || !_.trim(pagee)) continue;
     const punish = filtered.all.find(c => c.case === Number(_.trim(pagee)));
@@ -113,14 +114,17 @@ Page ${page + 1}/${pages.length}`)
 
 const func = async function (
   msg, {
-    prompt, guildId, guild, reply, checkRole, author, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms, searcher,
-    promptAmbig
+    prompt, guildId, guild, reply, checkRole, author, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms,
+    searcher, promptAmbig
   },
 ) {
   const punishments = this.db.table("punishments").get(guildId);
   if (!punishments || punishments.length < 1) return reply(`Nobody has been punished in this guild!`);
+  if (!perms["listpunish"]) return reply(`Missing permission \`listpunish\`! :(`)
   if (!args) {
-    main({ Embed: this.Embed, user: author, isAuthor: true, punishments, p, reply, send, uncompress: this.uncompress, _: this._ });
+    main({
+      Embed: this.Embed, user: author, isAuthor: true, punishments, p, reply, send, uncompress: this.uncompress,
+      _: this._ });
   } else {
     const matchObj = args.match(this.xreg(this.Constants.regex.LIST_PUNISH_MATCH, "xi"));
     let user, name, page;
@@ -169,20 +173,21 @@ const func = async function (
       }
       if (name) {
         return await specific({
-          Embed: this.Embed, user: memberToUse.user, Constants: this.Constants, isAuthor: false, punishments, p, type: name, reply, 
-          send, uncompress: this.uncompress, _: this._, page, paginate: this.paginate, endChar: this.endChar, bot: this.bot,
-          Time: this.Time
+          Embed: this.Embed, user: memberToUse.user, Constants: this.Constants, isAuthor: false, punishments, p,
+          type: name, reply, send, uncompress: this.uncompress, _: this._, page, paginate: this.paginate,
+          endChar: this.endChar, bot: this.bot, Time: this.Time
         });
       } else {
         main({
-          Embed: this.Embed, user: memberToUse.user, isAuthor: memberToUse.user.id === author.id, punishments, p, reply, send,
-          uncompress: this.uncompress, _: this._
+          Embed: this.Embed, user: memberToUse.user, isAuthor: memberToUse.user.id === author.id, punishments, p, reply,
+          send, uncompress: this.uncompress, _: this._
         });
       }
     } else {
       return await specific({
-        Embed: this.Embed, user: author, Constants: this.Constants, isAuthor: true, punishments, p, type: name, reply, send, 
-        uncompress: this.uncompress, _: this._, page, paginate: this.paginate, endChar: this.endChar, bot: this.bot, Time: this.Time
+        Embed: this.Embed, user: author, Constants: this.Constants, isAuthor: true, punishments, p, type: name, reply, 
+        send, uncompress: this.uncompress, _: this._, page, paginate: this.paginate, endChar: this.endChar, bot: this.bot,
+        Time: this.Time
       });
     }
   }
@@ -194,11 +199,11 @@ module.exports = new Command({
   perms: "listpunish",
   description: `List punishments of you or someone else. (Note: This only shows from the last 500 cases.)
 
-Run the command without specifying anything to display your list of punishments. Specify a name (or mention) to see someone \
-else's instead.
+Run the command without specifying anything to display your list of punishments. Specify a name (or mention) to see \
+someone else's instead.
 
-Specify a punishment (i.e. ban) or "all" to display its respective list. Specify a name (or mention) before that to see that list \
-for someone else instead. To switch pages, just specify a number (the page number) after the punishment name.`,
+Specify a punishment (i.e. ban) or "all" to display its respective list. Specify a name (or mention) before that to see \
+that list for someone else instead. To switch pages, just specify a number (the page number) after the punishment name.`,
   example: `{p}listpunish
 {p}listpunish bans
 {p}listpunish all 2

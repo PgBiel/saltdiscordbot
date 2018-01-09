@@ -12,8 +12,8 @@ const func = async function (
       steps.sort((a, b) => a.amount - b.amount);
       let str = "";
       for (const step of steps) {
-        str += `At **${step.amount} warns**, the member gets a ${step.punishment}\
-${step.time ? ` for **${new this.Time(Number(step.time) || this.Time.minutes(10)).toString()}**` : ""}.\n`;
+        str += `At **${step.amount} warns**, the member gets a ${this.Constants.maps.PUNISHMENTS[step.punishment][0]}\
+${step.time ? ` for **${new this.Time(Number(this.uncompress(step.time) * 1000) || this.Time.minutes(10)).toString()}**` : ""}.\n`;
       }
       return send(`Here's the list of the current set warn punishments for this server:\n\n${this._.trim(str)}`, { split: true });
     }
@@ -88,7 +88,7 @@ Sorry ¯\\\\this._(ツ)\\this._/¯ (Try a different action maybe?)`);
       const objToUse = {
         amount: num,
         punishment: punish[0].toLowerCase(),
-        time: punish === "mute" ? this.compress(Math.floor(time.time / 1000).toString()) : "0"
+        time: punish === "mute" ? this.compress(Math.floor(time.time / 1000).toString()) : ""
       };
       const step = steps.find(s => s.amount === num);
       if (step) {
