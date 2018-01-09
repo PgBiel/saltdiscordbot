@@ -1,6 +1,6 @@
 const { GuildMember, Message, MessageEmbed, Role, TextChannel, User } = require("discord.js");
 const { db, logger, Time } = require("../util/deps");
-const { createMutedRole, endChar, escMarkdown, rejct, textAbstract } = require("../util/funcs");
+const { compress, datecomp, createMutedRole, endChar, escMarkdown, rejct, textAbstract, uncompress } = require("../util/funcs");
 const Punishment = require("./punishment");
 
 class Mute extends Punishment {
@@ -30,12 +30,12 @@ class Mute extends Punishment {
     const muteInfo = db.table("mutes").get(guild.id);
     let muteRole;
     if (muteInfo) {
-      muteRole = guild.roles.get(muteInfo.muteRoleID);
+      muteRole = guild.roles.get(uncompress(muteInfo.muteRoleID));
     }
     if (!muteRole) {
       try {
         const newRole = await createMutedRole(guild);
-        db.table("mutes").assign(guild.id, { muteRoleID: newRole.id });
+        db.table("mutes").assign(guild.id, { muteRoleID: compress(newRole.id) });
         muteRole = newRole;
       } catch (err) {
         logger.error(`At making mute role: ${err}`);
@@ -79,8 +79,8 @@ class Mute extends Punishment {
         .add(time)
         .time.toString();
       db.table("activemutes").add(guild.id, {
-        userid: member.id,
-        timestamp,
+        userid: compress(member.id),
+        timestamp: datecomp(timestamp),
         permanent: Boolean(permanent)
       }).then(() => {
         const compressedText = textAbstract(endChar(auctPrefix) + (reason || "No reason given"), 512);

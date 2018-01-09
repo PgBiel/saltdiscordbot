@@ -252,7 +252,7 @@ function parseTimeStr(str) {
   for (const result of match) {
     const [amount, unit] = [
       result.match(Constants.regex.MUTE.SINGLE_TIME_MATCH(true))[1],
-      result.match(Constants.regex.MUTE.SINGLE_TIME_MATCH(false))[1],
+      result.match(Constants.regex.MUTE.SINGLE_TIME_MATCH(false))[1]
     ];
     if (Time.validUnit(unit)) {
       time.add(unit, Number(amount));
@@ -270,7 +270,7 @@ exports.parseTimeStr = parseTimeStr;
 async function createMutedRole(guild) {
   const newRole = await guild.createRole({
     name: "SaltMuted",
-    permissions: [],
+    permissions: []
   });
   for (const [id, channel] of guild.channels) {
     channel.overwritePermissions(newRole, { SEND_MESSAGES: false }).catch(rejct);
@@ -328,7 +328,7 @@ function parseMute(str) {
     ok: true,
     user: "",
     time: null,
-    reason: "",
+    reason: ""
   };
   const reg = xreg(Constants.regex.MUTE.MATCH_REG, "xi");
   const results = str.match(reg);
@@ -373,12 +373,12 @@ async function checkMutes() {
   for (const mute of mutesForShard) {
     const guild = bot.guilds.get(mute.serverid);
     if (!guild) { continue; }
-    const member = guild.members.get(mute.userid);
+    const member = guild.members.get(uncompress(mute.userid));
     if (!member) { continue; }
     const mutesForGuild = db.table("mutes").get(mute.serverid);
     if (!mutesForGuild) { continue; }
-    const muteRole = guild.roles.get(mutesForGuild.muteRoleID);
-    const timestamp = Number(mute.timestamp);
+    const muteRole = guild.roles.get(uncompress(mutesForGuild.muteRoleID));
+    const timestamp = Number(dateuncomp(mute.timestamp));
     if (
       !muteRole
       || mute.permanent
