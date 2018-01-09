@@ -77,10 +77,10 @@ class Mute extends Punishment {
     const executeMute = () => {
       const timestamp = new Time(Date.now())
         .add(time)
-        .time.toString();
+        .time;
       db.table("activemutes").add(guild.id, {
         userid: compress(member.id),
-        timestamp: datecomp(timestamp),
+        timestamp: datecomp(new Date(timestamp)),
         permanent: Boolean(permanent)
       }).then(() => {
         const compressedText = textAbstract(endChar(auctPrefix) + (reason || "No reason given"), 512);

@@ -378,7 +378,7 @@ async function checkMutes() {
     const mutesForGuild = db.table("mutes").get(mute.serverid);
     if (!mutesForGuild) { continue; }
     const muteRole = guild.roles.get(uncompress(mutesForGuild.muteRoleID));
-    const timestamp = Number(dateuncomp(mute.timestamp));
+    const timestamp = (dateuncomp(mute.timestamp) || { getTime: NaN }).getTime();
     if (
       !muteRole
       || mute.permanent
