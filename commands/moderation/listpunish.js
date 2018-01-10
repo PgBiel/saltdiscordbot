@@ -30,7 +30,7 @@ function exampleCases(punishes, init = " ") {
   }
 }
 
-function main({ Embed, user, isAuthor, punishments, p, reply, send, uncompress, _ }) {
+function main({ Embed, user, isAuthor, punishments, p, reply, send, uncompress, _, maxCases }) {
   const filtered = filterPunishes(punishments, user.id, uncompress);
   if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
     "You haven't" :
@@ -44,7 +44,7 @@ function main({ Embed, user, isAuthor, punishments, p, reply, send, uncompress, 
   }
   const embed = new Embed();
   embed
-    .setTitle("List of punishments (last 500 cases)")
+    .setTitle(`List of punishments (last ${maxCases} cases)`)
     .setDescription(_.trim(text))
     .setColor("RANDOM")
     .setFooter(`${isAuthor ?
@@ -60,7 +60,7 @@ function main({ Embed, user, isAuthor, punishments, p, reply, send, uncompress, 
 
 async function specific({
   Embed, user, Constants, isAuthor, punishments, p, type: aType, reply, send, uncompress, _, page: ogPage, paginate,
-  endChar, bot, Time
+  endChar, bot, Time, maxCases
 }) {
   const filtered = filterPunishes(punishments, user.id, uncompress);
   if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
@@ -87,7 +87,7 @@ async function specific({
   }
   const embed = new Embed();
   embed
-    .setTitle(`List of ${/^all/.test(type) ? "punishments" : type} for ${user.tag} (last 500 cases) - \
+    .setTitle(`List of ${/^all/.test(type) ? "punishments" : type} for ${user.tag} (last ${maxCases} cases) - \
 Page ${page + 1}/${pages.length}`)
     .setColor(color);
   if (pages.length > 1) embed.setFooter(`To go to a certain page, type \`${p}listpunish \
@@ -121,10 +121,12 @@ const func = async function (
   const punishments = this.db.table("punishments").get(guildId);
   if (!punishments || punishments.length < 1) return reply(`Nobody has been punished in this guild!`);
   if (!perms["listpunish"]) return reply(`Missing permission \`listpunish\`! :(`)
+  guild.members.fetch().catch(this.rejct);
+  const maxCases = this.Constants.numbers.MAX_CASES(guild.members.size);
   if (!args) {
     main({
       Embed: this.Embed, user: author, isAuthor: true, punishments, p, reply, send, uncompress: this.uncompress,
-      _: this._ });
+      _: this._, maxCases });
   } else {
     const matchObj = args.match(this.xreg(this.Constants.regex.LIST_PUNISH_MATCH, "xi"));
     let user, name, page;
@@ -175,19 +177,19 @@ const func = async function (
         return await specific({
           Embed: this.Embed, user: memberToUse.user, Constants: this.Constants, isAuthor: false, punishments, p,
           type: name, reply, send, uncompress: this.uncompress, _: this._, page, paginate: this.paginate,
-          endChar: this.endChar, bot: this.bot, Time: this.Time
+          endChar: this.endChar, bot: this.bot, Time: this.Time, maxCases
         });
       } else {
         main({
           Embed: this.Embed, user: memberToUse.user, isAuthor: memberToUse.user.id === author.id, punishments, p, reply,
-          send, uncompress: this.uncompress, _: this._
+          send, uncompress: this.uncompress, _: this._, maxCases
         });
       }
     } else {
       return await specific({
         Embed: this.Embed, user: author, Constants: this.Constants, isAuthor: true, punishments, p, type: name, reply, 
         send, uncompress: this.uncompress, _: this._, page, paginate: this.paginate, endChar: this.endChar, bot: this.bot,
-        Time: this.Time
+        Time: this.Time, maxCases
       });
     }
   }
@@ -197,7 +199,7 @@ module.exports = new Command({
   func,
   name: "listpunish",
   perms: "listpunish",
-  description: `List punishments of you or someone else. (Note: This only shows from the last 500 cases.)
+  description: `List punishments of you or someone else.
 
 Run the command without specifying anything to display your list of punishments. Specify a name (or mention) to see \
 someone else's instead.

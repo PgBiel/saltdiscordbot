@@ -306,8 +306,8 @@ class Table extends Storage {
    */
   get(key, defaultVal) {
     const val = db.get(key, this.name);
-    if (defaultVal && !val) db.set(key, defaultVal, this.name);
-    const defaulted = defaultVal ? (val || defaultVal) : val;
+    if (defaultVal && val == null) db.set(key, defaultVal, this.name);
+    const defaulted = defaultVal ? (val == null ? defaultVal : val) : val;
     super.set(key, defaulted);
     return defaulted;
   }

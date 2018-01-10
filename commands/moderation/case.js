@@ -28,6 +28,8 @@ const func = async function (
   }
   const arg2 = part3;
   const latest = (punishments[punishments.length - 1] || { case: 0 }).case;
+  guild.members.fetch().catch(this.rejct);
+  const maxCases = this.Constants.numbers.MAX_CASES(guild.members.size);
   if (action === "get" || !isNaN(action) || action === "???") {
     if (!perms["case.get"]) return reply(`Missing permission \`case get\`! :(`);
     if (action === "???" || arg === "???") {
@@ -42,7 +44,7 @@ There ${latest === 1 ? "is only 1 case" : `are ${latest} cases`}.`);
       "is only 1 case" :
       `are ${latest} cases`}.`);
     const { case: punish, embed } = await actionLog.fetchCase(number, guild);
-    if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest 500 cases are kept stored.)`);
+    if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest ${maxCases} cases are kept stored.)`);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
     return reply(`Here's Case #${punish.case}:`, { embed });
   } else if (["edit", "delete", "togglethumb"].includes(action)) {
@@ -56,7 +58,7 @@ There ${latest === 1 ? "is only 1 case" : `are ${latest} cases`}.`);
       "is only 1 case" :
       `are ${latest} cases`}.`);
     const { case: punish } = await actionLog.fetchCase(arg, guild);
-    if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest 500 cases are kept stored.)`);
+    if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest ${maxCases} cases are kept stored.)`);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
     const isYours = this.uncompress(punish.moderator) === author.id;
     if (

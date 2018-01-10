@@ -129,7 +129,9 @@ class ActionLog {
     }
     caseObj.messageid = compress(msgSent.id);
     db.table("punishments").add(guild.id, caseObj);
-    if (db.table("punishments").get(guild.id, []).length > 500) db.table("punishments").spliceArr(guild.id, 0, 1);
+    guild.members.fetch().catch(rejct);
+    const maxCases = Constants.numbers.MAX_CASES(guild.members.size);
+    if (db.table("punishments").get(guild.id, []).length > maxCases) db.table("punishments").spliceArr(guild.id, 0, 1);
     try {
       db.table("mods").assign(guild.id, { latestCase: caseNum + 1 }, true);
     } catch (err) {
@@ -267,7 +269,7 @@ class ActionLog {
     const embed = new MessageEmbed();
     const {
       case: num, target, time, moderator, reason, thumbnail, thumbOn, type,
-      duration: oDuration,
+      duration: oDuration
     } = action;
     const duration = oDuration ? String(Number(uncompress(oDuration)) * 1000) : "0";
     const uncTarget = uncompress(target || compress("666"));

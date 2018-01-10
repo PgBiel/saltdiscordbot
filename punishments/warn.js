@@ -92,7 +92,7 @@ a **${punishment}** (as says this server's current setup).`);
             sentWarnMsg.edit(`The member ${member} has reached a limit of ${warnStep.amount} warnings which implies a mute for \
 **${time.toString()}**.`);
             muteP.punish(member, {
-              author, reason, auctPrefix, context, time, permanent: false,
+              author, reason, auctPrefix, context, time, permanent: false
             });
           }
           if (warnStep.amount >= warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount) {
@@ -102,6 +102,7 @@ a **${punishment}** (as says this server's current setup).`);
             });
           } else {
             // logger.debug("Boi", warnStep.amount, warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount);
+            this.db.table("warnexpire").get(guild.id, this.compress(this.Time.weeks(1))); // make sure there's expiring
             await db.table("warns").add(guild.id, {
               userid: compress(member.id),
               reason: reason || "None",
@@ -110,6 +111,7 @@ a **${punishment}** (as says this server's current setup).`);
             }, true);
           }
         } else {
+          this.db.table("warnexpire").get(guild.id, this.compress(this.Time.weeks(1))); // make sure there's expiring
           await db.table("warns").add(guild.id, {
             userid: compress(member.id),
             reason: reason || "None",

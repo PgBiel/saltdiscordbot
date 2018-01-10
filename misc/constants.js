@@ -1,16 +1,14 @@
 const { combineRegex } = require("../util/funcs");
-const obj = {};
-module.exports = obj;
 
-obj.sql = {
+exports.sql = {
   UNIQUE_CONSTRAINT: "SequelizeUniqueConstraintError"
 };
 
-obj.times = {
+exports.times = {
   AMBIGUITY_EXPIRE: 30000
 };
 
-obj.maps = {
+exports.maps = {
   PUNISHMENTS: {
     m: ["mute", "**{target}** was muted", "GOLD", [["Muted For", "<d>"]]],
     w: ["warn", "**{target}** was warned", "AQUA"],
@@ -22,7 +20,7 @@ obj.maps = {
   }
 };
 
-obj.regex = {
+exports.regex = {
   HAS_DECIMAL: /\.(?!0+$)/,
   NAME_AND_DISCRIM: /^([^]{1,32})#(\d{4})$/,
   BAN_MATCH: /^([^]+?(?:#\d{4})?)(?:\s+([^]*))?$/,
@@ -151,11 +149,20 @@ obj.regex = {
   }
 };
 
-obj.numbers = {
-  MAX_PROMPT: 5
+exports.numbers = {
+  MAX_PROMPT: 5,
+  MAX_CASES: (members = 0) => {
+    if (members >= 5000) {
+      return 2000;
+    } else if (members >= 700) {
+      return 1000;
+    } else {
+      return 500;
+    }
+  }
 };
 
-obj.identifiers = {
+exports.identifiers = {
   OWNER: "180813971853410305",
   APLET: "201765854990434304"
 };

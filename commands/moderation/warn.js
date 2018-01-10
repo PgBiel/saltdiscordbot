@@ -4,22 +4,21 @@ const warnP = require("../../punishments/warn");
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   searcher, promptAmbig, author, botmember, member, actionLog, dummy, checkRole,
-  setPerms, self,
+  setPerms, self
 }) {
   let hasPerm = false;
+  if (hasPermission("MANAGE_ROLES")) hasPerm = true;
   try {
-    if (checkRole("mod", member)) {
-      hasPerm = true;
-    }
+    if (checkRole("mod", member)) hasPerm = true;
   } catch (err) {
     this.logger.error(`At check role: ${err}`);
   }
   if (setPerms.warn) {
-    hasPerm = setPerms.warn;
+    hasPerm = perms.warn;
   }
   if (!hasPerm) {
-    return reply(`You do not have sufficient permissions! To use this command, you need the \`Moderator\` SaltRole (or have a \
-permission overwrite).`);
+    return reply(`You do not have sufficient permissions! To use this command, you need the \`Moderator\` SaltRole, \
+    the \`Manage Roles\` Discord Permission or the permission \`warn\`.`);
   }
   if (!args) {
     return reply("Please tell me who to warn!");
@@ -71,5 +70,5 @@ module.exports = new Command({
   category: "Moderation",
   args: { member: false, reason: true },
   guildOnly: true,
-  default: false,
+  default: false
 });
