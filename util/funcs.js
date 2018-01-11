@@ -236,7 +236,7 @@ exports.combineRegex = combineRegex;
 /**
  * Parse a time string. (Used for mute command)
  * @param {string} str The time string.
- * @returns {?Object} The parsed time, with all units as a property.
+ * @returns {Object} The parsed time, with all units as a property.
  */
 function parseTimeStr(str) {
   logger.debug(str);
@@ -251,8 +251,8 @@ function parseTimeStr(str) {
   logger.debug(match);
   for (const result of match) {
     const [amount, unit] = [
-      result.match(Constants.regex.MUTE.SINGLE_TIME_MATCH(true))[1],
-      result.match(Constants.regex.MUTE.SINGLE_TIME_MATCH(false))[1]
+      _.trim(result).match(Constants.regex.MUTE.SINGLE_TIME_MATCH(true))[1],
+      _.trim(result).match(Constants.regex.MUTE.SINGLE_TIME_MATCH(false))[1]
     ];
     if (Time.validUnit(unit)) {
       time.add(unit, Number(amount));

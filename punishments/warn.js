@@ -102,7 +102,7 @@ a **${punishment}** (as says this server's current setup).`);
             });
           } else {
             // logger.debug("Boi", warnStep.amount, warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount);
-            this.db.table("warnexpire").get(guild.id, this.compress(this.Time.weeks(1))); // make sure there's expiring
+            this.db.table("warnexpires").get(guild.id, this.compress(this.Time.weeks(1))); // make sure there's expiring
             await db.table("warns").add(guild.id, {
               userid: compress(member.id),
               reason: reason || "None",
@@ -111,7 +111,7 @@ a **${punishment}** (as says this server's current setup).`);
             }, true);
           }
         } else {
-          this.db.table("warnexpire").get(guild.id, this.compress(this.Time.weeks(1))); // make sure there's expiring
+          this.db.table("warnexpires").get(guild.id, this.compress(this.Time.weeks(1))); // make sure there's expiring
           await db.table("warns").add(guild.id, {
             userid: compress(member.id),
             reason: reason || "None",

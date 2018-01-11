@@ -44,8 +44,9 @@ const tables = [
   "starboards",
   "verifications",
   "warns",
+  "warnexpires",
   "warnsteps",
-  "welcomes",
+  "welcomes"
 ];
 exports.tables = tables;
 

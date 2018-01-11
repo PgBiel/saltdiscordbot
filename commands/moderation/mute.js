@@ -88,7 +88,7 @@ const func = async function (msg, {
       }
     }
   } */
-  if (d.db.table("activemutes").get(guildId, []).findIndex(item => item.userid === memberToUse.id) > -1) {
+  if (d.db.table("activemutes").get(guildId, []).findIndex(item => d.uncompress(item.userid) === memberToUse.id) > -1) {
     return reply("That member is already muted!");
   }
   muteP.punish(memberToUse, {

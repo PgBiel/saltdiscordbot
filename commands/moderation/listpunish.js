@@ -46,7 +46,7 @@ function main({ user, isAuthor, punishments, p, reply, send, maxCases }) {
   const embed = new d.Embed();
   embed
     .setTitle(`List of punishments (last ${maxCases} cases)`)
-    .setDescription(_.trim(text))
+    .setDescription(d._.trim(text))
     .setColor("RANDOM")
     .setFooter(`${isAuthor ?
       "You have" :

@@ -74,12 +74,13 @@ exports.regex = {
           \\d+ # Amount of it.
           \\s* # Whitespace if you desire.
           (?: # Entering valid time units.
-            s(?:ec(?:ond)?s?)? # s, sec, secs, second, seconds
-            |m(?:in(?:ute)?s?)? # m, min, mins, minute, minutes
-            |(?:h(?:ours?)?) # h, hour, hours
-            |(?:d(?:ays?)?) # d, day, days
-            |(?:w(?:eeks?)?) # w, week, weeks
-            |(?:mo(?:nths?)?) # mo, month, months
+            (?:mo|(?:months?)) # mo, month, months
+            |(?:s|(sec|second)s?) # s, sec, secs, second, seconds
+            |(?:m|(?:min|minute)s?) # m, min, mins, minute, minutes
+            |(?:h|(?:hours?)) # h, hour, hours
+            |(?:d|(?:days?)) # d, day, days
+            |(?:w|(?:weeks?)) # w, week, weeks
+            |(?:y|(?:years?)) # y, year, years
           ) # Leaving valid time units.
         ) # End of first time unit.
         (?: # Holder for any extra time units.
@@ -87,12 +88,13 @@ exports.regex = {
           \\d+ # Amount of time unit.
           \\s* # Optional Whitespace.
           (?: # Once again, entering valid time units.
-            s(?:ec(?:ond)?s?)? # s, sec, secs, second, seconds
-            |m(?:in(?:ute)?s?)? # m, min, mins, minute, minutes
-            |(?:h(?:ours?)?) # h, hour, hours
-            |(?:d(?:ays?)?) # d, day, days
-            |(?:w(?:eeks?)?) # w, week, weeks
-            |(?:mo(?:nths?)?) # mo, month, months
+            (?:mo|(?:months?)) # mo, month, months
+            |(?:s|(sec|second)s?) # s, sec, secs, second, seconds
+            |(?:m|(?:min|minute)s?) # m, min, mins, minute, minutes
+            |(?:h|(?:hours?)) # h, hour, hours
+            |(?:d|(?:days?)) # d, day, days
+            |(?:w|(?:weeks?)) # w, week, weeks
+            |(?:y|(?:years?)) # y, year, years
           ) # Leaving valid time units.
         )* # Exiting holder for extra time units. Can be any amount.
       ) # Exiting the group of time units.
@@ -142,7 +144,7 @@ exports.regex = {
     IS_JUST_NUMBER: /^(?:"|'|'')?(\d+)(?:"|'|'')?$/,
     IS_NOTHING: /^(?:|\s+|(?:"|'|'')\s*(?:"|'|''))$/,
     TIME_MATCH:
-    /\d+\s*(?:(?:mo(?:nths?)?)|s(?:ec(?:ond)?s?)?|m(?:in(?:ute)?s?)?|(?:h(?:ours?)?)|(?:d(?:ays?)?)|(?:w(?:eeks?)?))/g,
+    /\d+\s*(?:(?:mo|(?:months?))|(?:s|(?:sec|second)s?)|(?:m|(?:min|minute?s?))|(?:h|(?:hours?))|(?:d|(?:days?))|(?:w|(?:weeks?))|(?:y|(?:years?)))/g,
     SINGLE_TIME_MATCH: isNumber => {
       return isNumber ? /^(\d+)\s*\w+$/ : /^\d+\s*(\w+)$/;
     }

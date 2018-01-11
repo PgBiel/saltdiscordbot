@@ -4,7 +4,7 @@ const d = require("../../misc/d");
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy,
-  checkRole,
+  checkRole
 }) {
   let hasPerm = false;
   if (hasPermission(["MANAGE_ROLES"])) {
@@ -69,12 +69,12 @@ const func = async function (msg, {
   const muteInfo = d.db.table("mutes").get(guild.id);
   let muteRole;
   if (muteInfo) {
-    muteRole = guild.roles.get(muteInfo.muteRoleID);
+    muteRole = guild.roles.get(d.uncompress(muteInfo.muteRoleID));
   }
   if (!muteRole) {
     return reply("That member is not muted!");
   }
-  const activeMute = d.db.table("activemutes").get(guild.id, []).find(item => item.userid === memberToUse.id);
+  const activeMute = d.db.table("activemutes").get(guild.id, []).find(item => d.uncompress(item.userid) === memberToUse.id);
 
   if (!activeMute) {
     return reply("That member is not muted!");
