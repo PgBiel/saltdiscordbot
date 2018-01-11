@@ -20,7 +20,7 @@ Could also use this command with the Administrator saltrole.`);
   if (time.time > d.Time.months(3)) return reply(`Expiry time must not be longer than 3 months!`);
   if (time.time < d.Time.minutes(1)) return reply(`Expiry time must not be shorter than 1 minute!`);
   await d.db.table("warnexpire").setRejct(guildId, d.compress(time.time.toString()));
-  reply(`Successfully set expiry time to **${time}**!`);+
+  reply(`Successfully set expiry time to **${time}**!`);
 };
 
 module.exports = new Command({
