@@ -41,7 +41,7 @@ function main({ user, isAuthor, punishments, p, reply, send, maxCases }) {
 `;
   for (const [type, filt] of Object.entries(filtered).sort(([, a], [, b]) => b.length - a.length)) {
     if (/^all/i.test(type)) continue;
-    text += `• **${_.capitalize(type)}**: **${filt.length}**${exampleCases(filt)}\n`;
+    text += `• **${d._.capitalize(type)}**: **${filt.length}**${exampleCases(filt)}\n`;
   }
   const embed = new d.Embed();
   embed
