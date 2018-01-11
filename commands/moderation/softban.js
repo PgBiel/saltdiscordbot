@@ -10,5 +10,5 @@ module.exports = Command.aliasFrom(ban, "softban", {
   banType: "softban",
   actions: ["Softbanning", "Softbanned", "softbanned", "Softban", "softban"],
   color: "ORANGE",
-  usePrompt: false,
+  usePrompt: false
 });

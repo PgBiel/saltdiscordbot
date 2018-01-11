@@ -1,4 +1,5 @@
 const Command = require("../../classes/command");
+const d = require("../../misc/d");
 
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
@@ -14,7 +15,7 @@ const func = async function (msg, {
       hasPerm = true;
     }
   } catch (err) {
-    this.logger.error(`At check role: ${err}`);
+    d.logger.error(`At check role: ${err}`);
   }
   if (setPerms.unmute) {
     if (!perms.unmute) {
@@ -32,7 +33,7 @@ const func = async function (msg, {
   if (!args) {
     return reply("Please tell me who to unmute!");
   }
-  const [user, reason] = this._.tail((args.match(this.Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason] = d._.tail((args.match(d.Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
@@ -65,7 +66,7 @@ const func = async function (msg, {
   if (!memberToUse) {
     return;
   }
-  const muteInfo = this.db.table("mutes").get(guild.id);
+  const muteInfo = d.db.table("mutes").get(guild.id);
   let muteRole;
   if (muteInfo) {
     muteRole = guild.roles.get(muteInfo.muteRoleID);
@@ -73,7 +74,7 @@ const func = async function (msg, {
   if (!muteRole) {
     return reply("That member is not muted!");
   }
-  const activeMute = this.db.table("activemutes").get(guild.id, []).find(item => item.userid === memberToUse.id);
+  const activeMute = d.db.table("activemutes").get(guild.id, []).find(item => item.userid === memberToUse.id);
 
   if (!activeMute) {
     return reply("That member is not muted!");
@@ -84,49 +85,49 @@ const func = async function (msg, {
     return reply("The role used for muting is my highest role!");
   }
   const sentMuteMsg = await send(`Unmuting ${memberToUse.user.tag}... (Sending DM...)`);
-  const reasonEmbed = new this.Embed();
+  const reasonEmbed = new d.Embed();
   reasonEmbed
     .setColor("GREEN")
     .setDescription(reason || "None")
     .setTimestamp(new Date());
   const finish = () => {
-    sentMuteMsg.edit(`Unmuted ${memberToUse.user.tag} successfully.`).catch(this.rejct);
+    sentMuteMsg.edit(`Unmuted ${memberToUse.user.tag} successfully.`).catch(d.rejct);
     actionLog({
       target: memberToUse,
       type: "u",
       author: member,
       reason: reason || "None",
-    }).catch(this.rejct);
+    }).catch(d.rejct);
   };
   const fail = err => {
-    this.rejct(err);
-    sentMuteMsg.edit(`The unmute failed! :frowning:`).catch(this.rejct);
+    d.rejct(err);
+    sentMuteMsg.edit(`The unmute failed! :frowning:`).catch(d.rejct);
   };
   const executeUnmute = () => {
-    this.db.table("activemutes").remArr(guild.id, activeMute).then(() => {
-      const compressedText = this.textAbstract(`[Unmute command executed by ${author.tag}] ${reason || "No reason given"}`, 512);
+    d.db.table("activemutes").remArr(guild.id, activeMute).then(() => {
+      const compressedText = d.textAbstract(`[Unmute command executed by ${author.tag}] ${reason || "No reason given"}`, 512);
       memberToUse.removeRole(muteRole, compressedText).then(finish).catch(fail);
     }).catch(fail);
   };
   let sent = false;
   let timeoutRan = false;
   memberToUse.send(
-    `Your mute at the server **${this.escMarkdown(guild.name)}** was lifted for the reason of:`,
+    `Your mute at the server **${d.escMarkdown(guild.name)}** was lifted for the reason of:`,
     { embed: reasonEmbed },
   ).then(() => {
     if (timeoutRan) {
       return;
     }
     sent = true;
-    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Sent. Removing muting role...)`).catch(this.rejct);
+    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Sent. Removing muting role...)`).catch(d.rejct);
     executeUnmute();
   }).catch(err => {
-    this.rejct(err);
+    d.rejct(err);
     if (timeoutRan) {
       return;
     }
     sent = true;
-    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Failed. Removing muting role anyway...)`).catch(this.rejct);
+    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Failed. Removing muting role anyway...)`).catch(d.rejct);
     executeUnmute();
   });
   setTimeout(() => {
@@ -134,7 +135,7 @@ const func = async function (msg, {
       timeoutRan = true;
       executeUnmute();
     }
-  }, this.Time.seconds(2.8));
+  }, d.Time.seconds(2.8));
 };
 
 module.exports = new Command({

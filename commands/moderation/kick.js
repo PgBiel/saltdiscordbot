@@ -1,9 +1,10 @@
 const Command = require("../../classes/command");
+const d = require("../../misc/d");
 const kickP = require("../../punishments/kick");
 
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
-  searcher, promptAmbig, author, botmember, member, actionLog, dummy, self,
+  searcher, promptAmbig, author, botmember, member, actionLog, dummy, self
 }) {
   if (!perms.kick && !hasPermission(["KICK_MEMBERS"])) {
     return reply("You do not have sufficient permissions! :frowning:");
@@ -13,7 +14,7 @@ const func = async function (msg, {
   if (!args) {
     return reply("Please tell me who to kick!");
   }
-  const [user, reason] = this._.tail((args.match(this.Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason] = d._.tail((args.match(d.Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
@@ -62,5 +63,5 @@ module.exports = new Command({
   category: "Moderation",
   args: { member: false, reason: true },
   guildOnly: true,
-  default: false,
+  default: false
 });

@@ -1,13 +1,14 @@
 const Command = require("../../classes/command");
 const actionLog = require("../../classes/actionlogger");
+const d = require("../../misc/d");
 
 const func = async function (
   msg, { prompt, guildId, guild, reply, checkRole, author, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms }
 ) {
   if (!args) return reply(`Please specify an action (or a case number to get)! (See the help command for details.)`);
-  const punishments = this.db.table("punishments").get(guildId);
+  const punishments = d.db.table("punishments").get(guildId);
   if (!punishments || punishments.length < 1) return reply(`There are no actions logged on this guild!`);
-  const match = args.match(this.Constants.regex.CASE_MATCH);
+  const match = args.match(d.Constants.regex.CASE_MATCH);
   let part1, part2, part3;
   if (arrArgs.length === 1) {
     part1 = match[6];
@@ -28,8 +29,8 @@ const func = async function (
   }
   const arg2 = part3;
   const latest = (punishments[punishments.length - 1] || { case: 0 }).case;
-  guild.members.fetch().catch(this.rejct);
-  const maxCases = this.Constants.numbers.MAX_CASES(guild.members.size);
+  guild.members.fetch().catch(d.rejct);
+  const maxCases = d.Constants.numbers.MAX_CASES(guild.members.size);
   if (action === "get" || !isNaN(action) || action === "???") {
     if (!perms["case.get"]) return reply(`Missing permission \`case get\`! :(`);
     if (action === "???" || arg === "???") {
@@ -60,7 +61,7 @@ There ${latest === 1 ? "is only 1 case" : `are ${latest} cases`}.`);
     const { case: punish } = await actionLog.fetchCase(arg, guild);
     if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest ${maxCases} cases are kept stored.)`);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
-    const isYours = this.uncompress(punish.moderator) === author.id;
+    const isYours = d.uncompress(punish.moderator) === author.id;
     if (
       !isYours
       && (setPerms["case.others"] ?
@@ -76,7 +77,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         filter: msg2 => {
           return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
         },
-        timeout: this.Time.seconds(15)
+        timeout: d.Time.seconds(15)
       });
       if (!result) {
         return;
@@ -89,9 +90,9 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         const { case: cResult, message: mResult } = await actionLog.delCase(arg, guild);
         if (!cResult) return reply("Uh oh! Therewas an error deleting the case. Sorry!");
         if (!mResult) return reply(`The case #${arg} was deleted successfully, however its message at Action Logs wasn't. \
-If Action Logs are disabled for this guild, you can ignore this.`);
+If Action Logs are disabled for this guild, you can ignore d.`);
       } catch (err) {
-        this.rejct(err);
+        d.rejct(err);
         return reply("Uh oh! There was an error deleting the case. Sorry!");
       }
       return reply(`Case #${arg} was deleted successfully!`);
@@ -106,7 +107,7 @@ you will become the author of the case. This will expire in 15 seconds. Type __y
             filter: msg2 => {
               return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
             },
-            timeout: this.Time.seconds(15)
+            timeout: d.Time.seconds(15)
           });
           if (!result) {
             return;
@@ -127,19 +128,19 @@ you will become the author of the case. This will expire in 15 seconds. Type __y
         } else {
           options.toggleThumbnail = true;
         }
-        this.logger.debug("a", arg2);
+        d.logger.debug("a", arg2);
         const { case: cResult, message: mResult } = await actionLog.editCase(arg, options, guild);
-        const { thumbOn } = this.db.table("punishments").get(guildId).find(c => c.case === arg);
+        const { thumbOn } = d.db.table("punishments").get(guildId).find(c => c.case === arg);
         if (!cResult) return reply("Uh oh! There was an error modifying the case. Sorry!");
         if (!mResult) return reply(`Case #${arg} ${action === "edit" ?
           "was modified" :
           ("had its thumbnail toggled " + (thumbOn ? "on" : "off"))} successfully, however its message at Action Logs wasn't able to \
-          be modified. If Action Logs are disabled for this guild, you can ignore this.`);
+          be modified. If Action Logs are disabled for this guild, you can ignore d.`);
         return reply(`Case #${arg} ${action === "edit" ?
           "was modified successfully" :
           ("successfully had its thumbnail toggled " + (thumbOn ? "on" : "off"))}!`);
       } catch (err) {
-        this.rejct(err);
+        d.rejct(err);
         return reply("Uh oh! There was an error modifying the case. Sorry!");
       }
     }

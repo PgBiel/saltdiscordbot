@@ -1,4 +1,5 @@
 const Command = require("../../classes/command");
+const d = require("../../misc/d");
 
 const func = async function (msg, { send }) {
   const now = Date.now();
@@ -37,5 +38,5 @@ module.exports = new Command({
   description: "View the ping of the bot.",
   example: "{p}ping",
   category: "Utility",
-  guildOnly: false,
+  guildOnly: false
 });

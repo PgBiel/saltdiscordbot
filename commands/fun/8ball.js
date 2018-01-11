@@ -1,4 +1,5 @@
 const Command = require("../../classes/command");
+const d = require("../../misc/d");
 
 /**
  * Does some insane maths.
@@ -27,7 +28,7 @@ const func = async function (msg, { args, reply, author }) {
     "Very unlikely.",
   ];
   reply(
-    answers[/* this.random(0, answers.length - 1) */maths(args, author.id, answers.length)],
+    answers[/* d.random(0, answers.length - 1) */maths(args, author.id, answers.length)],
     );
 };
 module.exports = new Command({
@@ -39,5 +40,5 @@ module.exports = new Command({
   example: "{p}8ball Is chocolate nice?",
   category: "Fun",
   args: {question: false},
-  guildOnly: false,
+  guildOnly: false
 });

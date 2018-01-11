@@ -1,4 +1,5 @@
 const Command = require("../../classes/command");
+const d = require("../../misc/d");
 
 const func = async function (msg, { args, send, channel, member, author, guild }) {
   let ripContent = "";
@@ -6,7 +7,7 @@ const func = async function (msg, { args, send, channel, member, author, guild }
     ripContent = member ?
     member.displayName :
     author.username;
-  } else if (channel instanceof this.TextChannel) {
+  } else if (channel instanceof d.TextChannel) {
     ripContent = args.replace(/<@!?\d+>/g, mention => {
       const id = mention.match(/^<@!?(\d+)>$/)[1];
       const memberToUse = guild.members.get(id);
@@ -29,5 +30,5 @@ module.exports = new Command({
   example: "{p}rip John",
   category: "Fun",
   args: {text: true},
-  guildOnly: false,
+  guildOnly: false
 });

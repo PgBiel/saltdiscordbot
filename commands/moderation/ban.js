@@ -1,10 +1,11 @@
 const Command = require("../../classes/command");
+const d = require("../../misc/d");
 const banP = require("../../punishments/ban");
 
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   searcher, promptAmbig, author, botmember, member, actionLog, dummy,
-  self,
+  self
 }) {
   const actions = [
     (dummy.actions && dummy.actions[0]) || "Banning",
@@ -22,12 +23,12 @@ const func = async function (msg, {
     return reply(`Please tell me who to ${actions[4]}!`);
   }
   let memberToUse;
-  const getUser = () => memberToUse instanceof this.GuildMember ? memberToUse.user : memberToUse;
-  const [user, reason] = this._.tail((args.match(this.Constants.regex.BAN_MATCH) || Array(3)));
+  const getUser = () => memberToUse instanceof d.GuildMember ? memberToUse.user : memberToUse;
+  const [user, reason] = d._.tail((args.match(d.Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
-  // this.logger.debug(user, reason);
+  // d.logger.debug(user, reason);
   let id;
   if (dummy.banType !== "idban") {
     let membersMatched;
@@ -64,11 +65,11 @@ const func = async function (msg, {
     }
     if (guild.members.has(user)) {
       memberToUse = guild.members.get(user);
-    } else if (this.bot.users.has(user)) {
-      memberToUse = this.bot.users.get(user);
+    } else if (d.bot.users.has(user)) {
+      memberToUse = d.bot.users.get(user);
     } else {
       try {
-        memberToUse = await this.bot.users.fetch(user);
+        memberToUse = await d.bot.users.fetch(user);
       } catch (err) {
         // User not found.
       }
@@ -95,5 +96,5 @@ module.exports = new Command({
   category: "Moderation",
   args: { member: false, reason: true },
   guildOnly: true,
-  default: false,
+  default: false
 });

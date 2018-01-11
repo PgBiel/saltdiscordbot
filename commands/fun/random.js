@@ -1,11 +1,12 @@
 const Command = require("../../classes/command");
+const d = require("../../misc/d");
 
 const func = async function (msg, { arrArgs, reply }) {
   if (arrArgs.length < 2) {
     reply("Please specify two numbers.");
     return;
   }
-  const result = this.random(
+  const result = d.random(
     Number(arrArgs[0]), Number(arrArgs[1]));
   if (result == null) {
     reply("Please specify two **numbers**.");
@@ -22,5 +23,5 @@ module.exports = new Command({
   example: "{p}random 1 10",
   args: {min: false, max: false},
   category: "Fun",
-  guildOnly: false,
+  guildOnly: false
 });

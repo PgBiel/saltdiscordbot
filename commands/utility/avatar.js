@@ -1,9 +1,9 @@
 const Command = require("../../classes/command");
-const { MessageEmbed } = require("discord.js");
+const d = require("../../misc/d");
 
 function getAvatarEmb(author) {
   const avatarRegex = /^((?:https?:\/\/)?cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpe?g|png|gif|webp))\?size=\d+$/;
-  const embed = new MessageEmbed();
+  const embed = new d.Embed();
   const tag = `${author.username}#${author.discriminator}`;
   const urlz = author.displayAvatarURL();
   const avatarUrl = avatarRegex.test(urlz) ?
@@ -18,15 +18,15 @@ function getAvatarEmb(author) {
 }
 
 const func = async function (msg, {
-  channel, guildId, author, args, arrArgs, send, reply, searcher, promptAmbig,
+  channel, guildId, author, args, arrArgs, send, reply, searcher, promptAmbig
 }) {
   if (!args) {
     send({ embed: getAvatarEmb(author) });
-  } else if (!(channel instanceof this.TextChannel)) {
-    send("This is a DM and there is nobody here other than me and you, so here's my avatar.", { embed: getAvatarEmb(this.bot.user) });
+  } else if (!(channel instanceof d.TextChannel)) {
+    send("This is a DM and there is nobody here other than me and you, so here's my avatar.", { embed: getAvatarEmb(d.bot.user) });
   } else {
     if (/^<@\d+>$/.test(args)) {
-      const user = this.bot.users.get(args.match(/^<@(\d+)>$/)[1]);
+      const user = d.bot.users.get(args.match(/^<@(\d+)>$/)[1]);
       if (!user) {
         return reply("Invalid member given!");
       }
@@ -34,7 +34,7 @@ const func = async function (msg, {
       return send({ embed });
     }
     const members = searcher.searchMember(args);
-    this.logger.debug(args);
+    d.logger.debug(args);
     if (members.length < 1) {
       return reply("Member not found!");
     }
@@ -67,5 +67,5 @@ module.exports = new Command({
   example: "{p}avatar",
   category: "Utility",
   args: {member: true},
-  guildOnly: false,
+  guildOnly: false
 });

@@ -243,9 +243,16 @@ If you want to contact the bot devs, please tell them this information: \`${data
     return actionLog.log(newOptions);
   };
 
+  const seePerm = (perm, perms, setPerms, { srole, hperms }) => {
+    if (setPerms[perm] && perms[perm]) return true;
+    if (hperms && hasPermission([...hperms])) return true;
+    if (srole && checkRole(srole)) return true;
+    return perms[perm] || false;
+  };
+
   let obj = {
     hasPermission, userError, promptAmbig, checkRole,
-    send, reply, prompt, actionLog: actionLog2,
+    send, reply, prompt, actionLog: actionLog2, seePerm
   };
 
   // let obj: typeof oldObj & { doEval: (content: string, subC?: {[prop: string]: any}) => Promise<any> };

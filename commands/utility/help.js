@@ -1,13 +1,14 @@
 const Command = require("../../classes/command");
+const d = require("../../misc/d");
 
 const func = async function (msg, { args, arrArgs, send, reply, prefix, botmember, dummy }) {
   const sendIt = (emb => {
     return send({ embed: emb, autocatch: false }).catch(err => err.status === 403 ?
       send("Please make sure I can send embeds in this channel.") :
-      void(this.rejct(err)));
+      void(d.rejct(err)));
   });
   const categories = {};
-  Object.entries(this.bot.commands).forEach(([k, v]) => {
+  Object.entries(d.bot.commands).forEach(([k, v]) => {
     if (v.category !== "Private") {
       let category = "Uncategorized";
       if (v.category) {
@@ -19,19 +20,19 @@ const func = async function (msg, { args, arrArgs, send, reply, prefix, botmembe
       categories[category][v.name] = v;
     }
   });
-  if (!args /* || this._.trim(args.toLowerCase()) === "all" */) {
-    const embed = new this.Embed();
+  if (!args /* || d._.trim(args.toLowerCase()) === "all" */) {
+    const embed = new d.Embed();
     embed
       .setColor("RANDOM")
       .setTitle("List of categories")
-      .setFooter(`To view all ${Object.values(this.bot.commands).filter(c => c.category !== "Private").length} commands, \
+      .setFooter(`To view all ${Object.values(d.bot.commands).filter(c => c.category !== "Private").length} commands, \
 type ${prefix}help all.`);
     /* Object.entries(categories).forEach(([k, v]) => {
       let str = "";
       Object.keys(v).forEach(k2 => {
         str += k2 + "\n";
       });
-      embed.addField(k, this._.trim(str), true);
+      embed.addField(k, d._.trim(str), true);
     }); */
     let arr = [];
     Object.entries(categories).forEach(([cat, cmds]) => {
@@ -42,14 +43,14 @@ type ${prefix}help all.`);
     for (const obj of arr.sort((a, b) => b[1] - a[1])) {
       table += `• **${obj[0]}**: **${obj[1]}** commands\n`;
     }
-    table = this._.trim(table);
+    table = d._.trim(table);
     embed.setDescription(`Categories of commands available (Type \`${prefix}help <category>\` to view its commands):
 
 ${table}`);
     sendIt(embed);
   } else if (arrArgs[0].toLowerCase().replace(/^\w/, m => m.toUpperCase()) in categories) {
     const category = arrArgs[0].toLowerCase().replace(/^\w/, m => m.toUpperCase());
-    const embed = new this.Embed();
+    const embed = new d.Embed();
     const page = Number(arrArgs[1] || 1);
     if (isNaN(page) || page < 1 || /\./.test(page.toString())) return reply(`Please provide a valid page (the second parameter)! \
 It must be a number that is higher than or equal to 1, and not have decimals.`);
@@ -57,8 +58,8 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
     Object.values(categories[category]).forEach(cmd => {
       str += cmd.name + "\n";
     });
-    str = this._.trim(str).split("\n").sort().join("\n");
-    const pages = this.paginate(str);
+    str = d._.trim(str).split("\n").sort().join("\n");
+    const pages = d.paginate(str);
     if (pages.length > 1) embed.setFooter(`To go to a certain page, use ${prefix}help ${category} <page>.`);
     if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
     embed
@@ -68,16 +69,16 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
       .addField("Commands", pages[page - 1]);
     sendIt(embed);
   } else if (arrArgs[0].toLowerCase() === "all") {
-    const embed = new this.Embed();
+    const embed = new d.Embed();
     const page = Number(arrArgs[1] || 1);
     if (isNaN(page) || page < 1 || /\./.test(page.toString())) return reply(`Please provide a valid page (the second parameter)! \
 It must be a number that is higher than or equal to 1, and not have decimals.`);
     let str = "";
-    Object.values(this.bot.commands).forEach(cmd => {
+    Object.values(d.bot.commands).forEach(cmd => {
       if (cmd.category !== "Private") str += cmd.name + "\n";
     });
-    str = this._.trim(str).split("\n").sort().join("\n");
-    const pages = this.paginate(str);
+    str = d._.trim(str).split("\n").sort().join("\n");
+    const pages = d.paginate(str);
     if (pages.length > 1) embed.setFooter(`To go to a certain page, use ${prefix}help all <page>.`);
     if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
     embed
@@ -86,14 +87,14 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
       .setDescription("All commands available.")
       .addField("Commands", pages[page - 1]);
     sendIt(embed);
-  } else if (this._.trim(args.toLowerCase()) in this.bot.commands) {
-    const cmdn = this._.trim(args.toLowerCase());
-    const embed = this.bot.commands[cmdn].help(prefix, true);
+  } else if (d._.trim(args.toLowerCase()) in d.bot.commands) {
+    const cmdn = d._.trim(args.toLowerCase());
+    const embed = d.bot.commands[cmdn].help(prefix, true);
     sendIt(embed);
   } else {
     return reply("Unknown command/category!");
     /* let cmdToUse = null;
-    Object.values(this.bot.commands).forEach((cmd: Command) => {
+    Object.values(d.bot.commands).forEach((cmd: Command) => {
       if (cmdToUse) {
         return;
       }
@@ -102,7 +103,7 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
           if (cmdToUse) {
             return;
           }
-          if (alias.name.toLowerCase() === this._.trim(args).toLowerCase()) {
+          if (alias.name.toLowerCase() === d._.trim(args).toLowerCase()) {
             cmdToUse = alias;
           }
         });

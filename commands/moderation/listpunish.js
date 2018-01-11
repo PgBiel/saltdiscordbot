@@ -1,8 +1,9 @@
 const Command = require("../../classes/command");
 const actionLog = require("../../classes/actionlogger");
+const d = require("../../misc/d");
 
-function filterPunishes(punishments, id, uncompress) {
-  const punishes = punishments.filter(c => uncompress(c.target) === id && !c.deleted);
+function filterPunishes(punishments, id) {
+  const punishes = punishments.filter(c => d.uncompress(c.target) === id && !c.deleted);
   return {
     all: punishes,
     alls: punishes,
@@ -30,8 +31,8 @@ function exampleCases(punishes, init = " ") {
   }
 }
 
-function main({ Embed, user, isAuthor, punishments, p, reply, send, uncompress, _, maxCases }) {
-  const filtered = filterPunishes(punishments, user.id, uncompress);
+function main({ user, isAuthor, punishments, p, reply, send, maxCases }) {
+  const filtered = filterPunishes(punishments, user.id, d.uncompress);
   if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
     "You haven't" :
     "That user hasn't"} ever been punished! :smiley:`);
@@ -42,7 +43,7 @@ function main({ Embed, user, isAuthor, punishments, p, reply, send, uncompress, 
     if (/^all/i.test(type)) continue;
     text += `• **${_.capitalize(type)}**: **${filt.length}**${exampleCases(filt)}\n`;
   }
-  const embed = new Embed();
+  const embed = new d.Embed();
   embed
     .setTitle(`List of punishments (last ${maxCases} cases)`)
     .setDescription(_.trim(text))
@@ -59,20 +60,19 @@ function main({ Embed, user, isAuthor, punishments, p, reply, send, uncompress, 
 }
 
 async function specific({
-  Embed, user, Constants, isAuthor, punishments, p, type: aType, reply, send, uncompress, _, page: ogPage, paginate,
-  endChar, bot, Time, maxCases
+  user, isAuthor, punishments, p, type: aType, reply, send, page: ogPage, maxCases
 }) {
-  const filtered = filterPunishes(punishments, user.id, uncompress);
+  const filtered = filterPunishes(punishments, user.id, d.uncompress);
   if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
     "You haven't" :
     "That user hasn't"} ever been punished! :smiley:`);
-  const typed = filtered[endChar((aType || "").toLowerCase(), "s")];
+  const typed = filtered[d.endChar((aType || "").toLowerCase(), "s")];
   if (!typed) return reply(`Unknown punishment.`);
   if (typed.length < 1)
     return reply(`${isAuthor ? "You haven't" : "That user hasn't"} ever received that punishment! :smiley:`);
-  const type = /^all/i.test(aType) ? "all" : endChar(aType.toLowerCase(), "s");
+  const type = /^all/i.test(aType) ? "all" : d.endChar(aType.toLowerCase(), "s");
 
-  const pages = typed.length === 1 ? [typed[0].case.toString()] : paginate(typed.map(c => c.case.toString()).join(" "), 4);
+  const pages = typed.length === 1 ? [typed[0].case.toString()] : d.paginate(typed.map(c => c.case.toString()).join(" "), 4);
   if (isNaN(ogPage)) return reply(`That page doesn't exist!`);
   const page = ogPage - 1;
   if (page < 0) return reply(`That page doesn't exist!`);
@@ -81,11 +81,11 @@ async function specific({
   if (/^all/i.test(type)) {
     color = "RANDOM";
   } else if (/^unban/i.test(type)) {
-    color = Constants.maps.PUNISHMENTS["U"][2];
+    color = d.Constants.maps.PUNISHMENTS["U"][2];
   } else {
-    color = (Constants.maps.PUNISHMENTS[type[0].toLowerCase()] || [0, 0, "RANDOM"])[2];
+    color = (d.Constants.maps.PUNISHMENTS[type[0].toLowerCase()] || [0, 0, "RANDOM"])[2];
   }
-  const embed = new Embed();
+  const embed = new d.Embed();
   embed
     .setTitle(`List of ${/^all/.test(type) ? "punishments" : type} for ${user.tag} (last ${maxCases} cases) - \
 Page ${page + 1}/${pages.length}`)
@@ -93,14 +93,14 @@ Page ${page + 1}/${pages.length}`)
   if (pages.length > 1) embed.setFooter(`To go to a certain page, type \`${p}listpunish \
   ${isAuthor ? "" : "<user> "}${type} <page>.`);
   for (const pagee of pages[page].split(" ")) {
-    if (isNaN(pagee) || !_.trim(pagee)) continue;
+    if (isNaN(pagee) || !d._.trim(pagee)) continue;
     const punish = filtered.all.find(c => c.case === Number(_.trim(pagee)));
-    const [name, _desc, color, extraFields] = Constants.maps.PUNISHMENTS[punish.type];
+    const [name, _desc, color, extraFields] = d.Constants.maps.PUNISHMENTS[punish.type];
     const extra = extraFields ?
-      ` - ${extraFields[0][0]} ${extraFields[0][1].replace("<d>", Time(Number(uncompress(punish.duration)) * 1000))}` :
-      (punish.type !== "m" && /^all/i.test(type) ? ` - ${_.capitalize(name)}` : "");
+      ` - ${extraFields[0][0]} ${extraFields[0][1].replace("<d>", d.Time(Number(d.uncompress(punish.duration)) * 1000))}` :
+      (punish.type !== "m" && /^all/i.test(type) ? ` - ${d._.capitalize(name)}` : "");
     const field = [
-      `Case ${punish.case} by ${((await bot.users.fetch(uncompress(punish.moderator))) || { tag: "Unknown" }).tag}${extra}`,
+      `Case ${punish.case} by ${((await d.bot.users.fetch(d.uncompress(punish.moderator))) || { tag: "Unknown" }).tag}${extra}`,
       `${punish.reason || "No reason"}`
     ];
     embed.addField(field[0], field[1]);
@@ -118,17 +118,16 @@ const func = async function (
     searcher, promptAmbig
   },
 ) {
-  const punishments = this.db.table("punishments").get(guildId);
+  const punishments = d.db.table("punishments").get(guildId);
   if (!punishments || punishments.length < 1) return reply(`Nobody has been punished in this guild!`);
   if (!perms["listpunish"]) return reply(`Missing permission \`listpunish\`! :(`)
-  guild.members.fetch().catch(this.rejct);
-  const maxCases = this.Constants.numbers.MAX_CASES(guild.members.size);
+  guild.members.fetch().catch(d.rejct);
+  const maxCases = d.Constants.numbers.MAX_CASES(guild.members.size);
   if (!args) {
     main({
-      Embed: this.Embed, user: author, isAuthor: true, punishments, p, reply, send, uncompress: this.uncompress,
-      _: this._, maxCases });
+      user: author, isAuthor: true, punishments, p, reply, send, maxCases });
   } else {
-    const matchObj = args.match(this.xreg(this.Constants.regex.LIST_PUNISH_MATCH, "xi"));
+    const matchObj = args.match(d.xreg(d.Constants.regex.LIST_PUNISH_MATCH, "xi"));
     let user, name, page;
     if (matchObj[1]) {
       name = matchObj[1];
@@ -141,8 +140,8 @@ const func = async function (
       user = matchObj[6];
     }
     if (!user && !name) return reply(`Please specify a valid user to check their punishments!`);
-    page = page && page.length < 5 && /^\d+$/.test(this._.trim(page)) ? (Number(page) || 1) : 1;
-    name = name ? this._.trim(name) : name;
+    page = page && page.length < 5 && /^\d+$/.test(d._.trim(page)) ? (Number(page) || 1) : 1;
+    name = name ? d._.trim(name) : name;
     if (user) {
       let memberToUse;
       let membersMatched;
@@ -175,21 +174,16 @@ const func = async function (
       }
       if (name) {
         return await specific({
-          Embed: this.Embed, user: memberToUse.user, Constants: this.Constants, isAuthor: false, punishments, p,
-          type: name, reply, send, uncompress: this.uncompress, _: this._, page, paginate: this.paginate,
-          endChar: this.endChar, bot: this.bot, Time: this.Time, maxCases
+          user: memberToUse.user, isAuthor: false, punishments, p, type: name, reply, send, page, maxCases
         });
       } else {
         main({
-          Embed: this.Embed, user: memberToUse.user, isAuthor: memberToUse.user.id === author.id, punishments, p, reply,
-          send, uncompress: this.uncompress, _: this._, maxCases
+          user: memberToUse.user, isAuthor: memberToUse.user.id === author.id, punishments, p, reply, send, maxCases
         });
       }
     } else {
       return await specific({
-        Embed: this.Embed, user: author, Constants: this.Constants, isAuthor: true, punishments, p, type: name, reply, 
-        send, uncompress: this.uncompress, _: this._, page, paginate: this.paginate, endChar: this.endChar, bot: this.bot,
-        Time: this.Time, maxCases
+        user: author, isAuthor: true, punishments, p, type: name, reply, send, page, maxCases
       });
     }
   }

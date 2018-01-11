@@ -1,4 +1,5 @@
 const Command = require("../../classes/command");
+const d = require("../../misc/d");
 const warnP = require("../../punishments/warn");
 
 const func = async function (msg, {
@@ -11,7 +12,7 @@ const func = async function (msg, {
   try {
     if (checkRole("mod", member)) hasPerm = true;
   } catch (err) {
-    this.logger.error(`At check role: ${err}`);
+    d.logger.error(`At check role: ${err}`);
   }
   if (setPerms.warn) {
     hasPerm = perms.warn;
@@ -23,7 +24,7 @@ const func = async function (msg, {
   if (!args) {
     return reply("Please tell me who to warn!");
   }
-  const [user, reason] = this._.tail((args.match(this.Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason] = d._.tail((args.match(d.Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }

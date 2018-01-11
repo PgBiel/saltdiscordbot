@@ -28,7 +28,7 @@ module.exports = async msg => {
 
   const {
     hasPermission, userError, promptAmbig, checkRole,
-    send, reply, doEval, prompt, actionLog,
+    send, reply, doEval, prompt, actionLog, seePerm
   } = funcs(msg);
 
   const context = {
@@ -41,6 +41,7 @@ module.exports = async msg => {
     botmember: msg.guild ? msg.guild.member(bot.user) : null,
     searcher: msg.guild ? new Searcher({ guild: msg.guild }) : null,
     checkRole, promptAmbig, userError, doEval, prompt, actionLog,
+    seePerm
   };
   // fetch prefix from db
   const dbPrefix = msg.guild ? db.table("prefixes").get(guildId) : null;
