@@ -45,5 +45,6 @@ exports.messager = require("../classes/messager");
 exports.perms = require("../classes/permissions");
 exports.Searcher = require("../classes/searcher");
 exports.Time = require("../classes/time");
+exports.Interval = require("../classes/interval");
 
 exports.Command = require("../classes/command");
