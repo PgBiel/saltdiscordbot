@@ -6,7 +6,7 @@ exports.applyFuncs = applyFuncs;
 const { Guild } = require("discord.js");
 const {
   _, bot, Command, commandParse, Constants, db, Discord, fs, logger, messager, rethink, Time, util,
-  xreg
+  xreg, moment
 } = require("./deps");
 
 const { HelperVals } = require("../misc/tableValues");
@@ -92,12 +92,12 @@ function messagerDoEval(evaler) {
       const result = eval(data.content); // tslint:disable-line:no-eval
       messager.emit(`${data.id}eval`, {
         success: true,
-        result,
+        result
       });
     } catch (err) {
       messager.emit(`${data.id}eval`, {
         success: false,
-        result: err,
+        result: err
       });
     }
   };
@@ -106,7 +106,7 @@ exports.messagerDoEval = messagerDoEval;
 function djsDebug(info) {
   logger.custom(info, {
       prefix: `[${/heartbeat/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`,
-      color: "magenta",
+      color: "magenta"
   });
 }
 exports.djsDebug = djsDebug;
@@ -356,7 +356,7 @@ function parseMute(str) {
       }
     }
   });
-  obj.reason = results[8] || "";
+  obj.reason = results[10] || "";
   return obj;
 }
 exports.parseMute = parseMute;
@@ -479,13 +479,25 @@ function botMessage(msg) {
 exports.botMessage = botMessage;
 
 function compress(str) {
+  str = String(str);
+  if (str.length == 1) {
+    return str;
+  }
   if (str.length % 2 != 0) {
     str = "0" + str;
   }
   return Buffer.from(str, "hex").toString("base64").replace(/=/g, "");
 }
 function uncompress(str) {
-  return Buffer.from(str + "=".repeat(str.length % 4), "base64").toString("hex");
+  str = String(str);
+  if (str.length == 1) {
+    return str;
+  }
+  var ret = Buffer.from(str + "=".repeat(str.length % 4), "base64").toString("hex");
+  if (ret[0] == "0") {
+    ret = ret.substr(1);
+  }
+  return ret;
 }
 exports.compress = compress;
 exports.uncompress = uncompress;

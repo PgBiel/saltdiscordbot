@@ -96,7 +96,7 @@ const func = async function (msg, {
       target: memberToUse,
       type: "u",
       author: member,
-      reason: reason || "None",
+      reason: reason || "None"
     }).catch(d.rejct);
   };
   const fail = err => {
@@ -146,5 +146,5 @@ module.exports = new Command({
   category: "Moderation",
   args: { reason: true },
   guildOnly: true,
-  default: false,
+  default: false
 });
