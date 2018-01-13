@@ -78,7 +78,7 @@ class Mute extends Punishment {
       sentMuteMsg.edit(`The mute failed! :frowning:`).catch(rejct);
     };
     const executeMute = () => {
-      const timestamp = moment().add(time);
+      const timestamp = moment().add(time.duration);
       db.table("activemutes").add(guild.id, {
         userid: compress(member.id),
         timestamp: datecomp(timestamp.toDate()),
