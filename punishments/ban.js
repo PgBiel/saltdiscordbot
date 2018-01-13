@@ -28,7 +28,7 @@ class Ban extends Punishment {
       days = 1, isSoft = false
     } = {
       author: null, reason: null, auctPrefix: "", actions: ["Banning", "Banned", "banned", "Ban", "ban"], usePrompt: true,
-      days: 1, isSoft: false,
+      days: 1, isSoft: false
     },
   ) {
     const id = typeof member === "string" ? member : null;
@@ -69,7 +69,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         },
         timeout: Time.seconds(15),
         cancel: false,
-        options: { embed },
+        options: { embed }
       });
       if (!result) {
         return;
@@ -113,7 +113,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         type: isSoft ? "s" : "b",
         author,
         reason: reason || "None",
-        target: userTarget,
+        target: userTarget
       };
       actionLog(logObj).catch(rejct);
     };

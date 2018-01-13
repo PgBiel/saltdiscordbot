@@ -1,8 +1,9 @@
-const { GuildMember, MessageEmbed, User } = require("discord.js");
+const { Guild, GuildMember, MessageEmbed, User } = require("discord.js");
 // const { cases, moderation } = require("../sequelize/sequelize");
-const { bot, Constants, db, logger, moment, msgEmbedToRich, Time } = require("../util/deps");
+const { bot, Constants, db, Interval, logger, moment, msgEmbedToRich, Time } = require("../util/deps");
 const {
-  avatarCompress, avatarUncompress, cloneObject, compress, datecomp, dateuncomp, rejct, textAbstract, uncompress
+  avatarCompress, avatarUncompress, cloneObject, compress, datecomp, dateuncomp, rejct, textAbstract, uncompress,
+  durationcompress, durationdecompress
 } = require("../util/funcs");
 
 /**
@@ -77,7 +78,13 @@ const {
 class ActionLog {
   /**
    * Log an action.
-   * @param {LogOptions} options The options.
+   * @param {object} options The options.
+   * @param {Guild} options.guild The guild to operate.
+   * @param {User} options.author The author of the punishment.
+   * @param {string} [options.reason] Optional reason.
+   * @param {GuildMember|User} options.target The target.
+   * @param {string} options.type The punishment type.
+   * @param {Interval} [options.time] Duration of punishment.
    * @returns {Promise<?Message>} The sent message.
    */
   async log(options) {
@@ -105,11 +112,11 @@ class ActionLog {
       target: compress(idToUse),
       time: datecomp(at),
       reason: textAbstract(reason, 500) || "None",
-      duration: time ? compress(Math.floor(time.time / 1000).toString()) : null,
+      duration: time ? durationcompress(time) : null,
       deleted: false,
       // messageid: msgSent.id,
       thumbOn: true,
-      thumbnail: avatarCompress(thumbnailToUse),
+      thumbnail: avatarCompress(thumbnailToUse)
     };
     const embed = await this.embedAction(caseObj);
     let msgSent;
@@ -265,13 +272,18 @@ class ActionLog {
     }
   }
 
-  async embedAction(action) {
+  /**
+   * Embed an action.
+   * @param {object} [action] The action object.
+   * @returns {MessageEmbed}
+   */
+  async embedAction(action = {}) {
     const embed = new MessageEmbed();
     const {
       case: num, target, time, moderator, reason, thumbnail, thumbOn, type,
       duration: oDuration
     } = action;
-    const duration = oDuration ? String(Number(uncompress(oDuration)) * 1000) : "0";
+    const duration = oDuration ? String(new Interval(durationdecompress(oDuration))) : "0 seconds";
     const uncTarget = uncompress(target || compress("666"));
     const [, description, color, extraFields] = Constants.maps.PUNISHMENTS[type] || [];
     let text;
@@ -303,7 +315,7 @@ class ActionLog {
       .setFooter(`Target Member's ID: ${uncTarget || "666"}`);
     if (extraFields) {
       for (const field of extraFields) {
-        embed.addField(field[0], field[1] === "<d>" ? Time(Number(duration || "0")).toString() : field[1], true);
+        embed.addField(field[0], field[1] === "<d>" ? duration : field[1], true);
       }
     }
     if (thumbOn) embed.setThumbnail(avatarUncompress(thumbnail, uncTarget) || bot.user.defaultAvatarURL);

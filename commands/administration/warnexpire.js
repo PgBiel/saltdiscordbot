@@ -4,22 +4,24 @@ const d = require("../../misc/d");
 const func = async function (
   msg, { seePerm, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms },
 ) {
-  const expire = d.uncompress(d.db.table("warnexpires").get(guildId, d.compress(d.Time.weeks(1))));
+  const expire = d.durationuncompress(
+    d.db.table("warnexpires").get(guildId, d.durationcompress(d.Interval.weeks(1)))
+  );
   if (!args) {
-    if (expire < 1) {
-      d.db.table("warnexpires").set(guildId, d.compress(d.Time.weeks(1).toString()));
+    if (!expire) {
+      d.db.table("warnexpires").set(guildId, d.durationcompress(d.Interval.weeks(1)));
       return reply(`Warns on this guild expire after **1 week** (default)!`);
     }
-    return reply(`Warns on this guild expire after **${d.Time(Number(expire))}**!`);
+    return reply(`Warns on this guild expire after **${new d.Interval(expire)}**!`);
   }
   if (!seePerm("warnexpire", perms, setPerms, { srole: "Administrator" })) return reply(`Missing permission \`warnexpire\`! \
 Could also use this command with the Administrator saltrole.`);
   const units = d.parseTimeStr(args);
   if (Object.values(units).reduce((a, v) => a + v, 0) <= 0) return reply(`Invalid time!`);
-  const time = d.Time(d._.flatten(Object.entries(units)));
-  if (time.time > d.Time.months(3)) return reply(`Expiry time must not be longer than 3 months!`);
-  if (time.time < d.Time.minutes(1)) return reply(`Expiry time must not be shorter than 1 minute!`);
-  await d.db.table("warnexpires").setRejct(guildId, d.compress(time.time.toString()));
+  const time = new d.Interval(Object.entries(units));
+  if (time.totalMonths > 3) return reply(`Expiry time must not be longer than 3 months!`);
+  if (time.totalMinutes < 1) return reply(`Expiry time must not be shorter than 1 minute!`);
+  await d.db.table("warnexpires").setRejct(guildId, d.durationcompress(time.duration));
   reply(`Successfully set expiry time to **${time}**!`);
 };
 

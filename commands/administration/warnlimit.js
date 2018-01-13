@@ -14,7 +14,7 @@ const func = async function (
       let str = "";
       for (const step of steps) {
         str += `At **${step.amount} warns**, the member gets a ${d.Constants.maps.PUNISHMENTS[step.punishment][0]}\
-${step.time ? ` for **${new d.Time(Number(d.uncompress(step.time) * 1000) || d.Time.minutes(10)).toString()}**` : ""}.\n`;
+${step.time ? ` for **${new d.Interval(d.durationuncompress(step.time) || d.Interval.minutes(10))}**` : ""}.\n`;
       }
       return send(`Here's the list of the current set warn punishments for this server:\n\n${d._.trim(str)}`, { split: true });
     }
@@ -37,7 +37,7 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
     const step = steps.find(s => s.amount === num);
     if (!step) return send(`There is no warn punishment for reaching ${num} total warns. :wink:`);
     return send(`Upon reaching ${num} total warns, the member receives a **${step.punishment}**\
-${step.time ? ` for **${new d.Time(Number(step.time) || d.Time.minutes(10)).toString()}**` : ""}.`);
+${step.time ? ` for **${new d.Interval(d.durationuncompress(step.time) || d.Interval.minutes(10))}**` : ""}.`);
   } else if (/^(?:set|unset|add|remove|clear)$/i.test(action)) {
     if (!seePerms("warnlimit.set", perms, setPerms, { srole: "admin" })) {
       return reply(`Uh-oh, it seems that you don't have permissions to set or unset warn punishments. \
@@ -81,15 +81,15 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
       let timeDefault = false;
       if (isNaN(subSubSubArg)) {
         timeDefault = true;
-        time = new d.Time(["m", 10]);
+        time = new d.Interval.minutes(10);
       } else {
-        time = new d.Time(["m", Number(subSubSubArg)]);
+        time = new d.Interval.minutes(Number(subSubSubArg));
       }
       const punish = subSubArg.toLowerCase();
       const objToUse = {
         amount: num,
         punishment: punish[0].toLowerCase(),
-        time: punish === "mute" ? d.compress(Math.floor(time.time / 1000).toString()) : ""
+        time: punish === "mute" ? d.durationcompress(time) : ""
       };
       const step = steps.find(s => s.amount === num);
       if (step) {
@@ -98,7 +98,7 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
         await d.db.table("warnsteps").add(guildId, objToUse, true);
       }
       const punishment = subSubArg.toLowerCase() === "mute" ?
-      `mute for ${timeDefault ? "10 minutes (default)" : time.toString()}`
+      `mute for ${timeDefault ? "10 minutes (default)" : time}`
       : subSubArg.toLowerCase();
       return send(`Successfully set the punishment for reaching **${num}** total warns to **${punishment}**!`);
     }

@@ -6,7 +6,7 @@ exports.applyFuncs = applyFuncs;
 const { Guild } = require("discord.js");
 const {
   _, bot, Command, commandParse, Constants, db, Discord, fs, logger, messager, rethink, Time, util,
-  xreg, moment
+  xreg, moment, Interval
 } = require("./deps");
 
 const { HelperVals } = require("../misc/tableValues");
@@ -240,7 +240,7 @@ exports.combineRegex = combineRegex;
  */
 function parseTimeStr(str) {
   logger.debug(str);
-  const time = new Time();
+  const time = new Interval();
   if (typeof str !== "string") {
     return time.units;
   }
@@ -254,7 +254,7 @@ function parseTimeStr(str) {
       _.trim(result).match(Constants.regex.MUTE.SINGLE_TIME_MATCH(true))[1],
       _.trim(result).match(Constants.regex.MUTE.SINGLE_TIME_MATCH(false))[1]
     ];
-    if (Time.validUnit(unit)) {
+    if (Interval.validUnit(unit)) {
       time.add(unit, Number(amount));
     }
   }
@@ -342,7 +342,7 @@ function parseMute(str) {
       obj.user = piece;
     } else if (!obj.time || obj.time.time < 1) {
       if (!obj.time) {
-        obj.time = new Time();
+        obj.time = new Interval();
       }
       if (Constants.regex.MUTE.IS_JUST_NUMBER.test(piece)) {
         obj.time.add("m", Number(piece));
@@ -350,7 +350,7 @@ function parseMute(str) {
       }
       const parsedTime = parseTimeStr(piece);
       for (const [unit, amount] of Object.entries(parsedTime)) {
-        if (Time.validUnit(unit)) {
+        if (Interval.validUnit(unit)) {
           obj.time.add(unit, amount);
         }
       }
@@ -528,6 +528,46 @@ function avatarUncompress(end, id) {
 
 exports.avatarCompress = avatarCompress;
 exports.avatarUncompress = avatarUncompress;
+
+/**
+ * Compress a duration.
+ * @param {string|Interval} dur
+ * @returns {string}
+ */
+function durationcompress (dur) {
+  let mo;
+  if (dur instanceof Interval) {
+    mo = dur.duration;
+  } else {
+    dur = String(dur);
+    mo = moment.duration(dur);
+  }
+  const temp = mo.hours();
+  mo.subtract(Math.floor(temp / 24) * 24, "hours");
+  mo.add(Math.floor(temp / 24), "days");
+  const stuff = [mo.months() + mo.years() * 12, mo.days(), mo.hours(), mo.minutes(), mo.seconds()];
+  const symbols = "abcde".split``;
+  return compress(stuff.map((v, i) => v ? v + symbols[i] : "").join``);
+}
+
+/**
+ * Decompresses a duration.
+ * @param {string} comp 
+ * @returns {Duration}
+ */
+function durationdecompress (comp) {
+  const str = uncompress(comp);
+  return moment.duration({
+    months: (str.match(/(\d+)a/) || "")[1],
+    days: (str.match(/(\d+)b/) || "")[1],
+    hours: (str.match(/(\d+)c/) || "")[1],
+    minutes: (str.match(/(\d+)d/) || "")[1],
+    seconds: (str.match(/(\d+)e/) || "")[1]
+  });
+}
+
+exports.durationcompress = durationcompress;
+exports.durationdecompress = durationdecompress;
 
 /* function avatarCompress(link) {
   const avatarPart = /^(?:https?:\/\/)?cdn\.discordapp\.com\/avatars\/\d+\/(\w+\.(?:jpe?g|png|gif|webp))(?:\?size=\d+)?$/i;

@@ -1,6 +1,9 @@
 const { GuildMember, Message, MessageEmbed, Role, TextChannel, User } = require("discord.js");
-const { db, logger, Time } = require("../util/deps");
-const { compress, datecomp, createMutedRole, endChar, escMarkdown, rejct, textAbstract, uncompress } = require("../util/funcs");
+const { db, moment, logger, Time, Interval } = require("../util/deps");
+const {
+  durationcompress, datecomp, createMutedRole, endChar, escMarkdown, rejct, textAbstract, durationuncompress,
+  uncompress, compress
+} = require("../util/funcs");
 const Punishment = require("./punishment");
 
 class Mute extends Punishment {
@@ -13,20 +16,20 @@ class Mute extends Punishment {
    * @param {string} [options.reason] The reason of the punishment.
    * @param {string} [options.auctPrefix] A prefix to be included on the audit logs.
    * @param {BaseContext<GuildChannel>} [options.context] The context of the command.
-   * @param {Time} [options.time] For how long the member should be muted.
+   * @param {Interval} [options.time] For how long the member should be muted.
    * @param {boolean} [options.permanent] If the member is permanently muted.
    * @returns {Promise<void>}
    */
   async punish(
     member, {
-      author = null, reason = null, auctPrefix = null, context = null, time = new Time(["m", 10]), permanent = false } = {
-      author: null, reason: null, auctPrefix: null, context: null, time: new Time(["m", 10]), permanent: false },
+      author = null, reason = null, auctPrefix = null, context = null, time = new Interval(["m", 10]), permanent = false } = {
+      author: null, reason: null, auctPrefix: null, context: null, time: new Interval(["m", 10]), permanent: false },
   ) {
     const guild = member.guild;
     const botmember = guild.me;
     const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def } = context;
-    if (!time) time = new Time(["m", 10]);
+    if (!time) time = Interval.minutes(10);
     const muteInfo = db.table("mutes").get(guild.id);
     let muteRole;
     if (muteInfo) {
@@ -75,12 +78,10 @@ class Mute extends Punishment {
       sentMuteMsg.edit(`The mute failed! :frowning:`).catch(rejct);
     };
     const executeMute = () => {
-      const timestamp = new Time(Date.now())
-        .add(time)
-        .time;
+      const timestamp = moment().add(time);
       db.table("activemutes").add(guild.id, {
         userid: compress(member.id),
-        timestamp: datecomp(new Date(timestamp)),
+        timestamp: datecomp(timestamp.toDate()),
         permanent: Boolean(permanent)
       }).then(() => {
         const compressedText = textAbstract(endChar(auctPrefix) + (reason || "No reason given"), 512);

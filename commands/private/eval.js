@@ -2,7 +2,7 @@ const Command = require("../../classes/command");
 const d = require("../../misc/d");
 
 const func = async function (msg, { args, doEval, send, self }) {
-  if ((msg.author.id !== d.Constants.identifiers.APLET && msg.author.id !== d.ownerID) || args.length < 1) {
+  if ((msg.author.id !== d.Constants.identifiers.APLET && msg.author.id !== d.ownerID) || !args) {
     return;
   }
   const results = await doEval(args, self);

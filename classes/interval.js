@@ -1,4 +1,6 @@
-const { _, moment, Time } = require("../misc/d");
+const _ = require("lodash");
+const moment = require("moment");
+const Time = require("./time");
 const dur = (...args) => moment.duration(...args);
 
 const ALIASES = {
@@ -38,7 +40,11 @@ const ALIASES = {
 class Interval {
   constructor(initialVal) {
     this.duration = dur();
-    if (!isNaN(initialVal)) this.add(initialVal);
+    if (typeof initialVal === "string") {
+      this.duration.add(initialVal);
+    } else {
+      this.add(initialVal);
+    }
   }
   
   /**
@@ -80,16 +86,15 @@ class Interval {
       if (unitOrQuantity.length < 1) return this;
       const arr = _.flatten(unitOrQuantity);
       for (let i = 0; i < arr.length; i += 2) {
-        const item = String(item).toLowerCase();
+        const item = String(arr[i]).toLowerCase();
         if (!(item in ALIASES)) continue;
         if (i + 1 >= arr.length) continue;
         const amount = arr[i + 1];
         if (isNaN(amount)) continue;
         func(amount, ALIASES[item][0]);
       }
-    } else {
-      return this;
     }
+    return this;
   }
 
   /**
@@ -154,6 +159,10 @@ class Interval {
     return result;
   }
 
+  valueOf() {
+    return this.ISO;
+  }
+
   // getters
   get years() { return this.duration.years(); }
   get months() { return this.duration.months(); }
@@ -173,7 +182,6 @@ class Interval {
   get time() { return this.duration.asMilliseconds(); }
 
   get ISO() { return this.duration.toISOString(); }
-  get valueOf() { return this.ISO; }
   get date() { return new Date(this.time); }
 
   get units() {
@@ -196,12 +204,12 @@ Interval.ALIASES = ALIASES;
 Interval.validUnit = str => String(str).toLowerCase() in ALIASES;
 
 // methods
-Interval.years = (num = 1) => Interval(["years", 1]);
-Interval.months = (num = 1) => Interval(["months", 1]);
-Interval.weeks = (num = 1) => Interval(["weeks", 1]);
-Interval.days = (num = 1) => Interval(["days", 1]);
-Interval.hours = (num = 1) => Interval(["hours", 1]);
-Interval.minutes = (num = 1) => Interval(["minutes", 1]);
-Interval.seconds = (num = 1) => Interval(["seconds", 1]);
+Interval.years = (num = 1) => new Interval(["years", num]);
+Interval.months = (num = 1) => new Interval(["months", num]);
+Interval.weeks = (num = 1) => new Interval(["weeks", num]);
+Interval.days = (num = 1) => new Interval(["days", num]);
+Interval.hours = (num = 1) => new Interval(["hours", num]);
+Interval.minutes = (num = 1) => new Interval(["minutes", num]);
+Interval.seconds = (num = 1) => new Interval(["seconds", num]);
 
 module.exports = Interval;

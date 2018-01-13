@@ -94,10 +94,10 @@ Page ${page + 1}/${pages.length}`)
   ${isAuthor ? "" : "<user> "}${type} <page>.`);
   for (const pagee of pages[page].split(" ")) {
     if (isNaN(pagee) || !d._.trim(pagee)) continue;
-    const punish = filtered.all.find(c => c.case === Number(_.trim(pagee)));
+    const punish = filtered.all.find(c => c.case === Number(d._.trim(pagee)));
     const [name, _desc, color, extraFields] = d.Constants.maps.PUNISHMENTS[punish.type];
     const extra = extraFields ?
-      ` - ${extraFields[0][0]} ${extraFields[0][1].replace("<d>", d.Time(Number(d.uncompress(punish.duration)) * 1000))}` :
+      ` - ${extraFields[0][0]} ${extraFields[0][1].replace("<d>", d.Interval(d.durationdecompress(punish.duration)))}` :
       (punish.type !== "m" && /^all/i.test(type) ? ` - ${d._.capitalize(name)}` : "");
     const field = [
       `Case ${punish.case} by ${((await d.bot.users.fetch(d.uncompress(punish.moderator))) || { tag: "Unknown" }).tag}${extra}`,
@@ -120,7 +120,7 @@ const func = async function (
 ) {
   const punishments = d.db.table("punishments").get(guildId);
   if (!punishments || punishments.length < 1) return reply(`Nobody has been punished in this guild!`);
-  if (!perms["listpunish"]) return reply(`Missing permission \`listpunish\`! :(`)
+  if (!perms["listpunish"]) return reply(`Missing permission \`listpunish\`! :(`);
   guild.members.fetch().catch(d.rejct);
   const maxCases = d.Constants.numbers.MAX_CASES(guild.members.size);
   if (!args) {

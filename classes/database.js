@@ -5,7 +5,6 @@ const Constants = require("../misc/Constants");
 const logger = require("./logger");
 const { Storage } = require("saltjs");
 // const { rejct } = require("../util/funcs");
-const Time = require("./time");
 
 function rejct(rejection, prefix) {
   // console.log(require("util").inspect(require("./deps")));
@@ -135,7 +134,7 @@ class Database {
     const statement = { id, data: val };
     try {
       await r.table(table).insert(statement, {
-        conflict: "replace",
+        conflict: "replace"
       }).run();
       const { shard } = bot;
       shard.send({ type: "dbUpdate", table, statement, id: shard.id })
