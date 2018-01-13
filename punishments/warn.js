@@ -44,7 +44,7 @@ class Warn extends Punishment {
         type: "w",
         author,
         color: "AQUA",
-        reason: reason || "None",
+        reason: reason || "None"
       }).catch(rejct);
     };
     const fail = err => {
@@ -78,7 +78,7 @@ a **${punishment}**, however I am not able to ${punishment} them because ${reaso
 a **${punishment}** (as says this server's current setup).`);
             if (punishment === "kick") {
               kickP.punish(member, {
-                author, reason, auctPrefix, context,
+                author, reason, auctPrefix, context
               });
             } else {
               banP.punish(member, guild, context, {
@@ -103,20 +103,20 @@ a **${punishment}** (as says this server's current setup).`);
           } else {
             // logger.debug("Boi", warnStep.amount, warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount);
             this.db.table("warnexpires").get(guild.id, this.compress(this.Time.weeks(1))); // make sure there's expiring
-            await db.table("warns").add(guild.id, {
+            await this.db.table("warns").add(guild.id, {
               userid: compress(member.id),
               reason: reason || "None",
               moderatorid: compress(author.id),
-              warnedat: datecomp(),
+              warnedat: datecomp()
             }, true);
           }
         } else {
           this.db.table("warnexpires").get(guild.id, this.compress(this.Time.weeks(1))); // make sure there's expiring
-          await db.table("warns").add(guild.id, {
+          await this.db.table("warns").add(guild.id, {
             userid: compress(member.id),
             reason: reason || "None",
             moderatorid: compress(author.id),
-            warnedat: datecomp(),
+            warnedat: datecomp()
           }, true);
           finish();
         }

@@ -44,6 +44,7 @@ const func = async function (msg, {
   if (!user) {
     return;
   }
+  if (time && time.totalYears > 1) return reply("Please don't mute for more than 1 year! For that, use `pmute`.");
   let memberToUse;
   let membersMatched;
   if (/[^]#\d{4}$/.test(user)) {
