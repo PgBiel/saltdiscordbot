@@ -1,7 +1,7 @@
 const { GuildMember, Message, MessageEmbed, Role, TextChannel, User } = require("discord.js");
 const { db, moment, logger, Time, Interval } = require("../util/deps");
 const {
-  durationcompress, datecomp, createMutedRole, endChar, escMarkdown, rejct, textAbstract, durationuncompress,
+  durationcompress, datecomp, createMutedRole, endChar, escMarkdown, rejct, textAbstract, durationdecompress,
   uncompress, compress
 } = require("../util/funcs");
 const Punishment = require("./punishment");

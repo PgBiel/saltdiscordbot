@@ -7,7 +7,7 @@ const func = async function (
     prompt
   },
 ) {
-  const expire = d.durationuncompress(
+  const expire = d.durationdecompress(
     d.db.table("warnexpires").get(guildId, d.durationcompress(d.Interval.weeks(1)))
   );
   if (!args) {
