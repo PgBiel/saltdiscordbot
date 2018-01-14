@@ -1,6 +1,8 @@
 const { MessageEmbed } = require("discord.js");
 const { Constants, db, logger, Time, util } = require("../util/deps");
-const { compress, datecomp, dateuncomp, escMarkdown, rejct, textAbstract, uncompress } = require("../util/funcs");
+const {
+  compress, datecomp, dateuncomp, escMarkdown, rejct, textAbstract, uncompress, durationcompress
+} = require("../util/funcs");
 const Punishment = require("./punishment");
 
 const banP = require("./ban");
@@ -102,8 +104,8 @@ a **${punishment}** (as says this server's current setup).`);
             });
           } else {
             // logger.debug("Boi", warnStep.amount, warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount);
-            this.db.table("warnexpires").get(guild.id, this.compress(this.Time.weeks(1))); // make sure there's expiring
-            await this.db.table("warns").add(guild.id, {
+            db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1))); // make sure there's expiring
+            await db.table("warns").add(guild.id, {
               userid: compress(member.id),
               reason: reason || "None",
               moderatorid: compress(author.id),
@@ -111,8 +113,8 @@ a **${punishment}** (as says this server's current setup).`);
             }, true);
           }
         } else {
-          this.db.table("warnexpires").get(guild.id, this.compress(this.Time.weeks(1))); // make sure there's expiring
-          await this.db.table("warns").add(guild.id, {
+          db.table("warnexpires").get(guild.id, d.durationcompress(Time.weeks(1))); // make sure there's expiring
+          await db.table("warns").add(guild.id, {
             userid: compress(member.id),
             reason: reason || "None",
             moderatorid: compress(author.id),
