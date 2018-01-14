@@ -167,7 +167,7 @@ class Interval {
   get years() { return this.duration.years(); }
   get months() { return this.duration.months(); }
   get weeks() { return Math.floor(this.duration.days() / 7); }
-  get days() { return this.duration.days(); }
+  get days() { return this.duration.days() % 7; }
   get hours() { return this.duration.hours(); }
   get minutes() { return this.duration.minutes(); }
   get seconds() { return this.duration.seconds(); }
