@@ -366,8 +366,15 @@ exports.parseMute = parseMute;
  */
 async function checkMutes() {
   if (!bot.readyTimestamp) return;
-  const mutesForShard = db.table("activemutes").storage.filter((mute, guildId) => bot.guilds.has(guildId.toString()));
-  for (const [guildId, mute] of mutesForShard) {
+  const mutesForShard = _.flatten(
+    db.table("activemutes")
+    .storage
+    .filter((mute, guildId) => bot.guilds.has(guildId.toString()))
+    .array()
+    .map(([guildId, vals]) => _.flatten(vals.map(val => Object.assign({ serverid: guildId }, val, { old: val }))))
+  );
+  for (const mute of mutesForShard) {
+    const guildId = mute.serverid;
     const guild = bot.guilds.get(guildId);
     if (!guild) continue;
     const member = guild.members.get(uncompress(mute.userid));
@@ -385,7 +392,7 @@ async function checkMutes() {
     const now = Date.now();
     const escapedName = escMarkdown(guild.name);
     if (now >= timestamp) {
-      db.table("activemutes").remArr(guild.id, mute);
+      db.table("activemutes").remArr(guild.id, mute.old);
       if (member.roles.has(muteRole.id)) {
         member.removeRole(muteRole).then(() => {
           member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
@@ -420,18 +427,30 @@ However, I was unable to take the role away from you for an yet unknown reason. 
 
 async function checkWarns() {
   if (!bot.readyTimestamp) return;
-  const warnsForShard = db.table("warns").storage.filter((mute, guildId) => bot.guilds.has(guildId.toString()));
-  for (const [guildId, warn] of warnsForShard) {
+  const warnsForShard = _.flatten(
+    db.table("warns").storage
+    .filter((mute, guildId) => bot.guilds.has(guildId.toString()))
+    .array()
+    .map(([guildId, vals]) => _.flatten(vals.map(val => Object.assign({ serverid: guildId }, val, { old: val }))))
+  );
+  for (const warn of warnsForShard) {
+    const guildId = warn.serverid;
+    console.log(`Entering warn ${util.inspect(warn)}`);
     const guild = bot.guilds.get(guildId);
     if (!guild) continue;
+    console.log("passed guild");
     const member = guild.members.get(uncompress(warn.userid));
     if (!member) continue;
+    console.log("passed member");
     const expire = durationdecompress(db.table("warnexpires").get(guildId));
     if (!expire) continue;
-    const warnedAt = (dateuncomp(warn.warnedAt));
-    if (warnedAt == null || isNaN(warnedAt)) continue;
-    const time = moment(warnedAt).add(expire).millisecond();
-    if (time >= Date.now()) db.table("warns").remArr(guildId, warn);
+    console.log("passed expire");
+    const warnedAt = dateuncomp(warn.warnedAt);
+    if (warnedAt == null) continue;
+    console.log("passed warnedAt");
+    const time = moment(warnedAt).add(expire).toDate().getTime();
+    if (time >= Date.now()) db.table("warns").remArr(guildId, warn.old);
+    console.log("warn removed");
   }
 }
 

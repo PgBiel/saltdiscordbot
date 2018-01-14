@@ -8,7 +8,7 @@ const func = async function (
   if (arrArgs.length < 1) {
     if (perms["warnlimit.get"]) {
       if (!steps || steps.length < 1) {
-        return reply(`There are no set warn punishments for this server.`);
+        return send(`There are no set warn punishments for this server.`);
       }
       steps.sort((a, b) => a.amount - b.amount);
       let str = "";
@@ -33,7 +33,7 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
     if (/^get$/i.test(action) && (arrArgs.length < 2 || isNaN(subArg)) || isNaN(action)) {
       return reply(`Please tell me which warn limit should I get! `);
     }
-    const num = Number(isNaN(action) ? action : subArg);
+    const num = Number(isNaN(action) ? subArg : action);
     const step = steps.find(s => s.amount === num);
     if (!step) return send(`There is no warn punishment for reaching ${num} total warns. :wink:`);
     return send(`Upon reaching ${num} total warns, the member receives a **${step.punishment}**\
