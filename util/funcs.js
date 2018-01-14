@@ -365,30 +365,27 @@ exports.parseMute = parseMute;
  * @returns {Promise<void>}
  */
 async function checkMutes() {
-  if (!bot.readyTimestamp) { return; }
-  const mutesForShard = _.flatten(
-    db.table("activemutes").storage.filter((mute, guildId) => bot.guilds.has(guildId.toString())).array()
-    .map(([guildId, vals]) => _.flatten(vals.map(value => Object.assign({ serverid: guildId }, value, { old: value })))),
-  );
-  for (const mute of mutesForShard) {
-    const guild = bot.guilds.get(mute.serverid);
-    if (!guild) { continue; }
+  if (!bot.readyTimestamp) return;
+  const mutesForShard = db.table("activemutes").storage.filter((mute, guildId) => bot.guilds.has(guildId.toString()));
+  for (const [guildId, mute] of mutesForShard) {
+    const guild = bot.guilds.get(guildId);
+    if (!guild) continue;
     const member = guild.members.get(uncompress(mute.userid));
-    if (!member) { continue; }
-    const mutesForGuild = db.table("mutes").get(mute.serverid);
-    if (!mutesForGuild) { continue; }
+    if (!member) continue;
+    const mutesForGuild = db.table("mutes").get(guildId);
+    if (!mutesForGuild) continue;
     const muteRole = guild.roles.get(uncompress(mutesForGuild.muteRoleID));
-    const timestamp = (dateuncomp(mute.timestamp) || { getTime: NaN }).getTime();
+    const timestamp = (dateuncomp(mute.timestamp) || { getTime: () => NaN }).getTime();
     if (
       !muteRole
       || mute.permanent
       || timestamp == null
-      || isNaN(timestamp)) { continue; }
+      || isNaN(timestamp)) continue;
     const botmember = guild.members.get(bot.user.id);
     const now = Date.now();
     const escapedName = escMarkdown(guild.name);
     if (now >= timestamp) {
-      db.table("activemutes").remArr(guild.id, mute.old);
+      db.table("activemutes").remArr(guild.id, mute);
       if (member.roles.has(muteRole.id)) {
         member.removeRole(muteRole).then(() => {
           member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
@@ -420,7 +417,26 @@ However, I was unable to take the role away from you for an yet unknown reason. 
     }
   }
 }
+
+async function checkWarns() {
+  if (!bot.readyTimestamp) return;
+  const warnsForShard = db.table("warns").storage.filter((mute, guildId) => bot.guilds.has(guildId.toString()));
+  for (const [guildId, warn] of warnsForShard) {
+    const guild = bot.guilds.get(guildId);
+    if (!guild) continue;
+    const member = guild.members.get(uncompress(warn.userid));
+    if (!member) continue;
+    const expire = durationdecompress(db.table("warnexpires").get(guildId));
+    if (!expire) continue;
+    const warnedAt = (dateuncomp(warn.warnedAt));
+    if (warnedAt == null || isNaN(warnedAt)) continue;
+    const time = moment(warnedAt).add(expire).millisecond();
+    if (time >= Date.now()) db.table("warns").remArr(guildId, warn);
+  }
+}
+
 exports.checkMutes = checkMutes;
+exports.checkWarns = checkWarns;
 
 /**
  * Capitalize the first letter in a string.

@@ -7,7 +7,7 @@ const setShards = { id: null };
 changeConsole(false, setShards);
 console.log("Initializing...");
 const {
-  botMessage, checkMutes, IMessagerEvalData, loadCmds, messagerDoEval, processMessage, rejct,
+  botMessage, checkMutes, IMessagerEvalData, loadCmds, messagerDoEval, processMessage, rejct, checkWarns
 } = require("./util/funcs");
 const { bot, data, decodeT, Discord, fs, logger, messager, /* sql, */ Time, toml } = require("./util/deps");
 require("./misc/events");
@@ -26,4 +26,7 @@ messager.on("doEval", edata => {
 });
 // sql.sync().catch(rejct);
 bot.login(decodeT(data.bot.token_beta)).catch(rejct);
-setInterval(checkMutes, Time.seconds(10));
+setInterval(() => {
+  checkMutes();
+  checkWarns();
+}, Time.seconds(10));

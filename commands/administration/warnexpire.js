@@ -2,7 +2,10 @@ const Command = require("../../classes/command");
 const d = require("../../misc/d");
 
 const func = async function (
-  msg, { seePerm, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms },
+  msg, {
+    seePerm, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms,
+    prompt
+  },
 ) {
   const expire = d.durationuncompress(
     d.db.table("warnexpires").get(guildId, d.durationcompress(d.Interval.weeks(1)))
@@ -21,6 +24,24 @@ Could also use this command with the Administrator saltrole.`);
   const time = new d.Interval(Object.entries(units));
   if (time.totalMonths > 3) return reply(`Expiry time must not be longer than 3 months!`);
   if (time.totalMinutes < 1) return reply(`Expiry time must not be shorter than 1 minute!`);
+  if (d.db.table("warns").get(guildId, []).length > 0) {
+    const result = await prompt({
+      question: `Are you sure you want to set warns to expire after **${time}**? **Any active warns that have been created \
+  for longer than that will automatically expire.** This will expire in 15 seconds. Type __y__es or __n__o.`,
+      invalidMsg: "__Y__es or __n__o?",
+      filter: msg2 => {
+        return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
+      },
+      timeout: d.Time.seconds(15)
+    });
+    if (!result) {
+      return;
+    }
+    if (/^[nc]/i.test(result)) {
+      send("Command cancelled.");
+      return;
+    }
+  }
   await d.db.table("warnexpires").setRejct(guildId, d.durationcompress(time.duration));
   reply(`Successfully set expiry time to **${time}**!`);
 };

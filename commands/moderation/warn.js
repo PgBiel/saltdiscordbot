@@ -66,7 +66,7 @@ module.exports = new Command({
   func,
   name: "warn",
   perms: "warn",
-  description: "Warn a member.",
+  description: "Warn a member. (Related commands: `warnlimit` and `warnexpire`)",
   example: "{p}warn @EvilGuy#0010 Spamming a bit",
   category: "Moderation",
   args: { member: false, reason: true },

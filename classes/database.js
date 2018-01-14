@@ -204,7 +204,7 @@ class Table extends Storage {
    * @param {string} prop The property
    * @returns {*}
    */
-  prop (key, prop) {
+  prop(key, prop) {
     const val = this.get(key);
     if (val == null) return;
     return val[prop];
@@ -346,6 +346,7 @@ class Table extends Storage {
 
   /**
    * Storage representing this Table, otherwise make new
+   * @returns {Storage<string, *>}
    */
   get cache() {
     return db.cache[this.name] || new Storage();
