@@ -113,7 +113,7 @@ a **${punishment}** (as says this server's current setup).`);
             }, true);
           }
         } else {
-          db.table("warnexpires").get(guild.id, d.durationcompress(Time.weeks(1))); // make sure there's expiring
+          db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1))); // make sure there's expiring
           await db.table("warns").add(guild.id, {
             userid: compress(member.id),
             reason: reason || "None",

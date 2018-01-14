@@ -27,7 +27,7 @@ Could also use this command with the Administrator saltrole.`);
   if (d.db.table("warns").get(guildId, []).length > 0) {
     const result = await prompt({
       question: `Are you sure you want to set warns to expire after **${time}**? **Any active warns that have been created \
-  for longer than that will automatically expire.** This will expire in 15 seconds. Type __y__es or __n__o.`,
+for longer than that will automatically expire.** This will expire in 15 seconds. Type __y__es or __n__o.`,
       invalidMsg: "__Y__es or __n__o?",
       filter: msg2 => {
         return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);

@@ -59,7 +59,7 @@ const func = async function (msg, {
   }
 
   await warnP.punish(memberToUse, {
-    author: member, reason, auctPrefix: `[Warn command executed by ${author.tag}] `, context: self, automatic: false,
+    author: member, reason, auctPrefix: `[Warn command executed by ${author.tag}] `, context: self, automatic: false
   });
 };
 module.exports = new Command({

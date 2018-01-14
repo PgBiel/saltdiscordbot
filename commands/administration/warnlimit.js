@@ -62,7 +62,7 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
         filter: msg2 => {
           return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
         },
-        timeout: d.Time.seconds(15),
+        timeout: d.Time.seconds(15)
       });
       if (!result) return;
       if (/^[nc]/.test(result)) return send("Command cancelled.");
