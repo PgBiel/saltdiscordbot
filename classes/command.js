@@ -68,7 +68,7 @@ module.exports = class Command {
       value: cmd,
       writable: false,
       enumerable: false,
-      configurable: true,
+      configurable: true
     });
     const newCmd = new Command({
       name,
@@ -82,7 +82,7 @@ module.exports = class Command {
       pattern: data.pattern || cmd.pattern,
       description: data.description || cmd.description,
       example: data.example || null,
-      args: data.args || cmd.args,
+      args: data.args || cmd.args
     });
     return newCmd;
   }
@@ -166,8 +166,6 @@ module.exports = class Command {
   */
 
   constructor(options) {
-    applyDeps.apply(this);
-    applyFuncs.apply(this);
     this.config(options);
   }
 
@@ -234,7 +232,7 @@ module.exports = class Command {
       value: cmd,
       writable: false,
       enumerable: false,
-      configurable: true,
+      configurable: true
     });
     return this;
   }

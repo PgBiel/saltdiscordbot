@@ -21,7 +21,7 @@ bot.on("message", m => {
   botMessage(m);
 });
 loadCmds();
-messager.on("doEval", edata => {
+messager.on("doEval", async edata => {
   messagerDoEval(thing => eval(thing))(edata);
 });
 // sql.sync().catch(rejct);

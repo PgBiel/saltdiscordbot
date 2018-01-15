@@ -1,6 +1,8 @@
 const re = require("rethinkdbdash");
 // const { HelperVals, TableName, TableVals } = require("../misc/tableValues");
 const { bot } = require("../util/bot");
+const util = require("util");
+const _ = require("lodash");
 const Constants = require("../misc/Constants");
 const logger = require("./logger");
 const { Storage } = require("saltjs");
@@ -129,10 +131,10 @@ class Table extends Storage {
    * @param {boolean} [reject=false] If should reject on promise
    * @returns {Promise<{ success: boolean; err: any; }>}
    */
-  add(key, val, reject = false) {
-    const arr = this.get(key) || [];
-    if (!Array.isArray(arr)) return Promise.resolve({ success: false, err: new TypeError("Non-array value.") });
-    return (reject ? this.setRejct : this.set).call(this, key, arr.concat([val]));
+  async add(key, val, reject = false) {
+    const arr = await this.get(key) || [];
+    if (!Array.isArray(arr)) return { success: false, err: new TypeError("Non-array value.") };
+    return await (reject ? this.setRejct : this.set).call(this, key, arr.concat([val]));
   }
 
   /**
@@ -142,20 +144,20 @@ class Table extends Storage {
    * @param {boolean} [reject] If should reject on promise
    * @returns {Promise<{ success: boolean; err: any; }>}
    */
-  remArr(key, obj, reject) {
-    const arr = this.get(key) || [];
-    if (!Array.isArray(arr)) return Promise.resolve({ success: false, err: new TypeError("Non-array value.") });
-    return this.spliceArr(key, this.indexOf(key, obj), 1, reject);
+  async remArr(key, obj, reject) {
+    const arr = await this.get(key) || [];
+    if (!Array.isArray(arr)) return { success: false, err: new TypeError("Non-array value.") };
+    return await this.spliceArr(key, this.indexOf(key, obj), 1, reject);
   }
 
   /**
    * Get the property of an object.
    * @param {string} key The key
    * @param {string} prop The property
-   * @returns {*}
+   * @returns {Promise<*>}
    */
-  prop(key, prop) {
-    const val = this.get(key);
+  async prop(key, prop) {
+    const val = await this.get(key);
     if (val == null) return;
     return val[prop];
   }
@@ -168,14 +170,14 @@ class Table extends Storage {
    * @param {boolean} [reject=false] If should reject on promise
    * @returns {Promise<{ success: boolean; err: any; }>}
    */
-  spliceArr(key, ind, amount, reject = false) {
-    const arr = this.get(key) || [];
+  async spliceArr(key, ind, amount, reject = false) {
+    const arr = await this.get(key) || [];
     if (Array.isArray(arr)) {
       const modify = arr.slice();
       modify.splice(ind, amount);
-      return (reject ? this.setRejct : this.set).call(this, key, modify);
+      return await (reject ? this.setRejct : this.set).call(this, key, modify);
     }
-    return Promise.resolve({ success: false, err: new TypeError("Non-array value.") });
+    return { success: false, err: new TypeError("Non-array value.") };
   }
 
   /**
@@ -186,9 +188,13 @@ class Table extends Storage {
    * @returns {Promise<number>}
    */
   async indexOf(key, obj, fromIndex = 0) {
-    const arr = (await this.get(key)) || [];
-    if (!Array.isArray(arr)) return -1;
-    return arr.indexOf(obj, fromIndex);
+    const arr = await this.get(key) || [];
+    if (Array.isArray(arr)) {
+      for (let i = _.max([Number(fromIndex), 0]); i < arr.length; i++) {
+        if (_.isEqual(obj, arr[i])) return i;
+      }
+    }
+    return -1;
   }
 
   /**
@@ -198,10 +204,10 @@ class Table extends Storage {
    * @param {boolean} [reject=false] If should reject on promise
    * @returns {Promise<{ success: boolean; err: any; }>}
    */
-  assign(key, val, reject = false) {
-    const obj = this.get(key) || {};
-    if (typeof obj !== "object") return Promise.resolve({ success: false, err: new TypeError("Non-object value.") });
-    return (reject ? this.setRejct : this.set).call(this, key, Object.assign(obj, val));
+  async assign(key, val, reject = false) {
+    const obj = await this.get(key) || {};
+    if (typeof obj !== "object") return { success: false, err: new TypeError("Non-object value.") };
+    return await (reject ? this.setRejct : this.set).call(this, key, Object.assign(obj, val));
   }
 
   /**
@@ -212,15 +218,15 @@ class Table extends Storage {
    * @param {boolean} [reject=false] If should reject on promise
    * @returns {Promise<{ success: boolean; err: any; }>}
    */
-  assignF(key, val, reject = false) {
+  async assignF(key, val, reject = false) {
     if (typeof val !== "object") return Promise.resolve({ success: false, err: new TypeError("Non-object second argument.") });
-    const obj = this.get(key) || {};
+    const obj = await this.get(key) || {};
     if (typeof obj !== "object") return Promise.resolve({ success: false, err: new TypeError("Non-object value.") });
     const newObj = {};
     for (const [prop, value] of Object.entries(val)) {
       newObj[prop] = typeof value === "function" ? value(obj[prop]) : value;
     }
-    return (reject ? this.setRejct : this.set).call(this, key, Object.assign(obj, newObj));
+    return await (reject ? this.setRejct : this.set).call(this, key, Object.assign(obj, newObj));
   }
 
   /**
@@ -308,6 +314,14 @@ class Table extends Storage {
    */
   storage() {
     return this.cache();
+  }
+
+  toString() {
+    return "[object Table]";
+  }
+
+  [util.inspect.custom]() {
+    return this.toString();
   }
 }
 

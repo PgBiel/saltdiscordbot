@@ -34,7 +34,7 @@ const func = async function (msg, { args, doEval, send, self }) {
     if (result instanceof Promise) {
       const sent = await send(resultText(args, "[Promise. Resolving...]", false));
       try {
-        sent.edit(resultText(args, await result, false, true));
+        sent.edit(resultText(args, await Promise.resolve(result), false, true));
       } catch (err) {
         sent.edit(resultText(args, err, true, true));
       }

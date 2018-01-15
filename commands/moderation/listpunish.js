@@ -97,7 +97,7 @@ Page ${page + 1}/${pages.length}`)
     const punish = filtered.all.find(c => c.case === Number(d._.trim(pagee)));
     const [name, _desc, color, extraFields] = d.Constants.maps.PUNISHMENTS[punish.type];
     const extra = extraFields ?
-      ` - ${extraFields[0][0]} ${extraFields[0][1].replace("<d>", d.Interval(d.durationdecompress(punish.duration)))}` :
+      ` - ${extraFields[0][0]} ${extraFields[0][1].replace("<d>", new d.Interval(d.durationdecompress(punish.duration)))}` :
       (punish.type !== "m" && /^all/i.test(type) ? ` - ${d._.capitalize(name)}` : "");
     const field = [
       `Case ${punish.case} by ${((await d.bot.users.fetch(d.uncompress(punish.moderator))) || { tag: "Unknown" }).tag}${extra}`,
