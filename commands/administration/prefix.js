@@ -5,7 +5,7 @@ const func = async function (
   msg, { guildId, reply, send, args, arrArgs, prefix: p, hasPermission, perms },
 ) {
   if (arrArgs.length < 1) {
-    const prefixUsed = (await d.db.table("prefixes").get(guildId)) || "+";
+    const prefixUsed = (await (d.db.table("prefixes").get(guildId))) || "+";
     return send(`Current prefix for this server: ${prefixUsed}`);
   }
   d.logger.debug("prefix:", arrArgs.toString());
@@ -15,7 +15,7 @@ const func = async function (
     );
   }
   try {
-    await d.db.table("prefixes").setRejct(guildId, args);
+    await (d.db.table("prefixes").setRejct(guildId, args));
     send(`Prefix set to \`${args}\`!`);
   } catch(err) {
     d.rejct(err);

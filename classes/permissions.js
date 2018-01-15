@@ -60,7 +60,7 @@ class Permz {
     // if (extra1) whereobj.extra1 = extra1;
     // if (extra2) whereobj.extra2 = extra2;
     // if (extra3) whereobj.extra3 = extra3;
-    const perms = (await db.table("perms").get(guildId, [])).filter(item => item.type.startsWith("m") && uncompress(item.id) === member.id);
+    const perms = (await (db.table("perms").get(guildId, []))).filter(item => item.type.startsWith("m") && uncompress(item.id) === member.id);
     let hasPerm = isDefault;
     let setPerm = false;
     const filtered = perms.find(item => item.command === "any" || item.command
@@ -68,7 +68,7 @@ class Permz {
     if (!filtered) { // no user perm that could influence the execution. Proceeding to role perms.
       const roles = member.roles.sort((a, b) => b.position - a.position).array();
       for (const role of roles) {
-        const roleperms = (await db.table("perms").get(guildId, [])).filter(it => it.type.startsWith("r") && it.id === role.id);
+        const roleperms = (await (db.table("perms").get(guildId, []))).filter(it => it.type.startsWith("r") && it.id === role.id);
         if (roleperms.length < 1) {
           continue;
         }
@@ -116,7 +116,7 @@ class Permz {
    * @returns {Promise<string>}
    */
   async isDisabled(guildId, channelid, name) {
-    const disabled = (await db.table("perms").get(guildId, []))
+    const disabled = (await (db.table("perms").get(guildId, [])))
       .find(
         item => (item.command === "any" || item.command === name)
         && (item.type === "channel" || item.type === "guild")

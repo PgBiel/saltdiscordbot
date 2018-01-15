@@ -366,8 +366,9 @@ exports.parseMute = parseMute;
  */
 async function checkMutes() {
   if (!bot.readyTimestamp) return;
+  const awaited = await (db.table("activemutes").storage());
   const mutesForShard = _.flatten(
-    (await db.table("activemutes").storage())
+    awaited
     .filter((mute, guildId) => bot.guilds.has(guildId.toString()))
     .array()
     .map(([guildId, vals]) => _.flatten(vals.map(val => Object.assign({ serverid: guildId }, val, { old: val }))))
@@ -378,7 +379,7 @@ async function checkMutes() {
     if (!guild) continue;
     const member = guild.members.get(uncompress(mute.userid));
     if (!member) continue;
-    const mutesForGuild = await db.table("mutes").get(guildId);
+    const mutesForGuild = await (db.table("mutes").get(guildId));
     if (!mutesForGuild) continue;
     const muteRole = guild.roles.get(uncompress(mutesForGuild.muteRoleID));
     const timestamp = (dateuncomp(mute.timestamp) || { getTime: () => NaN }).getTime();
@@ -426,8 +427,9 @@ However, I was unable to take the role away from you for an yet unknown reason. 
 
 async function checkWarns() {
   if (!bot.readyTimestamp) return;
+  const awaited = await (db.table("warns").storage());
   const warnsForShard = _.flatten(
-    (await db.table("warns").storage())
+    awaited
     .filter((mute, guildId) => bot.guilds.has(guildId.toString()))
     .array()
     .map(([guildId, vals]) => _.flatten(vals.map(val => Object.assign({ serverid: guildId }, val, { old: val }))))
@@ -438,7 +440,7 @@ async function checkWarns() {
     if (!guild) continue;
     const member = guild.members.get(uncompress(warn.userid));
     if (!member) continue;
-    const expire = durationdecompress(await db.table("warnexpires").get(guildId));
+    const expire = durationdecompress(await (db.table("warnexpires").get(guildId)));
     if (!expire) continue;
     const warnedAt = dateuncomp(warn.warnedat);
     if (warnedAt == null) continue;

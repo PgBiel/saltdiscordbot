@@ -138,11 +138,11 @@ class ActionLog {
     db.table("punishments").add(guild.id, caseObj);
     guild.members.fetch().catch(rejct);
     const maxCases = Constants.numbers.MAX_CASES(guild.members.size);
-    if ((await db.table("punishments").get(guild.id, []).length) > maxCases) {
+    if ((await (db.table("punishments").get(guild.id, [])).length) > maxCases) {
       db.table("punishments").spliceArr(guild.id, 0, 1);
     }
     try {
-      await db.table("mods").assign(guild.id, { latestCase: caseNum + 1 }, true);
+      await (db.table("mods").assign(guild.id, { latestCase: caseNum + 1 }, true));
     } catch (err) {
       logger.error(`At updating moderation entry (Case num: ${caseNum}, guild: ${guild.id}): ${err.stack || err}`);
     }
@@ -167,7 +167,7 @@ class ActionLog {
     try {
       await (db
         .table("punishments")
-        .assign(guild.id, { [await db.table("punishments").indexOf(guild.id, caseToLook)]: newCaseToLook }, true));
+        .assign(guild.id, { [await (db.table("punishments").indexOf(guild.id, caseToLook))]: newCaseToLook }, true));
     } catch (err) {
       rejct(err);
       return obj;
@@ -245,7 +245,7 @@ class ActionLog {
     try {
       await (db
         .table("punishments")
-        .assign(guild.id, { [await db.table("punishments").indexOf(guild.id, caseToLook)]: newCaseToLook }, true));
+        .assign(guild.id, { [await (db.table("punishments").indexOf(guild.id, caseToLook))]: newCaseToLook }, true));
       obj.case = true;
     } catch (err) {
       rejct(err);
@@ -327,7 +327,7 @@ class ActionLog {
    * @private
    */
   async _getLog(guild) {
-    const logChannel = await db.table("mods").prop(guild.id || guild, "logs");
+    const logChannel = await (db.table("mods").prop(guild.id || guild, "logs"));
     if (logChannel) {
       const returnVal = guild.channels.get(logChannel);
       if (returnVal && returnVal.type === "text") {
@@ -344,7 +344,7 @@ class ActionLog {
    * @private
    */
   async _getCase(guild) {
-    const logCase = await db.table("mods").prop(guild.id, "latestCase");
+    const logCase = await (db.table("mods").prop(guild.id, "latestCase"));
     if (logCase) {
       const returnVal = isNaN(logCase) ? logCase : Number(logCase);
       if (typeof returnVal === "string" || typeof returnVal === "number") {

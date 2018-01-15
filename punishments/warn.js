@@ -31,8 +31,8 @@ class Warn extends Punishment {
     const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def } = context;
     const sentWarnMsg = await send(`Warning ${member.user.tag}... (Sending DM...)`);
-    const warns = (await db.table("warns").get(guild.id, [])).filter(u => u.userid === member.id);
-    const warnSteps = (await db.table("warnsteps").get(guild.id, [])).sort((step1, step2) => step1.amount - step2.amount);
+    const warns = (await (db.table("warns").get(guild.id, []))).filter(u => u.userid === member.id);
+    const warnSteps = (await (db.table("warnsteps").get(guild.id, []))).sort((step1, step2) => step1.amount - step2.amount);
     const warnStep = warnSteps.find(step => step.amount === warns.length + 1);
     const reasonEmbed = new MessageEmbed();
     reasonEmbed
@@ -105,23 +105,23 @@ a **${punishment}** (as says this server's current setup).`);
           } else {
             // logger.debug("Boi", warnStep.amount, warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount);
             db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1))); // make sure there's expiring
-            await db.table("warns").add(guild.id, {
+            await (db.table("warns").add(guild.id, {
               userid: compress(member.id),
-              casenumber: (await db.table("mods").prop(guild.id, "latestCase")) + 1,
+              casenumber: (await (db.table("mods").prop(guild.id, "latestCase"))) + 1,
               reason: reason || "None",
               moderatorid: compress(author.id),
               warnedat: datecomp()
-            }, true);
+            }, true));
           }
         } else {
           db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1))); // make sure there's expiring
-          await db.table("warns").add(guild.id, {
+          await (db.table("warns").add(guild.id, {
             userid: compress(member.id),
-            casenumber: (await db.table("mods").prop(guild.id, "latestCase")) + 1,
+            casenumber: (await (db.table("mods").prop(guild.id, "latestCase"))) + 1,
             reason: reason || "None",
             moderatorid: compress(author.id),
             warnedat: datecomp()
-          }, true);
+          }, true));
           finish();
         }
       } catch (err) {

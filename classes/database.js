@@ -90,9 +90,9 @@ class Database {
    * @returns {Promise<*>} Possibly the value
    */
   async get(id, table) {
-    if (!table || !tables.include(table.toLowerCase())) { return; }
-    const data = await r.table(table).filter({ id }).run();
-    if (data != null) return data[0];
+    if (!table || !tables.includes(table.toLowerCase())) { return; }
+    const data = await r.table(table).get(id).run();
+    if (data != null) return data.data;
   }
 
   async insert(table, id, val) {
@@ -307,7 +307,7 @@ class Table extends Storage {
    * Alias of cache()
    */
   storage() {
-    return this.cache;
+    return this.cache();
   }
 }
 

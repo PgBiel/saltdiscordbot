@@ -118,7 +118,7 @@ const func = async function (
     searcher, promptAmbig
   },
 ) {
-  const punishments = await d.db.table("punishments").get(guildId);
+  const punishments = await (d.db.table("punishments").get(guildId));
   if (!punishments || punishments.length < 1) return reply(`Nobody has been punished in this guild!`);
   if (!perms["listpunish"]) return reply(`Missing permission \`listpunish\`! :(`);
   guild.members.fetch().catch(d.rejct);

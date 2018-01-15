@@ -66,7 +66,7 @@ const func = async function (msg, {
   if (!memberToUse) {
     return;
   }
-  const muteInfo = await d.db.table("mutes").get(guild.id);
+  const muteInfo = await (d.db.table("mutes").get(guild.id));
   let muteRole;
   if (muteInfo) {
     muteRole = guild.roles.get(d.uncompress(muteInfo.muteRoleID));
@@ -74,7 +74,7 @@ const func = async function (msg, {
   if (!muteRole) {
     return reply("That member is not muted!");
   }
-  const activeMute = (await d.db.table("activemutes").get(guild.id, [])).find(item => d.uncompress(item.userid) === memberToUse.id);
+  const activeMute = (await (d.db.table("activemutes").get(guild.id, []))).find(item => d.uncompress(item.userid) === memberToUse.id);
 
   if (!activeMute) {
     return reply("That member is not muted!");

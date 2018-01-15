@@ -88,7 +88,7 @@ module.exports = function returnFuncs(msg) {
     if (!guildId) {
       return false;
     }
-    const result = await db.table("mods").get(guild.id);
+    const result = await (db.table("mods").get(guild.id));
     if (!result || !result[role]) {
       return false;
     }

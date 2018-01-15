@@ -4,7 +4,7 @@ const d = require("../../misc/d");
 const func = async function (
   msg, { prompt, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms, seePerm },
 ) {
-  const steps = await d.db.table("warnsteps").get(guildId);
+  const steps = await (d.db.table("warnsteps").get(guildId));
   if (arrArgs.length < 1) {
     if (perms["warnlimit.get"]) {
       if (!steps || steps.length < 1) {
@@ -50,7 +50,7 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
     if (/^(unset|remove)$/i.test(action)) {
       const step = steps.find(s => s.amount === num);
       if (!step) return send(`There is no warn punishment for reaching ${num} total warns. :wink:`);
-      await d.db.table("warnsteps").remArr(guildId, step, true);
+      await (d.db.table("warnsteps").remArr(guildId, step, true));
       return send(`Successfully removed the punishment for reaching **${num}** total warns! :wink:`);
     } else if (/^clear$/i.test(action)) {
       if (steps.length < 1) return send(`There are no warn punishments.`);
@@ -66,7 +66,7 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
       });
       if (!result) return;
       if (/^[nc]/.test(result)) return send("Command cancelled.");
-      await d.db.table("warnsteps").setRejct(guildId, []);
+      await (d.db.table("warnsteps").setRejct(guildId, []));
       return send(`Successfully removed all warn punishments! :wink:`);
     } else {
       if (arrArgs.length < 3) {
@@ -93,9 +93,9 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
       };
       const step = steps.find(s => s.amount === num);
       if (step) {
-        await d.db.table("warnsteps").assign(guildId, { [d.db.table("warnsteps").indexOf(guildId, step)]: objToUse }, true);
+        await (d.db.table("warnsteps").assign(guildId, { [d.db.table("warnsteps").indexOf(guildId, step)]: objToUse }, true));
       } else {
-        await d.db.table("warnsteps").add(guildId, objToUse, true);
+        await (d.db.table("warnsteps").add(guildId, objToUse, true));
       }
       const punishment = subSubArg.toLowerCase() === "mute" ?
       `mute for ${timeDefault ? "10 minutes (default)" : time}`

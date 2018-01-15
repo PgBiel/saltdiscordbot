@@ -44,7 +44,7 @@ module.exports = async msg => {
     seePerm
   };
   // fetch prefix from db
-  const dbPrefix = msg.guild ? await db.table("prefixes").get(guildId) : null;
+  const dbPrefix = msg.guild ? (await (db.table("prefixes").get(guildId))) : null;
   const possiblePrefix = dbPrefix || "+";
   // loop commands to find a match
   for (const cmdn in bot.commands) {
@@ -86,6 +86,7 @@ module.exports = async msg => {
     const mentionfix = input.startsWith(`<@${bot.user.id}> `) ? `<@${bot.user.id}> ` : null;
     // ...then really determine the prefix used.
     const usedPrefix = mentionfix || prefix || "+";
+    console.log(usedPrefix, mentionfix, prefix);
     // if message doesn't start with prefix... skip (not break the loop because commands can still have custom prefixes)
     if (!message.content.toUpperCase().startsWith(usedPrefix.toUpperCase())) {
       continue;
