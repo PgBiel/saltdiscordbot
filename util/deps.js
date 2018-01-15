@@ -5,6 +5,7 @@ exports.applyDeps = function applyDeps() {
 exports.db = require("../classes/database");
 exports.Storage = require("saltjs").Storage;
 exports._ = require("lodash");
+exports.burlp = require("burlp");
 exports.logger = require("../classes/logger");
 exports.moment = require("moment");
 exports.bot = require("./bot").bot;

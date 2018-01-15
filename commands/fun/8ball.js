@@ -25,7 +25,7 @@ const func = async function (msg, { args, reply, author }) {
     "Maybe.",
     "I wouldn't say so.",
     "Low chance of so.",
-    "Very unlikely.",
+    "Very unlikely."
   ];
   reply(
     answers[/* d.random(0, answers.length - 1) */maths(args, author.id, answers.length)],

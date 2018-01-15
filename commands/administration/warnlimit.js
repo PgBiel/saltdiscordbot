@@ -28,7 +28,7 @@ Try an action (like setting)! (Use the \`help\` command for help.)`);
   if (!isNaN(Number(action)) || /^get$/i.test(action)) {
     if (!perms["warnlimit.get"]) {
       return reply(`Uh-oh, it seems that you don't have permissions to get warn punishments. \
-Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
+Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
     }
     if (/^get$/i.test(action) && (arrArgs.length < 2 || isNaN(subArg))) {
       return reply(`Please tell me which warn limit should I get! `);
@@ -43,7 +43,7 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
   } else if (/^(?:set|unset|add|remove|clear)$/i.test(action)) {
     if (!(await seePerm("warnlimit.set", perms, setPerms, { srole: "admin" }))) {
       return reply(`Uh-oh, it seems that you don't have permissions to set or unset warn punishments. \
-Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
+Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
     }
     if (!/^clear$/i.test(action) && (arrArgs.length < 2 || isNaN(subArg))) {
       return reply(`Please tell me which warn limit should I add/remove!`);
