@@ -36,13 +36,26 @@ const func = async function (msg, {
   if (!args) {
     return reply("Please tell me who to mute!");
   }
-  const { user, time, reason, ok: parseOk } = d.parseMute(args);
-  d.logger.debug("Mute Debug:", user, time, reason);
-  if (!parseOk) {
-    return reply("Member not found!");
-  }
-  if (!user) {
-    return;
+  let user, time, reason;
+  if (dummy.permanent) {
+    const [tempUser, tempReason] = d._.tail((args.match(d.Constants.regex.BAN_MATCH) || Array(3)));
+    if (!tempUser && !tempReason) {
+      return;
+    }
+    user = tempUser;
+    reason = tempReason;
+  } else {
+    const { user: tempUser, time: tempTime, reason: tempReason, ok: parseOk } = d.parseMute(args);
+    d.logger.debug("Mute Debug:", tempUser, tempTime, tempReason);
+    if (!parseOk) {
+      return reply("Member not found!");
+    }
+    if (!tempUser) {
+      return;
+    }
+    user = tempUser;
+    time = tempTime;
+    reason = tempReason;
   }
   if (time && time.totalYears > 1) return reply("Please don't mute for more than 1 year! For that, use `pmute`.");
   let memberToUse;
@@ -111,10 +124,10 @@ module.exports = new Command({
   - For seconds, use one of \`second\`, \`seconds\`, \`secs\`, \`sec\`, \`s\`.
   You can also use just a number in the \`time\` parameter to use minutes.`,
   example: `{p}mute @InsultGuy#0000 Calm down on the insults!
-  {p}mute @InsultGuy#0000 1 hour 2 minutes Calm down.
-  {p}mute @Spammer#0000 1 day Man stop spamming pls.`,
+{p}mute @InsultGuy#0000 1 hour 2 minutes Calm down.
+{p}mute @Spammer#0000 1 day Man stop spamming pls.`,
   category: "Moderation",
-  args: { time: true, reason: true },
+  args: { user: false, time: true, reason: true },
   guildOnly: true,
   default: false
 });

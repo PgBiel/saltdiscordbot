@@ -11,6 +11,7 @@ exports.times = {
 exports.maps = {
   PUNISHMENTS: {
     m: ["mute", "**{target}** was muted", "GOLD", [["Muted For", "<d>"]]],
+    p: ["mute", "**{target}** was muted", "GOLD", [["Muted For", "Until they're unmuted"]]],
     w: ["warn", "**{target}** was warned", "AQUA"],
     u: ["unmute", "**{target}** was unmuted", "GREEN"],
     U: ["unban", "**{target}** was unbanned", "DARK_GREEN"],

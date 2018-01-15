@@ -22,14 +22,14 @@ class Mute extends Punishment {
    */
   async punish(
     member, {
-      author = null, reason = null, auctPrefix = null, context = null, time = new Interval(["m", 10]), permanent = false } = {
-      author: null, reason: null, auctPrefix: null, context: null, time: new Interval(["m", 10]), permanent: false },
+      author = null, reason = null, auctPrefix = null, context = null, time = Interval.minutes(10), permanent = false } = {
+      author: null, reason: null, auctPrefix: null, context: null, time: Interval.minutes(10), permanent: false },
   ) {
     const guild = member.guild;
     const botmember = guild.me;
     const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def } = context;
-    if (!time) time = Interval.minutes(10);
+    if (!time && !permanent) time = Interval.minutes(10);
     const muteInfo = await (db.table("mutes").get(guild.id));
     let muteRole;
     if (muteInfo) {
@@ -63,12 +63,14 @@ class Mute extends Punishment {
       .setTimestamp(new Date());
     const finish = () => {
       sentMuteMsg.edit(
-        `Muted ${member.user.tag} for **${time.toString()}** ${time ? "" : "(default) "}successfully.`,
+        permanent ?
+        `Permanently muted ${member.user.tag} successfully.` :
+        `Muted ${member.user.tag} for **${time}** ${time ? "" : "(default) "}successfully.`,
       ).catch(rejct);
       actionLog({
         target: member,
         time,
-        type: "m",
+        type: permanent ? "p" : "m",
         author,
         reason: reason || "None"
       }).catch(rejct);
@@ -78,10 +80,11 @@ class Mute extends Punishment {
       sentMuteMsg.edit(`The mute failed! :frowning:`).catch(rejct);
     };
     const executeMute = () => {
-      const timestamp = moment().add(time.duration);
+      let timestamp;
+      if (!permanent) timestamp = moment().add(time.duration);
       db.table("activemutes").add(guild.id, {
         userid: compress(member.id),
-        timestamp: datecomp(timestamp.toDate()),
+        timestamp: timestamp ? datecomp(timestamp.toDate()) : null,
         permanent: Boolean(permanent)
       }).then(() => {
         const compressedText = textAbstract(endChar(auctPrefix) + (reason || "No reason given"), 512);
@@ -91,7 +94,9 @@ class Mute extends Punishment {
     let sent = false;
     let timeoutRan = false;
     member.send(
-      `You were muted at the server **${escMarkdown(guild.name)}** for **${time}** for the reason of:`,
+      `You were muted at the server **${escMarkdown(guild.name)}** ${permanent ?
+        "permanently" :
+        "for **${time}**"} for the reason of:`,
       { embed: reasonEmbed },
     ).then(() => {
       if (timeoutRan) {

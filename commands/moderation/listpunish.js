@@ -3,12 +3,12 @@ const actionLog = require("../../classes/actionlogger");
 const d = require("../../misc/d");
 
 function filterPunishes(punishments, id) {
-  const punishes = punishments.filter(c => d.uncompress(c.target) === id && !c.deleted);
+  const punishes = punishments.filter(c => d.uncompress(c.target) === id && !c.deleted).reverse();
   return {
     all: punishes,
     alls: punishes,
     warns: punishes.filter(c => c.type === "w"),
-    mutes: punishes.filter(c => c.type === "m"),
+    mutes: punishes.filter(c => ["p", "m"].includes(c.type)),
     kicks: punishes.filter(c => c.type === "k"),
     softbans: punishes.filter(c => c.type === "s"),
     bans: punishes.filter(c => c.type === "b"),
@@ -96,9 +96,21 @@ Page ${page + 1}/${pages.length}`)
     if (isNaN(pagee) || !d._.trim(pagee)) continue;
     const punish = filtered.all.find(c => c.case === Number(d._.trim(pagee)));
     const [name, _desc, color, extraFields] = d.Constants.maps.PUNISHMENTS[punish.type];
-    const extra = extraFields ?
-      ` - ${extraFields[0][0]} ${extraFields[0][1].replace("<d>", new d.Interval(d.durationdecompress(punish.duration)))}` :
-      (punish.type !== "m" && /^all/i.test(type) ? ` - ${d._.capitalize(name)}` : "");
+    let extra;
+    if (extraFields) {
+      const extraPart = punish.type === "p" ?
+      [
+        "Muted for",
+        "Eternity"
+      ] :
+      [
+        extraFields[0][0].replace(/^Muted For$/, "Muted for"),
+        extraFields[0][1].replace("<d>", new d.Interval(d.durationdecompress(punish.duration)))
+      ];
+      extra = ` - ${extraPart.join(" ")}`;
+    } else {
+      extra = !["p", "m"].includes(punish.type) && /^all/i.test(type) ? ` - ${d._.capitalize(name)}` : "";
+    }
     const field = [
       `Case ${punish.case} by ${((await d.bot.users.fetch(d.uncompress(punish.moderator))) || { tag: "Unknown" }).tag}${extra}`,
       `${punish.reason || "No reason"}`
