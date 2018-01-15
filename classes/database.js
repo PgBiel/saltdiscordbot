@@ -79,7 +79,7 @@ class Database {
    * @param {string} table The table
    */
   set(id, val, table) {
-    if (!this.cache[table]) { return; }
+    if (!tables.includes(table)) { return; }
     return this.insert(table, id, val);
   }
 

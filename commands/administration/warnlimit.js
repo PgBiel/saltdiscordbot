@@ -81,9 +81,9 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
       let timeDefault = false;
       if (isNaN(subSubSubArg)) {
         timeDefault = true;
-        time = new d.Interval.minutes(10);
+        time = d.Interval.minutes(10);
       } else {
-        time = new d.Interval.minutes(Number(subSubSubArg));
+        time = d.Interval.minutes(Number(subSubSubArg));
       }
       const punish = subSubArg.toLowerCase();
       const objToUse = {

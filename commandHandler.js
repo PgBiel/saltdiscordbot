@@ -86,7 +86,6 @@ module.exports = async msg => {
     const mentionfix = input.startsWith(`<@${bot.user.id}> `) ? `<@${bot.user.id}> ` : null;
     // ...then really determine the prefix used.
     const usedPrefix = mentionfix || prefix || "+";
-    console.log(usedPrefix, mentionfix, prefix);
     // if message doesn't start with prefix... skip (not break the loop because commands can still have custom prefixes)
     if (!message.content.toUpperCase().startsWith(usedPrefix.toUpperCase())) {
       continue;
@@ -104,7 +103,7 @@ module.exports = async msg => {
     // check if command is disabled (and ensure eval isn't disabled :p)
     if (guildId && cmd.name !== "eval") {
       try {
-        const disabled = perms.isDisabled(guildId, channel.id, cmd.name);
+        const disabled = await perms.isDisabled(guildId, channel.id, cmd.name);
         if (disabled) {
           return send(":lock: That command is disabled for this " + disabled + "!");
         }
