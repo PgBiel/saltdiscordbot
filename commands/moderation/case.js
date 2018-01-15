@@ -101,8 +101,8 @@ If Action Logs are disabled for this guild, you can ignore d.`);
         if (!arg2) return reply(`Please specify a reason to change the case's to!`);
         if (!isYours) {
           const result = await prompt({
-            question: `Are you sure you want to edit the reason of the case numbered ${arg}? It isn't yours, and if you do this, \
-you will become the author of the case. This will expire in 15 seconds. Type __y__es or __n__o.`,
+            question: `Are you sure you want to edit the reason of the case numbered ${arg}? **It isn't yours, and if you do this, \
+you will become the author of the case.** This will expire in 15 seconds. Type __y__es or __n__o.`,
             invalidMsg: "__Y__es or __n__o?",
             filter: msg2 => {
               return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);

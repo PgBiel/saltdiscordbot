@@ -30,14 +30,16 @@ Try an action (like setting)! (Use the \`help\` command for help.)`);
       return reply(`Uh-oh, it seems that you don't have permissions to get warn punishments. \
 Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
     }
-    if (/^get$/i.test(action) && (arrArgs.length < 2 || isNaN(subArg)) || isNaN(action)) {
+    if (/^get$/i.test(action) && (arrArgs.length < 2 || isNaN(subArg))) {
       return reply(`Please tell me which warn limit should I get! `);
     }
     const num = Number(isNaN(action) ? subArg : action);
     const step = steps.find(s => s.amount === num);
     if (!step) return send(`There is no warn punishment for reaching ${num} total warns. :wink:`);
-    return send(`Upon reaching ${num} total warns, the member receives a **${step.punishment}**\
-${step.time ? ` for **${new d.Interval(d.durationdecompress(step.time) || d.Interval.minutes(10))}**` : ""}.`);
+    return send(`Upon reaching ${num} total warns, the member receives a \
+**${d.Constants.maps.PUNISHMENTS[step.punishment][0]}**${step.time ?
+    ` for **${new d.Interval(d.durationdecompress(step.time) || d.Interval.minutes(10))}**` :
+    ""}.`);
   } else if (/^(?:set|unset|add|remove|clear)$/i.test(action)) {
     if (!(await seePerm("warnlimit.set", perms, setPerms, { srole: "admin" }))) {
       return reply(`Uh-oh, it seems that you don't have permissions to set or unset warn punishments. \
@@ -102,6 +104,8 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
       : subSubArg.toLowerCase();
       return send(`Successfully set the punishment for reaching **${num}** total warns to **${punishment}**!`);
     }
+  } else {
+    return reply(`Unknown action! See the help command for details.`);
   }
 };
 
