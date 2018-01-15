@@ -1,6 +1,6 @@
 const {
   Channel, Collection, DMChannel, GroupDMChannel, GuildMember, Message, MessageOptions, StringResolvable,
-  TextChannel, User,
+  TextChannel, User
 } = require("discord.js");
 const _ = require("lodash");
 const { CommandSetPerm } = require("./classes/command");
@@ -44,7 +44,7 @@ module.exports = async msg => {
     seePerm
   };
   // fetch prefix from db
-  const dbPrefix = msg.guild ? db.table("prefixes").get(guildId) : null;
+  const dbPrefix = msg.guild ? await db.table("prefixes").get(guildId) : null;
   const possiblePrefix = dbPrefix || "+";
   // loop commands to find a match
   for (const cmdn in bot.commands) {
@@ -137,7 +137,7 @@ module.exports = async msg => {
         }
         const isDefault = Boolean(permsToCheck[permission]); // if perm is default
         try {
-          const permsResult = perms.hasPerm(msg.member, guildId, permission, isDefault); // execute hasPerm to check perm
+          const permsResult = await perms.hasPerm(msg.member, guildId, permission, isDefault); // execute hasPerm to check perm
           console.log("Result: " + require("util").inspect(permsResult) + " . Permission: " + permission);
           parsedPerms[permission] = Boolean(permsResult.hasPerm); // add if has perm
           setPerms[permission] = Boolean(permsResult.setPerm); // add if perm was set or is it default

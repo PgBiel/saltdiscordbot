@@ -2,9 +2,9 @@ const Command = require("../../classes/command");
 const d = require("../../misc/d");
 
 const func = async function (
-  msg, { prompt, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms, seePerms },
+  msg, { prompt, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms, seePerm },
 ) {
-  const steps = d.db.table("warnsteps").get(guildId);
+  const steps = await d.db.table("warnsteps").get(guildId);
   if (arrArgs.length < 1) {
     if (perms["warnlimit.get"]) {
       if (!steps || steps.length < 1) {
@@ -39,7 +39,7 @@ Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
     return send(`Upon reaching ${num} total warns, the member receives a **${step.punishment}**\
 ${step.time ? ` for **${new d.Interval(d.durationdecompress(step.time) || d.Interval.minutes(10))}**` : ""}.`);
   } else if (/^(?:set|unset|add|remove|clear)$/i.test(action)) {
-    if (!seePerms("warnlimit.set", perms, setPerms, { srole: "admin" })) {
+    if (!(await seePerm("warnlimit.set", perms, setPerms, { srole: "admin" }))) {
       return reply(`Uh-oh, it seems that you don't have permissions to set or unset warn punishments. \
 Sorry ¯\\\\d._(ツ)\\d._/¯ (Try a different action maybe?)`);
     }

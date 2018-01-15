@@ -52,15 +52,15 @@ class Permz {
    * @param {string} guildId Guild to check
    * @param {string} perm The permission node to check (e.g. command.subcommand)
    * @param {boolean} [isDefault=false] If it is a default permission
-   * @returns {Object}
+   * @returns {Promise<object>}
    */
-  checkPerm(member, guildId, perm, isDefault = false) {
+  async checkPerm(member, guildId, perm, isDefault = false) {
     const [cmdname, extra] = _.toPath(perm);
     console.log(member.id, guildId, perm, isDefault);
     // if (extra1) whereobj.extra1 = extra1;
     // if (extra2) whereobj.extra2 = extra2;
     // if (extra3) whereobj.extra3 = extra3;
-    const perms = db.table("perms").get(guildId, []).filter(item => item.type.startsWith("m") && uncompress(item.id) === member.id);
+    const perms = (await db.table("perms").get(guildId, [])).filter(item => item.type.startsWith("m") && uncompress(item.id) === member.id);
     let hasPerm = isDefault;
     let setPerm = false;
     const filtered = perms.find(item => item.command === "any" || item.command
@@ -68,7 +68,7 @@ class Permz {
     if (!filtered) { // no user perm that could influence the execution. Proceeding to role perms.
       const roles = member.roles.sort((a, b) => b.position - a.position).array();
       for (const role of roles) {
-        const roleperms = db.table("perms").get(guildId, []).filter(it => it.type.startsWith("r") && it.id === role.id);
+        const roleperms = (await db.table("perms").get(guildId, [])).filter(it => it.type.startsWith("r") && it.id === role.id);
         if (roleperms.length < 1) {
           continue;
         }
@@ -113,10 +113,10 @@ class Permz {
    * @param {string} guildId The id of the guild
    * @param {string} channelid The id of the channel
    * @param {string} name The command name
-   * @returns {string}
+   * @returns {Promise<string>}
    */
-  isDisabled(guildId, channelid, name) {
-    const disabled = db.table("perms").get(guildId, [])
+  async isDisabled(guildId, channelid, name) {
+    const disabled = (await db.table("perms").get(guildId, []))
       .find(
         item => (item.command === "any" || item.command === name)
         && (item.type === "channel" || item.type === "guild")
@@ -138,7 +138,7 @@ class Permz {
    * @param {string} guildId Guild to check
    * @param {string} perm The permission node to check (e.g. command.subcommand)
    * @param {boolean} [isDefault=false] If it is a default permission
-   * @returns {Promise<Object>}
+   * @returns {Promise<object>}
    */
   hasPerm(member, guildId, perm, isDefault = false) {
     return this.checkPerm(member, guildId, perm, isDefault);

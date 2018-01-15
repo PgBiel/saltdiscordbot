@@ -92,7 +92,7 @@ class ActionLog {
       guild, author, reason, target, type,
       targetId, thumbnail, time
     } = options;
-    const caseNum = Number(this._getCase(guild)) || 0;
+    const caseNum = Number(await this._getCase(guild)) || 0;
     // let time = new Time(1);
     const at = new Date();
     let thumbnailToUse;
@@ -121,7 +121,7 @@ class ActionLog {
     const embed = await this.embedAction(caseObj);
     let msgSent;
     try {
-      const logChannel = this._getLog(guild);
+      const logChannel = await this._getLog(guild);
       if (logChannel) {
         const semiMsgSent = await logChannel.send({ embed });
         if (Array.isArray(semiMsgSent)) {
@@ -138,9 +138,11 @@ class ActionLog {
     db.table("punishments").add(guild.id, caseObj);
     guild.members.fetch().catch(rejct);
     const maxCases = Constants.numbers.MAX_CASES(guild.members.size);
-    if (db.table("punishments").get(guild.id, []).length > maxCases) db.table("punishments").spliceArr(guild.id, 0, 1);
+    if ((await db.table("punishments").get(guild.id, []).length) > maxCases) {
+      db.table("punishments").spliceArr(guild.id, 0, 1);
+    }
     try {
-      db.table("mods").assign(guild.id, { latestCase: caseNum + 1 }, true);
+      await db.table("mods").assign(guild.id, { latestCase: caseNum + 1 }, true);
     } catch (err) {
       logger.error(`At updating moderation entry (Case num: ${caseNum}, guild: ${guild.id}): ${err.stack || err}`);
     }
@@ -155,9 +157,7 @@ class ActionLog {
    */
   async delCase(caseN, guild) {
     const cases = db.table("punishments");
-    const caseToLook = cases
-      .get(guild.id)
-      .find(punish => punish.case === caseN);
+    const caseToLook = (await cases.get(guild.id)).find(punish => punish.case === caseN);
     const obj = { case: false, message: false };
     if (!caseToLook) {
       return obj;
@@ -167,13 +167,13 @@ class ActionLog {
     try {
       await (db
         .table("punishments")
-        .assign(guild.id, { [db.table("punishments").indexOf(guild.id, caseToLook)]: newCaseToLook }, true));
+        .assign(guild.id, { [await db.table("punishments").indexOf(guild.id, caseToLook)]: newCaseToLook }, true));
     } catch (err) {
       rejct(err);
       return obj;
     }
     obj.case = true;
-    const logChannel = this._getLog(guild);
+    const logChannel = await this._getLog(guild);
     if (!logChannel) {
       return obj;
     }
@@ -190,21 +190,19 @@ class ActionLog {
   /**
    * Get a specific case.
    * @param {number} caseN The case number.
-   * @param {Guild|string} The guild to look at (or its id).
-   * @returns {Promise<Object>} The result.
+   * @param {Guild|string} guild The guild to look at (or its id).
+   * @returns {Promise<object>} The result.
    */
   async fetchCase(caseN, guild) {
     const cases = db.table("punishments");
-    const caseToLook = cases
-      .get(guild.id)
-      .find(punish => punish.case === caseN);
+    const caseToLook = (await cases.get(guild.id)).find(punish => punish.case === caseN);
     const obj = { case: null, embed: null, message: null };
     if (!caseToLook) {
       return obj;
     }
     obj.case = caseToLook;
     obj.embed = await this.embedAction(caseToLook);
-    const logChannel = this._getLog(guild);
+    const logChannel = await this._getLog(guild);
     if (!logChannel) {
       return obj;
     }
@@ -225,13 +223,11 @@ class ActionLog {
    * @param {string} [options.reason] The reason to set.
    * @param {boolean} [options.toggleThumbnail] If it should toggle thumbnail.
    * @param {Guild} guild The guild to edit at.
-   * @returns {Promise<Object>} Two properties saying if it was edited or not.
+   * @returns {Promise<object>} Two properties saying if it was edited or not.
    */
   async editCase(caseN, options, guild) {
     const cases = db.table("punishments");
-    const caseToLook = cases
-      .get(guild.id)
-      .find(punish => punish.case === caseN);
+    const caseToLook = (await cases.get(guild.id)).find(punish => punish.case === caseN);
     const obj = { case: false, message: false, resultCase: null };
     if (!caseToLook) {
       return obj;
@@ -249,13 +245,13 @@ class ActionLog {
     try {
       await (db
         .table("punishments")
-        .assign(guild.id, { [db.table("punishments").indexOf(guild.id, caseToLook)]: newCaseToLook }, true));
+        .assign(guild.id, { [await db.table("punishments").indexOf(guild.id, caseToLook)]: newCaseToLook }, true));
       obj.case = true;
     } catch (err) {
       rejct(err);
       return obj;
     }
-    const logChannel = this._getLog(guild);
+    const logChannel = await this._getLog(guild);
     if (!logChannel) {
       return obj;
     }
@@ -330,8 +326,8 @@ class ActionLog {
    * @returns {Promise<?TextChannel>} The channel.
    * @private
    */
-  _getLog(guild) {
-    const logChannel = db.table("mods").prop(guild.id || guild, "logs");
+  async _getLog(guild) {
+    const logChannel = await db.table("mods").prop(guild.id || guild, "logs");
     if (logChannel) {
       const returnVal = guild.channels.get(logChannel);
       if (returnVal && returnVal.type === "text") {
@@ -344,11 +340,11 @@ class ActionLog {
   /**
    * Get the latest case for a guild.
    * @param {Guild} guild The guild to get the case for.
-   * @returns {?string|number} The case number.
+   * @returns {Promise<?string|number>} The case number.
    * @private
    */
-  _getCase(guild) {
-    const logCase = db.table("mods").prop(guild.id, "latestCase");
+  async _getCase(guild) {
+    const logCase = await db.table("mods").prop(guild.id, "latestCase");
     if (logCase) {
       const returnVal = isNaN(logCase) ? logCase : Number(logCase);
       if (typeof returnVal === "string" || typeof returnVal === "number") {

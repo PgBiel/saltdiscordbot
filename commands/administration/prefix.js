@@ -5,7 +5,7 @@ const func = async function (
   msg, { guildId, reply, send, args, arrArgs, prefix: p, hasPermission, perms },
 ) {
   if (arrArgs.length < 1) {
-    const prefixUsed = d.db.table("prefixes").get(guildId) || "+";
+    const prefixUsed = (await d.db.table("prefixes").get(guildId)) || "+";
     return send(`Current prefix for this server: ${prefixUsed}`);
   }
   d.logger.debug("prefix:", arrArgs.toString());
@@ -14,8 +14,13 @@ const func = async function (
     "You do not have `Manage Server` (nor a permission overwrite).",
     );
   }
-  d.db.table("prefixes").set(guildId, args);
-  send(`Prefix set to \`${args}\`!`);
+  try {
+    await d.db.table("prefixes").setRejct(guildId, args);
+    send(`Prefix set to \`${args}\`!`);
+  } catch(err) {
+    d.rejct(err);
+    send(`Failed to set the prefix! :(`);
+  }
 };
 module.exports = new Command({
   func,

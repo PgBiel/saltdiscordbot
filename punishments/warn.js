@@ -31,8 +31,8 @@ class Warn extends Punishment {
     const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def } = context;
     const sentWarnMsg = await send(`Warning ${member.user.tag}... (Sending DM...)`);
-    const warns = db.table("warns").get(guild.id, []).filter(u => u.userid === member.id);
-    const warnSteps = db.table("warnsteps").get(guild.id, []).sort((step1, step2) => step1.amount - step2.amount);
+    const warns = (await db.table("warns").get(guild.id, [])).filter(u => u.userid === member.id);
+    const warnSteps = (await db.table("warnsteps").get(guild.id, [])).sort((step1, step2) => step1.amount - step2.amount);
     const warnStep = warnSteps.find(step => step.amount === warns.length + 1);
     const reasonEmbed = new MessageEmbed();
     reasonEmbed
@@ -107,7 +107,7 @@ a **${punishment}** (as says this server's current setup).`);
             db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1))); // make sure there's expiring
             await db.table("warns").add(guild.id, {
               userid: compress(member.id),
-              casenumber: db.table("mods").prop(guild.id, "latestCase") + 1,
+              casenumber: (await db.table("mods").prop(guild.id, "latestCase")) + 1,
               reason: reason || "None",
               moderatorid: compress(author.id),
               warnedat: datecomp()
@@ -117,7 +117,7 @@ a **${punishment}** (as says this server's current setup).`);
           db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1))); // make sure there's expiring
           await db.table("warns").add(guild.id, {
             userid: compress(member.id),
-            casenumber: db.table("mods").prop(guild.id, "latestCase") + 1,
+            casenumber: (await db.table("mods").prop(guild.id, "latestCase")) + 1,
             reason: reason || "None",
             moderatorid: compress(author.id),
             warnedat: datecomp()

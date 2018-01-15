@@ -10,7 +10,7 @@ const func = async function (msg, {
   let hasPerm = false;
   if (hasPermission("MANAGE_ROLES")) hasPerm = true;
   try {
-    if (checkRole("mod", member)) hasPerm = true;
+    if (await checkRole("mod", member)) hasPerm = true;
   } catch (err) {
     d.logger.error(`At check role: ${err}`);
   }

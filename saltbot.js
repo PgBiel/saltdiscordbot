@@ -23,7 +23,7 @@ if (!cmd.default) {
   // console.log(dir, inspect(cmd));
 }
 const Manager = new Discord.ShardingManager("./bot.js", {
-  totalShards: 2,
+  totalShards: 2
 });
 
 Manager.spawn().then(shards => {

@@ -30,7 +30,7 @@ class Mute extends Punishment {
     const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def } = context;
     if (!time) time = Interval.minutes(10);
-    const muteInfo = db.table("mutes").get(guild.id);
+    const muteInfo = await db.table("mutes").get(guild.id);
     let muteRole;
     if (muteInfo) {
       muteRole = guild.roles.get(uncompress(muteInfo.muteRoleID));

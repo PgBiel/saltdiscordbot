@@ -62,38 +62,6 @@ tables.forEach(table => {
 });
 
 class Database {
-  /* props:
-  public cache: { [prop in TableName]: Storage<string, TableVals[prop]> };
-  private loop: NodeJS.Timer;
-  */
-
-  constructor() {
-    this.cache = {};
-    (async () => {
-      for (const table of tables) {
-        const cacheSpot = this.cache[table] = new Storage();
-        let list;
-        try {
-          list = await r.tableList().run();
-        } catch (err) {
-          rejct(err, "at tablelist:");
-          list = [];
-        }
-        r.table(table).run().then(res => {
-          res.forEach(obj => cacheSpot.set(obj.id, obj.data));
-        }).catch(rejct);
-
-        r.table(table).changes().run().then(stuff => {
-          stuff.each((err, row) => {
-            if (err) { return rejct(err); }
-            if (!row || !row.new_val) { return logger.error("stuff#each: Invalid row"); }
-            const newVal = row.new_val;
-            this.cache[table].set(newVal.id, newVal.data);
-          });
-        });
-      }
-    })();
-  }
 
   /**
    * Gets a Table.
@@ -101,8 +69,7 @@ class Database {
    * @returns {Table}
    */
   table(name) {
-    const tableStor = this.cache[name];
-    if (tableStor) return new Table(name, tableStor);
+    if (tables.includes(name.toLowerCase())) return new Table(name.toLowerCase(), new Storage());
   }
 
   /**
@@ -110,7 +77,6 @@ class Database {
    * @param {string} id The id
    * @param {*} val The value
    * @param {string} table The table
-   * @returns {Database} this
    */
   set(id, val, table) {
     if (!this.cache[table]) { return; }
@@ -121,63 +87,47 @@ class Database {
    * Gets something from a Table.
    * @param {string} id The id to get
    * @param {string} table The table
-   * @returns {*} Possibly the value
+   * @returns {Promise<*>} Possibly the value
    */
-  get(id, table) {
-    if (!this.cache[table]) { return; }
-    return this.cache[table].get(id);
+  async get(id, table) {
+    if (!table || !tables.include(table.toLowerCase())) { return; }
+    const data = await r.table(table).filter({ id }).run();
+    if (data != null) return data[0];
   }
 
   async insert(table, id, val) {
     if (id == null || val == null) return { success: false, err: new TypeError("Invalid ID or value.") };
-    this.cache[table].set(id, val);
     const statement = { id, data: val };
     try {
       await r.table(table).insert(statement, {
         conflict: "replace"
       }).run();
-      const { shard } = bot;
-      shard.send({ type: "dbUpdate", table, statement, id: shard.id })
-        .catch(err => logger.error(`Failed to send DB update message to master process: ${err}`));
       return { success: true, err: null };
     } catch (err) {
       rejct(err, `Table ${table}:`);
       return { success: false, err };
     }
   }
-
-  /* private update(id: string, table: string) {
-    const tabula = this.queue.get(table);
-    if (!tabula) { return; }
-    tabula.push({
-      id,
-      data: this.cache[table].get(id),
-    });
-  } */
 }
 
 const db = new Database();
 
-// tslint:disable-next-line:max-classes-per-file
+/**
+ * A table from the database.
+ */
 class Table extends Storage {
-  /* props:
-  public db: Database;
-  public name: TableName;
-  */
 
   constructor(name, content) {
     super(content);
     this.name = name;
   }
 
-  /* public add <B extends keyof HelperVals>(key: string, val: HelperVals[B], table: B): Promise<ISetRes>;
-  public add(key: string, val: any): Promise<ISetRes>; */
   /**
    * Add to an array.
    * @param {string} key The key
    * @param {*} val Value to add
    * @param {boolean} [reject=false] If should reject on promise
-   * @returns {Promise<Object>}
+   * @returns {Promise<{ success: boolean; err: any; }>}
    */
   add(key, val, reject = false) {
     const arr = this.get(key) || [];
@@ -190,7 +140,7 @@ class Table extends Storage {
    * @param {string} key The key
    * @param {*} obj Object to remove
    * @param {boolean} [reject] If should reject on promise
-   * @returns {Promise<Object>}
+   * @returns {Promise<{ success: boolean; err: any; }>}
    */
   remArr(key, obj, reject) {
     const arr = this.get(key) || [];
@@ -216,7 +166,7 @@ class Table extends Storage {
    * @param {number} ind The index
    * @param {number} [amount] Amount to splice (default 1)
    * @param {boolean} [reject=false] If should reject on promise
-   * @returns {Promise<Object>}
+   * @returns {Promise<{ success: boolean; err: any; }>}
    */
   spliceArr(key, ind, amount, reject = false) {
     const arr = this.get(key) || [];
@@ -233,10 +183,10 @@ class Table extends Storage {
    * @param {string} key The key
    * @param {*} obj The object
    * @param {number} [fromIndex=0] From which index to start
-   * @returns {number}
+   * @returns {Promise<number>}
    */
-  indexOf(key, obj, fromIndex = 0) {
-    const arr = this.get(key) || [];
+  async indexOf(key, obj, fromIndex = 0) {
+    const arr = (await this.get(key)) || [];
     if (!Array.isArray(arr)) return -1;
     return arr.indexOf(obj, fromIndex);
   }
@@ -246,7 +196,7 @@ class Table extends Storage {
    * @param {string} key The key
    * @param {Object} val An object to merge props with
    * @param {boolean} [reject=false] If should reject on promise
-   * @returns {Promise<Object>}
+   * @returns {Promise<{ success: boolean; err: any; }>}
    */
   assign(key, val, reject = false) {
     const obj = this.get(key) || {};
@@ -260,7 +210,7 @@ class Table extends Storage {
    * @param {Object} val An object to merge props with, each value must be a function fed with old value. 
      The return value of it will be used
    * @param {boolean} [reject=false] If should reject on promise
-   * @returns {Promise<Object>}
+   * @returns {Promise<{ success: boolean; err: any; }>}
    */
   assignF(key, val, reject = false) {
     if (typeof val !== "object") return Promise.resolve({ success: false, err: new TypeError("Non-object second argument.") });
@@ -273,16 +223,13 @@ class Table extends Storage {
     return (reject ? this.setRejct : this.set).call(this, key, Object.assign(obj, newObj));
   }
 
-  /* public set(key: "\u202E\u202E\u200B<", val: TableVals[T]): this; // totally not attempting to bypass typescript yelling at me
-  public set(key: string, val: TableVals[T]): Promise<ISetRes>; */
   /**
    * Set a value.
    * @param {string} key The key
    * @param {*} val The value
-   * @returns {Promise<Object>}
+   * @returns {Promise<{ success: boolean; err: any; }>}
    */
   set(key, val) {
-    // if (NaN) return this; // also totally not attempting to bypass typescript yelling at me
     return db.set(key, val, this.name);
   }
 
@@ -290,7 +237,7 @@ class Table extends Storage {
    * Set a value with reject on promise.
    * @param {string} key The key
    * @param {*} val The value
-   * @returns {Promise<Object>}
+   * @returns {Promise<{ success: boolean; err: any; }>}
    */
   async setRejct(key, val) {
     const res = await this.set(key, val);
@@ -302,77 +249,66 @@ class Table extends Storage {
    * Get a value.
    * @param {string} key The key
    * @param {*} [defaultVal] A default value to be returned (and set) when none is present
-   * @returns {*}
+   * @returns {Promise<*>}
    */
-  get(key, defaultVal) {
-    const val = db.get(key, this.name);
+  async get(key, defaultVal) {
+    const val = await db.get(key, this.name);
     if (defaultVal && val == null) db.set(key, defaultVal, this.name);
     const defaulted = defaultVal ? (val == null ? defaultVal : val) : val;
-    super.set(key, defaulted);
     return defaulted;
   }
 
   /**
    * Array of values
-   * @returns {Array<*>}
+   * @returns {Promise<Array<*>>}
    */
-  valuesArray() {
-    return super.valuesArray.call(this.cache);
+  async valuesArray() {
+    return super.valuesArray.call(await this.cache());
   }
 
   /**
    * Array of keys
-   * @returns {string[]}
+   * @returns {Promise<string[]>}
    */
-  keysArray() {
-    return super.keysArray.call(this.cache);
+  async keysArray() {
+    return super.keysArray.call(await this.cache());
   }
 
   /**
    * Array of keys (alias)
-   * @returns {string[]}
+   * @returns {Promise<string[]>}
    */
-  keyArray() {
-    return super.keyArray.call(this.cache);
+  async keyArray() {
+    return super.keyArray.call(await this.cache());
   }
 
   /**
    * Array representation of this Table
-   * @returns {Array<string, *>}
+   * @returns {Promise<Array<string, *>>}
    */
-  array() {
-    return super.array.call(this.cache);
+  async array() {
+    return super.array.call(await this.cache());
   }
 
   /**
    * Storage representing this Table, otherwise make new
-   * @returns {Storage<string, *>}
+   * @returns {Promise<Storage<string, *>>}
    */
-  get cache() {
-    return db.cache[this.name] || new Storage();
+  async cache() {
+    const data = await r.table(this.name).run();
+    const store = new Storage();
+    for (const obj of data) {
+      store.set(obj.id, obj.data);
+    }
+    return store;
   }
 
   /**
    * Alias of cache()
    */
-  get storage() {
+  storage() {
     return this.cache;
   }
 }
-
-process.on("message", message => {
-  if (message && message.type === "dbUpdate" && message.table && message.statement) {
-    const msg = message;
-    const { table, statement, id } = msg;
-    const cacheSpot = db.cache[table];
-    if (cacheSpot) {
-      if (statement && statement.id && statement.data) {
-        cacheSpot.set(statement.id, statement.data);
-      }
-    } else {
-      logger.warn(`Got unknown table name from shard ID ${id}: ${table}`);
-    }
-  }
-});
 
 module.exports = db;

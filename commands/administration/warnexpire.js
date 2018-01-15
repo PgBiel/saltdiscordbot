@@ -8,7 +8,7 @@ const func = async function (
   },
 ) {
   const expire = d.durationdecompress(
-    d.db.table("warnexpires").get(guildId, d.durationcompress(d.Interval.weeks(1)))
+    await d.db.table("warnexpires").get(guildId, d.durationcompress(d.Interval.weeks(1)))
   );
   if (!args) {
     if (!expire) {
@@ -17,15 +17,16 @@ const func = async function (
     }
     return reply(`Warns on this guild expire after **${new d.Interval(expire)}**!`);
   }
-  if (!seePerm("warnexpire", perms, setPerms, { srole: "Administrator" })) return reply(`Missing permission \`warnexpire\`! \
-Could also use this command with the Administrator saltrole.`);
+  if (!(await seePerm("warnexpire", perms, setPerms, { srole: "Administrator" }))) {
+    return reply(`Missing permission \`warnexpire\`! Could also use this command with the Administrator saltrole.`);
+  }
   const units = d.parseTimeStr(args);
   if (Object.values(units).reduce((a, v) => a + v, 0) <= 0) return reply(`Invalid time!`);
   const time = new d.Interval(Object.entries(units));
   if (new d.Interval(time).remove(expire).time === 0) return reply(`That is already the warn expiry time! :wink:`);
   if (time.totalMonths > 3) return reply(`Expiry time must not be longer than 3 months!`);
   if (time.totalMinutes < 1) return reply(`Expiry time must not be shorter than 1 minute!`);
-  if (d.db.table("warns").get(guildId, []).length > 0 && expire.asMilliseconds() > time.time) {
+  if ((await d.db.table("warns").get(guildId, [])).length > 0 && expire.asMilliseconds() > time.time) {
     const result = await prompt({
       question: `Are you sure you want to set warns to expire after **${time}**? **Any active warns that have been created \
 for longer than that will automatically expire.** This will expire in 15 seconds. Type __y__es or __n__o.`,

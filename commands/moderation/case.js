@@ -6,7 +6,7 @@ const func = async function (
   msg, { prompt, guildId, guild, reply, checkRole, author, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms }
 ) {
   if (!args) return reply(`Please specify an action (or a case number to get)! (See the help command for details.)`);
-  const punishments = d.db.table("punishments").get(guildId);
+  const punishments = await d.db.table("punishments").get(guildId);
   if (!punishments || punishments.length < 1) return reply(`There are no actions logged on this guild!`);
   const match = args.match(d.Constants.regex.CASE_MATCH);
   let part1, part2, part3;
@@ -66,7 +66,7 @@ There ${latest === 1 ? "is only 1 case" : `are ${latest} cases`}.`);
       !isYours
       && (setPerms["case.others"] ?
         !perms["case.others"] :
-        !checkRole("administrator"))
+        !(await checkRole("administrator")))
       ) return reply(`That case is not yours. You need the permission
 \`case others\` or the Administrator saltrole to edit others' cases!`);
     if (action === "delete") {
@@ -130,7 +130,7 @@ you will become the author of the case. This will expire in 15 seconds. Type __y
         }
         d.logger.debug("a", arg2);
         const { case: cResult, message: mResult } = await actionLog.editCase(arg, options, guild);
-        const { thumbOn } = d.db.table("punishments").get(guildId).find(c => c.case === arg);
+        const { thumbOn } = (await d.db.table("punishments").get(guildId)).find(c => c.case === arg);
         if (!cResult) return reply("Uh oh! There was an error modifying the case. Sorry!");
         if (!mResult) return reply(`Case #${arg} ${action === "edit" ?
           "was modified" :

@@ -1,6 +1,6 @@
 const {
-  Collection, DMChannel, GroupDMChannel, Guild, GuildMember, Message, MessageOptions, StringResolvable,
-  TextChannel, User,
+  Collection, Guild, GuildMember,
+  TextChannel, User
 } = require("discord.js");
 const actionLog = require("./classes/actionlogger");
 const messager = require("./classes/messager");
@@ -81,14 +81,14 @@ module.exports = function returnFuncs(msg) {
   };
   const reply = sendingFunc(msg.reply.bind(msg));
   const send = sendingFunc(channel.send.bind(channel));
-  const checkRole = (role, member) => {
+  const checkRole = async (role, member) => {
     if (["mod", "admin"].includes(role)) {
       role = role === "mod" ? "moderator" : "administrator";
     }
     if (!guildId) {
       return false;
     }
-    const result = db.table("mods").get(guild.id);
+    const result = await db.table("mods").get(guild.id);
     if (!result || !result[role]) {
       return false;
     }
@@ -149,20 +149,20 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
         const result = await channel.awaitMessages(
           filter, {
             time: Constants.times.AMBIGUITY_EXPIRE, max: 1,
-            errors: ["time"],
+            errors: ["time"]
           },
         );
         if (satisfied) {
           return {
             member: currentOptions[0],
-            cancelled: false,
+            cancelled: false
           };
         }
         if (cancelled) {
           send("Command cancelled.");
           return {
             member: null,
-            cancelled: true,
+            cancelled: true
           };
         }
         if (i < 5) {
@@ -176,14 +176,14 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
         send("Command cancelled.");
         return {
           member: null,
-          cancelled: true,
+          cancelled: true
         };
       }
     }
     send("Automatically cancelled command.");
     return {
       member: null,
-      cancelled: true,
+      cancelled: true
     };
   };
   const hasPermission = msg.member ? msg.member.hasPermission.bind(msg.member) : null;
@@ -243,10 +243,10 @@ If you want to contact the bot devs, please tell them this information: \`${data
     return actionLog.log(newOptions);
   };
 
-  const seePerm = (perm, perms, setPerms, { srole, hperms }) => {
+  const seePerm = async (perm, perms, setPerms, { srole, hperms }) => {
     if (setPerms[perm] && perms[perm]) return true;
     if (hperms && hasPermission([...hperms])) return true;
-    if (srole && checkRole(srole)) return true;
+    if (srole && await checkRole(srole)) return true;
     return perms[perm] || false;
   };
 
@@ -262,12 +262,12 @@ If you want to contact the bot devs, please tell them this information: \`${data
       bot, msg, message: msg,
       channel, guildId, deps,
       funcs, context: subC || {},
-      guild, db,
+      guild, db
     });
     const data = {
       content,
       id: Date.now(),
-      vars: objectToUse,
+      vars: objectToUse
     };
     return messager.awaitForThenEmit("doEval", data, data.id + "eval");
   };
