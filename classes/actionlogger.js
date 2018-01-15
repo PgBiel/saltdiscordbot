@@ -85,7 +85,7 @@ class ActionLog {
    * @param {GuildMember|User} options.target The target.
    * @param {string} options.type The punishment type.
    * @param {Interval} [options.time] Duration of punishment.
-   * @returns {Promise<?Message>} The sent message.
+   * @returns {Promise<[Message, number]>} The sent message and case number.
    */
   async log(options) {
     const {
@@ -144,7 +144,7 @@ class ActionLog {
     } catch (err) {
       logger.error(`At updating moderation entry (Case num: ${caseNum}, guild: ${guild.id}): ${err.stack || err}`);
     }
-    return msgSent;
+    return [msgSent, caseNum + 1];
   }
 
   /**

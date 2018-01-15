@@ -150,6 +150,7 @@ export interface HelperVals {
   };
   warns: {
     userid: string;
+    casenumber?: number;
     reason?: string;
     moderatorid?: string;
     warnedat?: string;

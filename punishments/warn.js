@@ -107,6 +107,7 @@ a **${punishment}** (as says this server's current setup).`);
             db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1))); // make sure there's expiring
             await db.table("warns").add(guild.id, {
               userid: compress(member.id),
+              casenumber: db.table("mods").prop(guild.id, "latestCase") + 1,
               reason: reason || "None",
               moderatorid: compress(author.id),
               warnedat: datecomp()
@@ -116,6 +117,7 @@ a **${punishment}** (as says this server's current setup).`);
           db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1))); // make sure there's expiring
           await db.table("warns").add(guild.id, {
             userid: compress(member.id),
+            casenumber: db.table("mods").prop(guild.id, "latestCase") + 1,
             reason: reason || "None",
             moderatorid: compress(author.id),
             warnedat: datecomp()

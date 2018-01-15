@@ -435,22 +435,16 @@ async function checkWarns() {
   );
   for (const warn of warnsForShard) {
     const guildId = warn.serverid;
-    console.log(`Entering warn ${util.inspect(warn)}`);
     const guild = bot.guilds.get(guildId);
     if (!guild) continue;
-    console.log("passed guild");
     const member = guild.members.get(uncompress(warn.userid));
     if (!member) continue;
-    console.log("passed member");
     const expire = durationdecompress(db.table("warnexpires").get(guildId));
     if (!expire) continue;
-    console.log("passed expire");
-    const warnedAt = dateuncomp(warn.warnedAt);
+    const warnedAt = dateuncomp(warn.warnedat);
     if (warnedAt == null) continue;
-    console.log("passed warnedAt");
     const time = moment(warnedAt).add(expire).toDate().getTime();
-    if (time >= Date.now()) db.table("warns").remArr(guildId, warn.old);
-    console.log("warn removed");
+    if (Date.now() >= time) db.table("warns").remArr(guildId, warn.old);
   }
 }
 
