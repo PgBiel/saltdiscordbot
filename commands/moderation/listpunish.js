@@ -66,7 +66,7 @@ async function specific({
   if (isWarn) {
     filtered = typed = await (d.db.table("warns").get(guildId, []));
     if (!filtered || filtered.length < 1) return reply(`There are no active warns on this guild!`);
-    typed = typed.filter(w => w.userid === user.id);
+    typed = typed.filter(w => d.uncompress(w.userid) === user.id).reverse();
     if (typed.length < 1) return reply(`${isAuthor ? "You have" : "That user has"} no active warns on this guild!`);
   } else {
     filtered = filterPunishes(punishments, user.id, d.uncompress);
@@ -116,10 +116,10 @@ async function specific({
     head = /^all/.test(type) ? "punishments" : type;
   }
   embed
-    .setTitle(`List of ${head} for ${user.tag} (last ${maxCases} cases) - \
+    .setTitle(`List of ${head} for ${user.tag}${isWarn ? "" : " (last ${maxCases} cases)"} - \
 Page ${page + 1}/${pages.length}`)
     .setColor(color);
-  if (pages.length > 1) embed.setFooter(`To go to a certain page, type \`${p}list${isWarn ? "warns" : "punish"} \
+  if (pages.length > 1) embed.setFooter(`To go to a certain page, type {p}list${isWarn ? "warns" : "punish"} \
   ${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
   for (const pagee of pages[page].split(" ")) {
     if (isNaN(pagee) || !d._.trim(pagee)) continue;

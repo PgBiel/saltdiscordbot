@@ -93,8 +93,8 @@ class Database {
    */
   async get(id, table) {
     if (!table || !tables.includes(table.toLowerCase())) { return; }
-    const data = await r.table(table).get(id).run();
-    if (data != null) return data.data;
+    const data = await (r.table(table).filter({ id }).run());
+    if (data != null && data[0] != null) return data[0].data;
   }
 
   async insert(table, id, val) {

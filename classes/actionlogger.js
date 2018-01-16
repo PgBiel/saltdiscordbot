@@ -173,6 +173,15 @@ class ActionLog {
       return obj;
     }
     obj.case = true;
+    if (caseToLook.type === "w") {
+      try {
+        const warns = await (db.table("warns").get(guild.id, []));
+        const warn = warns.find(w => w.casenumber === caseN);
+        if (warn) db.table("warns").remArr(guild.id, warn);
+      } catch (err) {
+        rejct(err);
+      }
+    }
     const logChannel = await this._getLog(guild);
     if (!logChannel) {
       return obj;
@@ -250,6 +259,21 @@ class ActionLog {
     } catch (err) {
       rejct(err);
       return obj;
+    }
+    if (caseToLook.type === "w" && (options.reason || options.moderator)) {
+      try {
+        const warns = await (db.table("warns").get(guild.id, []));
+        const warn = warns.find(w => w.casenumber === caseN);
+        if (warn) {
+          const index = await (db.table("warns").indexOf(guild.id, warn));
+          const newWarn = cloneObject(warn);
+          if (options.reason) newWarn.reason = textAbstract(options.reason, 500);
+          if (options.moderator) newWarn.moderatorid = compress(options.moderator);
+          db.table("warns").assign(guild.id, { [index]: newWarn });
+        }
+      } catch (err) {
+        rejct(err);
+      }
     }
     const logChannel = await this._getLog(guild);
     if (!logChannel) {
