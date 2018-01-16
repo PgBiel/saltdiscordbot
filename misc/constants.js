@@ -26,6 +26,7 @@ exports.regex = {
   NAME_AND_DISCRIM: /^([^]{1,32})#(\d{4})$/,
   BAN_MATCH: /^([^]+?(?:#\d{4})?)(?:\s+([^]*))?$/,
   CASE_MATCH: /^(?:([\s\S]+)\s+(\d+)\s+([\s\S]+)|([\s\S]+)\s+([\s\S]+)|([\s\S]+))/,
+  LIST_WARNS_MATCH: /^([\s\S]{1,32}|[\s\S]{1,32}\#\d{4})\s+(\d+)|([\s\S]{1,32}|[\s\S]{1,32}\#\d{4})$/,
   LIST_PUNISH_MATCH: `
   ^(?:((?:all|kick|ban|unban|unmute|softban|mute|warn)s?)(?:\\s+(\\d+))?)|(?:([\\s\\S]{1,32}|[\\s\\S]{1,32}\\#\\d{4})\\s+["']*
   ((?:all|kick|ban|unban|unmute|softban|mute|warn)s?)["']*(?![^\\s])(?:\\s+(\\d+))?)|([\\s\\S]{1,32}|[\\s\\S]{1,32}\\#\\d{4})$`,
