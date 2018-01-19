@@ -8,7 +8,7 @@ const Searcher = require("./classes/searcher");
 const deps = require("./util/deps");
 const { bot, Constants, db, logger, util } = require("./util/deps");
 const funcs = require("./util/funcs");
-const { capitalize, cloneObject, rejct } = require("./util/funcs");
+const { capitalize, cloneObject, rejct, uncompress } = require("./util/funcs");
 
 // const { bot, Constants, logger } = deps;
 // const { cloneObject, rejct } = funcs;
@@ -94,10 +94,10 @@ module.exports = function returnFuncs(msg) {
     }
     if (Array.isArray(result[role])) {
       for (const roleID of result[role]) {
-        if (member.roles.has(roleID)) return true;
+        if (member.roles.has(uncompress(roleID))) return true;
       }
     } else {
-      return member.roles.has(result[role]);
+      return member.roles.has(uncompress(result[role]));
     }
   };
   const promptAmbig = async (members, pluralName = "members") => {

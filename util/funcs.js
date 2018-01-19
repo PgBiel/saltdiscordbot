@@ -603,12 +603,12 @@ exports.durationdecompress = durationdecompress;
 /**
  * Clean a string.
  * @param {string} str String to clean
- * @param {number} [strictness=2] Strictness
+ * @param {number} [strictness=3] Strictness
  * @returns {string}
  */
-function cleanify (str, strictness = 2) {
+function cleanify (str, strictness = 3) {
   if (typeof str !== "string") return str;
-  strictness = Number(_.clamp(strictness, 0, 3));
+  strictness = Number(_.clamp(strictness, 0, 4));
   const replace = {
     "4":  "a", "1": "l", "3": "e", "@":  "a", "$":  "s",
     "0": "o", "7": "t", "5":  "s", "&":  "e", "§": "s",
@@ -622,7 +622,9 @@ function cleanify (str, strictness = 2) {
     lowercase: true,
     separator: strictness === 0 ? "_" : ""
   };
-  let text = slugify(_.deburr(tr(str, strictness >= 2 ? { replace } : {})), options);
-  if (strictness === 3) text = text.split("").sort((a, b) => b.charCodeAt(0) - a.charCodeAt(0)).join("");
+  let text = slugify(_.deburr(tr(str, strictness >= 3 ? { replace } : {})), options);
+  if (strictness === 4) text = text.split("").sort((a, b) => b.charCodeAt(0) - a.charCodeAt(0)).join("");
+  if (strictness >= 2) text = text.replace(/(\w)\1+/, t => t[0]);
   return text;
 }
+exports.cleanify = cleanify;

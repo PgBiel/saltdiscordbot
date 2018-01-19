@@ -44,6 +44,9 @@ interface TableValsDraft {
     latestCase?: number;
     filterStrict?: number;
     filterEnabled?: boolean;
+    filterPunishment?: string;
+    filterMessage?: string;
+    filterPunishmentMute?: string;
   };
   mutes: { // index by Server ID ($)
     muteRoleID?: string;
@@ -74,6 +77,7 @@ interface TableValsDraft {
     farewell?: string;
     farewellchannel?: string;
   };
+  wordfilters: Array<string>; // index by $
 }
 
 export interface HelperVals {
