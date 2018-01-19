@@ -42,6 +42,8 @@ interface TableValsDraft {
     administrator?: oneOrMany<string>;
     logs?: string;
     latestCase?: number;
+    filterStrict?: number;
+    filterEnabled?: boolean;
   };
   mutes: { // index by Server ID ($)
     muteRoleID?: string;

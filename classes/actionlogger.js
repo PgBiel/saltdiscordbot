@@ -157,7 +157,7 @@ class ActionLog {
    */
   async delCase(caseN, guild) {
     const cases = db.table("punishments");
-    const caseToLook = (await cases.get(guild.id)).find(punish => punish.case === caseN);
+    const caseToLook = (await cases.get(guild.id, [])).find(punish => punish.case === caseN);
     const obj = { case: false, message: false };
     if (!caseToLook) {
       return obj;
@@ -204,7 +204,7 @@ class ActionLog {
    */
   async fetchCase(caseN, guild) {
     const cases = db.table("punishments");
-    const caseToLook = (await cases.get(guild.id)).find(punish => punish.case === caseN);
+    const caseToLook = (await cases.get(guild.id, [])).find(punish => punish.case === caseN);
     const obj = { case: null, embed: null, message: null };
     if (!caseToLook) {
       return obj;
@@ -236,7 +236,7 @@ class ActionLog {
    */
   async editCase(caseN, options, guild) {
     const cases = db.table("punishments");
-    const caseToLook = (await cases.get(guild.id)).find(punish => punish.case === caseN);
+    const caseToLook = (await cases.get(guild.id, [])).find(punish => punish.case === caseN);
     const obj = { case: false, message: false, resultCase: null };
     if (!caseToLook) {
       return obj;
@@ -353,7 +353,7 @@ class ActionLog {
   async _getLog(guild) {
     const logChannel = await (db.table("mods").prop(guild.id || guild, "logs"));
     if (logChannel) {
-      const returnVal = guild.channels.get(logChannel);
+      const returnVal = guild.channels.get(uncompress(logChannel));
       if (returnVal && returnVal.type === "text") {
         return returnVal;
       }

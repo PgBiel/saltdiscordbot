@@ -13,8 +13,14 @@ const func = async function (
       steps.sort((a, b) => a.amount - b.amount);
       let str = "";
       for (const step of steps) {
+        let timeStr = "";
+        if (step.punishment === "p") {
+          timeStr = ` for **Eternity**`;
+        } else if (step.time) {
+          timeStr = ` for **${new d.Interval(d.durationdecompress(step.time))}**`;
+        }
         str += `At **${step.amount} warns**, the member gets a ${d.Constants.maps.PUNISHMENTS[step.punishment][0]}\
-${step.time ? ` for **${new d.Interval(d.durationdecompress(step.time) || d.Interval.minutes(10))}**` : ""}.\n`;
+${timeStr}.\n`;
       }
       return send(`Here's the list of the current set warn punishments for this server:\n\n${d._.trim(str)}`, { split: true });
     }
@@ -76,8 +82,8 @@ Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
 (Either ban, softban, kick, or mute + minutes muted)`);
       }
       if (num > 25) return reply(`The max warn limit is 25!`);
-      if (!/^(?:kick|(?:soft)?ban|mute)$/i.test(subSubArg)) {
-        return reply(`The punishment must be either kick, ban, softban or mute (+ minutes muted, default is 10 mins).`);
+      if (!/^(?:kick|(?:soft)?ban|p?mute)$/i.test(subSubArg)) {
+        return reply(`The punishment must be either kick, ban, softban, pmute or mute (+ minutes muted, default is 10 mins).`);
       }
       let time;
       let timeDefault = false;
@@ -95,13 +101,18 @@ Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
       };
       const step = steps.find(s => s.amount === num);
       if (step) {
-        await (d.db.table("warnsteps").assign(guildId, { [d.db.table("warnsteps").indexOf(guildId, step)]: objToUse }, true));
+        await (d.db.table("warnsteps").assign(guildId, { [await (d.db.table("warnsteps").indexOf(guildId, step))]: objToUse }, true));
       } else {
         await (d.db.table("warnsteps").add(guildId, objToUse, true));
       }
-      const punishment = subSubArg.toLowerCase() === "mute" ?
-      `mute for ${timeDefault ? "10 minutes (default)" : time}`
-      : subSubArg.toLowerCase();
+      let punishment;
+      if (subSubArg.toLowerCase() === "mute") {
+        punishment = `mute for ${timeDefault ? "10 minutes (default)" : time}`;
+      } else if (subSubArg.toLowerCase() === "pmute") {
+        punishment = `permanent mute`;
+      } else {
+        punishment = subSubArg.toLowerCase();
+      }
       return send(`Successfully set the punishment for reaching **${num}** total warns to **${punishment}**!`);
     }
   } else {
@@ -117,7 +128,7 @@ module.exports = new Command({
 don't specify an action. For the "get" action, you specify a number after it which is the warn count punishment you want to view.\n\
 For the "set", "unset", "add" (same as "set") and "remove" (same as "unset") actions, specify a number after it which is the \
 warn count punishment to set/unset. That's all you need if unsetting. If setting, specify a punishment after it (one of kick, \
-ban, softban, mute). For mute, specify amount of minutes after it; if you don't specify an amount of minutes it defaults to 10. \
+ban, softban, pmute, mute). For mute, specify amount of minutes after it; if you don't specify an amount of minutes it defaults to 10. \
 Otherwise, the punishment will set.\n\nMax warn count (for punishments) is 20.
 
 For permissions, use the \`warnlimit set\` permission for setting/unsetting and the \`warnlimit get\` permission for \
@@ -127,6 +138,6 @@ eeing/listing them. :wink:`,
 {p}warnlimit set 10 mute 15 (on 10 warns, mute for 15 mins)\n\
 {p}warnlimit unset 10 (remove punishment on 10 warns)`,
   category: "Administration",
-  args: { action: true, "warn count": true, "action args": true, "mute minutes (if setting)": true },
+  args: { action: true, "warn count": true, "punishment (if setting)": true, "mute minutes (if setting temporary mute)": true },
   guildOnly: true
 });

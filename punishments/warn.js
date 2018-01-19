@@ -90,11 +90,12 @@ a **${punishment}** (as says this server's current setup).`);
                 ["Banning", "Banned", "banned", "Ban", "ban"]
               });
             }
-          } else if (punishment === "mute") {
-            sentWarnMsg.edit(`The member ${member} has reached a limit of ${warnStep.amount} warnings which implies a mute for \
-**${time.toString()}**.`);
+          } else if (/^p?mute/.test(punishment)) {
+            const isPerm = /^p/.test(punishment);
+            const complText = isPerm ? "permanent mute" : `mute for **${time}**`;
+            sentWarnMsg.edit(`The member ${member} has reached a limit of ${warnStep.amount} warnings which implies a ${complText}.`);
             muteP.punish(member, {
-              author, reason, auctPrefix, context, time, permanent: false
+              author, reason, auctPrefix, context, time, permanent: isPerm
             });
           }
           if (warnStep.amount >= warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount) {
@@ -104,7 +105,7 @@ a **${punishment}** (as says this server's current setup).`);
             });
           } else {
             // logger.debug("Boi", warnStep.amount, warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount);
-            db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1))); // make sure there's expiring
+            db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1)), true); // make sure there's expiring
             await (db.table("warns").add(guild.id, {
               userid: compress(member.id),
               casenumber: (await (db.table("mods").prop(guild.id, "latestCase"))) + 1,
@@ -114,7 +115,7 @@ a **${punishment}** (as says this server's current setup).`);
             }, true));
           }
         } else {
-          db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1))); // make sure there's expiring
+          db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1)), true); // make sure there's expiring
           await (db.table("warns").add(guild.id, {
             userid: compress(member.id),
             casenumber: (await (db.table("mods").prop(guild.id, "latestCase"))) + 1,

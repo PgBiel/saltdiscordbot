@@ -40,6 +40,7 @@
     "saltjs": "github:Aplet123/saltjs",
     "tables.js": "^1.0.1",
     "toml": "^2.3.2",
+    "transliteration": "^1.6.2",
     "uws": "^8.14.1",
     "xregexp": "^3.2.0",
     "ztimespan": "^2.0.0"

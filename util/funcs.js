@@ -6,7 +6,7 @@ exports.applyFuncs = applyFuncs;
 const { Guild } = require("discord.js");
 const {
   _, bot, Command, commandParse, Constants, db, Discord, fs, logger, messager, rethink, Time, util,
-  xreg, moment, Interval
+  xreg, moment, Interval, tr, slugify
 } = require("./deps");
 
 const { HelperVals } = require("../misc/tableValues");
@@ -441,7 +441,7 @@ async function checkWarns() {
     if (!guild) continue;
     const member = guild.members.get(uncompress(warn.userid));
     if (!member) continue;
-    const expire = durationdecompress(await (db.table("warnexpires").get(guildId)));
+    const expire = durationdecompress(await (db.table("warnexpires").get(guildId, "")));
     if (!expire) continue;
     const warnedAt = dateuncomp(warn.warnedat);
     if (warnedAt == null) continue;
@@ -600,23 +600,29 @@ function durationdecompress (comp) {
 exports.durationcompress = durationcompress;
 exports.durationdecompress = durationdecompress;
 
-/* function avatarCompress(link) {
-  const avatarPart = /^(?:https?:\/\/)?cdn\.discordapp\.com\/avatars\/\d+\/(\w+\.(?:jpe?g|png|gif|webp))(?:\?size=\d+)?$/i;
-  const defAvatar = /^(?:https:\/\/)?cdn\.discordapp\.com\/embed\/avatars\/(\d+)\.(?:jpe?g|png|gif|webp)(?:\?size=\d+)?$/i;
-  if (link.match(avatarPart)) {
-    return link.match(avatarPart)[1];
-  } else if (link.match(defAvatar)) {
-    return "-" + link.match(defAvatar)[1];
-  } else {
-    return link;
-  }
+/**
+ * Clean a string.
+ * @param {string} str String to clean
+ * @param {number} [strictness=2] Strictness
+ * @returns {string}
+ */
+function cleanify (str, strictness = 2) {
+  if (typeof str !== "string") return str;
+  strictness = Number(_.clamp(strictness, 0, 3));
+  const replace = {
+    "4":  "a", "1": "l", "3": "e", "@":  "a", "$":  "s",
+    "0": "o", "7": "t", "5":  "s", "&":  "e", "§": "s",
+    "∑": "e", "®":  "r", "©":  "c", "ß": "b", "∂": "g",
+    "∆":  "a", "˚":  "o", "Ω":  "o", "√": "v", "∫": "s",
+    "™": "tm", "£": "l", "•": "o", "∞": "oo", "€":  "e",
+    "°": "o", "∏": "n", "◊":  "o", "Ԁ": "d", "ѧ": "a",
+    "∪": "u", "Ϲ": "c", "Ϝ": "f", "К": "k", "Ρ": "p"
+  };
+  const options = {
+    lowercase: true,
+    separator: strictness === 0 ? "_" : ""
+  };
+  let text = slugify(_.deburr(tr(str, strictness >= 2 ? { replace } : {})), options);
+  if (strictness === 3) text = text.split("").sort((a, b) => b.charCodeAt(0) - a.charCodeAt(0)).join("");
+  return text;
 }
-function avatarUncompress(compressed, id) {
-  if (/^(?:https:\/\/)?cdn\.discordapp\.com/i.test(_.trim(compressed))) {
-    return compressed;
-  } else if (/^\-\d+$/.test(_.trim(compressed))) {
-    return `https://cdn.discordapp.com/embed/avatars/${_.trim(compressed).match(/^\-(\d+)$/)[1]}.png`;
-  } else {
-    return `https://cdn.discordapp.com/avatars/${id}/${_.trim(compressed)}`;
-  }
-} */

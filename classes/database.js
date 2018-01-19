@@ -44,6 +44,7 @@ const tables = [
   "selfroles",
   "starboards",
   "verifications",
+  "wordfilters",
   "warns",
   "warnexpires",
   "warnsteps",
@@ -255,11 +256,12 @@ class Table extends Storage {
    * Get a value.
    * @param {string} key The key
    * @param {*} [defaultVal] A default value to be returned (and set) when none is present
+   * @param {boolean} [replaceDefault=false] If the default value should be applied
    * @returns {Promise<*>}
    */
-  async get(key, defaultVal) {
+  async get(key, defaultVal, replaceDefault = false) {
     const val = await db.get(key, this.name);
-    if (defaultVal && val == null) db.set(key, defaultVal, this.name);
+    if (defaultVal && replaceDefault && val == null) db.set(key, defaultVal, this.name);
     const defaulted = defaultVal ? (val == null ? defaultVal : val) : val;
     return defaulted;
   }
