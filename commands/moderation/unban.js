@@ -63,7 +63,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
       return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
     },
     timeout: d.Time.seconds(15),
-    options: { embed },
+    options: { embed }
   });
   if (!result) {
     return;

@@ -610,19 +610,34 @@ function cleanify (str, strictness = 3) {
   if (typeof str !== "string") return str;
   strictness = Number(_.clamp(strictness, 0, 4));
   const replace = {
-    "4":  "a", "1": "l", "3": "e", "@":  "a", "$":  "s",
-    "0": "o", "7": "t", "5":  "s", "&":  "e", "§": "s",
-    "∑": "e", "®":  "r", "©":  "c", "ß": "b", "∂": "g",
-    "∆":  "a", "˚":  "o", "Ω":  "o", "√": "v", "∫": "s",
-    "™": "tm", "£": "l", "•": "o", "∞": "oo", "€":  "e",
-    "°": "o", "∏": "n", "◊":  "o", "Ԁ": "d", "ѧ": "a",
-    "∪": "u", "Ϲ": "c", "Ϝ": "f", "К": "k", "Ρ": "p"
+    "4":  "a", "1": "i", /* l = i */ "3": "e", "@":  "a", "$":  "s",
+    "0": "o", "7": "t", "5": "s", "&":  "e", "§": "s",
+    "∑": "e", "®":  "r", "©": "c", "ß": "b", "∂": "g",
+    "∆":  "a", "˚":  "o", "Ω": "o", "√": "v", "∫": "s",
+    "™": "tm", "£": "i", /* l = i */ "•": "o", "∞": "oo", "€":  "e",
+    "°": "o", "∏": "n", "◊": "o", "Ԁ": "d", "ѧ": "a",
+    "∪": "u", "Ϲ": "c", "Ϝ": "f", "К": "k", "Ρ": "p",
+    "ℏ": "h", "ҳ": "x", "l": "i", "|": "i", "!": "i",
+    "¡": "i", "2": "z", "()": "o", "[]": "o", "{}": "o",
+    "<>": "o", "6": "g", "8": "b", "〰": "w"
   };
+  const greekCyrilic = {
+    "Φ": "o", "Χ": "x", "Ψ": "y", "Ω": "o", "ή": "n",
+    "γ": "y", "η": "n", "Η": "h", "Θ": "o", "Λ": "a",
+    "Ή": "h", "Ͷ": "n", "Σ": "e", "ρ": "p", "χ": "x",
+    "ω": "w", "ϋ": "u", "ύ": "u", "ώ": "w", "Ϗ": "k",
+    "Ϻ": "m", "ϻ": "m", "Н": "h", "Р": "p", "С": "c",
+    "У": "y", "Х": "x", "Ъ": "b", "Ы": "bi", "Ь": "b",
+    "Ю": "io", "Я": "r", "в": "b", "г": "r", "Γ": "r",
+    "ϝ": "f", "Ϟ": "n", "ϰ": "x", "Ѕ": "s", "Ї": "i",
+    "Ќ": "k", "Ў": "y", "Ф": "o", "Ѥ": "ie"
+  }
   const options = {
     lowercase: true,
     separator: strictness === 0 ? "_" : ""
   };
-  let text = slugify(_.deburr(tr(str, strictness >= 3 ? { replace } : {})), options);
+  const obj = Object.assign({}, greekCyrilic, replace);
+  let text = slugify(_.deburr(tr(str, strictness >= 3 ? { replace: obj } : {})), options);
   if (strictness === 4) text = text.split("").sort((a, b) => b.charCodeAt(0) - a.charCodeAt(0)).join("");
   if (strictness >= 2) text = text.replace(/(\w)\1+/, t => t[0]);
   return text;

@@ -32,7 +32,7 @@ module.exports = async msg => {
 
   const {
     hasPermission, userError, promptAmbig, checkRole,
-    send, reply, doEval, prompt, actionLog, seePerm
+    send, reply, doEval, prompt, actionLog, seePerm, genPrompt
   } = funcs(msg);
 
   const context = {
@@ -45,7 +45,7 @@ module.exports = async msg => {
     botmember: msg.guild ? msg.guild.member(bot.user) : null,
     searcher: msg.guild ? new Searcher({ guild: msg.guild }) : null,
     checkRole, promptAmbig, userError, doEval, prompt, actionLog,
-    seePerm
+    seePerm, genPrompt
   };
   // fetch prefix from db
   const dbPrefix = msg.guild ? (await (db.table("prefixes").get(guildId))) : null;
@@ -67,18 +67,15 @@ module.exports = async msg => {
       ) {
         for (const word of wordsF) {
           if (typeof word !== "string") continue;
-          console.log("word -", word);
-          console.log(mods.filterStrict, "|", cleanify(msg.content, mods.filterStrict - 1));
           let condition;
           if (mods.filterStrict === 0) {
             condition = msg.content.toLowerCase().includes(word);
           } else if (mods.filterStrict === 5) {
-            const cleanified = cleanify(word, 4);
             condition = cleanify(msg.content, 4)
               .split("")
-              .filter(l => cleanified.split("").includes(l))
+              .filter(l => word.split("").includes(l))
               .join("")
-              .includes(cleanified);
+              .includes(word);
           } else {
             condition = cleanify(msg.content, mods.filterStrict - 1).includes(word);
           }

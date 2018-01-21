@@ -23,6 +23,8 @@ exports.fs = require("fs");
 exports.klaw = require("klaw-sync");
 exports.querystring = require("querystring");
 exports.Discord = require("discord.js");
+// multi-prompt
+exports.MultiPrompt = require("../classes/multiprompt");
 // some Discord utils
 exports.Embed = exports.Discord.MessageEmbed;
 exports.Message = exports.Discord.Message;

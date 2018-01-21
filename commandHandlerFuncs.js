@@ -6,7 +6,7 @@ const actionLog = require("./classes/actionlogger");
 const messager = require("./classes/messager");
 const Searcher = require("./classes/searcher");
 const deps = require("./util/deps");
-const { bot, Constants, db, logger, util } = require("./util/deps");
+const { bot, Constants, db, logger, Time, util } = require("./util/deps");
 const funcs = require("./util/funcs");
 const { capitalize, cloneObject, rejct, uncompress } = require("./util/funcs");
 
@@ -216,7 +216,7 @@ If you want to contact the bot devs, please tell them this information: \`${data
       try {
         const msgs = await msg.channel.awaitMessages(filterToUse, { time: timeout, max: 1, errors: ["time"] });
         if (!satisfied) {
-          if (i < 5) {
+          if (i < Constants.numbers.MAX_PROMPT) {
             send(invalidMsg);
           }
           continue;
@@ -235,6 +235,45 @@ If you want to contact the bot devs, please tell them this information: \`${data
     return "";
   };
 
+  const genPrompt = options => {
+    return async function() {
+      const res = await prompt(Object.assign({ question: this.text }, options));
+      if (options.array) {
+        if (options.index) {
+          options.array[options.index] = [res, this];
+        } else {
+          options.array.push([res, this]);
+        }
+      }
+    };
+  };
+
+  /* /**
+   * Multi-prompt
+   * @param {Array} branches branches
+   * @param {object} options Options
+   * @param {number} [options.timeout=15000] Timeout
+   * @param {boolean} [options.cancel=true] If should be able to cancel
+   * @param {string} [options.invalidMsg] An invalid message
+   * /
+  const multiPrompt = async (branches, { timeout = Time.seconds(15), cancel = true, invalidMsg } = {}) => {
+    if (!Array.isArray(branches)) return [];
+    const results = [];
+    let ii = 0;
+    const forF = async branches => {
+      for (const [options, branch] of branches) {
+        const i = ii++;
+        if (!options.func) continue;
+        const prompted = await prompt(Object.assign({ timeout, cancel, invalidMsg }, options));
+        if (!prompted) break;
+        const res = options.func(prompted, { i, options, branch });
+        if (res) results.push(res.result);
+        if (!res || !branch || !branch[res.next] || !Array.isArray(branch)) continue;
+        await forF(branch);
+      }
+    };
+  }; */
+
   const actionLog2 = options => {
     if (!msg.guild) {
       return;
@@ -252,10 +291,8 @@ If you want to contact the bot devs, please tell them this information: \`${data
 
   let obj = {
     hasPermission, userError, promptAmbig, checkRole,
-    send, reply, prompt, actionLog: actionLog2, seePerm
+    send, reply, prompt, actionLog: actionLog2, seePerm, genPrompt
   };
-
-  // let obj: typeof oldObj & { doEval: (content: string, subC?: {[prop: string]: any}) => Promise<any> };
 
   const doEval = (content, subC = {}) => {
     const objectToUse = Object.assign({}, obj, {
