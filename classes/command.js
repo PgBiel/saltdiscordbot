@@ -7,6 +7,7 @@
 const { Message, MessageEmbed } = require("discord.js");
 const { applyDeps, logger } = require("../util/deps");
 const { applyFuncs } = require("../util/funcs");
+const Constants = require("../misc/constants");
 
 const assert = require("assert");
 const _ = require("lodash");
@@ -240,10 +241,11 @@ module.exports = class Command {
   /**
    * Get the help embed or string.
    * @param {string} p The prefix to use
-   * @param {boolean} [useEmbed=false] If it should use embed or not
+   * @param {boolean} [useEmbed=true] If it should use embed or not
+   * @param {Guild} [guild] Guild
    * @returns {string|MessageEmbed} The result
    */
-  help(p, useEmbed = false) {
+  help(p, useEmbed = true, guild) {
     if (!p) {
       throw new TypeError("No prefix given.");
     }
@@ -284,7 +286,30 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
             ""}`)
       .addField("Usage", `${this.customPrefix || p}${this.name}${usedargs}`);
     if (this.description) {
-      embed.setDescription(this.description);
+      embed.setDescription(
+        this.description.replace(
+          /{maxcases}/ig, Constants.numbers.MAX_CASES((guild || { members: { size: 0 } }).members.size)
+        )
+      );
+    }
+    if (this.perms) {
+      let string = "";
+      if (typeof this.perms === "string") {
+        string = `\`${this.perms.replace(/\./g, "")}\``;
+        if (this.default) string += " (available by default)";
+      } else {
+        for (const [key, val] of Object.entries(this.perms)) {
+          string += `\`${key.replace(/\./g, "")}\``;
+          if (
+            (typeof val === "boolean" && val) ||
+            val && val.default
+          ) {
+            string += " (available by default)";
+          }
+          string += ", ";
+        }
+      }
+      embed.addField("Permissions", string.replace(/,\s+$/, ""));
     }
     if (this.example) {
       embed.addField("Example", _.trim(this.example).replace(/{p}/g, p), true);

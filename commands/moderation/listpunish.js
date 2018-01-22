@@ -76,8 +76,9 @@ async function specific({
     typed = filtered[d.endChar((aType || "").toLowerCase(), "s")];
     if (!typed) return reply(`Unknown punishment.`);
   }
-  if (typed.length < 1)
+  if (typed.length < 1) {
     return reply(`${isAuthor ? "You haven't" : "That user hasn't"} ever received that punishment! :smiley:`);
+  }
   const type = isWarn ?
     "warns" :
     (
@@ -116,10 +117,10 @@ async function specific({
     head = /^all/.test(type) ? "punishments" : type;
   }
   embed
-    .setTitle(`List of ${head} for ${user.tag}${isWarn ? "" : " (last ${maxCases} cases)"} - \
+    .setTitle(`List of ${head} for ${user.tag}${isWarn ? "" : ` (last ${maxCases} cases)`} - \
 Page ${page + 1}/${pages.length}`)
     .setColor(color);
-  if (pages.length > 1) embed.setFooter(`To go to a certain page, type {p}list${isWarn ? "warns" : "punish"} \
+  if (pages.length > 1) embed.setFooter(`To go to a certain page, type ${p}list${isWarn ? "warns" : "punish"} \
   ${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
   for (const pagee of pages[page].split(" ")) {
     if (isNaN(pagee) || !d._.trim(pagee)) continue;
@@ -157,7 +158,7 @@ Page ${page + 1}/${pages.length}`)
 const func = async function (
   msg, {
     prompt, guildId, guild, reply, checkRole, author, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms,
-    searcher, promptAmbig, dummy
+    searcher, promptAmbig, dummy, member
   },
 ) {
   const punishments = await (d.db.table("punishments").get(guildId));
@@ -178,11 +179,17 @@ const func = async function (
         page = match[2];
       } else {
         user = match[3];
+        if (/^\d+$/.test(user)) {
+          page = user;
+          user = true;
+        }
       }
       page = page && page.length < 5 && /^\d+$/.test(d._.trim(page)) ? (Number(page) || 1) : 1;
       let memberToUse;
       let membersMatched;
-      if (/[^]#\d{4}$/.test(user)) {
+      if (user === true) {
+        memberToUse = member;
+      } else if (/[^]#\d{4}$/.test(user)) {
         const split = user.split("#");
         const discrim = split.pop();
         const username = split.join("#");
@@ -287,7 +294,7 @@ module.exports = new Command({
   func,
   name: "listpunish",
   perms: "listpunish",
-  description: `List punishments of you or someone else.
+  description: `List punishments of you or someone else, **from the last {maxcases} punishments**.
 
 Run the command without specifying anything to display your list of punishments. Specify a name (or mention) to see \
 someone else's instead.
