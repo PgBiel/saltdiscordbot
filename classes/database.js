@@ -182,6 +182,15 @@ class Table extends Storage {
   }
 
   /**
+   * Shift an array.
+   * @param {string} key The key
+   * @param {boolean} [reject=false] If should reject on promise
+   */
+  async shift(key, reject = false) {
+    return await this.spliceArr(key, 0, 1, reject);
+  }
+
+  /**
    * Get the index of an object in an array.
    * @param {string} key The key
    * @param {*} obj The object

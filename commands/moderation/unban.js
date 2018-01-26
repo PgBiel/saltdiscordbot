@@ -84,7 +84,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
       target: memberToUse,
       type: "U",
       author: member,
-      reason: reason || "None",
+      reason: reason || "None"
     }).catch(d.rejct);
   };
   const fail = err => {

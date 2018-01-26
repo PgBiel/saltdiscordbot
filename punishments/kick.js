@@ -52,7 +52,7 @@ Check the conditions for being kicked (e.g. must not be owner, etc)!");
         target: member,
         type: "k",
         author: member,
-        reason: reason || "None",
+        reason: reason || "None"
       }).catch(rejct);
     };
     const fail = err => {
