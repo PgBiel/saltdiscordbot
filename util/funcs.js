@@ -398,18 +398,18 @@ async function checkMutes() {
     if (now >= timestamp) {
       db.table("activemutes").remArr(guild.id, mute.old);
       if (member.roles.has(muteRole.id)) {
-        member.removeRole(muteRole).then(() => {
+        member.roles.remove(muteRole).then(() => {
           member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
           .catch(rejct);
         }).catch(err => {
           if (!botmember.hasPermission(["MANAGE_ROLES"])) {
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
 However, I was unable to take the role away from you due to having no \`Manage Roles\` permission. :frowning:`).catch(rejct);
-          } else if (botmember.highestRole.position < muteRole.position) {
+          } else if (botmember.roles.highest.position < muteRole.position) {
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
 However, I was unable to take the role away from you due to the mute role being higher than my highest role. \
 :frowning:`).catch(rejct);
-          } else if (botmember.highestRole.id === muteRole.id) {
+          } else if (botmember.roles.highest.id === muteRole.id) {
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
 However, I was unable to take the role away from you due to the mute role being my highest role. :frowning:`).catch(rejct);
           } else {
@@ -423,7 +423,7 @@ However, I was unable to take the role away from you for an yet unknown reason. 
         .catch(rejct);
       }
     } else if (!member.roles.has(muteRole.id)) {
-      member.addRole(muteRole)
+      member.roles.add(muteRole)
       .catch(rejct);
     }
   }
