@@ -79,9 +79,9 @@ const func = async function (msg, {
   if (!activeMute) {
     return reply("That member is not muted!");
   }
-  if (muteRole.position > botmember.highestRole.position) {
+  if (muteRole.position > botmember.roles.highest.position) {
     return reply("The role used for muting has a higher position than my highest role!");
-  } else if (muteRole.position === botmember.highestRole.position) {
+  } else if (muteRole.position === botmember.roles.highest.position) {
     return reply("The role used for muting is my highest role!");
   }
   const sentMuteMsg = await send(`Unmuting ${memberToUse.user.tag}... (Sending DM...)`);
@@ -106,7 +106,7 @@ const func = async function (msg, {
   const executeUnmute = () => {
     d.db.table("activemutes").remArr(guild.id, activeMute).then(() => {
       const compressedText = d.textAbstract(`[Unmute command executed by ${author.tag}] ${reason || "No reason given"}`, 512);
-      memberToUse.removeRole(muteRole, compressedText).then(finish).catch(fail);
+      memberToUse.roles.remove(muteRole, compressedText).then(finish).catch(fail);
     }).catch(fail);
   };
   let sent = false;
