@@ -7,6 +7,7 @@ const { CommandSetPerm } = require("./classes/command");
 const logger = require("./classes/logger");
 const perms = require("./classes/permissions");
 const Searcher = require("./classes/searcher");
+const MultiPrompt = require("./classes/multiprompt");
 const funcs = require("./commandHandlerFuncs");
 // const { moderation, prefixes } = require("./sequelize/sequelize");
 const { bot } = require("./util/bot");
@@ -32,7 +33,7 @@ module.exports = async msg => {
 
   const {
     hasPermission, userError, promptAmbig, checkRole,
-    send, reply, doEval, prompt, actionLog, seePerm, genPrompt
+    send, reply, doEval, prompt, actionLog, seePerm, genPrompt, genPromptD
   } = funcs(msg);
 
   const context = {
@@ -45,7 +46,7 @@ module.exports = async msg => {
     botmember: msg.guild ? msg.guild.member(bot.user) : null,
     searcher: msg.guild ? new Searcher({ guild: msg.guild }) : null,
     checkRole, promptAmbig, userError, doEval, prompt, actionLog,
-    seePerm, genPrompt
+    seePerm, genPrompt, genPromptD
   };
   // fetch prefix from db
   const dbPrefix = msg.guild ? (await (db.table("prefixes").get(guildId))) : null;

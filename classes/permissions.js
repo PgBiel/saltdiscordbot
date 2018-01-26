@@ -76,17 +76,17 @@ class Permz {
         if (!item) { // nothing that could influence the command execution. Check if is default.
           hasPerm = !!isDefault;
         } else { // yay there's a role perm. Let's check if it's negated.
-            if (item.command === "any") {
-              hasPerm = !item.negated;
-              setPerm = true;
-              break;
-            } else if (item.extra == null) {
-              hasPerm = !item.negated;
-              setPerm = true;
-            } else if (extra && item.extra === extra) {
-              hasPerm = !item.negated;
-              setPerm = true;
-            }
+          if (item.command === "any") {
+            hasPerm = !item.negated;
+            setPerm = true;
+            break;
+          } else if (item.extra == null) {
+            hasPerm = !item.negated;
+            setPerm = true;
+          } else if (extra && item.extra === extra) {
+            hasPerm = !item.negated;
+            setPerm = true;
+          }
         }
       }
     } else {

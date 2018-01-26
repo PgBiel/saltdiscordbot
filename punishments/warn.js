@@ -62,9 +62,9 @@ class Warn extends Punishment {
           if (punishment === "kick" || punishment === "ban" || punishment === "softban") {
             let reasonStr;
             const ableName = punishment === "kick" ? "kick" : "bann";
-            if (member.highestRole.position > botmember.highestRole.position) {
+            if (member.roles.highest.position > botmember.roles.highest.position) {
               reasonStr = "that member's highest role is higher in position than mine!";
-            } else if (member.highestRole.position === botmember.highestRole.position) {
+            } else if (member.roles.highest.position === botmember.roles.highest.position) {
               reasonStr = "that member's highest role is the same in position as mine!";
             } else if (member.id === guild.owner.id) {
               reasonStr = "that member is the owner!";

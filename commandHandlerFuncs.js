@@ -196,12 +196,13 @@ If you want to contact the bot devs, please tell them this information: \`${data
     {
       question, invalidMsg, filter,
       timeout = Constants.times.AMBIGUITY_EXPIRE, cancel = true,
-      options = {} },
+      skip = false, options = {}
+    },
   ) => {
     let cancelled = false;
     let satisfied = null;
     const filterToUse = msg2 => {
-      if (msg2.content === "cancel" && cancel) {
+      if (msg2.content.toLowerCase() === "cancel" && cancel || msg2.content.toLowerCase() === "skip" && skip) {
         return (cancelled = true);
       }
       const result = filter(msg2);
@@ -245,6 +246,9 @@ If you want to contact the bot devs, please tell them this information: \`${data
           options.array.push([res, this]);
         }
       }
+      if (options.branch) {
+        return options.branch(res);
+      }
     };
   };
 
@@ -284,14 +288,15 @@ If you want to contact the bot devs, please tell them this information: \`${data
 
   const seePerm = async (perm, perms, setPerms, { srole, hperms }) => {
     if (setPerms[perm] && perms[perm]) return true;
-    if (hperms && hasPermission([...hperms])) return true;
+    if (hperms && hasPermission(Array.isArray(hperms) ? hperms : [hperms])) return true;
     if (srole && await checkRole(srole)) return true;
     return perms[perm] || false;
   };
 
   let obj = {
     hasPermission, userError, promptAmbig, checkRole,
-    send, reply, prompt, actionLog: actionLog2, seePerm, genPrompt
+    send, reply, prompt, actionLog: actionLog2, seePerm, genPrompt,
+    genPromptD: optionsD => options => genPrompt(Object.assign(optionsD, options))
   };
 
   const doEval = (content, subC = {}) => {

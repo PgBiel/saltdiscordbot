@@ -50,9 +50,9 @@ class Mute extends Punishment {
     } else if (memberToUse.hasPermission(["ADMINISTRATOR"])) {
       return reply("That user has `Administrator` permissions, so muting would have no effect!");
     } else */
-    if (muteRole.position > botmember.highestRole.position) {
+    if (muteRole.position > botmember.roles.highest.position) {
       return void reply("The role used for muting has a higher position than my highest role!");
-    } else if (muteRole.position === botmember.highestRole.position) {
+    } else if (muteRole.position === botmember.roles.highest.position) {
       return void reply("The role used for muting is my highest role!");
     }
     const sentMuteMsg = await send(`Muting ${member.user.tag}... (Sending DM...)`);
@@ -88,7 +88,7 @@ class Mute extends Punishment {
         permanent: Boolean(permanent)
       }).then(() => {
         const compressedText = textAbstract(endChar(auctPrefix) + (reason || "No reason given"), 512);
-        member.addRole(muteRole, compressedText).then(finish).catch(fail);
+        member.roles.add(muteRole, compressedText).then(finish).catch(fail);
       }).catch(fail);
     };
     let sent = false;

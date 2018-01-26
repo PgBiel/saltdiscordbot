@@ -24,13 +24,13 @@ class Kick extends Punishment {
     const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def } = context;
     if (author) {
-      if (member.highestRole.position > botmember.highestRole.position) {
+      if (member.roles.highest.position > botmember.roles.highest.position) {
         return void reply("That member's highest role is higher in position than mine!");
-      } else if (member.highestRole.position === botmember.highestRole.position) {
+      } else if (member.roles.highest.position === botmember.roles.highest.position) {
         return void reply("That member's highest role is the same in position as mine!");
-      } else if (member.highestRole.position > author.highestRole.position && author.id !== guild.owner.id) {
+      } else if (member.roles.highest.position > author.roles.highest.position && author.id !== guild.owner.id) {
         return void reply("That member's highest role is higher in position than yours!");
-      } else if (member.highestRole.position === author.highestRole.position && author.id !== guild.owner.id) {
+      } else if (member.roles.highest.position === author.roles.highest.position && author.id !== guild.owner.id) {
         return void reply("That member's highest role is the same in position as yours!");
       } else if (member.id === guild.owner.id) {
         return void reply("That member is the owner!");
