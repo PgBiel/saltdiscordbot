@@ -215,7 +215,7 @@ ${unavailable.join(", ")}.`}`);
       await (multiPrompt.toFirst().exec());
       if (!cancelled) {
         const [wordz, strict, messag, punish, muteTime] = responses;
-        const sendStrict = strict ? d._.clamp(Number(strict), 0, 4) : (config.filterStrict == null ? 3 : null);
+        const sendStrict = strict ? d._.clamp(Number(strict) - 1, 0, 4) : (config.filterStrict == null ? 3 : null);
         const sendWords = wordz ? wordz.split(/\s*,\s*/).map(word => d.cleanify(word, sendStrict == null ? 3 : sendStrict)) : null;
         const sendPunish = punish ? punish.charAt(0) : null;
         let sendTime;
@@ -227,14 +227,14 @@ ${unavailable.join(", ")}.`}`);
             d.rejct(err, "[AT MUTE TIME WORDFILTER SETUP SEND]");
           }
         }
-        const obj = {};
-        if (sendStrict != null) obj.filterStrict = sendStrict;
-        if (messag) obj.filterMessage = messag;
-        if (sendPunish) obj.filterPunishment = sendPunish;
-        if (sendTime) obj.filterPunishmentMute = sendTime;
+        const obj = { filterSetUp: () => true, filterEnabled: enabled => enabled || false };
+        if (sendStrict != null) obj.filterStrict = () => sendStrict;
+        if (messag) obj.filterMessage = () => messag;
+        if (sendPunish) obj.filterPunishment = () => sendPunish;
+        if (sendTime) obj.filterPunishmentMute = () => sendTime;
         try {
-          await d.db.table("mods").assign(guildId, obj, true);
-          if (sendWords && sendWords.length > 0) await d.db.table("wordfilters").setRejct(guildId, obj);
+          await (d.db.table("mods").assignF(guildId, obj, true));
+          if (sendWords && sendWords.length > 0) await (d.db.table("wordfilters").setRejct(guildId, sendWords));
         } catch (err) {
           d.rejct(err, "[AT WORDFILTER SETUP SAVE]");
           reply("Oh no! There was an error saving the data. :frowning: Sorry!");

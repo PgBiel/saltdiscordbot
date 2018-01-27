@@ -205,15 +205,12 @@ If you want to contact the bot devs, please tell them this information: \`${data
     const filterToUse = msg2 => {
       if (author && msg2.author.id !== (author.id || author)) return false;
       if (msg2.content.toLowerCase() === "cancel" && cancel) {
-        logger.debug("cancelled", msg2);
         return (cancelled = true);
       }
       if (msg2.content.toLowerCase() === "skip" && skip) {
-        logger.debug("skipped", msg2);
         return (skipped = true);
       }
       const result = filter(msg2);
-      logger.debug("f", msg2, result);
       satisfied = result ? msg2 : null;
       return true;
     };
@@ -221,14 +218,12 @@ If you want to contact the bot devs, please tell them this information: \`${data
     for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
       try {
         const msgs = await msg.channel.awaitMessages(filterToUse, { time: timeout, max: 1, errors: ["time"] });
-        logger.debug("Timeout", timeout, cancel, skip, question, invalidMsg);
         if (cancelled || skipped) {
           break;
         }
         if (!satisfied) {
           if (i < Constants.numbers.MAX_PROMPT) {
             send(invalidMsg);
-            logger.debug("Tried to send invalid msg");
           } else {
             cancelled = true;
           }
@@ -249,18 +244,15 @@ If you want to contact the bot devs, please tell them this information: \`${data
 
   const genPrompt = options => {
     return async function() {
-      logger.debug(`Summoned: ${this.text} Options:`, options);
       const { res, cancelled, skipped } = await prompt(Object.assign({ question: this.text }, options));
-      logger.debug(`AA ${res} ${cancelled} ${skipped}`);
       if (options.array) {
-        if (options.index) {
-          options.array[options.index] = [res, this];
+        if (typeof options.index === "number" && !isNaN(options.index)) {
+          options.array[options.index] = res;
         } else {
-          options.array.push([res, this]);
+          options.array.push(res);
         }
       }
       if (typeof options.branch === "function") {
-        logger.debug(`HAS FUNC ${options.branch(res)} ${typeof res}`);
         const branch = (this.branch(options.branch(res, cancelled, skipped)) || { exec: async _ => _ });
         if (options.exec && (options.goCancelled ? true : !cancelled)) await branch.exec();
       }
