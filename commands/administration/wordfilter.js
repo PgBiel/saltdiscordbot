@@ -41,9 +41,20 @@ const func = async function (
         array: responses,
         filter: msg2 => !/^[^a-z\d]$/i.test(msg2.content),
         invalidMsg: "Invalid response!",
-        branch: msg2 => msg2 && msg2.content && msg2.content.toLowerCase() === "cancel" ? "cancel" : "next",
+        branch: (brancher, cancelled, skipped) => {
+          if (cancelled) return "cancel";
+          if (skipped) return "next";
+          if (typeof brancher === "string") {
+            return brancher === "cancel" || !brancher ? "cancel" : "next";
+          } else if (typeof brancher.content === "string") {
+            return brancher.content === "cancel" || !brancher.content ? "cancel" : "next";
+          } else {
+            return "next";
+          }
+        },
         cancel: true,
-        exec: true
+        exec: true,
+        goCancelled: true
       });
       if (words.length) {
         const result = await prompt({
@@ -70,7 +81,7 @@ Separate words with commas. This will expire in 20 seconds. Type ${canDOther && 
 \`cancel\` to cancel.`,
         genPrompt({
           skip: canDOther && words.length,
-          invalidMsg: "Every word must consist of letters and have a minimum length of 3 characters \
+          invalidMsg: "Please, make sure every word consists of letters and have a minimum length of 3 characters \
 (**not including duplicate letters**).",
           filter: msg2 => {
             if (/^[^a-z\d]+$/i.test(msg2.content)) return false;
@@ -87,14 +98,13 @@ Separate words with commas. This will expire in 20 seconds. Type ${canDOther && 
       );
       multiPrompt.addBranch("cancel", "", () => {
         cancelled = true;
-        send("Command cancelled.");
       });
       if (canStrict) {
         multiPrompt.addBranch(
           "next",
           `What strictness would you like to set for the word filter (1-5)? Strictness **1** is normal filtering with \
 basic replacement (not recommended). Strictness **2** ignores spaces. Strictness **3** ignores duplicated characters. \
-Strictness **4** adds a huge replacement character list (RECOMMENDED). Finally, strictness **5** ignores the order of \
+Strictness **4** adds a huge replacement character list **(RECOMMENDED)**. Finally, strictness **5** ignores the order of \
 letters and can spot words hidden in words, but gives many false positives (not recommended). \
 This will expire in 15 seconds. Type \`skip\` to skip${config.filterStrict == null ? " (defaults to 4)" : ""} and \
 \`cancel\` to cancel.`,
@@ -112,7 +122,6 @@ This will expire in 15 seconds. Type \`skip\` to skip${config.filterStrict == nu
         multiPrompt.branch("next");
         multiPrompt.addBranch("cancel", "", () => {
           cancelled = true;
-          send("Command cancelled.");
         });
       }
       if (canMessag) {
@@ -131,7 +140,6 @@ This will expire in 20 seconds. Type \`skip\` to skip (defaults to a pre-defined
         multiPrompt.branch("next");
         multiPrompt.addBranch("cancel", "", () => {
           cancelled = true;
-          send("Command cancelled.");
         });
       }
       if (canActuallyPunish) {
@@ -147,7 +155,7 @@ This will expire in 20 seconds. Type \`skip\` to skip (defaults to a pre-defined
 ${available.join(", ")}. This will expire in 15 seconds. Type \`skip\` to skip (defaults to none) and \`cancel\` to cancel.`,
           genPrompt({
             skip: true,
-            invalidMsg: "Please choose one permission out of those that you have permission for!",
+            invalidMsg: "Please choose one punishment out of those that you have permission for!",
             filter: msg2 => available.includes(msg2.content.toLowerCase()),
             index: 3
           })
@@ -155,7 +163,6 @@ ${available.join(", ")}. This will expire in 15 seconds. Type \`skip\` to skip (
         multiPrompt.branch("next");
         multiPrompt.addBranch("cancel", "", () => {
           cancelled = true;
-          send("Command cancelled.");
         });
 
         multiPrompt.addBranch(
@@ -183,14 +190,13 @@ ${available.join(", ")}. This will expire in 15 seconds. Type \`skip\` to skip (
                 index: 4
               }).apply(question, [question]);
             } else {
-              (this.branch("next") || { exec: async _ => _ }).exec();
+              (question.branch("next") || { exec: async _ => _ }).exec();
             }
           }
         );
         multiPrompt.branch("next");
         multiPrompt.addBranch("cancel", "", () => {
           cancelled = true;
-          send("Command cancelled.");
         });
       }
       multiPrompt.addBranch("next", "", () => {
@@ -207,30 +213,32 @@ ${available.join(", ")}. This will expire in 15 seconds. Type \`skip\` to skip (
 ${unavailable.join(", ")}.`}`);
       });
       await (multiPrompt.toFirst().exec());
-      const [wordz, strict, messag, punish, muteTime] = responses;
-      const sendStrict = strict ? d._.clamp(Number(strict), 0, 4) : (config.filterStrict == null ? 3 : null);
-      const sendWords = wordz.split(/\s*,\s*/).map(word => d.cleanify(word, sendStrict == null ? 3 : sendStrict));
-      const sendPunish = punish ? punish.charAt(0) : null;
-      let sendTime;
-      if (muteTime) {
-        try {
-          const parsed = d.parseTimeStr(muteTime.replace(/,|and/ig, ""));
-          if (!parsed[d.parseTimeStr.invalid]) sendTime = d.durationcompress(new d.Interval(Object.entries(parsed)));
-        } catch(err) {
-          d.rejct(err, "[AT MUTE TIME WORDFILTER SETUP SEND]");
+      if (!cancelled) {
+        const [wordz, strict, messag, punish, muteTime] = responses;
+        const sendStrict = strict ? d._.clamp(Number(strict), 0, 4) : (config.filterStrict == null ? 3 : null);
+        const sendWords = wordz ? wordz.split(/\s*,\s*/).map(word => d.cleanify(word, sendStrict == null ? 3 : sendStrict)) : null;
+        const sendPunish = punish ? punish.charAt(0) : null;
+        let sendTime;
+        if (muteTime) {
+          try {
+            const parsed = d.parseTimeStr(muteTime.replace(/,|and/ig, ""));
+            if (!parsed[d.parseTimeStr.invalid]) sendTime = d.durationcompress(new d.Interval(Object.entries(parsed)));
+          } catch(err) {
+            d.rejct(err, "[AT MUTE TIME WORDFILTER SETUP SEND]");
+          }
         }
-      }
-      const obj = {};
-      if (sendStrict != null) obj.filterStrict = sendStrict;
-      if (messag) obj.filterMessage = messag;
-      if (sendPunish) obj.filterPunishment = sendPunish;
-      if (sendTime) obj.filterPunishmentMute = sendTime;
-      try {
-        await d.db.table("mods").assign(guildId, obj, true);
-        if (sendWords && sendWords.length > 0) await d.db.table("wordfilters").setRejct(guildId, obj);
-      } catch (err) {
-        d.rejct(err, "[AT WORDFILTER SETUP SAVE]");
-        reply("Oh no! There was an error saving the data. :frowning: Sorry!");
+        const obj = {};
+        if (sendStrict != null) obj.filterStrict = sendStrict;
+        if (messag) obj.filterMessage = messag;
+        if (sendPunish) obj.filterPunishment = sendPunish;
+        if (sendTime) obj.filterPunishmentMute = sendTime;
+        try {
+          await d.db.table("mods").assign(guildId, obj, true);
+          if (sendWords && sendWords.length > 0) await d.db.table("wordfilters").setRejct(guildId, obj);
+        } catch (err) {
+          d.rejct(err, "[AT WORDFILTER SETUP SAVE]");
+          reply("Oh no! There was an error saving the data. :frowning: Sorry!");
+        }
       }
     }
   }

@@ -32,7 +32,10 @@ export interface IMuteParseResults {
  */
 function rejct(reject, prefix) {
   // console.log(require("util").inspect(require("./deps")));
-  logger.custom(prefix + (reject && reject.stack ? reject.stack : reject), { prefix: "[ERR/REJECT]", color: "red", type: "error" });
+  logger.custom(
+    (prefix ? prefix + " " : "") + (reject && reject.stack ? reject.stack : reject),
+    { prefix: "[ERR/REJECT]", color: "red", type: "error" }
+  );
 }
 exports.rejct = rejct;
 

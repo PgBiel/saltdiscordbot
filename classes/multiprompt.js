@@ -72,11 +72,10 @@ class Question {
   /**
    * Execute this question
    * @param {...*} args 
-   * @returns {this}
+   * @returns {*}
    */
   exec(...args) {
-    this.func.apply(this, [this, ...args]);
-    return this;
+    return this.func.apply(this, [this, ...args]);
   }
 }
 
@@ -140,11 +139,10 @@ class MultiPrompt {
   /**
    * Execute the current question
    * @param {...*} args 
-   * @returns {Question}
+   * @returns {*}
    */
   exec(...args) {
-    this.current.exec.apply(this.current, args);
-    return this.current;
+    return this.current.exec.apply(this.current, args);
   }
 
   /**

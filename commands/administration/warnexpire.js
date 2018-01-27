@@ -4,7 +4,7 @@ const d = require("../../misc/d");
 const func = async function (
   msg, {
     seePerm, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms,
-    prompt
+    prompt, author
   },
 ) {
   const expire = d.durationdecompress(
@@ -27,14 +27,15 @@ const func = async function (
   if (time.totalMonths > 3) return reply(`Expiry time must not be longer than 3 months!`);
   if (time.totalMinutes < 1) return reply(`Expiry time must not be shorter than 1 minute!`);
   if ((await (d.db.table("warns").get(guildId, []))).length > 0 && expire.asMilliseconds() > time.time) {
-    const result = await prompt({
+    const { res: result } = await prompt({
       question: `Are you sure you want to set warns to expire after **${time}**? **Any active warns that have been created \
 for longer than that will automatically expire.** This will expire in 15 seconds. Type __y__es or __n__o.`,
       invalidMsg: "__Y__es or __n__o?",
       filter: msg2 => {
         return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
       },
-      timeout: d.Time.seconds(15)
+      timeout: d.Time.seconds(15),
+      author
     });
     if (!result) {
       return;

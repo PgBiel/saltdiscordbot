@@ -60,7 +60,7 @@ Check the conditions for being banned (e.g. must not be owner, etc)!");
         .setColor("RED")
         .setDescription(reason || "No reason")
         .setTimestamp(new Date());
-      const result = await prompt({
+      const { res: result } = await prompt({
         question: `Are you sure you want to ${actions[4]} this ${id ? "user ID" : "member"}? \
 This will expire in 15 seconds. Type __y__es or __n__o.`,
         invalidMsg: "__Y__es or __n__o?",

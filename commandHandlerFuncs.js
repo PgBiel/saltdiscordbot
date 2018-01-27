@@ -196,49 +196,62 @@ If you want to contact the bot devs, please tell them this information: \`${data
     {
       question, invalidMsg, filter,
       timeout = Constants.times.AMBIGUITY_EXPIRE, cancel = true,
-      skip = false, options = {}
+      skip = false, options = {}, author = msg.author
     },
   ) => {
+    let skipped = false;
     let cancelled = false;
     let satisfied = null;
     const filterToUse = msg2 => {
-      if (msg2.content.toLowerCase() === "cancel" && cancel || msg2.content.toLowerCase() === "skip" && skip) {
+      if (author && msg2.author.id !== (author.id || author)) return false;
+      if (msg2.content.toLowerCase() === "cancel" && cancel) {
+        logger.debug("cancelled", msg2);
         return (cancelled = true);
       }
-      const result = filter(msg2);
-      if (result !== false && result != null) {
-        satisfied = msg2;
-        return true;
+      if (msg2.content.toLowerCase() === "skip" && skip) {
+        logger.debug("skipped", msg2);
+        return (skipped = true);
       }
-      return false;
+      const result = filter(msg2);
+      logger.debug("f", msg2, result);
+      satisfied = result ? msg2 : null;
+      return true;
     };
     const sentmsg = await send(question, options || {});
     for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
       try {
         const msgs = await msg.channel.awaitMessages(filterToUse, { time: timeout, max: 1, errors: ["time"] });
+        logger.debug("Timeout", timeout, cancel, skip, question, invalidMsg);
+        if (cancelled || skipped) {
+          break;
+        }
         if (!satisfied) {
           if (i < Constants.numbers.MAX_PROMPT) {
             send(invalidMsg);
+            logger.debug("Tried to send invalid msg");
+          } else {
+            cancelled = true;
           }
           continue;
         }
-        if (cancelled) {
-          break;
-        }
         if (satisfied) {
-          return satisfied.content;
+          return { res: satisfied.content, cancelled, skipped };
         }
       } catch (err) {
+        if (!(err instanceof Collection)) rejct(err, "{AT PROMPT}");
+        cancelled = true;
         break;
       }
     }
-    send("Command cancelled.");
-    return "";
+    if (!skipped) send("Command cancelled.");
+    return { res: "", cancelled, skipped };
   };
 
   const genPrompt = options => {
     return async function() {
-      const res = await prompt(Object.assign({ question: this.text }, options));
+      logger.debug(`Summoned: ${this.text} Options:`, options);
+      const { res, cancelled, skipped } = await prompt(Object.assign({ question: this.text }, options));
+      logger.debug(`AA ${res} ${cancelled} ${skipped}`);
       if (options.array) {
         if (options.index) {
           options.array[options.index] = [res, this];
@@ -247,8 +260,9 @@ If you want to contact the bot devs, please tell them this information: \`${data
         }
       }
       if (typeof options.branch === "function") {
-        const branch = (this.branch(options.branch(res)) || { exec: async _ => _ });
-        if (options.exec) await branch.exec();
+        logger.debug(`HAS FUNC ${options.branch(res)} ${typeof res}`);
+        const branch = (this.branch(options.branch(res, cancelled, skipped)) || { exec: async _ => _ });
+        if (options.exec && (options.goCancelled ? true : !cancelled)) await branch.exec();
       }
     };
   };
@@ -297,7 +311,7 @@ If you want to contact the bot devs, please tell them this information: \`${data
   let obj = {
     hasPermission, userError, promptAmbig, checkRole,
     send, reply, prompt, actionLog: actionLog2, seePerm, genPrompt,
-    genPromptD: optionsD => options => genPrompt(Object.assign(optionsD, options))
+    genPromptD: optionsD => options => genPrompt(Object.assign({}, optionsD, options))
   };
 
   const doEval = (content, subC = {}) => {

@@ -62,7 +62,7 @@ Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
       return send(`Successfully removed the punishment for reaching **${num}** total warns! :wink:`);
     } else if (/^clear$/i.test(action)) {
       if (steps.length < 1) return send(`There are no warn punishments.`);
-      const result = await prompt({
+      const { res: result } = await prompt({
         question: `Are you sure you want to remove ${steps.length < 2 ?
           "the only warn punishment" :
           `all the **${steps.length}** warn punishments`}? Type __y__es or __n__o.`,

@@ -55,7 +55,7 @@ const func = async function (msg, {
     .setColor("DARK_GREEN")
     .setDescription(reason || "No reason")
     .setTimestamp(new Date());
-  const result = await prompt({
+  const { res: result } = await prompt({
     question: `Are you sure you want to unban this member? \
 This will expire in 15 seconds. Type __y__es or __n__o.`,
     invalidMsg: "__Y__es or __n__o?",

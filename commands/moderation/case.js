@@ -70,7 +70,7 @@ There ${latest === 1 ? "is only 1 case" : `are ${latest} cases`}.`);
       ) return reply(`That case is not yours. You need the permission
 \`case others\` or the Administrator saltrole to edit others' cases!`);
     if (action === "delete") {
-      const result = await prompt({
+      const { res: result } = await prompt({
         question: `Are you sure you want to delete the case numbered ${arg}?${isYours ? "" : " **It isn't yours.**"} \
 This will expire in 15 seconds. Type __y__es or __n__o.`,
         invalidMsg: "__Y__es or __n__o?",
@@ -100,7 +100,7 @@ If Action Logs are disabled for this guild, you can ignore d.`);
       if (action === "edit") {
         if (!arg2) return reply(`Please specify a reason to change the case's to!`);
         if (!isYours) {
-          const result = await prompt({
+          const { res: result } = await prompt({
             question: `Are you sure you want to edit the reason of the case numbered ${arg}? **It isn't yours, and if you do this, \
 you will become the author of the case.** This will expire in 15 seconds. Type __y__es or __n__o.`,
             invalidMsg: "__Y__es or __n__o?",
