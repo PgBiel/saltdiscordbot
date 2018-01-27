@@ -5,27 +5,9 @@ const d = require("../../misc/d");
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy,
-  checkRole, self
+  checkRole, self, seePerm
 }) {
-  let hasPerm = false;
-  if (hasPermission(["MANAGE_ROLES"])) {
-    hasPerm = true;
-  }
-  try {
-    if (await checkRole("mod", member)) {
-      hasPerm = true;
-    }
-  } catch (err) {
-    d.logger.error(`At check role: ${err}`);
-  }
-  if (setPerms.mute) {
-    if (!perms.mute) {
-      hasPerm = false;
-    }
-    if (dummy.perms && !perms[dummy.perms] && setPerms[dummy.perms]) {
-      hasPerm = false;
-    }
-  }
+  const hasPerm = seePerm(dummy.perms || "mute", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" });
   if (!hasPerm) {
     return reply("You do not have sufficient permissions! :frowning:");
   } else if (!botmember.hasPermission(["MANAGE_ROLES"])) {

@@ -4,10 +4,12 @@ const kickP = require("../../punishments/kick");
 
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
-  searcher, promptAmbig, author, botmember, member, actionLog, dummy, self
+  searcher, promptAmbig, author, botmember, member, actionLog, dummy, self,
+  seePerm, setPerms
 }) {
-  if (!perms.kick && !hasPermission(["KICK_MEMBERS"])) {
-    return reply("You do not have sufficient permissions! :frowning:");
+  if (!seePerm("kick", perms, setPerms, { hperms: "KICK_MEMBERS" })) {
+    return reply("Missing permission `kick`! :frowning: Could also use this command with the `Kick Members` \
+discord permission.");
   } else if (!botmember.hasPermission(["KICK_MEMBERS"])) {
     return reply("I do not have the permission `Kick Members`! :frowning:");
   }

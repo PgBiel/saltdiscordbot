@@ -2,7 +2,7 @@ const Storage = require("saltjs").Storage;
 
 class Question {
   /**
-   * A question
+   * Constructs a question
    * @param {string} str The question
    * @param {Function} func The function
    */

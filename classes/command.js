@@ -298,7 +298,10 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
         string = `\`${this.perms.replace(/\./g, "")}\``;
         if (this.default) string += " (available by default)";
       } else {
-        for (const [key, val] of Object.entries(this.perms)) {
+        for (const [key, val] of Object.entries(this.perms).filter(([_n, perm]) => typeof perm === "boolean" ?
+          true :
+          (perm.show == null || perm.show)
+        )) {
           string += `\`${key.replace(/\./g, "")}\``;
           if (
             (typeof val === "boolean" && val) ||
