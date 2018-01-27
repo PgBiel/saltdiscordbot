@@ -75,7 +75,7 @@ class Question {
    * @returns {this}
    */
   exec(...args) {
-    this.func.apply(this, args);
+    this.func.apply(this, [this, ...args]);
     return this;
   }
 }

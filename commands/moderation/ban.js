@@ -5,17 +5,18 @@ const banP = require("../../punishments/ban");
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   searcher, promptAmbig, author, botmember, member, actionLog, dummy,
-  self
+  self, seePerm, setPerms
 }) {
   const actions = [
     (dummy.actions && dummy.actions[0]) || "Banning",
     (dummy.actions && dummy.actions[1]) || "Banned",
     (dummy.actions && dummy.actions[2]) || "banned",
     (dummy.actions && dummy.actions[3]) || "Ban",
-    (dummy.actions && dummy.actions[4]) || "ban",
+    (dummy.actions && dummy.actions[4]) || "ban"
   ];
-  if (!perms[dummy.perms || "ban"] && !hasPermission(["BAN_MEMBERS"])) {
-    return reply("You do not have sufficient permissions! :frowning:");
+  if (!seePerm(dummy.perms || "ban", perms, setPerms, { hperms: "BAN_MEMBERS" })) {
+    return reply(`Missing permission \`${dummy.perms || "ban"}\`! :frowning: Could also use this command with the \
+\`Ban Members\` discord permission.`);
   } else if (!botmember.hasPermission(["BAN_MEMBERS"])) {
     return reply("I do not have the permission `Ban Members`! :frowning:");
   }
@@ -84,7 +85,7 @@ const func = async function (msg, {
   banP.punish(id || memberToUse, guild, self, {
     author: member, reason, auctPrefix: `[${actions[3]} command executed by ${author.tag}] `, actions,
     usePrompt: dummy.usePrompt == null ? true : dummy.usePrompt, color: dummy.color, days: dummy.days,
-    isSoft: dummy.banType === "softban",
+    isSoft: dummy.banType === "softban"
   });
 };
 module.exports = new Command({

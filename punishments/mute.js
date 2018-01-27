@@ -96,7 +96,7 @@ class Mute extends Punishment {
     member.send(
       `You were muted at the server **${escMarkdown(guild.name)}** ${permanent ?
         "permanently" :
-        "for **${time}**"} for the reason of:`,
+        `for **${time}**`} for the reason of:`,
       { embed: reasonEmbed },
     ).then(() => {
       if (timeoutRan) {

@@ -237,6 +237,7 @@ function combineRegex(regs, options) {
 }
 exports.combineRegex = combineRegex;
 
+const invalidSymbol = Symbol("InvalidTime");
 /**
  * Parse a time string. (Used for mute command)
  * @param {string} str The time string.
@@ -246,11 +247,11 @@ function parseTimeStr(str) {
   logger.debug(str);
   const time = new Interval();
   if (typeof str !== "string") {
-    return time.units;
+    return Object.assign({}, time.units, { [invalidSymbol]: true });
   }
   const match = str.match(Constants.regex.MUTE.TIME_MATCH);
   if (!match || match.length < 1) {
-    return time.units;
+    return Object.assign({}, time.units, { [invalidSymbol]: true });
   }
   logger.debug(match);
   for (const result of match) {
@@ -262,8 +263,9 @@ function parseTimeStr(str) {
       time.add(unit, Number(amount));
     }
   }
-  return time.units;
+  return Object.assign({}, time.units, { [invalidSymbol]: false });
 }
+parseTimeStr.invalid = invalidSymbol;
 exports.parseTimeStr = parseTimeStr;
 
 /**

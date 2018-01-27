@@ -246,8 +246,9 @@ If you want to contact the bot devs, please tell them this information: \`${data
           options.array.push([res, this]);
         }
       }
-      if (options.branch) {
-        return options.branch(res);
+      if (typeof options.branch === "function") {
+        const branch = (this.branch(options.branch(res)) || { exec: async _ => _ });
+        if (options.exec) await branch.exec();
       }
     };
   };

@@ -69,16 +69,14 @@ module.exports = async msg => {
         for (const word of wordsF) {
           if (typeof word !== "string") continue;
           let condition;
-          if (mods.filterStrict === 0) {
-            condition = msg.content.toLowerCase().includes(word);
-          } else if (mods.filterStrict === 5) {
+          if (mods.filterStrict === 4) {
             condition = cleanify(msg.content, 4)
               .split("")
               .filter(l => word.split("").includes(l))
               .join("")
               .includes(word);
           } else {
-            condition = cleanify(msg.content, mods.filterStrict - 1).includes(word);
+            condition = cleanify(msg.content, mods.filterStrict).includes(word);
           }
           if (condition) {
             msg.delete();
@@ -219,7 +217,8 @@ module.exports = async msg => {
           if (!permsToCheck.hasOwnProperty(permission)) {
             continue;
           }
-          const isDefault = Boolean(permsToCheck[permission]); // if perm is default
+          const perme = permsToCheck[permission];
+          const isDefault = typeof perme === "boolean" ? perme : perme.default; // if perm is default
           try {
             const permsResult = await perms.hasPerm(msg.member, guildId, permission, isDefault); // execute hasPerm to check perm
             console.log("Result: " + require("util").inspect(permsResult) + " . Permission: " + permission);

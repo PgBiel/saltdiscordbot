@@ -44,6 +44,7 @@ interface TableValsDraft {
     latestCase?: number;
     filterStrict?: number;
     filterEnabled?: boolean;
+    filterSetUp?: boolean;
     filterPunishment?: string;
     filterMessage?: string;
     filterPunishmentMute?: string;

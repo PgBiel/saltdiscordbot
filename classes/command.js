@@ -302,7 +302,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
           true :
           (perm.show == null || perm.show)
         )) {
-          string += `\`${key.replace(/\./g, "")}\``;
+          string += `\`${key.replace(/\./g, " ")}\``;
           if (
             (typeof val === "boolean" && val) ||
             val && val.default
