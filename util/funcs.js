@@ -628,7 +628,7 @@ function cleanify (str, strictness = 3) {
   const obj = Object.assign({}, Constants.maps.FILTER.greekCyrilic, Constants.maps.FILTER.replace);
   let text = slugify(_.deburr(tr(str, strictness >= 3 ? { replace: obj } : {})), options);
   if (strictness === 4) text = text.split("").sort((a, b) => b.charCodeAt(0) - a.charCodeAt(0)).join("");
-  if (strictness >= 2) text = text.replace(/(\w)\1+/, t => t[0]);
+  if (strictness >= 2) text = text.replace(/(\w)\1+/g, "$1");
   return text;
 }
 exports.cleanify = cleanify;

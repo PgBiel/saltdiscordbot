@@ -88,23 +88,43 @@ const func = async function (
         if (!filterWords(d._.trim(arg))) return reply("Please, make sure every word consists of letters and have a minimum \
 length of 3 characters and a maximum of 256 characters (**both not including duplicate letters**). Also, please only \
 specify up to 75 words.");
-        const sendWords = args.split(/\s*,\s*/).map(w => d.cleanify(w, 0));
+        const sendWords = arg.split(/\s*,\s*/).map(w => d.cleanify(w, 0));
         if (action === "add") {
           await d.db.table("wordfilters").addMult(guildId, sendWords, true);
         } else {
           await d.db.table("wordfilters").setRejct(guildId, sendWords);
         }
-        return reply(`${action === "add" ? "Added" : "Set"} ${sendWords.length} words to be filtered successfully!`);
+        return reply(`${action === "add" ? "Added" : "Set"} ${sendWords.length} \
+word${sendWords.length === 1 ? "" : "s"} to be filtered successfully!`);
       } else if (action === "remove") {
-        const sendWordsUnfiltered = args.split(/\s,\s*/).map(w => d.cleanify(w, 0));
+        const sendWordsUnfiltered = arg.split(/\s,\s*/).map(w => d.cleanify(w, 0));
         const sendWords = sendWordsUnfiltered.filter(w => words.includes(w));
         if (sendWords.length < 1) return reply(`None of those words are filtered!`);
         await d.db.table("wordfilters").remArrMult(guildId, sendWords, true);
         const diff = sendWordsUnfiltered.length - sendWords.length;
-        return reply(`Removed ${sendWords.length} words!${diff ?
+        return reply(`Removed ${sendWords.length} word${sendWords.length === 1 ? "" : "s"}!${diff ?
           ` ${diff} words were ignored due to not being filtered.` :
           ""}`);
       }
+    } else if (action === "clear") {
+      const result = await prompt({
+        question: `Are you sure you want to clear the whole word filtering list? **This cannot be undone.** \
+This will expire in 15 seconds. Type __y__es or __n__o.`,
+        invalidMsg: "__Y__es or __n__o?",
+        filter: msg2 => {
+          return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
+        },
+        timeout: d.Time.seconds(15)
+      });
+      if (!result) {
+        return;
+      }
+      if (/^[nc]/i.test(result)) {
+        send("Command cancelled.");
+        return;
+      }
+      await d.db.table("wordfilters").setRejct(guildId, []);
+      return reply(`Cleared ${words.length < 2 ? "one word" : `all ${words.length} words`} from the filter successfully!`);
     } else {
       const responses = Array(5);
       const genPrompt = genPromptD({
@@ -130,7 +150,7 @@ specify up to 75 words.");
       if (words.length) {
         const result = await prompt({
           question: `Are you sure you want to proceed? **Any words you specify will replace the whole current list\
-  ${canDOther ? ", unless you skip the first step" : ""}.** This will expire in 15 seconds. Type __y__es or __n__o.`,
+${canDOther ? ", unless you skip the first step" : ""}.** This will expire in 15 seconds. Type __y__es or __n__o.`,
           invalidMsg: "__Y__es or __n__o?",
           filter: msg2 => {
             return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
@@ -148,12 +168,12 @@ specify up to 75 words.");
       let cancelled = false;
       const multiPrompt = new d.MultiPrompt(
         `Now setting up word filter. What words would you like to be filtered? \
-  Separate words with commas. This will expire in 20 seconds. Type ${canDOther && words.length ? "`skip` to skip and " : ""}\
-  \`cancel\` to cancel.`,
+Separate words with commas. This will expire in 20 seconds. Type ${canDOther && words.length ? "`skip` to skip and " : ""}\
+\`cancel\` to cancel.`,
         genPrompt({
           skip: canDOther && words.length,
           invalidMsg: "Please, make sure every word consists of letters and have a minimum length of 3 characters \
-  and a maximum of 256 characters (**both not including duplicate letters**). Also, please only specify up to 75 words.",
+and a maximum of 256 characters (**both not including duplicate letters**). Also, please only specify up to 75 words.",
           filter: msg2 => filterWords(msg2.content),
           timeout: d.Time.seconds(20),
           index: 0
@@ -166,11 +186,11 @@ specify up to 75 words.");
         multiPrompt.addBranch(
           "next",
           `What strictness would you like to set for the word filter (1-5)? Strictness **1** is normal filtering with \
-  basic replacement (not recommended). Strictness **2** ignores spaces. Strictness **3** ignores duplicated characters. \
-  Strictness **4** adds a huge replacement character list **(RECOMMENDED)**. Finally, strictness **5** ignores the order of \
-  letters and can spot words hidden in words, but gives many false positives (not recommended). \
-  This will expire in 15 seconds. Type \`skip\` to skip${config.filterStrict == null ? " (defaults to 4)" : ""} and \
-  \`cancel\` to cancel.`,
+basic replacement (not recommended). Strictness **2** ignores spaces. Strictness **3** ignores duplicated characters. \
+Strictness **4** adds a huge replacement character list **(RECOMMENDED)**. Finally, strictness **5** ignores the order of \
+letters and can spot words hidden in words, but gives many false positives (not recommended). \
+This will expire in 15 seconds. Type \`skip\` to skip${config.filterStrict == null ? " (defaults to 4)" : ""} and \
+\`cancel\` to cancel.`,
           genPrompt({
             skip: true,
             invalidMsg: "Please specify a number that is at least 1 and at most 5!",
@@ -191,7 +211,7 @@ specify up to 75 words.");
         multiPrompt.addBranch(
           "next",
           `What message would you like to set as the message sent when someone is caught by the filter? \
-  This will expire in 20 seconds. Type \`skip\` to skip (defaults to a pre-defined message) and \`cancel\` to cancel.`,
+This will expire in 20 seconds. Type \`skip\` to skip (defaults to a pre-defined message) and \`cancel\` to cancel.`,
           genPrompt({
             skip: true,
             invalidMsg: "",
@@ -215,11 +235,12 @@ specify up to 75 words.");
         multiPrompt.addBranch(
           "next",
           `Would you like to set any punishment for reaching the word filter? You have permissions for the following: \
-  ${available.join(", ")}. This will expire in 15 seconds. Type \`skip\` to skip (defaults to none) and \`cancel\` to cancel.`,
+${available.join(", ")}. This will expire in 15 seconds. Type \`skip\` to skip (defaults to none), \`none\` for none \
+and \`cancel\` to cancel.`,
           genPrompt({
             skip: true,
             invalidMsg: "Please choose one punishment out of those that you have permission for!",
-            filter: msg2 => available.includes(msg2.content.toLowerCase()),
+            filter: msg2 => /none/i.test(msg2.content) || available.includes(msg2.content.toLowerCase()),
             index: 3
           })
         );
@@ -231,7 +252,7 @@ specify up to 75 words.");
         multiPrompt.addBranch(
           "next",
           `What time would you like to mute the user for? Specify time in months, weeks, days, hours, minutes and seconds.\
-  This will expire in 15 seconds. Type \`skip\` to skip (defaults to 10 minutes) and \`cancel\` to cancel.`,
+This will expire in 15 seconds. Type \`skip\` to skip (defaults to 10 minutes) and \`cancel\` to cancel.`,
           async question => {
             if (responses[3] === "mute") {
               await genPrompt({
@@ -272,8 +293,8 @@ specify up to 75 words.");
           unavailable.push("Punishment (No permissions for any of the available punishments)");
         }
         reply(`Congratulations! The setup is done. :smiley:${canStrict && canMessag && canActuallyPunish ? "" : `
-  \nThe following step${unavailable.length > 1 ? "s were" : " was"} skipped due to missing permissions: \
-  ${unavailable.join(", ")}.`}`);
+\nThe following step${unavailable.length > 1 ? "s were" : " was"} skipped due to missing permissions: \
+${unavailable.join(", ")}.`}`);
       });
       await (multiPrompt.toFirst().exec());
       if (!cancelled) {
@@ -282,7 +303,7 @@ specify up to 75 words.");
         const sendWords = wordz ?
           wordz.split(/\s*,\s*/).map(w => d.cleanify(w, 0)) :
           null;
-        const sendPunish = punish ? punish.charAt(0) : null;
+        const sendPunish = punish && !/none/i.test(punish) ? punish.charAt(0) : null;
         let sendTime;
         if (muteTime) {
           try {
