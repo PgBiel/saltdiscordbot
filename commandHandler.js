@@ -11,7 +11,7 @@ const MultiPrompt = require("./classes/multiprompt");
 const funcs = require("./commandHandlerFuncs");
 // const { moderation, prefixes } = require("./sequelize/sequelize");
 const { bot } = require("./util/bot");
-const { chalk, conn, Constants, Interval, db } = require("./util/deps");
+const { chalk, conn, Constants, Interval, Time, db } = require("./util/deps");
 const { cleanify, cloneObject, durationdecompress, rejct } = require("./util/funcs");
 const muteP = require("./punishments/mute");
 const banP = require("./punishments/ban");
@@ -66,8 +66,9 @@ module.exports = async msg => {
         msg.guild &&
         (mods.filterEnabled == null || mods.filterEnabled)
       ) {
-        for (const word of wordsF) {
-          if (typeof word !== "string") continue;
+        for (const nonWord of wordsF) {
+          const word = nonWord && typeof nonWord === "string" ? cleanify(nonWord, mods.filterStrict) : "";
+          if (typeof word !== "string" || !word) continue;
           let condition;
           if (mods.filterStrict === 4) {
             condition = cleanify(msg.content, 4)
@@ -81,17 +82,19 @@ module.exports = async msg => {
           if (condition) {
             msg.delete();
             msg.reply(mods.filterMessage || "Your message was caught in the word filter!")
-              .then(m => m.delete({ timeout: 5000 }))
+              .then(m => m.delete({ timeout: Time.seconds(7) }))
               .catch(rejct);
             const punishment = mods.filterPunishment;
-            if (punishment && typeof punishment === "string" && punishment[0] in Constants.maps.PUNISHMENTS) {
+            if (punishment && typeof punishment === "string" && punishment[0] in Constants.maps.PUNISHMENTS) { 
+              msg.reply(`For saying a filtered word, this server defines a punishment of a \
+**${Constants.maps.PUNISHMENTS[punishment[0]].replace("pmute", "permanent mute")}**. Thus, you will receive that punishment.`);
               const name = punishment[0];
               if (/p|m/.test(name)) {
                 muteP.punish(msg.member, {
                   author: bot.user,
                   reason: "<Auto punishment by Word Filter>",
                   auctPrefix: "[Auto-mute issued by Word Filter] ",
-                  time: mods.filterPunishmentMute ? durationdecompress(mods.filterPunishmentMute) : Interval.minutes(10),
+                  time: mods.filterPunishmentMute ? new Interval(durationdecompress(mods.filterPunishmentMute)) : Interval.minutes(10),
                   permanent: name === "p",
                   context
                 });

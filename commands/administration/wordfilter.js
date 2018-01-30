@@ -13,12 +13,13 @@ const func = async function (
     if (!words || words.length < 1) return reply("There are no words filtered in this server! To manage, see the help command.");
     return reply(`There are ${words.length} words filtered in this server! To manage, see the help command.`);
   }
-  let [action] = arrArgs;
+  let [action, ...irregArg] = arrArgs;
   action = action.toLowerCase();
   const arg = args.replace(new RegExp(`^\\s*${d._.escapeRegExp(action)}\\s*`, "i"), "");
   const canModify = seePerm("wordfilter.modify", perms, setPerms, { srole: "Administrator", hperms: "MANAGE_MESSAGES" });
   const canStrict = seePerm("wordfilter.strictness", perms, setPerms, { srole: "Administrator", hperms: "MANAGE_MESSAGES" });
   const canMessag = seePerm("wordfilter.message", perms, setPerms, { srole: "Administrator", hperms: "MANAGE_MESSAGES" });
+  const canToggle = seePerm("wordfilter.toggle", perms, setPerms, { srole: "Administrator", hperms: "MANAGE_MESSAGES" });
   const canPunish = seePerm("wordfilter.punishment", perms, setPerms, { srole: "Administrator", hperms: "MANAGE_GUILD" });
   const canBan = seePerm("ban", perms, setPerms, { hperms: "BAN_MEMBERS" });
   const canSoftban = seePerm("softban", perms, setPerms, { hperms: "BAN_MEMBERS" });
@@ -28,13 +29,83 @@ const func = async function (
   const canActuallyPunish = canPunish && (canBan || canSoftban || canKick || canWarn || canMute);
   const canDOther = canStrict || canMessag || canActuallyPunish;
   if (action === "list") {
-    // wip
-  } else {
+    if (!perms["wordfilter.list"]) {
+      return reply("Missing permission `wordfilter list`! :frowning:");
+    }
+    if (!words || words.length < 1) return reply(`There are no words filtered in this server!`);
+    const pages = words.length === 1 ?
+      [words[0]] :
+      d.paginate(
+        words.map(w => d.textAbstract(w, Math.floor(d.Constants.numbers.MAX_DESC_CHARS / 11))).join(" "),
+        10
+      );
+    const page = irregArg &&
+      irregArg.length > 0 &&
+      irregArg[0].length < d.Constants.numbers.MAX_PAGE_LENGTH &&
+      !isNaN(irregArg) ?
+        Number(irregArg[0]) :
+        1;
+    if (page > pages.length) return reply(`Invalid page! The max page is ${pages.length}.`);
+    if (page < 1) return reply(`Invalid page! Page must be at least 1.`);
+    const embed = new d.Embed()
+      .setTitle(`List of filtered words - Page ${page}/${pages.length}`)
+      .setColor("RED");
+    if (pages.length > 1) embed.setFooter(`To go to a certain page, type ${p}wordfilter list <page>.`);
+    let str = "";
+    for (const pagee of pages[page - 1].split(" ")) {
+      if (!d._.trim(pagee)) continue;
+      str += `• ${pagee.replace(/_/g, " ")}\n`;
+    }
+    embed.setDescription(d._.trim(str));
+    reply(
+      words.length === 1 ?
+        "Here's the only filtered word in this server:" :
+        `Here is a list of all ${words.length} filtered words in this server:`,
+      { embed }
+    );
+  } else if (["add", "remove", "set", "clear", "setup", "register"].includes(action)) {
     if (!canModify) {
       return reply("Missing permission `wordfilter modify`! Could also use this with the Administrator saltrole or the \
 `Manage Messages` Discord permission.");
     }
-    if (["setup", "register"].includes(action)) {
+    const filterWords = str => {
+      if (typeof str !== "string") return false;
+      if (/^[^a-z\d]+$/i.test(str)) return false;
+      if (str.length < 3) return false;
+      const words = str.split(/\s*,\s*/).map(str => d._.trim(d.cleanify(str, 3)));
+      if (words.length > 75) return false;
+      for (const word of words) {
+        if (word.length < 3 || word.length > 256) return false;
+      }
+      return true;
+    };
+    if (["add", "remove", "set"].includes(action)) {
+      if (!arg) {
+        return reply(`Please specify words to ${action}!`);
+      }
+      if (!config.filterSetUp) return reply(`You must setup word filter first! Type \`${p}wordfilter setup\` to do so.`);
+      if (["add", "set"].includes(action)) {
+        if (!filterWords(d._.trim(arg))) return reply("Please, make sure every word consists of letters and have a minimum \
+length of 3 characters and a maximum of 256 characters (**both not including duplicate letters**). Also, please only \
+specify up to 75 words.");
+        const sendWords = args.split(/\s*,\s*/).map(w => d.cleanify(w, 0));
+        if (action === "add") {
+          await d.db.table("wordfilters").addMult(guildId, sendWords, true);
+        } else {
+          await d.db.table("wordfilters").setRejct(guildId, sendWords);
+        }
+        return reply(`${action === "add" ? "Added" : "Set"} ${sendWords.length} words to be filtered successfully!`);
+      } else if (action === "remove") {
+        const sendWordsUnfiltered = args.split(/\s,\s*/).map(w => d.cleanify(w, 0));
+        const sendWords = sendWordsUnfiltered.filter(w => words.includes(w));
+        if (sendWords.length < 1) return reply(`None of those words are filtered!`);
+        await d.db.table("wordfilters").remArrMult(guildId, sendWords, true);
+        const diff = sendWordsUnfiltered.length - sendWords.length;
+        return reply(`Removed ${sendWords.length} words!${diff ?
+          ` ${diff} words were ignored due to not being filtered.` :
+          ""}`);
+      }
+    } else {
       const responses = Array(5);
       const genPrompt = genPromptD({
         timeout: d.Time.seconds(15),
@@ -45,9 +116,9 @@ const func = async function (
           if (cancelled) return "cancel";
           if (skipped) return "next";
           if (typeof brancher === "string") {
-            return brancher === "cancel" || !brancher ? "cancel" : "next";
+            return (brancher === "cancel" || !brancher) ? "cancel" : "next";
           } else if (typeof brancher.content === "string") {
-            return brancher.content === "cancel" || !brancher.content ? "cancel" : "next";
+            return (brancher.content === "cancel" || !brancher.content) ? "cancel" : "next";
           } else {
             return "next";
           }
@@ -59,7 +130,7 @@ const func = async function (
       if (words.length) {
         const result = await prompt({
           question: `Are you sure you want to proceed? **Any words you specify will replace the whole current list\
-${canDOther ? ", unless you skip the first step" : ""}.** This will expire in 15 seconds. Type __y__es or __n__o.`,
+  ${canDOther ? ", unless you skip the first step" : ""}.** This will expire in 15 seconds. Type __y__es or __n__o.`,
           invalidMsg: "__Y__es or __n__o?",
           filter: msg2 => {
             return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
@@ -77,21 +148,13 @@ ${canDOther ? ", unless you skip the first step" : ""}.** This will expire in 15
       let cancelled = false;
       const multiPrompt = new d.MultiPrompt(
         `Now setting up word filter. What words would you like to be filtered? \
-Separate words with commas. This will expire in 20 seconds. Type ${canDOther && words.length ? "`skip` to skip and " : ""}\
-\`cancel\` to cancel.`,
+  Separate words with commas. This will expire in 20 seconds. Type ${canDOther && words.length ? "`skip` to skip and " : ""}\
+  \`cancel\` to cancel.`,
         genPrompt({
           skip: canDOther && words.length,
           invalidMsg: "Please, make sure every word consists of letters and have a minimum length of 3 characters \
-(**not including duplicate letters**).",
-          filter: msg2 => {
-            if (/^[^a-z\d]+$/i.test(msg2.content)) return false;
-            if (msg2.content.length < 3) return false;
-            const words = msg2.content.split(/\s*,\s*/).map(str => d._.trim(d.cleanify(str, 3)));
-            for (const word of words) {
-              if (word.length < 3) return false;
-            }
-            return true;
-          },
+  and a maximum of 256 characters (**both not including duplicate letters**). Also, please only specify up to 75 words.",
+          filter: msg2 => filterWords(msg2.content),
           timeout: d.Time.seconds(20),
           index: 0
         })
@@ -103,11 +166,11 @@ Separate words with commas. This will expire in 20 seconds. Type ${canDOther && 
         multiPrompt.addBranch(
           "next",
           `What strictness would you like to set for the word filter (1-5)? Strictness **1** is normal filtering with \
-basic replacement (not recommended). Strictness **2** ignores spaces. Strictness **3** ignores duplicated characters. \
-Strictness **4** adds a huge replacement character list **(RECOMMENDED)**. Finally, strictness **5** ignores the order of \
-letters and can spot words hidden in words, but gives many false positives (not recommended). \
-This will expire in 15 seconds. Type \`skip\` to skip${config.filterStrict == null ? " (defaults to 4)" : ""} and \
-\`cancel\` to cancel.`,
+  basic replacement (not recommended). Strictness **2** ignores spaces. Strictness **3** ignores duplicated characters. \
+  Strictness **4** adds a huge replacement character list **(RECOMMENDED)**. Finally, strictness **5** ignores the order of \
+  letters and can spot words hidden in words, but gives many false positives (not recommended). \
+  This will expire in 15 seconds. Type \`skip\` to skip${config.filterStrict == null ? " (defaults to 4)" : ""} and \
+  \`cancel\` to cancel.`,
           genPrompt({
             skip: true,
             invalidMsg: "Please specify a number that is at least 1 and at most 5!",
@@ -128,7 +191,7 @@ This will expire in 15 seconds. Type \`skip\` to skip${config.filterStrict == nu
         multiPrompt.addBranch(
           "next",
           `What message would you like to set as the message sent when someone is caught by the filter? \
-This will expire in 20 seconds. Type \`skip\` to skip (defaults to a pre-defined message) and \`cancel\` to cancel.`,
+  This will expire in 20 seconds. Type \`skip\` to skip (defaults to a pre-defined message) and \`cancel\` to cancel.`,
           genPrompt({
             skip: true,
             invalidMsg: "",
@@ -152,7 +215,7 @@ This will expire in 20 seconds. Type \`skip\` to skip (defaults to a pre-defined
         multiPrompt.addBranch(
           "next",
           `Would you like to set any punishment for reaching the word filter? You have permissions for the following: \
-${available.join(", ")}. This will expire in 15 seconds. Type \`skip\` to skip (defaults to none) and \`cancel\` to cancel.`,
+  ${available.join(", ")}. This will expire in 15 seconds. Type \`skip\` to skip (defaults to none) and \`cancel\` to cancel.`,
           genPrompt({
             skip: true,
             invalidMsg: "Please choose one punishment out of those that you have permission for!",
@@ -209,14 +272,16 @@ ${available.join(", ")}. This will expire in 15 seconds. Type \`skip\` to skip (
           unavailable.push("Punishment (No permissions for any of the available punishments)");
         }
         reply(`Congratulations! The setup is done. :smiley:${canStrict && canMessag && canActuallyPunish ? "" : `
-\nThe following step${unavailable.length > 1 ? "s were" : " was"} skipped due to missing permissions: \
-${unavailable.join(", ")}.`}`);
+  \nThe following step${unavailable.length > 1 ? "s were" : " was"} skipped due to missing permissions: \
+  ${unavailable.join(", ")}.`}`);
       });
       await (multiPrompt.toFirst().exec());
       if (!cancelled) {
         const [wordz, strict, messag, punish, muteTime] = responses;
         const sendStrict = strict ? d._.clamp(Number(strict) - 1, 0, 4) : (config.filterStrict == null ? 3 : null);
-        const sendWords = wordz ? wordz.split(/\s*,\s*/).map(word => d.cleanify(word, sendStrict == null ? 3 : sendStrict)) : null;
+        const sendWords = wordz ?
+          wordz.split(/\s*,\s*/).map(w => d.cleanify(w, 0)) :
+          null;
         const sendPunish = punish ? punish.charAt(0) : null;
         let sendTime;
         if (muteTime) {
@@ -249,7 +314,8 @@ module.exports = new Command({
   name: "wordfilter",
   perms: {
     "wordfilter.list": true, "wordfilter.modify": false, "wordfilter.strictness": false, "wordfilter.message": false,
-    "wordfilter.punishment": false, "kick": { default: false, show: false }, "ban": { default: false, show: false },
+    "wordfilter.punishment": false, "wordfilter.toggle": false, 
+    "kick": { default: false, show: false }, "ban": { default: false, show: false },
     "warn": { default: false, show: false }, "softban": { default: false, show: false },
     "mute": { default: false, show: false }
   },

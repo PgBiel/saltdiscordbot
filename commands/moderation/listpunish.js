@@ -105,7 +105,7 @@ async function specific({
   if (/^all/i.test(type)) {
     color = "RANDOM";
   } else if (/^unban/i.test(type)) {
-    color = d.Constants.maps.PUNISHMENTS["U"][2];
+    color = d.Constants.maps.PUNISHMENTS.U[2];
   } else {
     color = (d.Constants.maps.PUNISHMENTS[type[0].toLowerCase()] || [0, 0, "RANDOM"])[2];
   }
@@ -184,7 +184,7 @@ const func = async function (
           user = true;
         }
       }
-      page = page && page.length < 5 && /^\d+$/.test(d._.trim(page)) ? (Number(page) || 1) : 1;
+      page = page && page.length < d.Constants.numbers.MAX_PAGE_LENGTH && !isNaN(d._.trim(page)) ? (Number(page) || 1) : 1;
       let memberToUse;
       let membersMatched;
       if (user === true) {

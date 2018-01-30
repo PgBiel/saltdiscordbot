@@ -139,16 +139,59 @@ class Table extends Storage {
   }
 
   /**
+   * Add multiple items to an array.
+   * @param {string} key The key
+   * @param {Array<*>} val Values to add
+   * @param {boolean} [reject=false] If should reject on promise
+   * @returns {Promise<{ success: boolean; err: any; }>}
+   */
+  async addMult(key, val, reject = false) {
+    const arr = await this.get(key) || [];
+    const arr2 = val || [];
+    if (!Array.isArray(arr) || !Array.isArray(arr2)) return { success: false, err: new TypeError("Non-array value.") };
+    return await (reject ? this.setRejct : this.set).call(this, key, arr.concat(val));
+  }
+
+  /**
    * Remove from an array.
    * @param {string} key The key
    * @param {*} obj Object to remove
-   * @param {boolean} [reject] If should reject on promise
+   * @param {boolean} [reject=false] If should reject on promise
    * @returns {Promise<{ success: boolean; err: any; }>}
    */
-  async remArr(key, obj, reject) {
+  async remArr(key, obj, reject = false) {
     const arr = await this.get(key) || [];
     if (!Array.isArray(arr)) return { success: false, err: new TypeError("Non-array value.") };
     return await this.spliceArr(key, this.indexOf(key, obj), 1, reject);
+  }
+
+  /**
+   * Remove multiple items from an array.
+   * @param {string} key The key
+   * @param {Array<*>} objs Objects to remove
+   * @param {boolean} [reject=false] If should reject on promise
+   * @returns {Promise<Array<{ success: boolean; err: any; }>>}
+   */
+  async remArrMult(key, objs, reject = false) {
+    const arr = await this.get(key) || [];
+    const arr2 = objs || [];
+    if (!Array.isArray(arr) || !Array.isArray(arr2)) return { success: false, err: new TypeError("Non-array value.") };
+    const results = [];
+    for (const item of arr2) {
+      let res;
+      try {
+        res = await this.spliceArr(key, this.indexOf(key, item), 1, false);
+      } catch (err) {
+        res = err;
+      }
+      results.push(res);
+    }
+    if (reject) {
+      for (const res of results) {
+        if (!res || !res.success) throw results;
+      }
+    }
+    return results;
   }
 
   /**

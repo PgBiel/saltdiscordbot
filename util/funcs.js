@@ -434,6 +434,10 @@ However, I was unable to take the role away from you for an yet unknown reason. 
   }
 }
 
+/**
+ * Check all active warns and remove them if needed.
+ * @returns {Promise<void>}
+ */
 async function checkWarns() {
   if (!bot.readyTimestamp) return;
   const awaited = await (db.table("warns").storage());
@@ -628,3 +632,13 @@ function cleanify (str, strictness = 3) {
   return text;
 }
 exports.cleanify = cleanify;
+
+/**
+ * Sleep.
+ * @param {number} [ms=10000] Milliseconds to sleep
+ * @returns {Promise<void>} Done!
+ */
+function sleep (ms) {
+  return new Promise(res => setTimeout(res, ms));
+}
+exports.sleep = sleep;

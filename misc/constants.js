@@ -189,7 +189,10 @@ exports.numbers = {
     } else {
       return 500;
     }
-  }
+  },
+  MAX_FIELD_CHARS: 1024,
+  MAX_DESC_CHARS: 2000,
+  MAX_PAGE_LENGTH: 5
 };
 
 exports.identifiers = {
