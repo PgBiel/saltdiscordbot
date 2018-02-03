@@ -127,7 +127,7 @@ ${availablePunish.join(", ")}. You can also choose \`none\` for none!`
         let time = null;
         if (sendPunish === "m") {
           time = d.Interval.minutes(10);
-          if (arg2) {
+          if (d._.trim(arg2)) {
             if (!filterMute(arg2)) return reply(
               "Invalid timespan for mute! See help for the mute command for info on time."
             );
@@ -141,7 +141,7 @@ ${availablePunish.join(", ")}. You can also choose \`none\` for none!`
         reply(
           `Successfully set the punishment for saying a filtered word to **${arg1}**${sendPunish === "m" ?
 ` for **${time}**` :
-""}`
+""}!`
         );
       }
     } else if (["enable", "disable", "toggle"].includes(action)) {
