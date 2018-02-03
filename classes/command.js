@@ -6,7 +6,7 @@
 
 const { Message, MessageEmbed } = require("discord.js");
 const { applyDeps, logger } = require("../util/deps");
-const { applyFuncs, textAbstract } = require("../util/funcs");
+const { applyFuncs } = require("../util/funcs");
 const Constants = require("../misc/constants");
 
 const assert = require("assert");
@@ -53,6 +53,32 @@ function debug(...text) {
 
 function cloneObject (objec) {
   return Object.assign(Object.create(objec), objec);
+}
+
+/**
+ * Abstract strings if it is too long.
+ * @param {string} text The string to abstract.
+ * @param {number} length The max length.
+ * @returns {string} The abstracted string.
+ */
+function textAbstract(text, length) {
+  if (text == null) {
+    return "";
+  }
+  if (typeof text !== "string") {
+    text = String(text);
+  }
+  if (typeof length !== "number") {
+    if (isNaN(length)) {
+      throw new TypeError("Length must be a number!");
+    }
+    length = Number(length);
+  }
+  if (text.length <= length) {
+    return text;
+  }
+  const newText = text.substring(0, length).replace(/[^]{0,3}$/, "...");
+  return newText || "...";
 }
 
 module.exports = class Command {
