@@ -54,7 +54,7 @@ const func = async function (
   if (canSoftban) availablePunish.push("softban");
   const filterPunish = str => {
     return /none/i.test(str) || availablePunish.includes(str.toLowerCase());
-  }
+  };
   if (action === "list") {
     if (!perms["wordfilter.list"]) {
       return reply("Missing permission `wordfilter list`! :frowning:");
@@ -140,7 +140,7 @@ ${availablePunish.join(", ")}. You can also choose \`none\` for none!`
         });
         reply(
           `Successfully set the punishment for saying a filtered word to **${arg1}**${sendPunish === "m" ?
-` for **${}**` :
+` for **${time}**` :
 ""}`
         );
       }
