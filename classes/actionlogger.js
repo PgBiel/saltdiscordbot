@@ -327,7 +327,7 @@ class ActionLog {
       numTime = new Date();
     }
     embed
-      .setTitle(`Action Log ${num || "???"}`)
+      .setTitle(`Action Log #${num || "???"}`)
       .setDescription(descToUse)
       .setColor(color || "RANDOM")
       .setTimestamp(numTime || new Date())

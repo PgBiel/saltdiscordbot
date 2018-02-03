@@ -4,7 +4,7 @@ const d = require("../../misc/d");
 const func = async function (
   msg, {
     prompt, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms, seePerm,
-    genPromptD
+    genPromptD, guild
   },
 ) {
   const words = await (d.db.table("wordfilters").get(guildId, []));
@@ -21,13 +21,40 @@ const func = async function (
   const canMessag = seePerm("wordfilter.message", perms, setPerms, { srole: "Administrator", hperms: "MANAGE_MESSAGES" });
   const canToggle = seePerm("wordfilter.toggle", perms, setPerms, { srole: "Administrator", hperms: "MANAGE_MESSAGES" });
   const canPunish = seePerm("wordfilter.punishment", perms, setPerms, { srole: "Administrator", hperms: "MANAGE_GUILD" });
-  const canBan = seePerm("ban", perms, setPerms, { hperms: "BAN_MEMBERS" });
-  const canSoftban = seePerm("softban", perms, setPerms, { hperms: "BAN_MEMBERS" });
-  const canKick = seePerm("kick", perms, setPerms, { hperms: "KICK_MEMBERS" });
-  const canWarn = seePerm("warn", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" });
-  const canMute = seePerm("mute", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" });
+  const canBan = seePerm("ban", perms, setPerms, { hperms: "BAN_MEMBERS" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
+  const canSoftban = seePerm("softban", perms, setPerms, { hperms: "BAN_MEMBERS" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
+  const canKick = seePerm("kick", perms, setPerms, { hperms: "KICK_MEMBERS" }) && guild.me.hasPermission(["KICK_MEMBERS"]);
+  const canWarn = seePerm("warn", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
+  const canMute = seePerm("mute", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" }) && guild.me.hasPermission(["MANAGE_ROLES", "MANAGE_CHANNELS"]);
   const canActuallyPunish = canPunish && (canBan || canSoftban || canKick || canWarn || canMute);
   const canDOther = canStrict || canMessag || canActuallyPunish;
+  const filterStrict = str => {
+    if (!/^\d$/.test(str)) return false;
+    const num = Number(str);
+    return num >= 1 && num <= 5;
+  };
+  const filterMute = str => {
+    if (/^[^a-z\d]+$/i.test(str)) return false;
+    let result;
+    try {
+      const parsed = d.parseTimeStr(str.replace(/,|and/ig, ""));
+      if (parsed[d.parseTimeStr.invalid]) return false;
+      result = new d.Interval(Object.entries(parsed));
+      return true;
+    } catch(err) {
+      d.rejct(err, "[AT MUTE TIME WORDFILTER SETUP]");
+      return false;
+    }
+  };
+  const availablePunish = [];
+  if (canWarn) availablePunish.push("warn");
+  if (canMute) availablePunish.push("mute", "pmute");
+  if (canBan) availablePunish.push("ban");
+  if (canKick) availablePunish.push("kick");
+  if (canSoftban) availablePunish.push("softban");
+  const filterPunish = str => {
+    return /none/i.test(str) || availablePunish.includes(str.toLowerCase());
+  }
   if (action === "list") {
     if (!perms["wordfilter.list"]) {
       return reply("Missing permission `wordfilter list`! :frowning:");
@@ -63,6 +90,68 @@ const func = async function (
         `Here is a list of all ${words.length} filtered words in this server:`,
       { embed }
     );
+  } else if (["message", "strictness", "punish", "punishment", "enable", "disable", "toggle"].includes(action)) {
+    if (!config.filterSetUp) {
+      return reply(`The word filter must be set up first! Type \`${p}wordfilter setup\` to do so, if you have permission.`);
+    }
+    if (["message", "strictness", "punish", "punishment"].includes(action)) {
+      if (!arg) {
+        return reply(`Please specify what to set the ${action === "punish" ? "punishment" : action} to!`);
+      }
+      if (action === "message") {
+        if (!canMessag) return reply("Missing permission `wordfilter message`! Could also use this command with the \
+Administrator saltrole or the `Manage Messages` Discord permission.");
+        await d.db.table("mods").assign(
+          guildId,
+          { filterMessage: d.textAbstract(arg, d.Constants.numbers.MAX_MSG_CHARS - 24) },
+          true
+        );
+        reply("Successfully changed the filtering message!");
+      } else if (action === "strictness") {
+        if (!canStrict) return reply("Missing permission `wordfilter strictness`! Could also use this command with the \
+Administrator saltrole or the `Manage Messages` Discord permission.");
+        if (!filterStrict(arg)) return reply("Please specify a number that is at least 1 and at most 5!");
+        await d.db.table("mods").assign(guildId, { filterStrict: Number(arg) - 1 }, true);
+        reply(`Successfully set the strictness to ${arg}!`);
+      } else if (["punish", "punishment"].includes(action)) {
+        if (!canPunish) return reply(`Missing permission \`wordfilter punishment\`! Could also use this with the \
+Administrator saltrole or the \`Manage Server\` Discord permission.`);
+        const [arg1, ...arg2] = irregArg;
+        if (!canActuallyPunish && arg.toLowerCase() !== "none") return reply(`There is no punishment that both you and me \
+have permissions for! Alternatively, you can choose \`none\` to set to none.`);
+        if (!filterPunish(arg1)) return reply(
+          `Please choose one punishment out of those that both you and me have permission for! Those include: \
+${availablePunish.join(", ")}. You can also choose \`none\` for none!`
+        );
+        const sendPunish = arg1 && !/none/i.test(arg1) ? arg1.charAt(0) : null;
+        let time = null;
+        if (sendPunish === "m") {
+          time = d.Interval.minutes(10);
+          if (arg2) {
+            if (!filterMute(arg2)) return reply(
+              "Invalid timespan for mute! See help for the mute command for info on time."
+            );
+            time = new d.Interval(Object.entries(d.parseTimeStr(arg2.replace(/,|and/ig, ""))));
+          }
+        }
+        await d.db.table("mods").assign(guildId, {
+          filterPunishment: sendPunish,
+          filterPunishmentMute: d.durationcompress(time)
+        });
+        reply(
+          `Successfully set the punishment for saying a filtered word to **${arg1}**${sendPunish === "m" ?
+` for **${}**` :
+""}`
+        );
+      }
+    } else if (["enable", "disable", "toggle"].includes(action)) {
+      if (!canToggle) return reply("Missing permission `wordfilter toggle`! Could also use this command with the \
+Administrator saltrole or the `Manage Messages` Discord permission.");
+      await d.db.table("mods").assignF(guildId, {
+        filterEnabled: current => action === "toggle" ? !current : action === "enable"
+      }, true);
+      reply(`Word filtering toggled ${await d.db.table("mods").prop(guildId, "filterEnabled") ? "on" : "off"} successfully!`);
+    }
   } else if (["add", "remove", "set", "clear", "setup", "register"].includes(action)) {
     if (!canModify) {
       return reply("Missing permission `wordfilter modify`! Could also use this with the Administrator saltrole or the \
@@ -81,7 +170,7 @@ const func = async function (
     };
     if (["add", "remove", "set"].includes(action)) {
       if (!arg) {
-        return reply(`Please specify words to ${action}!`);
+        return reply(`Please specify words to ${action} (separated by commas)!`);
       }
       if (!config.filterSetUp) return reply(`You must setup word filter first! Type \`${p}wordfilter setup\` to do so.`);
       if (["add", "set"].includes(action)) {
@@ -97,6 +186,7 @@ specify up to 75 words.");
         return reply(`${action === "add" ? "Added" : "Set"} ${sendWords.length} \
 word${sendWords.length === 1 ? "" : "s"} to be filtered successfully!`);
       } else if (action === "remove") {
+        if (words.length < 1) return reply("There are no words to remove!");
         const sendWordsUnfiltered = arg.split(/\s,\s*/).map(w => d.cleanify(w, 0));
         const sendWords = sendWordsUnfiltered.filter(w => words.includes(w));
         if (sendWords.length < 1) return reply(`None of those words are filtered!`);
@@ -107,6 +197,7 @@ word${sendWords.length === 1 ? "" : "s"} to be filtered successfully!`);
           ""}`);
       }
     } else if (action === "clear") {
+      if (words.length < 1) return reply("There are no words to clear!");
       const result = await prompt({
         question: `Are you sure you want to clear the whole word filtering list? **This cannot be undone.** \
 This will expire in 15 seconds. Type __y__es or __n__o.`,
@@ -194,11 +285,7 @@ This will expire in 15 seconds. Type \`skip\` to skip${config.filterStrict == nu
           genPrompt({
             skip: true,
             invalidMsg: "Please specify a number that is at least 1 and at most 5!",
-            filter: msg2 => {
-              if (!/^\d$/.test(msg2.content)) return false;
-              const num = Number(msg2.content);
-              return num >= 1 && num <= 5;
-            },
+            filter: msg2 => filterStrict(msg2.content),
             index: 1
           })
         );
@@ -226,21 +313,15 @@ This will expire in 20 seconds. Type \`skip\` to skip (defaults to a pre-defined
         });
       }
       if (canActuallyPunish) {
-        const available = [];
-        if (canWarn) available.push("warn");
-        if (canMute) available.push("mute", "pmute");
-        if (canBan) available.push("ban");
-        if (canKick) available.push("kick");
-        if (canSoftban) available.push("softban");
         multiPrompt.addBranch(
           "next",
-          `Would you like to set any punishment for reaching the word filter? You have permissions for the following: \
-${available.join(", ")}. This will expire in 15 seconds. Type \`skip\` to skip (defaults to none), \`none\` for none \
-and \`cancel\` to cancel.`,
+          `Would you like to set any punishment for reaching the word filter? You have permissions for the following \
+punishments, out of all that I have permissions to: ${availablePunish.join(", ")}. This will expire in 15 seconds. \
+Type \`skip\` to skip (defaults to none), \`none\` for none and \`cancel\` to cancel.`,
           genPrompt({
             skip: true,
-            invalidMsg: "Please choose one punishment out of those that you have permission for!",
-            filter: msg2 => /none/i.test(msg2.content) || available.includes(msg2.content.toLowerCase()),
+            invalidMsg: "Please choose one punishment out of those that both you and me have permission for!",
+            filter: msg2 => filterPunish(msg2.content),
             index: 3
           })
         );
@@ -258,19 +339,7 @@ This will expire in 15 seconds. Type \`skip\` to skip (defaults to 10 minutes) a
               await genPrompt({
                 skip: true,
                 invalidMsg: "Please specify a valid timespan!",
-                filter: msg2 => {
-                  if (/^[^a-z\d]+$/i.test(msg2.content)) return false;
-                  let result;
-                  try {
-                    const parsed = d.parseTimeStr(msg2.content.replace(/,|and/ig, ""));
-                    if (parsed[d.parseTimeStr.invalid]) return false;
-                    result = new d.Interval(Object.entries(parsed));
-                    return true;
-                  } catch(err) {
-                    d.rejct(err, "[AT MUTE TIME WORDFILTER SETUP]");
-                    return false;
-                  }
-                },
+                filter: msg2 => filterMute(msg2.content),
                 index: 4
               }).apply(question, [question]);
             } else {
@@ -315,7 +384,7 @@ ${unavailable.join(", ")}.`}`);
         }
         const obj = { filterSetUp: () => true, filterEnabled: enabled => enabled || false };
         if (sendStrict != null) obj.filterStrict = () => sendStrict;
-        if (messag) obj.filterMessage = () => messag;
+        if (messag) obj.filterMessage = () => d.textAbstract(messag, d.Constants.numbers.MAX_MSG_CHARS - 24);
         if (sendPunish) obj.filterPunishment = () => sendPunish;
         if (sendTime) obj.filterPunishmentMute = () => sendTime;
         try {
@@ -327,6 +396,8 @@ ${unavailable.join(", ")}.`}`);
         }
       }
     }
+  } else {
+    reply("Unknown action! See help command for valid actions.");
   }
 };
 
@@ -335,25 +406,39 @@ module.exports = new Command({
   name: "wordfilter",
   perms: {
     "wordfilter.list": true, "wordfilter.modify": false, "wordfilter.strictness": false, "wordfilter.message": false,
-    "wordfilter.punishment": false, "wordfilter.toggle": false, 
+    "wordfilter.punishment": false, "wordfilter.toggle": false, "wordfilter.immune": false,
     "kick": { default: false, show: false }, "ban": { default: false, show: false },
     "warn": { default: false, show: false }, "softban": { default: false, show: false },
     "mute": { default: false, show: false }
   },
-  description: `Set or view warn punishments for reaching a certain (or multiple) warn count(s). For a list of them, \
-don't specify an action. For the "get" action, you specify a number after it which is the warn count punishment you want to view.\n\
-For the "set", "unset", "add" (same as "set") and "remove" (same as "unset") actions, specify a number after it which is the \
-warn count punishment to set/unset. That's all you need if unsetting. If setting, specify a punishment after it (one of kick, \
-ban, softban, pmute, mute). For mute, specify amount of minutes after it; if you don't specify an amount of minutes it defaults to 10. \
-Otherwise, the punishment will set.\n\nMax warn count (for punishments) is 20.
+  description: `See the filtered words or modify the word filter. Specify an action after the command to \
+show what is being done.
+\nFor listing all words filtered, specify \`list\` as the action. You can include a page after it to go to specific pages.
+**For setting up the word filter** (You cannot use other actions without setting up first), specify \`setup\` or \`register\`\
+ as action.
+For modifying the word filter list, you can specify \`add\`, \`remove\` and \`set\` to add, remove and set words \
+(respectively), separated by comma. Specify \`clear\` as an action to remove all words.
+For setting the word filter strictness, specify \`strictness\` as the action. It must be between 1 and 5.
+For setting the filtering message, specify \`message\` as the action.
+For setting the filtering punishment, specify \`punishment\` (or \`punish\`) as the action, plus a punishment. If you \
+specify mute, specify the time muted as well after it. (Note that both you and the bot need to be able to execute said \
+punishment to be able to choose it.)
+For toggling the word filtering, specify \`enable\`, \`disable\` or \`toggle\` to enable it, disable it or toggle it, \
+respectively.
 
-For permissions, use the \`warnlimit set\` permission for setting/unsetting and the \`warnlimit get\` permission for \
-eeing/listing them. :wink:`,
-  example: `{p}warnlimit get 5 (see punishment on 5 warns)\n\
-{p}warnlimit set 13 kick (on 13 warns, kick)\n\
-{p}warnlimit set 10 mute 15 (on 10 warns, mute for 15 mins)\n\
-{p}warnlimit unset 10 (remove punishment on 10 warns)`,
+About permissions: The \`wordfilter modify\` permission lets you use \`add\`/\`set\`/\`remove\`/\`setup\`, the \`wordfilter \
+toggle\` permission lets you use \`enable\`/\`disable\`/\`toggle\`, the \`wordfilter immune\` permission makes you immune \
+to the word filter and the rest are for their respective actions.
+`,
+  example: `{p}wordfilter list\n\
+{p}wordfilter setup\n\
+{p}wordfilter set apple, banana, orange\n\
+{p}wordfilter remove orange, banana
+{p}wordfilter message You have been caught!
+{p}wordfilter punish mute 2 minutes
+{p}wordfilter strictness 4
+{p}wordfilter toggle`,
   category: "Administration",
-  args: { action: true, "warn count": true, "punishment (if setting)": true, "mute minutes (if setting temporary mute)": true },
+  args: { action: false, "parameter (or page, if using list)": true, "mute time (if using punish with mute)": true },
   guildOnly: true
 });

@@ -6,7 +6,7 @@
 
 const { Message, MessageEmbed } = require("discord.js");
 const { applyDeps, logger } = require("../util/deps");
-const { applyFuncs } = require("../util/funcs");
+const { applyFuncs, textAbstract } = require("../util/funcs");
 const Constants = require("../misc/constants");
 
 const assert = require("assert");
@@ -268,7 +268,7 @@ ${this.customPrefix || p}${this.name}${this.private ?
   ""}${this.guildOnly ?
     " (Not usable in DMs)" :
     ""}
-${this.description}
+${textAbstract(this.description, Constants.numbers.MAX_MSG_CHARS - 100)}
 Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
   `\n\nExample(s): ${_.trim(this.example).replace(/{p}/g, p)}` :
   ``}
@@ -287,8 +287,11 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
       .addField("Usage", `${this.customPrefix || p}${this.name}${usedargs}`);
     if (this.description) {
       embed.setDescription(
-        this.description.replace(
-          /{maxcases}/ig, Constants.numbers.MAX_CASES((guild || { members: { size: 0 } }).members.size)
+        textAbstract(
+          this.description.replace(
+            /{maxcases}/ig, Constants.numbers.MAX_CASES((guild || { members: { size: 0 } }).members.size)
+          ),
+          Constants.numbers.MAX_DESC_CHARS
         )
       );
     }

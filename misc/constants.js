@@ -30,7 +30,7 @@ exports.maps = {
       "∪": "u", "Ϲ": "c", "Ϝ": "f", "К": "k", "Ρ": "p",
       "ℏ": "h", "ҳ": "x", "l": "i", "|": "i", "!": "i",
       "¡": "i", "2": "z", "()": "o", "[]": "o", "{}": "o",
-      "<>": "o", "6": "g", "8": "b", "〰": "w"
+      "<>": "o", "6": "g", "8": "b", "〰": "w", "(": "c"
     },
     greekCyrilic: {
       "Φ": "o", "Χ": "x", "Ψ": "y", "Ω": "o", "ή": "n",
@@ -191,7 +191,8 @@ exports.numbers = {
     }
   },
   MAX_FIELD_CHARS: 1024,
-  MAX_DESC_CHARS: 2000,
+  MAX_DESC_CHARS: 2048,
+  MAX_MSG_CHARS: 2000,
   MAX_PAGE_LENGTH: 5
 };
 

@@ -56,7 +56,7 @@ ${table}`);
 It must be a number that is higher than or equal to 1, and not have decimals.`);
     let str = "";
     Object.values(categories[category]).forEach(cmd => {
-      str += `• cmd.name\n`;
+      str += `• ${cmd.name}\n`;
     });
     str = d._.trim(str).split("\n").sort().join("\n");
     const pages = d.paginate(str);
