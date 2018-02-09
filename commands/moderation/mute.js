@@ -7,7 +7,7 @@ const func = async function (msg, {
   setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy,
   checkRole, self, seePerm
 }) {
-  const hasPerm = seePerm(dummy.perms || "mute", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" });
+  const hasPerm = await seePerm(dummy.perms || "mute", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" });
   if (!hasPerm) {
     return reply("You do not have sufficient permissions! :frowning:");
   } else if (!botmember.hasPermission(["MANAGE_ROLES"])) {

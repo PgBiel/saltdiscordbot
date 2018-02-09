@@ -14,7 +14,7 @@ const func = async function (msg, {
     (dummy.actions && dummy.actions[3]) || "Ban",
     (dummy.actions && dummy.actions[4]) || "ban"
   ];
-  if (!seePerm(dummy.perms || "ban", perms, setPerms, { hperms: "BAN_MEMBERS" })) {
+  if (!await seePerm(dummy.perms || "ban", perms, setPerms, { hperms: "BAN_MEMBERS" })) {
     return reply(`Missing permission \`${dummy.perms || "ban"}\`! :frowning: Could also use this command with the \
 \`Ban Members\` discord permission.`);
   } else if (!botmember.hasPermission(["BAN_MEMBERS"])) {

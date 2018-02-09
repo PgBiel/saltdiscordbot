@@ -7,7 +7,7 @@ const func = async function (msg, {
   searcher, promptAmbig, author, botmember, member, actionLog, dummy, self,
   seePerm, setPerms
 }) {
-  if (!seePerm("kick", perms, setPerms, { hperms: "KICK_MEMBERS" })) {
+  if (!(await seePerm("kick", perms, setPerms, { hperms: "KICK_MEMBERS" }))) {
     return reply("Missing permission `kick`! :frowning: Could also use this command with the `Kick Members` \
 discord permission.");
   } else if (!botmember.hasPermission(["KICK_MEMBERS"])) {

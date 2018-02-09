@@ -80,11 +80,11 @@ or the \`Manage Server\` Discord permission.`);
       await (d.db.table("warnsteps").setRejct(guildId, []));
       return send(`Successfully removed all warn punishments! :wink:`);
     } else {
-      const canBan = seePerm("ban", perms, setPerms, { hperms: "BAN_MEMBERS" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
-      const canSoftban = seePerm("softban", perms, setPerms, { hperms: "BAN_MEMBERS" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
-      const canKick = seePerm("kick", perms, setPerms, { hperms: "KICK_MEMBERS" }) && guild.me.hasPermission(["KICK_MEMBERS"]);
-      const canWarn = seePerm("warn", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
-      const canMute = seePerm("mute", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" }) && guild.me.hasPermission(["MANAGE_ROLES", "MANAGE_CHANNELS"]);
+      const canBan = await seePerm("ban", perms, setPerms, { hperms: "BAN_MEMBERS" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
+      const canSoftban = await seePerm("softban", perms, setPerms, { hperms: "BAN_MEMBERS" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
+      const canKick = await seePerm("kick", perms, setPerms, { hperms: "KICK_MEMBERS" }) && guild.me.hasPermission(["KICK_MEMBERS"]);
+      const canWarn = await seePerm("warn", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
+      const canMute = await seePerm("mute", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" }) && guild.me.hasPermission(["MANAGE_ROLES", "MANAGE_CHANNELS"]);
       const canActuallyPunish = canBan || canSoftban || canKick || canWarn || canMute;
       const availablePunish = [];
       if (canWarn) availablePunish.push("warn");
@@ -96,13 +96,12 @@ or the \`Manage Server\` Discord permission.`);
         return reply(`Please tell me which punishment should I give on reaching that limit! \
 (Either ban, softban, kick, or mute + minutes muted)`);
       }
-      d.logger.debug(`AA`, canBan, availablePunish, canActuallyPunish, subSubArg, args);
       if (availablePunish.length < 1) return reply(`There is no punishment that both you and the bot have permission to \
 do! (See their individual help commands for permissions)`);
       if (num > 25) return reply(`The max warn limit is 25!`);
       if (!availablePunish.includes(subSubArg.toLowerCase())) {
         return reply(`The punishment must be one of those that both you and the bot have permission to! Those include: \
-${availablePunish.split(", ")}.`);
+${availablePunish.join(", ")}.`);
       }
       let time;
       let timeDefault = false;
