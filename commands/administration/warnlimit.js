@@ -2,7 +2,10 @@ const Command = require("../../classes/command");
 const d = require("../../misc/d");
 
 const func = async function (
-  msg, { prompt, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms, seePerm },
+  msg, {
+    prompt, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms, seePerm,
+    guild
+  },
 ) {
   const steps = await (d.db.table("warnsteps").get(guildId));
   if (arrArgs.length < 1) {
@@ -47,9 +50,9 @@ Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
     ` for **${new d.Interval(d.durationdecompress(step.time) || d.Interval.minutes(10))}**` :
     ""}.`);
   } else if (/^(?:set|unset|add|remove|clear)$/i.test(action)) {
-    if (!(await seePerm("warnlimit.set", perms, setPerms, { srole: "admin" }))) {
-      return reply(`Uh-oh, it seems that you don't have permissions to set or unset warn punishments. \
-Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
+    if (!(await seePerm("warnlimit.modify", perms, setPerms, { srole: "admin", hperm: "MANAGE_GUILD" }))) {
+      return reply(`Missing permission \`warnlimit modify\`! Could also use this command with the Administrator saltrole \
+or the \`Manage Server\` Discord permission.`);
     }
     if (!/^clear$/i.test(action) && (arrArgs.length < 2 || isNaN(subArg))) {
       return reply(`Please tell me which warn limit should I add/remove!`);
@@ -77,13 +80,29 @@ Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
       await (d.db.table("warnsteps").setRejct(guildId, []));
       return send(`Successfully removed all warn punishments! :wink:`);
     } else {
+      const canBan = seePerm("ban", perms, setPerms, { hperms: "BAN_MEMBERS" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
+      const canSoftban = seePerm("softban", perms, setPerms, { hperms: "BAN_MEMBERS" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
+      const canKick = seePerm("kick", perms, setPerms, { hperms: "KICK_MEMBERS" }) && guild.me.hasPermission(["KICK_MEMBERS"]);
+      const canWarn = seePerm("warn", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" }) && guild.me.hasPermission(["BAN_MEMBERS"]);
+      const canMute = seePerm("mute", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" }) && guild.me.hasPermission(["MANAGE_ROLES", "MANAGE_CHANNELS"]);
+      const canActuallyPunish = canBan || canSoftban || canKick || canWarn || canMute;
+      const availablePunish = [];
+      if (canWarn) availablePunish.push("warn");
+      if (canMute) availablePunish.push("mute", "pmute");
+      if (canBan) availablePunish.push("ban");
+      if (canKick) availablePunish.push("kick");
+      if (canSoftban) availablePunish.push("softban");
       if (arrArgs.length < 3) {
         return reply(`Please tell me which punishment should I give on reaching that limit! \
 (Either ban, softban, kick, or mute + minutes muted)`);
       }
+      d.logger.debug(`AA`, canBan, availablePunish, canActuallyPunish, subSubArg, args);
+      if (availablePunish.length < 1) return reply(`There is no punishment that both you and the bot have permission to \
+do! (See their individual help commands for permissions)`);
       if (num > 25) return reply(`The max warn limit is 25!`);
-      if (!/^(?:kick|(?:soft)?ban|p?mute)$/i.test(subSubArg)) {
-        return reply(`The punishment must be either kick, ban, softban, pmute or mute (+ minutes muted, default is 10 mins).`);
+      if (!availablePunish.includes(subSubArg.toLowerCase())) {
+        return reply(`The punishment must be one of those that both you and the bot have permission to! Those include: \
+${availablePunish.split(", ")}.`);
       }
       let time;
       let timeDefault = false;
@@ -123,7 +142,9 @@ Sorry ¯\\\\_(ツ)\\_/¯ (Try a different action maybe?)`);
 module.exports = new Command({
   func,
   name: "warnlimit",
-  perms: { "warnlimit.set": false, "warnlimit.get": true },
+  perms: { "warnlimit.modify": false, "warnlimit.get": true, "kick": { default: false, show: false },
+  "ban": { default: false, show: false }, "warn": { default: false, show: false },
+  "softban": { default: false, show: false }, "mute": { default: false, show: false } },
   description: `Set or view warn punishments for reaching a certain (or multiple) warn count(s). For a list of them, \
 don't specify an action. For the "get" action, you specify a number after it which is the warn count punishment you want to view.\n\
 For the "set", "unset", "add" (same as "set") and "remove" (same as "unset") actions, specify a number after it which is the \
@@ -131,7 +152,7 @@ warn count punishment to set/unset. That's all you need if unsetting. If setting
 ban, softban, pmute, mute). For mute, specify amount of minutes after it; if you don't specify an amount of minutes it defaults to 10. \
 Otherwise, the punishment will set.\n\nMax warn count (for punishments) is 20.
 
-For permissions, use the \`warnlimit set\` permission for setting/unsetting and the \`warnlimit get\` permission for \
+For permissions, use the \`warnlimit modify\` permission for setting/unsetting and the \`warnlimit get\` permission for \
 eeing/listing them. :wink:`,
   example: `{p}warnlimit get 5 (see punishment on 5 warns)\n\
 {p}warnlimit set 13 kick (on 13 warns, kick)\n\

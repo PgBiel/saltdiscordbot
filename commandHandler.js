@@ -58,15 +58,14 @@ module.exports = async msg => {
     try {
       const wordsF = await (db.table("wordfilters").get(guildId, []));
       const mods = await (db.table("mods").get(guildId, {}));
-      /* let isImmune = false;
+      let isImmune = false;
       try {
         isImmune = await perms.hasPerm(msg.member, guildId, "wordfilter.immune", false); // execute hasPerm to check immunity
       } catch (err) {
         logger.custom(err, { prefix: `[ERR/PERMCHECK]`, color: "red", type: "error" });
       } 
       if (
-        !isImmune && */
-      if (
+        !isImmune &&
         wordsF &&
         wordsF.length > 0 && 
         mods && 

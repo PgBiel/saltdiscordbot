@@ -56,9 +56,9 @@ ${table}`);
 It must be a number that is higher than or equal to 1, and not have decimals.`);
     let str = "";
     Object.values(categories[category]).forEach(cmd => {
-      str += `• ${cmd.name}\n`;
+      str += `${cmd.name}\n`;
     });
-    str = d._.trim(str).split("\n").sort().join("\n");
+    str = d._.trim(str);
     const pages = d.paginate(str);
     if (pages.length > 1) embed.setFooter(`To go to a certain page, use ${prefix}help ${category} <page>.`);
     if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
@@ -66,7 +66,7 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
       .setColor("RANDOM")
       .setTitle(`List of commands in category "${category}" - Page ${page}/${pages.length}`)
       .setDescription("All commands available in that category.")
-      .addField("Commands", pages[page - 1]);
+      .addField("Commands", pages[page - 1].split("\n").sort().map(l => "• " + l).join("\n"));
     sendIt(embed);
   } else if (arrArgs[0].toLowerCase() === "all") {
     const embed = new d.Embed();
@@ -75,9 +75,9 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
 It must be a number that is higher than or equal to 1, and not have decimals.`);
     let str = "";
     Object.values(d.bot.commands).forEach(cmd => {
-      if (cmd.category !== "Private") str += `• cmd.name\n`;
+      if (cmd.category !== "Private") str += `${cmd.name}\n`;
     });
-    str = d._.trim(str).split("\n").sort().join("\n");
+    str = d._.trim(str);
     const pages = d.paginate(str);
     if (pages.length > 1) embed.setFooter(`To go to a certain page, use ${prefix}help all <page>.`);
     if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
@@ -85,7 +85,7 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
       .setColor("RANDOM")
       .setTitle(`List of all commands - Page ${page}/${pages.length}`)
       .setDescription("All commands available.")
-      .addField("Commands", pages[page - 1]);
+      .addField("Commands", pages[page - 1].split("\n").sort().map(l => "• " + l).join("\n"));
     sendIt(embed);
   } else if (d._.trim(args.toLowerCase()) in d.bot.commands) {
     const cmdn = d._.trim(args.toLowerCase());
