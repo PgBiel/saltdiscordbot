@@ -88,17 +88,22 @@ const func = async function (
       words.length === 1 ?
         "Here's the only filtered word in this server:" :
         `Here is a list of all ${words.length} filtered words in this server:`,
-      { embed }
+      { embed, deletable: true }
     );
   } else if (["message", "strictness", "punish", "punishment", "enable", "disable", "toggle"].includes(action)) {
     if (!config.filterSetUp) {
       return reply(`The word filter must be set up first! Type \`${p}wordfilter setup\` to do so, if you have permission.`);
     }
     if (["message", "strictness", "punish", "punishment"].includes(action)) {
-      if (!arg) {
-        return reply(`Please specify what to set the ${action === "punish" ? "punishment" : action} to!`);
-      }
       if (action === "message") {
+        if (!arg) {
+          if (!config.filterMessage) return reply("There is no custom message set at the moment!");
+          const embed = new d.Embed()
+            .setDescription(d._.trim(config.filterMessage) || "None")
+            .setFooter("To change the message, just specify it with this same command. Make sure you have permissions for \
+that, though.");
+          return reply("Here is the currently set custom message:", { embed, deletable: true });
+        }
         if (!canMessag) return reply("Missing permission `wordfilter message`! Could also use this command with the \
 Administrator saltrole or the `Manage Messages` Discord permission.");
         await d.db.table("mods").assign(
@@ -108,12 +113,23 @@ Administrator saltrole or the `Manage Messages` Discord permission.");
         );
         reply("Successfully changed the filtering message!");
       } else if (action === "strictness") {
+        if (!arg) {
+          return reply(`The current filter strictness is **${(config.filterStrict || 3) + 1}**!`);
+        }
         if (!canStrict) return reply("Missing permission `wordfilter strictness`! Could also use this command with the \
 Administrator saltrole or the `Manage Messages` Discord permission.");
         if (!filterStrict(arg)) return reply("Please specify a number that is at least 1 and at most 5!");
         await d.db.table("mods").assign(guildId, { filterStrict: Number(arg) - 1 }, true);
         reply(`Successfully set the strictness to ${arg}!`);
       } else if (["punish", "punishment"].includes(action)) {
+        if (!arg) {
+          const punishUsed = config.filterPunishment;
+          if (!punishUsed) return reply("There is no set punishment for saying filtered words!");
+          return reply(
+            `The current punishment for saying filtered words is a **${d.Constants.maps.PUNISHMENTS[punishUsed][0]}**\
+${punishUsed === "m" ? ` for **${new d.Interval(d.durationdecompress(config.filterPunishmentMute))}**` : ""}!`
+          );
+        }
         if (!canPunish) return reply(`Missing permission \`wordfilter punishment\`! Could also use this with the \
 Administrator saltrole or the \`Manage Server\` Discord permission.`);
         const [arg1, ...arg2] = irregArg;
@@ -418,17 +434,18 @@ show what is being done.
  as action.
 For modifying the word filter list, you can specify \`add\`, \`remove\` and \`set\` to add, remove and set words \
 (respectively), separated by comma. Specify \`clear\` as an action to remove all words.
-For setting the word filter strictness, specify \`strictness\` as the action. It must be between 1 and 5.
-For setting the filtering message, specify \`message\` as the action.
-For setting the filtering punishment, specify \`punishment\` (or \`punish\`) as the action, plus a punishment. If you \
-specify mute, specify the time muted as well after it. (Note that both you and the bot need to be able to execute said \
-punishment to be able to choose it.)
+For setting or viewing the word filter strictness, specify \`strictness\` as the action. If setting, it must be between \
+1 and 5.
+For setting or viewing the filtering message, specify \`message\` as the action, plus the message if setting.
+For setting or viewing the filtering punishment, specify \`punishment\` (or \`punish\`) as the action. If setting, \
+also specify a punishment. If you specify mute, specify the time muted as well after it. (Note that both you and the bot \
+need to be able to execute said punishment to be able to choose it.)
 For toggling the word filtering, specify \`enable\`, \`disable\` or \`toggle\` to enable it, disable it or toggle it, \
 respectively.
 
 About permissions: The \`wordfilter modify\` permission lets you use \`add\`/\`set\`/\`remove\`/\`setup\`, the \`wordfilter \
 toggle\` permission lets you use \`enable\`/\`disable\`/\`toggle\`, the \`wordfilter immune\` permission makes you immune \
-to the word filter and the rest are for their respective actions.
+to the word filter and the rest are for their resspective actions.
 `,
   example: `{p}wordfilter list\n\
 {p}wordfilter setup\n\

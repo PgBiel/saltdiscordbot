@@ -3,7 +3,7 @@ const d = require("../../misc/d");
 
 const func = async function (msg, { args, arrArgs, send, reply, prefix, botmember, dummy, guild }) {
   const sendIt = (emb => {
-    return send({ embed: emb, autoCatch: false }).catch(err => [403, 50013].includes(err.code) ?
+    return send({ embed: emb, autoCatch: false, deletable: true }).catch(err => [403, 50013].includes(err.code) ?
       send("Please make sure I can send embeds in this channel.") :
       void(d.rejct(err)));
   });

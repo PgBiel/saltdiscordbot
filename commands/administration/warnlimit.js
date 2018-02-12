@@ -25,7 +25,10 @@ const func = async function (
         str += `At **${step.amount} warns**, the member gets a ${d.Constants.maps.PUNISHMENTS[step.punishment][0]}\
 ${timeStr}.\n`;
       }
-      return send(`Here's the list of the current set warn punishments for this server:\n\n${d._.trim(str)}`, { split: true });
+      return send(
+        `Here's the list of the current set warn punishments for this server:\n\n${d._.trim(str)}`,
+        { split: true, deletable: true }
+      );
     }
     return reply(`Uh-oh, it seems that you don't have permissions to get warn punishments, so I'm not listing them. \
 Try an action (like setting)! (Use the \`help\` command for help.)`);

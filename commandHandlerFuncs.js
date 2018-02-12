@@ -58,11 +58,10 @@ export type SaltRole = "moderator"
 export type TextBasedChannel = DMChannel | TextChannel | GroupDMChannel; */
 
 module.exports = function returnFuncs(msg) {
+  const { author, guild, channel } = msg;
   const input = msg.content;
-  const channel = msg.channel;
   const message = msg;
   const guildId = msg.guild ? msg.guild.id : null;
-  const guild = msg.guild || null;
 
   const sendingFunc = func => { // factory for sending functions
     return (content, options) => {
@@ -76,7 +75,30 @@ module.exports = function returnFuncs(msg) {
       if (options.autoCatch == null || options.autoCatch) {
         result.catch(rejct);
       }
-      return result;
+      return options.deletable ? // react with a deleting emoji 
+        result.then(messg => {
+          if (
+            messg && // message was sent successfully
+            messg.react && // message was actually sent successfully
+            guild && // we're in a guild
+            guild.me.hasPermission(["ADD_REACTIONS"]) && // I can add reactions
+            channel && // ????
+            channel.permissionsFor(guild.me).has(["ADD_REACTIONS"]) // I can definitely add reactions
+          ) {
+            messg.react(Constants.emoji.WASTEBASKET)
+              .then(reaction => {
+                messg.awaitReactions(
+                  (react, usr) => react.emoji.name === Constants.emoji.WASTEBASKET && usr.id === author.id,
+                  { time: Time.minutes(1), max: 1, errors: ["time"] }
+                )
+                  .then(collected => messg.delete())
+                  .catch(() => reaction.users.remove(bot.user).catch(() => {}));
+              })
+              .catch(err => rejct(err, "[TRASH-REACT-1]"));
+          }
+          return messg;
+        }) :
+        result;
     };
   };
   const reply = sendingFunc(msg.reply.bind(msg));

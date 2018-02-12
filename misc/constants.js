@@ -196,6 +196,10 @@ exports.numbers = {
   MAX_PAGE_LENGTH: 5
 };
 
+exports.emoji = {
+  WASTEBASKET: "🗑"
+};
+
 exports.identifiers = {
   OWNER: "180813971853410305",
   APLET: "201765854990434304"

@@ -21,9 +21,12 @@ const func = async function (msg, {
   channel, guildId, author, args, arrArgs, send, reply, searcher, promptAmbig
 }) {
   if (!args) {
-    send({ embed: getAvatarEmb(author) });
+    send({ embed: getAvatarEmb(author), deletable: true });
   } else if (!(channel instanceof d.TextChannel)) {
-    send("This is a DM and there is nobody here other than me and you, so here's my avatar.", { embed: getAvatarEmb(d.bot.user) });
+    send(
+      "This is a DM and there is nobody here other than me and you, so here's my avatar.",
+      { embed: getAvatarEmb(d.bot.user), deletable: true }
+    );
   } else {
     if (/^<@\d+>$/.test(args)) {
       const user = d.bot.users.get(args.match(/^<@(\d+)>$/)[1]);
@@ -31,7 +34,7 @@ const func = async function (msg, {
         return reply("Invalid member given!");
       }
       const embed = getAvatarEmb(user);
-      return send({ embed });
+      return send({ embed, deletable: true });
     }
     const members = searcher.searchMember(args);
     d.logger.debug(args);
@@ -46,13 +49,13 @@ const func = async function (msg, {
       if (ambResult.member) {
         const member = ambResult.member;
         const embed = getAvatarEmb(member.user);
-        send({ embed });
+        send({ embed, deletable: true });
         return;
       }
     }
     if (members.length === 1) {
       const embed = getAvatarEmb(members[0].user);
-      send({ embed });
+      send({ embed, deletable: true });
       return;
     }
     return reply("Multiple members were found in your search. Please be more specific.");
