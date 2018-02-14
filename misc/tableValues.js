@@ -41,6 +41,7 @@ interface TableValsDraft {
     moderator?: oneOrMany<string>;
     administrator?: oneOrMany<string>;
     logs?: string;
+    logsOn?: boolean;
     latestCase?: number;
     filterStrict?: number;
     filterEnabled?: boolean;

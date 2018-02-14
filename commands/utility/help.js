@@ -1,6 +1,8 @@
 const Command = require("../../classes/command");
 const d = require("../../misc/d");
 
+const map = { Mod: "Moderation", Admin: "Administration", Util: "Utility" };
+
 const func = async function (msg, { args, arrArgs, send, reply, prefix, botmember, dummy, guild }) {
   const sendIt = (emb => {
     return send({ embed: emb, autoCatch: false, deletable: true }).catch(err => [403, 50013].includes(err.code) ?
@@ -20,6 +22,7 @@ const func = async function (msg, { args, arrArgs, send, reply, prefix, botmembe
       categories[category][v.name] = v;
     }
   });
+  const extraCategories = Object.assign({}, categories, { Mod: null, Admin: null, Util: null });
   if (!args /* || d._.trim(args.toLowerCase()) === "all" */) {
     const embed = new d.Embed();
     embed
@@ -48,23 +51,24 @@ type ${prefix}help all.`);
 
 ${table}`);
     sendIt(embed);
-  } else if (arrArgs[0].toLowerCase().replace(/^\w/, m => m.toUpperCase()) in categories) {
+  } else if (arrArgs[0].toLowerCase().replace(/^\w/, m => m.toUpperCase()) in extraCategories) {
     const category = arrArgs[0].toLowerCase().replace(/^\w/, m => m.toUpperCase());
     const embed = new d.Embed();
     const page = Number(arrArgs[1] || 1);
     if (isNaN(page) || page < 1 || /\./.test(page.toString())) return reply(`Please provide a valid page (the second parameter)! \
 It must be a number that is higher than or equal to 1, and not have decimals.`);
     let str = "";
-    Object.values(categories[category]).forEach(cmd => {
+    Object.values(categories[category in map ? map[category] : category]).forEach(cmd => {
       str += `${cmd.name}\n`;
     });
     str = d._.trim(str);
     const pages = d.paginate(str);
-    if (pages.length > 1) embed.setFooter(`To go to a certain page, use ${prefix}help ${category} <page>.`);
+    if (pages.length > 1) embed.setFooter(`To go to a certain page, use \
+${prefix}help ${category in map ? map[category] : category} <page>.`);
     if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
     embed
       .setColor("RANDOM")
-      .setTitle(`List of commands in category "${category}" - Page ${page}/${pages.length}`)
+      .setTitle(`List of commands in category "${category in map ? map[category] : category}" - Page ${page}/${pages.length}`)
       .setDescription("All commands available in that category.")
       .addField("Commands", pages[page - 1].split("\n").sort().map(l => "• " + l).join("\n"));
     sendIt(embed);

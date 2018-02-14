@@ -99,9 +99,9 @@ const func = async function (
         if (!arg) {
           if (!config.filterMessage) return reply("There is no custom message set at the moment!");
           const embed = new d.Embed()
-            .setDescription(d._.trim(config.filterMessage) || "None")
-            .setFooter("To change the message, just specify it with this same command. Make sure you have permissions for \
-that, though.");
+            .setTitle("Current Word Filtering Message")
+            .setDescription(d._.trim(config.filterMessage) || "None");
+          if (canMessag) embed.setFooter("To change the message, just specify it with this same command.");
           return reply("Here is the currently set custom message:", { embed, deletable: true });
         }
         if (!canMessag) return reply("Missing permission `wordfilter message`! Could also use this command with the \
@@ -125,14 +125,22 @@ Administrator saltrole or the `Manage Messages` Discord permission.");
         if (!arg) {
           const punishUsed = config.filterPunishment;
           if (!punishUsed) return reply("There is no set punishment for saying filtered words!");
+          let text;
+          if (punishUsed === "p") {
+            text = "permanent mute";
+          } else if (punishUsed === "m") {
+            text = `mute** for **${new d.Interval(d.durationdecompress(config.filterPunishmentMute))}`;
+          } else {
+            text = d.Constants.maps.PUNISHMENTS[punishUsed][0];
+          }
           return reply(
-            `The current punishment for saying filtered words is a **${d.Constants.maps.PUNISHMENTS[punishUsed][0]}**\
-${punishUsed === "m" ? ` for **${new d.Interval(d.durationdecompress(config.filterPunishmentMute))}**` : ""}!`
+            `The current punishment for saying filtered words is a **${text}**!`
           );
         }
         if (!canPunish) return reply(`Missing permission \`wordfilter punishment\`! Could also use this with the \
 Administrator saltrole or the \`Manage Server\` Discord permission.`);
-        const [arg1, ...arg2] = irregArg;
+        const [arg1, ..._arg2] = irregArg;
+        const arg2 = _arg2.join(" ");
         if (!canActuallyPunish && arg.toLowerCase() !== "none") return reply(`There is no punishment that both you and me \
 have permissions for! Alternatively, you can choose \`none\` to set to none.`);
         if (!filterPunish(arg1)) return reply(

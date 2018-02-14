@@ -122,7 +122,8 @@ class ActionLog {
     let msgSent;
     try {
       const logChannel = await this._getLog(guild);
-      if (logChannel) {
+      const isOn = await (db.table("mods").prop(guild.id || guild, "logsOn"));
+      if (logChannel && (isOn || isOn == null)) {
         const semiMsgSent = await logChannel.send({ embed });
         if (Array.isArray(semiMsgSent)) {
           msgSent = semiMsgSent[0];
