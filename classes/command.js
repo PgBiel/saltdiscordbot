@@ -210,7 +210,12 @@ module.exports = class Command {
 
     this.perms = options.perms;
 
-    this.aliases = options.aliases;
+    this.aliases = typeof options.aliases === "object" ?
+      _.fromPairs(Object.entries(options.aliases).map(([k, v]) => typeof v === "object" ?
+        [k, Command.aliasFrom(this, k, Object.assign({ show: false }, v))] :
+        [k, null]
+      )) :
+      null;
 
     this.aliasData = options.aliasData;
 

@@ -1,63 +1,93 @@
 const Command = require("../../classes/command");
 const d = require("../../misc/d");
 
- /* const func = async function (
+const func = async function (
   msg, {
-    prompt, guildId, reply, checkRole, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms, seePerm,
-    genPromptD, guild
+    prompt, guildId, reply, searcher, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms, seePerm,
+    genPromptD, guild, promptAmbig
   },
 ) {
+  let logs = await (d.db.table("mods").prop(guildId, "logs"));
+  if (logs) logs = d.uncompress(String(logs));
+  const logsOn = await (d.db.table("mods").prop(guildId, "logsOn"));
+  const isOn = logsOn || logsOn == null;
   if (!args) {
-    const logs = await (d.db.table("mods").prop(guildId, "logs"));
-    if (!logs || !guild.channels.has(String(logs))) {
+    if (!logs || !guild.channels.has(logs)) {
       return reply(`There is no set action logs channel at the moment! (To manage, see help command.)`);
     }
-    const logsOn = await (d.db.table("mods").prop(guildId, "logsOn"));
-    let isOn = logsOn || logsOn == null;
     return reply(`The current action logs channel is set to <#${logs}>, and action logs are currently \
 ${isOn ? "enabled" : "disabled"}! (To manage, see help command.)`);
+  }
+  const { channels } = guild;
+  const action = arrArgs[0].toLowerCase();
+  if (["set", "unset", "enable", "disable", "toggle"].includes(action)) {
+    if (!seePerm("actionlogs", perms, setPerms, { srole: "Admin", hperms: "MANAGE_GUILD" })) {
+      return reply("Missing permission `actionlogs`! Could also use this command with the Administrator saltrole or the \
+`Manage Servers` Discord permission.");
+    }
+    if (action === "set") {
+      if (args.length < 2) return reply("Please specify a channel to set action logs to!");
+      const name = arrArgs[1];
+      if (!/^(?:<#\d+>|#?[\w-]+)$/i.test(name)) return reply("Please provide a valid channel name!");
+      let cToUse;
+      if (/^<#\d+>$/.test(name)) {
+        const cId = name.match(/^<#(\d+)>$/)[1];
+        if (!channels.has(cId)) return reply("Unknown channel!");
+        cToUse = channels.get(cId);
+      } else {
+        const mName = name.replace(/^#/, "");
+        const result = searcher.searchChannel(mName, "text");
+        if (!result || result.length < 1) return reply("Unknown channel!");
+        if (result.length < 2) {
+          cToUse = result[0];
+        } else if (result.length > 1 && result.length < 10) {
+          const cResult = await promptAmbig(result, "channels", { type: "channel", channelType: "text" });
+          if (cResult.cancelled) return;
+          cToUse = cResult.subject;
+        }
+      }
+      await (d.db.table("mods").assignF(
+        guildId,
+        { logs: () => d.compress(cToUse.id), logsOn: isOn => isOn == null ? true : isOn },
+        true
+      ));
+      reply(`Successfully set the action logging channel to ${cToUse}!`);
+    } else if (["enable", "disable", "unset", "toggle"].includes(action)) {
+      if (!logs || !guild.channels.has(logs)) return reply(`Action logs must be set to a channel first! To do so, use \
+\`${p}actionlogs set #channel\`, where \`#channel\` is the channel you want to set it to.`);
+      if (["enable", "disable", "unset"].includes(action)) {
+        if ((action === "enable" && logsOn) || (action !== "enable" && !logsOn)) {
+          return reply(`Action logs are already ${action === "enable" ? "on" : "off"}!`);
+        }
+        await (d.db.table("mods").assign(guildId, { logsOn: action === "enable" ? true : false }, true));
+        reply(`Successfully ${action === "enable" ? "enabled" : "disabled"} action logs!`);
+      } else if (action === "toggle") {
+        await (d.db.table("mods").assignF(guildId, { logsOn: isOn => !isOn}, true));
+        reply(`Successfully toggled action logs ${logsOn ? "off" : "on"}!`);
+      }
+    }
+  } else {
+    reply("Unknown action! See help command for help.");
   }
 };
 
 module.exports = new Command({
   func,
-  name: "wordfilter",
-  perms: {
-    "wordfilter.list": true, "wordfilter.modify": false, "wordfilter.strictness": false, "wordfilter.message": false,
-    "wordfilter.punishment": false, "wordfilter.toggle": false, "wordfilter.immune": false,
-    "kick": { default: false, show: false }, "ban": { default: false, show: false },
-    "warn": { default: false, show: false }, "softban": { default: false, show: false },
-    "mute": { default: false, show: false }
-  },
-  description: `See the filtered words or modify the word filter. Specify an action after the command to \
-show what is being done.
-\nFor listing all words filtered, specify \`list\` as the action. You can include a page after it to go to specific pages.
-**For setting up the word filter** (You cannot use other actions without setting up first), specify \`setup\` or \`register\`\
- as action.
-For modifying the word filter list, you can specify \`add\`, \`remove\` and \`set\` to add, remove and set words \
-(respectively), separated by comma. Specify \`clear\` as an action to remove all words.
-For setting or viewing the word filter strictness, specify \`strictness\` as the action. If setting, it must be between \
-1 and 5.
-For setting or viewing the filtering message, specify \`message\` as the action, plus the message if setting.
-For setting or viewing the filtering punishment, specify \`punishment\` (or \`punish\`) as the action. If setting, \
-also specify a punishment. If you specify mute, specify the time muted as well after it. (Note that both you and the bot \
-need to be able to execute said punishment to be able to choose it.)
-For toggling the word filtering, specify \`enable\`, \`disable\` or \`toggle\` to enable it, disable it or toggle it, \
-respectively.
+  name: "actionlogs",
+  perms: "actionlogs",
+  default: false,
+  description: `Manage action logs. Specify no parameters to simply view the channel at which action logs are set to.
 
-About permissions: The \`wordfilter modify\` permission lets you use \`add\`/\`set\`/\`remove\`/\`setup\`, the \`wordfilter \
-toggle\` permission lets you use \`enable\`/\`disable\`/\`toggle\`, the \`wordfilter immune\` permission makes you immune \
-to the word filter and the rest are for their resspective actions.
-`,
-  example: `{p}wordfilter list\n\
-{p}wordfilter setup\n\
-{p}wordfilter set apple, banana, orange\n\
-{p}wordfilter remove orange, banana
-{p}wordfilter message You have been caught!
-{p}wordfilter punish mute 2 minutes
-{p}wordfilter strictness 4
-{p}wordfilter toggle`,
+You can specify an action after the command name (if you have the permission \`actionlog\`):
+If specifying action \`set\`, specify a channel to set it as the action log channel.
+If specifying \`enable\` or \`disable\`, you will enable and disable action logs, respectively.
+If specifying \`unset\`, you will disable action logs (alias to \`disable\`).
+If specifying \`toggle\`, you will toggle if action logs are enabled or disabled.`,
+  example: `{p}actionlogs
+{p}actionlogs set #channel
+{p}actionlogs enable
+{p}actionlogs toggle`,
   category: "Administration",
-  args: { action: false, "parameter (or page, if using list)": true, "mute time (if using punish with mute)": true },
+  args: { action: true, "channel (if setting action logs channel)": true },
   guildOnly: true
-}); */
+});

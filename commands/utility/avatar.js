@@ -18,8 +18,9 @@ function getAvatarEmb(author) {
 }
 
 const func = async function (msg, {
-  channel, guildId, author, args, arrArgs, send, reply, searcher, promptAmbig
+  channel, guildId, author, args, arrArgs, send, reply, searcher, promptAmbig, perms, guild
 }) {
+  if (guild && !perms.avatar) return reply("Missing permission `avatar`! :frowning:");
   if (!args) {
     send({ embed: getAvatarEmb(author), deletable: true });
   } else if (!(channel instanceof d.TextChannel)) {
@@ -46,8 +47,8 @@ const func = async function (msg, {
       if (ambResult.cancelled) {
         return;
       }
-      if (ambResult.member) {
-        const member = ambResult.member;
+      if (ambResult.subject) {
+        const member = ambResult.subject;
         const embed = getAvatarEmb(member.user);
         send({ embed, deletable: true });
         return;

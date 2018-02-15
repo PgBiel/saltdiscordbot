@@ -10,7 +10,7 @@ const func = async function (msg, {
   const hasPerm = await seePerm("warn", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" });
   if (!hasPerm) {
     return reply(`You do not have sufficient permissions! To use this command, you need the \`Moderator\` SaltRole, \
-    the \`Manage Roles\` Discord Permission or the permission \`warn\`.`);
+the \`Manage Roles\` Discord Permission or the permission \`warn\`.`);
   }
   if (!args) {
     return reply("Please tell me who to warn!");
@@ -41,7 +41,7 @@ const func = async function (msg, {
     if (result.cancelled) {
       return;
     }
-    memberToUse = result.member;
+    memberToUse = result.subject;
   } else if (membersMatched) {
     return reply("Multiple members have matched your search. Please be more specific.");
   }

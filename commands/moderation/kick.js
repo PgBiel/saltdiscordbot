@@ -42,7 +42,7 @@ discord permission.");
     if (result.cancelled) {
       return;
     }
-    memberToUse = result.member;
+    memberToUse = result.subject;
   } else if (membersMatched) {
     return reply("Multiple members have matched your search. Please be more specific.");
   }

@@ -131,8 +131,7 @@ Page ${page + 1}/${pages.length}`)
     if (extraFields) {
       const extraPart = punish.type === "p" ?
       [
-        "Muted for",
-        "Eternity"
+        "Permanently muted"
       ] :
       [
         extraFields[0][0].replace(/^Muted For$/, "Muted for"),
@@ -144,7 +143,7 @@ Page ${page + 1}/${pages.length}`)
     }
     const field = [
       `Case ${punish[cprop]} by ${((await d.bot.users.fetch(d.uncompress(punish[mprop]))) || { tag: "Unknown" }).tag}${extra}`,
-      `${punish.reason || "No reason"}`
+      `${punish.reason === "None" ? "No reason" : (punish.reason || "No reason")}`
     ];
     embed.addField(field[0], field[1]);
   }
@@ -209,7 +208,7 @@ const func = async function (
         if (result.cancelled) {
           return;
         }
-        memberToUse = result.member;
+        memberToUse = result.subject;
       } else if (membersMatched) {
         return reply("Multiple members have matched your search. Please be more specific.");
       }
@@ -265,7 +264,7 @@ const func = async function (
           if (result.cancelled) {
             return;
           }
-          memberToUse = result.member;
+          memberToUse = result.subject;
         } else if (membersMatched) {
           return reply("Multiple members have matched your search. Please be more specific.");
         }

@@ -1,7 +1,8 @@
 const Command = require("../../classes/command");
 const d = require("../../misc/d");
 
-const func = async function (msg, { arrArgs, reply }) {
+const func = async function (msg, { arrArgs, reply, guild, perms }) {
+  if (guild && !perms.random) return reply("Missing permission `random`! :frowning:");
   if (arrArgs.length < 2) {
     reply("Please specify two numbers.");
     return;

@@ -1,6 +1,6 @@
 const { Guild, GuildMember, MessageEmbed, User } = require("discord.js");
 // const { cases, moderation } = require("../sequelize/sequelize");
-const { bot, Constants, db, Interval, logger, moment, msgEmbedToRich, Time } = require("../util/deps");
+const { bot, Constants, db, Interval, logger, moment, msgEmbedToRich, Time, util } = require("../util/deps");
 const {
   avatarCompress, avatarUncompress, cloneObject, compress, datecomp, dateuncomp, rejct, textAbstract, uncompress,
   durationcompress, durationdecompress
@@ -135,7 +135,7 @@ class ActionLog {
       rejct(err);
       return null;
     }
-    caseObj.messageid = compress(msgSent.id);
+    if (msgSent && msgSent.id) caseObj.messageid = compress(msgSent.id);
     db.table("punishments").add(guild.id, caseObj);
     guild.members.fetch().catch(rejct);
     const maxCases = Constants.numbers.MAX_CASES(guild.members.size);
@@ -192,7 +192,7 @@ class ActionLog {
       await logged.delete();
       obj.message = true;
     } catch (err) {
-      rejct(err);
+      // lol
     }
     return obj;
   }
@@ -221,7 +221,6 @@ class ActionLog {
       obj.message = logged;
       return obj;
     } catch (err) {
-      rejct(err);
       return obj;
     }
   }
@@ -288,7 +287,7 @@ class ActionLog {
       obj.message = true;
       return obj;
     } catch (err) {
-      rejct(err);
+      if (!/snowflake/i.test(util.inspect(err))) rejct(err, "[EDIT CASE LOG FETCH]");
       return obj;
     }
   }

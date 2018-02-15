@@ -1,6 +1,6 @@
 const {
   Collection, Guild, GuildMember,
-  TextChannel, User
+  TextChannel, User, Channel, GuildChannel, Role
 } = require("discord.js");
 const actionLog = require("./classes/actionlogger");
 const messager = require("./classes/messager");
@@ -8,7 +8,7 @@ const Searcher = require("./classes/searcher");
 const deps = require("./util/deps");
 const { bot, Constants, db, logger, Time, util } = require("./util/deps");
 const funcs = require("./util/funcs");
-const { capitalize, cloneObject, rejct, uncompress } = require("./util/funcs");
+const { capitalize, cloneObject, rejct, uncompress, escMarkdown } = require("./util/funcs");
 
 // const { bot, Constants, logger } = deps;
 // const { cloneObject, rejct } = funcs;
@@ -122,35 +122,70 @@ module.exports = function returnFuncs(msg) {
       return member.roles.has(uncompress(result[role]));
     }
   };
-  const promptAmbig = async (members, pluralName = "members") => {
+  const promptAmbig = async (subjects, pluralName = "members", opts = { type: "member" }) => {
     let satisfied = false;
     let cancelled = false;
     let currentOptions = [];
+    const { type, channelType = "text" } = opts;
 
-    const getTag = gm => gm.user ? gm.user.tag : (gm.tag || gm.toString());
+    const getTag = gm => {
+      if (gm instanceof GuildChannel) {
+        return `#${gm.name}`;
+      } else if (gm.user) {
+        return gm.user.tag;
+      } else if (gm.tag) {
+        return gm.tag;
+      } else {
+        return gm.toString();
+      }
+    };
 
-    members.forEach(gm => currentOptions.push(gm));
+    subjects.forEach(gm => currentOptions.push(gm));
     const filter = msg2 => {
+      const cont = msg2.content;
       const options = currentOptions;
       if (msg2.author.id !== msg.author.id) {
         return false;
       }
-      if (msg2.content === "cancel" || msg2.content === "`cancel`") {
+      if (cont === "cancel" || cont === "`cancel`") {
         cancelled = true;
         return true;
       }
-      const tagOptions = options.map(gm => getTag(gm));
-      if (tagOptions.includes(msg2.content)) {
+      if (/^#\d+$/.test(cont)) {
+        const nNumber = cont.match(/^#(\d+)$/)[1];
+        if (nNumber.length < 5) {
+          const number = Number(nNumber);
+          if (number % 1 === 0 && number > 0 && number < 51 && number <= options.length) {
+            satisfied = true;
+            currentOptions = [options[Number(number) - 1]];
+            return true;
+          }
+        }
+      }
+      const tagOptions = [];
+      for (const gm of options) {
+        if (gm instanceof Role || gm instanceof GuildChannel) {
+          tagOptions.push(String(gm));
+        } else {
+          tagOptions.push(getTag(gm));
+        }
+      }
+      if (tagOptions.includes(cont)) {
         satisfied = true;
-        currentOptions = [options[tagOptions.indexOf(msg2.content)]];
+        currentOptions = [options[tagOptions.indexOf(cont)]];
         return true;
       }
       const collOptions = new Collection();
       options.forEach(gm => {
         collOptions.set(gm.id || gm.toString(), gm);
       });
-      const searcher2 = new Searcher({ members: collOptions });
-      const resultingMembers = searcher2.searchMember(msg2.content);
+      const searcher2 = new Searcher({ [type + "s"]: collOptions });
+      const resultingMembers = type === "channel" ?
+        searcher2.searchChannel(cont.replace(/^#/, ""), channelType || "text") :
+        (type === "role" ?
+          searcher2.searchRole(cont) :
+          searcher2.searchMember(cont)
+        );
       if (resultingMembers.length < 1) {
         return true;
       }
@@ -162,10 +197,10 @@ module.exports = function returnFuncs(msg) {
       currentOptions = resultingMembers;
       return true;
     };
-    reply(`Multiple ${pluralName} have matched that search. Please specify one.
-This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
+    reply(`Multiple ${pluralName} have matched that search. Please specify one, or a number preceded by \`#\` (e.g. \`#1\`).
+This command will automatically cancel after 25 seconds. Type \`cancel\` to cancel.
 **${capitalize(pluralName)} Matched**:
-\`${currentOptions.map(gm => getTag(gm)).join("`, `")}\``);
+${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`);
     for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
       try {
         const result = await channel.awaitMessages(
@@ -176,35 +211,35 @@ This command will automatically cancel after 30 seconds. Type \`cancel\` to canc
         );
         if (satisfied) {
           return {
-            member: currentOptions[0],
+            subject: currentOptions[0],
             cancelled: false
           };
         }
         if (cancelled) {
           send("Command cancelled.");
           return {
-            member: null,
+            subject: null,
             cancelled: true
           };
         }
         if (i < 5) {
           reply(`Multiple ${pluralName} have matched that search. Please specify one.
-This command will automatically cancel after 30 seconds. Type \`cancel\` to cancel.
-**Members Matched**:
-\`${currentOptions.map(gm => getTag(gm)).join("`,`")}\``);
+This command will automatically cancel after 25 seconds. Type \`cancel\` to cancel.
+**${capitalize(pluralName)} Matched**:
+${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`);
         }
       } catch (err) {
         logger.error(`At PromptAmbig: ${err}`);
         send("Command cancelled.");
         return {
-          member: null,
+          subject: null,
           cancelled: true
         };
       }
     }
     send("Automatically cancelled command.");
     return {
-      member: null,
+      subject: null,
       cancelled: true
     };
   };

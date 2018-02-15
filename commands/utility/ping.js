@@ -1,7 +1,8 @@
 const Command = require("../../classes/command");
 const d = require("../../misc/d");
 
-const func = async function (msg, { send }) {
+const func = async function (msg, { guild, send, reply, perms }) {
+  if (guild && !perms.ping) return reply("Missing permission `ping`! (Try using this command by messaging me.)");
   const now = Date.now();
   const sentmsg = await send("Calculating ping...");
   const ping = Date.now() - now; // tslint:disable-line:no-shadowed-variable

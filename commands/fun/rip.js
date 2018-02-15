@@ -1,7 +1,8 @@
 const Command = require("../../classes/command");
 const d = require("../../misc/d");
 
-const func = async function (msg, { args, send, channel, member, author, guild }) {
+const func = async function (msg, { args, send, reply, channel, member, author, guild, perms }) {
+  if (guild && !perms.rip) return reply("Missing permission `rip`! :frowning:");
   let ripContent = "";
   if (!args) {
     ripContent = member ?

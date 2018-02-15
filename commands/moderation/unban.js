@@ -42,7 +42,7 @@ const func = async function (msg, {
     if (resultPrompt.cancelled) {
       return;
     }
-    memberToUse = resultPrompt.member;
+    memberToUse = resultPrompt.subject;
   } else if (membersMatched) {
     return reply("Multiple banned users have matched your search. Please be more specific.");
   }

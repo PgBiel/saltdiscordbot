@@ -5,7 +5,7 @@ exports.sql = {
 };
 
 exports.times = {
-  AMBIGUITY_EXPIRE: 30000
+  AMBIGUITY_EXPIRE: 25000
 };
 
 exports.maps = {

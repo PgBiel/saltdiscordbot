@@ -14,10 +14,11 @@ function maths(text, id, n) {
   return (charcodes.reduce((a, b) => a + b, 0) + idd) % n;
 }
 
-const func = async function (msg, { args, reply, author }) {
+const func = async function (msg, { args, reply, guild, author, perms }) {
   if (!args) {
     return reply("Please ask a question!");
   }
+  if (guild && !perms["8ball"]) return reply("Missing permission `8ball! :frowning:");
   const answers = [
     "Very probably.",
     "High chance of so.",
