@@ -160,8 +160,8 @@ module.exports = class Searcher {
   /**
    * Search for a channel.
    * @param {string} nameOrPattern The channel name to search for or pattern to test for
-   * @param {string} [type="text"] The channel type to look for. One of "text", "voice" and "all"
-   * @returns {Array<TextChannel>|Array<VoiceChannel>|Array<TextChannel|VoiceChannel>} The result(s)
+   * @param {string} [type="text"] The channel type to look for. One of "text", "voice", "category", and "all"
+   * @returns {Array<TextChannel|VoiceChannel|CategoryChannel>} The result(s)
    */
   /* public searchChannel(nameOrPattern: string | RegExp, type: "text"): TextChannel[];
   public searchChannel(nameOrPattern: string | RegExp, type: "voice"): VoiceChannel[];
@@ -170,16 +170,12 @@ module.exports = class Searcher {
     const pattern = nameOrPattern instanceof RegExp ?
     nameOrPattern :
     new RegExp(_.escapeRegExp(nameOrPattern), "i");
+    let toLook = _.castArray(type).map(s => String(s).toLowerCase());
+    toLook = toLook.length > 0 ?
+      this.channels.filter(c => toLook.includes(c.type)) :
+      this.channels;
+    if (toLook.size < 1) return [];
     const match = [];
-    let toLook;
-    switch (type.toLowerCase()) {
-      case "text":
-      case "voice":
-      case "category":
-        toLook = type.toLowerCase();
-        break;
-    }
-    toLook = toLook ? this.channels.filter(c => c.type === toLook) : this.channels;
     for (const [id, channel] of toLook) {
       if (
         (typeof nameOrPattern === "string" && channel.name === nameOrPattern)

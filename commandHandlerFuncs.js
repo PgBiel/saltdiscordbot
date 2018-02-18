@@ -223,7 +223,7 @@ ${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'"
           };
         }
         if (i < 5) {
-          reply(`Multiple ${pluralName} have matched that search. Please specify one.
+          reply(`Multiple ${pluralName} have matched that search. Please specify one. Please specify one, or a number preceded by \`#\` (e.g. \`#1\`).
 This command will automatically cancel after 25 seconds. Type \`cancel\` to cancel.
 **${capitalize(pluralName)} Matched**:
 ${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`);

@@ -105,10 +105,11 @@ module.exports = class Command {
       customPrefix: cmd.customPrefix,
       devonly: cmd.private,
       perms: data.perms || cmd.perms,
-      default: data.default || cmd.default,
+      default: data.default == null ? cmd.default : data.default,
       pattern: data.pattern || cmd.pattern,
       description: data.description || cmd.description,
       example: data.example || null,
+      guildOnly: data.guildOnly == null ? cmd.guildOnly : data.guildOnly,
       args: data.args || cmd.args
     });
     return newCmd;

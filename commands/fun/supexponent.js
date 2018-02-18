@@ -11,9 +11,9 @@ to \`numupper\`, but only superscripts exponents. Note that this does not resolv
   msgNoNumbers: "Please ensure there's at least one number in your expression/text.",
   msgEmpty: "Please specify a math expression or text to superscript exponents!",
   embTitle: "Sent text with all exponents superscripted",
-  replace: (text, arrup) => text.replace(/(\*\*|\^|ˆ)\s*\d+/g, str => {
-    const nums = str.match(/(?:\*\*|\^|ˆ)\s*(\d+)/)[1];
-    const numstr = nums.split("").map(n => arrup[Number(n)]).join("");
+  replace: (text, arrup) => text.replace(/(\*\*|[ˆ^+-])\s*\d+/g, str => {
+    const nums = str.match(/(?:\*\*|[ˆ^+-])\s*(\d+)/)[1];
+    const numstr = nums.split("").map(n => arrup[n]).join("");
     return numstr;
   }),
   sentMsg: "Here is your message with all exponents set to superscript:",
