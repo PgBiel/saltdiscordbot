@@ -7,8 +7,8 @@ const messager = require("./classes/messager");
 const Searcher = require("./classes/searcher");
 const deps = require("./util/deps");
 const { bot, Constants, db, logger, Time, util } = require("./util/deps");
-const funcs = require("./util/funcs");
-const { capitalize, cloneObject, rejct, uncompress, escMarkdown } = require("./util/funcs");
+const funcs = require("./funcs/funcs");
+const { capitalize, cloneObject, rejct, uncompress, escMarkdown } = require("./funcs/funcs");
 
 // const { bot, Constants, logger } = deps;
 // const { cloneObject, rejct } = funcs;
@@ -77,6 +77,7 @@ module.exports = function returnFuncs(msg) {
       }
       return options.deletable ? // react with a deleting emoji 
         result.then(messg => {
+          if (channel.typing) channel.stopTyping();
           if (
             messg && // message was sent successfully
             messg.react && // message was actually sent successfully

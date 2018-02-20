@@ -1,5 +1,5 @@
 const { bot, colors } = require("../util/deps");
-const { djsDebug, djsWarn } = require("../util/funcs");
+const { djsDebug, djsWarn } = require("../funcs/funcs");
 
 bot.on("ready", () => {
   console.log(colors.green(`Shard ${bot.shard.id} initialized!`));

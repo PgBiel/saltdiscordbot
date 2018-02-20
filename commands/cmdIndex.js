@@ -1,5 +1,5 @@
 const { Command, klaw } = require("../util/deps");
-const { ncrequire } = require("../util/funcs");
+const { ncrequire } = require("../funcs/funcs");
 
 const commands = {};
 const options = { nodir: true };

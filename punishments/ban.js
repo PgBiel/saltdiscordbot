@@ -1,6 +1,6 @@
 const { Guild, GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
 const { Time } = require("ztimespan");
-const { endChar, escMarkdown, rejct, textAbstract } = require("../util/funcs");
+const { endChar, escMarkdown, rejct, textAbstract } = require("../funcs/funcs");
 const Punishment = require("./punishment");
 
 class Ban extends Punishment {

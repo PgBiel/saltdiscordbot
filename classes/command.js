@@ -6,7 +6,7 @@
 
 const { Message, MessageEmbed } = require("discord.js");
 const { applyDeps, logger } = require("../util/deps");
-const { applyFuncs } = require("../util/funcs");
+const { applyFuncs } = require("../funcs/funcs");
 const Constants = require("../misc/constants");
 
 const assert = require("assert");

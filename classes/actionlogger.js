@@ -4,7 +4,7 @@ const { bot, Constants, db, Interval, logger, moment, msgEmbedToRich, Time, util
 const {
   avatarCompress, avatarUncompress, cloneObject, compress, datecomp, dateuncomp, rejct, textAbstract, uncompress,
   durationcompress, durationdecompress
-} = require("../util/funcs");
+} = require("../funcs/funcs");
 
 /**
  * Options for editing a case. (TypeScript remainder)

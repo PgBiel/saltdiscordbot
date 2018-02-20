@@ -3,7 +3,7 @@ const { db, moment, logger, Time, Interval } = require("../util/deps");
 const {
   durationcompress, datecomp, createMutedRole, endChar, escMarkdown, rejct, textAbstract, durationdecompress,
   uncompress, compress
-} = require("../util/funcs");
+} = require("../funcs/funcs");
 const Punishment = require("./punishment");
 
 class Mute extends Punishment {

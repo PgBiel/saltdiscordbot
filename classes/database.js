@@ -6,7 +6,7 @@ const _ = require("lodash");
 const Constants = require("../misc/Constants");
 const logger = require("./logger");
 const { Storage } = require("saltjs");
-// const { rejct } = require("../util/funcs");
+// const { rejct } = require("../funcs/funcs");
 
 function rejct(rejection, prefix) {
   // console.log(require("util").inspect(require("./deps")));

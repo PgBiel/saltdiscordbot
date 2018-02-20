@@ -2,7 +2,7 @@ const { MessageEmbed } = require("discord.js");
 const { Constants, db, logger, Time, util } = require("../util/deps");
 const {
   compress, datecomp, dateuncomp, escMarkdown, rejct, textAbstract, uncompress, durationcompress
-} = require("../util/funcs");
+} = require("../funcs/funcs");
 const Punishment = require("./punishment");
 
 const banP = require("./ban");

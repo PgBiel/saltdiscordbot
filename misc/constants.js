@@ -1,4 +1,4 @@
-const { combineRegex } = require("../util/funcs");
+const { combineRegex } = require("../funcs/funcs");
 
 exports.sql = {
   UNIQUE_CONSTRAINT: "SequelizeUniqueConstraintError"

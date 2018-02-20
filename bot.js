@@ -8,7 +8,7 @@ changeConsole(false, setShards);
 console.log("Initializing...");
 const {
   botMessage, checkMutes, IMessagerEvalData, loadCmds, messagerDoEval, processMessage, rejct, checkWarns
-} = require("./util/funcs");
+} = require("./funcs/funcs");
 const { bot, data, decodeT, Discord, fs, logger, messager, /* sql, */ Time, toml } = require("./util/deps");
 require("./misc/events");
 setShards.id = bot.shard.id;
