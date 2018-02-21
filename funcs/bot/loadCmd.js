@@ -13,7 +13,7 @@ module.exports = function loadCmd(cmdn) {
       loadedCmds.push(ncrequire(`../commands/${f}`));
     }
   }); */
-  const loadedCmds = ncrequire("../commands/cmdIndex").commands;
+  const loadedCmds = ncrequire("../../commands/cmdIndex").commands;
   if (loadedCmds.hasOwnProperty(cmdn) ) {
     const cmd = loadedCmds[cmdn];
     // const parsed = commandParse(loadedCmds[cmd]);

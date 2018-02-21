@@ -1,4 +1,4 @@
-const db = require("../classes/database");
+const db = require("../../classes/database");
 
 /**
  * Fetch prefix from database

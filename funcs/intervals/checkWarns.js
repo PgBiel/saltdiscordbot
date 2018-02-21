@@ -7,7 +7,7 @@ const durationdecompress = require("../compression/durationdecompress");
  * Check all active warns and remove them if needed.
  * @returns {Promise<void>}
  */
-async function checkWarns() {
+module.exports = async function checkWarns() {
   if (!bot.readyTimestamp) return;
   const awaited = await (db.table("warns").storage());
   const warnsForShard = _.flatten(
@@ -29,4 +29,4 @@ async function checkWarns() {
     const time = moment(warnedAt).add(expire).toDate().getTime();
     if (Date.now() >= time) db.table("warns").remArr(guildId, warn.old);
   }
-}
+};

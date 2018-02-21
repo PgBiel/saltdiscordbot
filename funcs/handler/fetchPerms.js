@@ -1,4 +1,5 @@
 const cloneObject = require("../util/cloneObject");
+const p = require("../../classes/permissions");
 const logger = require("../../classes/logger");
 
 /**
@@ -24,7 +25,7 @@ module.exports = async function fetchPerms(perms, member, defaultPerm = false) {
     const isDefault = typeof perme === "boolean" ? perme : perme.default; // if perm is default
     try {
       // execute hasPerm to check perm
-      const permsResult = await perms.hasPerm(member, member.guild.id, permission, isDefault);
+      const permsResult = await p.hasPerm(member, member.guild.id, permission, isDefault);
       logger.debug("Result: " + require("util").inspect(permsResult) + " . Permission: " + permission);
       obj.parsedPerms[permission] = Boolean(permsResult.hasPerm); // add if has perm
       obj.setPerms[permission] = Boolean(permsResult.setPerm); // add if perm was set or is it default

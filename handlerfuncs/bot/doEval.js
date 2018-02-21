@@ -5,8 +5,8 @@ const { bot, db, messager } = deps;
 module.exports = msg => {
   const { channel, guild } = msg;
   const guildId = guild ? guild.id : null;
+  const handlerFuncs = require("../commandHandlerFuncs")(msg, true); // lazy require for no mess up
   return (content, subC = {}) => {
-    const handlerFuncs = require("../commandHandlerFuncs"); // lazy require to not mess up things
     const objectToUse = Object.assign({}, handlerFuncs, {
       bot, msg, message: msg,
       channel, guildId, deps,

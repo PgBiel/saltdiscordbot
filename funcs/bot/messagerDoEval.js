@@ -19,6 +19,13 @@ module.exports = function messagerDoEval(evaler) {
     } = data.vars;
     const { _, Storage, util } = deps;
     const { member, author } = context;
+    for (const [name, func] of Object.entries(funcs)) {
+      try {
+        eval(`var { ${name} } = funcs`);
+      } catch (err) {
+        // lol
+      }
+    }
     // tslint:enable:no-shadowed-variable
     let cont = data.content;
     try {

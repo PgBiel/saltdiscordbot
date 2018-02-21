@@ -3,15 +3,15 @@ const {
   TextChannel, User
 } = require("discord.js");
 const _ = require("lodash");
-const logger = require("./classes/logger");
-const Searcher = require("./classes/searcher");
-const funcs = require("./handlerfuncs/commandHandlerFuncs");
+const logger = require("../classes/logger");
+const Searcher = require("../classes/searcher");
+const funcs = require("../handlerfuncs/commandHandlerFuncs");
 // const { moderation, prefixes } = require("./sequelize/sequelize");
-const { bot } = require("./util/bot");
-const { chalk } = require("./util/deps");
+const { bot } = require("../util/bot");
+const { chalk } = require("../util/deps");
 const {
   cloneObject, fetchPrefix, fetchPerms, fetchDisable, rejct
-} = require("./funcs/funcs");
+} = require("../funcs/funcs");
 const wordFilterer = require("./wordFilterer");
 
 /* export * from "./misc/contextType";

@@ -32,17 +32,17 @@ const func = async function (msg, { args, doEval, send, self }) {
   const result = results.result;
   if (results.success) {
     if (result instanceof Promise) {
-      const sent = await send(resultText(args, "[Promise. Resolving...]", false));
+      const sent = await send(resultText(args, "[Promise. Resolving...]", false), { deletable: true });
       try {
         sent.edit(resultText(args, await Promise.resolve(result), false, true));
       } catch (err) {
         sent.edit(resultText(args, err, true, true));
       }
     } else {
-      send(resultText(args, result, false));
+      send(resultText(args, result, false), { deletable: true });
     }
   } else {
-    send(resultText(args, result, true));
+    send(resultText(args, result, true), { deletable: true });
   }
 };
 module.exports = new Command({
