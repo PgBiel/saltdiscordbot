@@ -5,7 +5,7 @@ const {
 const _ = require("lodash");
 const logger = require("./classes/logger");
 const Searcher = require("./classes/searcher");
-const funcs = require("./commandHandlerFuncs");
+const funcs = require("./handlerfuncs/commandHandlerFuncs");
 // const { moderation, prefixes } = require("./sequelize/sequelize");
 const { bot } = require("./util/bot");
 const { chalk } = require("./util/deps");

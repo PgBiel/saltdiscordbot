@@ -1,0 +1,1 @@
+module.exports = msg => msg.member ? msg.member.hasPermission.bind(msg.member) : null;
