@@ -12,13 +12,15 @@ function changeOutput(obj) {
     INVALID: 2
   };
   function loop(val) {
-    if (val == null) return [undefined, returnCodes.INVALID];
+    if (val === undefined) return [undefined, returnCodes.INVALID];
     if (val instanceof d.mathjs.type.ResultSet) {
       let arrToAdd = [];
       for (const val2 of val.entries) {
         const res = loop(val2);
         if (res[1] === 1) {
           arrToAdd = arrToAdd.concat(res[0]);
+        } else if (res[1] === returnCodes.INVALID) {
+          continue;
         } else {
           arrToAdd = arrToAdd.concat([res[0]]);
         }
@@ -29,8 +31,10 @@ function changeOutput(obj) {
       let arrToAdd = [];
       for (const val2 of val._values) {
         const res = loop(val2);
-        if (res[1] === 1) {
+        if (res[1] === returnCodes.CONCAT) {
           arrToAdd = arrToAdd.concat(res[0]);
+        } else if (res[1] === returnCodes.INVALID) {
+          continue;
         } else {
           arrToAdd = arrToAdd.concat([res[0]]);
         }
