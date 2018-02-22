@@ -26,7 +26,19 @@ function changeOutput(obj) {
       return [arrToAdd, returnCodes.CONCAT];
     }
     if (val._values) {
-      return [val._values, returnCodes.CONCAT];
+      let arrToAdd = [];
+      for (const val2 of val._values) {
+        const res = loop(val2);
+        if (res[1] === 1) {
+          arrToAdd = arrToAdd.concat(res[0]);
+        } else {
+          arrToAdd = arrToAdd.concat([res[0]]);
+        }
+      }
+      return [arrToAdd, returnCodes.CONCAT];
+    }
+    if (typeof val === "function") {
+      return [`«Function ${val.name || "Anonymous"}»`, returnCodes.OK];
     }
     return [val, returnCodes.OK];
   }

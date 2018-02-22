@@ -25,7 +25,7 @@ module.exports = msg => {
             channel && // ????
             channel.permissionsFor(guild.me).has(["ADD_REACTIONS"]) // I can definitely add reactions
           ) {
-            collectReact(messg, Constants.emoji.WASTEBASKET, author.id, () => messg.delete())
+            collectReact(messg, Constants.emoji.WASTEBASKET, author.id)
               .catch(err => rejct(err, "[TRASH-REACT-1]"));
           }
         }
