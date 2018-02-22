@@ -6,7 +6,7 @@ const func = async function (msg, {
   promptAmbig, author, botmember, member, actionLog, dummy
 }) {
   if (!perms.unban && !hasPermission(["BAN_MEMBERS"])) {
-    return reply("You do not have sufficient permissions! :frowning:");
+    return reply("Missing permission `unban`! Could also use this command with the `Ban Members` Discord permission.");
   } else if (!botmember.hasPermission(["BAN_MEMBERS"])) {
     return reply("I do not have the permission `Ban Members`! :frowning:");
   }

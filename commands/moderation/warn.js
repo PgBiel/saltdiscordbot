@@ -9,8 +9,8 @@ const func = async function (msg, {
 }) {
   const hasPerm = await seePerm("warn", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" });
   if (!hasPerm) {
-    return reply(`You do not have sufficient permissions! To use this command, you need the \`Moderator\` SaltRole, \
-the \`Manage Roles\` Discord Permission or the permission \`warn\`.`);
+    return reply(`Missing permission \`warn\`! Could also use this command with the \`Moderator\` SaltRole or \
+the \`Manage Roles\` Discord Permission.`);
   }
   if (!args) {
     return reply("Please tell me who to warn!");

@@ -10,7 +10,7 @@ const func = async function (
   }
   d.logger.debug("prefix:", arrArgs.toString());
   if (!await seePerm("prefix", perms, setPerms, { srole: "Admin", hperms: "MANAGE_GUILD" })) {
-    return reply("Missing permission `prefix`! Could also use this command with the Administrator saltrole or the `\
+    return reply("Missing permission `prefix`! Could also use this command with the `Administrator` saltrole or the `\
 Manage Server` Discord permission.");
   }
   if (args.length > 200) return reply("The prefix must not exceed 200 characters!");

@@ -3,7 +3,7 @@ const prompt = require("./prompt");
 module.exports = msg => {
   return options => {
     return async function() {
-      const { res, cancelled, skipped } = await prompt(Object.assign({ question: this.text }, options));
+      const { res, cancelled, skipped } = await (prompt(msg)(Object.assign({ question: this.text }, options)));
       if (options.array) {
         if (typeof options.index === "number" && !isNaN(options.index)) {
           options.array[options.index] = res;

@@ -9,7 +9,7 @@ const func = async function (msg, {
 }) {
   if (!(await seePerm("kick", perms, setPerms, { hperms: "KICK_MEMBERS" }))) {
     return reply("Missing permission `kick`! :frowning: Could also use this command with the `Kick Members` \
-discord permission.");
+Discord permission.");
   } else if (!botmember.hasPermission(["KICK_MEMBERS"])) {
     return reply("I do not have the permission `Kick Members`! :frowning:");
   }

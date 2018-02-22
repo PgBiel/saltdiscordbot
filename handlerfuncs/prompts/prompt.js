@@ -1,5 +1,5 @@
 const { Discord, Constants, rejct } = require("../../misc/d");
-const send = require("../senders/send");
+const _send = require("../senders/send");
 
 module.exports = msg => {
   const { Collection } = Discord;
@@ -11,6 +11,7 @@ module.exports = msg => {
       skip = false, options = {}, author = msg.author
     },
   ) => {
+    const send = _send(msg);
     let skipped = false;
     let cancelled = false;
     let satisfied = null;

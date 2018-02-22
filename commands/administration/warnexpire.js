@@ -18,7 +18,7 @@ const func = async function (
     return reply(`Warns on this guild expire after **${new d.Interval(expire)}**!`);
   }
   if (!(await seePerm("warnexpire", perms, setPerms, { srole: "Administrator" }))) {
-    return reply(`Missing permission \`warnexpire\`! Could also use this command with the Administrator saltrole.`);
+    return reply(`Missing permission \`warnexpire\`! Could also use this command with the \`Administrator\` saltrole.`);
   }
   const units = d.parseTimeStr(args);
   if (Object.values(units).reduce((a, v) => a + v, 0) <= 0) return reply(`Invalid time!`);

@@ -1,11 +1,13 @@
 const { capitalize, Constants, Discord, logger, Searcher, TextChannel } = require("../../misc/d");
-const reply = require("../senders/reply");
-const send = require("../senders/send");
+const _reply = require("../senders/reply");
+const _send = require("../senders/send");
 
 module.exports = msg => {
   const { channel } = msg;
   const { Collection, GuildChannel, Role, VoiceChannel } = Discord;
   return async (subjects, pluralName = "members", opts = { type: "member" }) => {
+    const send = _send(msg);
+    const reply = _reply(msg);
     let satisfied = false;
     let cancelled = false;
     let currentOptions = [];

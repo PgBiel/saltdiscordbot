@@ -1,3 +1,3 @@
 const genPrompt = require("./genPrompt");
 
-module.exports = msg => optionsD => options => genPrompt(Object.assign({}, optionsD, options));
+module.exports = msg => optionsD => options => genPrompt(msg)(Object.assign({}, optionsD, options));

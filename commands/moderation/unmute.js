@@ -4,29 +4,11 @@ const d = require("../../misc/d");
 const func = async function (msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy,
-  checkRole
+  checkRole, seePerm
 }) {
-  let hasPerm = false;
-  if (hasPermission(["MANAGE_ROLES"])) {
-    hasPerm = true;
-  }
-  try {
-    if (await checkRole("mod", member)) {
-      hasPerm = true;
-    }
-  } catch (err) {
-    d.logger.error(`At check role: ${err}`);
-  }
-  if (setPerms.unmute) {
-    if (!perms.unmute) {
-      hasPerm = false;
-    }
-    if (dummy.perms && !perms[dummy.perms] && setPerms[dummy.perms]) {
-      hasPerm = false;
-    }
-  }
-  if (!hasPerm) {
-    return reply("You do not have sufficient permissions! :frowning:");
+  if (!seePerm("unmute", perms, setPerms, { srole: "Moderator", hperm: "MANAGE_ROLES" })) {
+    return reply("Missing permission `unmute`! Could also use this command with the `Moderator` saltrole or the `Manage \
+Roles` Discord permission.");
   } else if (!botmember.hasPermission(["MANAGE_ROLES"])) {
     return reply("I do not have the permission `Manage Roles`! :frowning:");
   }

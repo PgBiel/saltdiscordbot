@@ -9,7 +9,8 @@ const func = async function (msg, {
 }) {
   const hasPerm = await seePerm(dummy.perms || "mute", perms, setPerms, { srole: "Moderator", hperms: "MANAGE_ROLES" });
   if (!hasPerm) {
-    return reply("You do not have sufficient permissions! :frowning:");
+    return reply("Missing permission `mute`! Could also use this command with the `Moderator` saltrole or the `Manage \
+Roles` Discord permission. :frowning:");
   } else if (!botmember.hasPermission(["MANAGE_ROLES"])) {
     return reply("I do not have the permission `Manage Roles`! :frowning:");
   } else if (!botmember.hasPermission(["MANAGE_CHANNELS"])) {
