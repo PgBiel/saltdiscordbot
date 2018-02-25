@@ -7,6 +7,7 @@ const logger = require("../../classes/logger");
  * @param {*} perms Permissions
  * @param {GuildMember} member The member
  * @param {boolean} [defaultPerm=false] The default permission (if only using a single perm)
+ * @returns {object} Parsed and set perms
  */
 module.exports = async function fetchPerms(perms, member, defaultPerm = false) {
   const permsToCheck = typeof perms === "string" ? // a single perm or...

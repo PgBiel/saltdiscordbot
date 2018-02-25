@@ -1,3 +1,8 @@
+/**
+ * Uncompress a compressed Date
+ * @param {string} str The compressed date
+ * @returns {Date} Uncompressed date
+ */
 module.exports = function dateuncomp(str) {
   var ret = new Date(0);
   var stuff = str.split``;

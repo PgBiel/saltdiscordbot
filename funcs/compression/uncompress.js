@@ -1,3 +1,8 @@
+/**
+ * Uncompress a compressed number
+ * @param {string} str Compressed number
+ * @returns {string} Uncompressed number (as string)
+ */
 module.exports = function uncompress(str) {
   str = String(str);
   if (str.length == 1) {

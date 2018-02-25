@@ -1,3 +1,4 @@
+const { Time } = require("../classes/time");
 const { combineRegex } = require("../funcs/funcs");
 
 exports.sql = {
@@ -5,7 +6,7 @@ exports.sql = {
 };
 
 exports.times = {
-  AMBIGUITY_EXPIRE: 25000
+  AMBIGUITY_EXPIRE: Time.seconds(25)
 };
 
 exports.maps = {
@@ -47,9 +48,17 @@ exports.maps = {
   }
 };
 
+exports.strings = {
+  DATE_FORMAT: "ddd MMM DD YYYY hh:mm:ss A",
+  DEFAULT_ROLE_COLOR: "#000000",
+  DISPLAY_DEFAULT_ROLE_COLOR: "#9CAAB3"
+};
+
 exports.regex = {
   HAS_DECIMAL: /\.(?!0+$)/,
   NAME_AND_DISCRIM: /^([^]{1,32})#(\d{4})$/,
+  ID: /^(\d{16,21})$/,
+  MENTION: /^<@!?(\d{16,21})>$/,
   BAN_MATCH: /^([^]+?(?:#\d{4})?)(?:\s+([^]*))?$/,
   CASE_MATCH: /^(?:([\s\S]+)\s+(\d+)\s+([\s\S]+)|([\s\S]+)\s+([\s\S]+)|([\s\S]+))/,
   LIST_WARNS_MATCH: /^([\s\S]{1,32}|[\s\S]{1,32}\#\d{4})\s+(\d+)|([\s\S]{1,32}|[\s\S]{1,32}\#\d{4})$/,

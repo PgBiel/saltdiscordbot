@@ -1,3 +1,8 @@
+/**
+ * Compress a semi-large number
+ * @param {string|number} str
+ * @returns {string} Compressed number
+ */
 module.exports = function compress(str) {
   str = String(str);
   if (str.length == 1) {

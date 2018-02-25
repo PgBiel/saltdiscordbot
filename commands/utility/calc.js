@@ -117,5 +117,15 @@ module.exports = new Command({
 {p}calc cos(25)`,
   category: "Utility",
   args: {"math expression": false},
+  aliases: {
+    math: {
+      description: "Alias to calc",
+      example:`{p}math 1 + 1
+{p}math pi * 2
+{p}math 6.66 * 10^50
+{p}math i ^ 2
+{p}math cos(25)`
+    }
+  },
   guildOnly: false
 });

@@ -37,20 +37,24 @@ class Ban extends Punishment {
     const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def, prompt } = context;
     if (author && member instanceof GuildMember) {
+      let rply = "";
       if (member.roles.highest.position > botmember.roles.highest.position) {
-        return void reply("That member's highest role is higher in position than mine!");
+        rply = "That member's highest role is higher in position than mine!";
+      } else if (member.id === botmember.id) {
+        rply = "I refuse to ban myself! :frowning:";
       } else if (member.roles.highest.position === botmember.roles.highest.position) {
-        return void reply("That member's highest role is the same in position as mine!");
+        rply = "That member's highest role is the same in position as mine!";
       } else if (member.roles.highest.position > author.roles.highest.position && author.id !== guild.owner.id) {
-        return void reply("That member's highest role is higher in position than yours!");
+        rply = "That member's highest role is higher in position than yours!";
       } else if (member.roles.highest.position === author.roles.highest.position && author.id !== guild.owner.id) {
-        return void reply("That member's highest role is the same in position as yours!");
+        rply = "That member's highest role is the same in position as yours!";
       } else if (member.id === guild.owner.id) {
-        return void reply("That member is the owner!");
+        rply = "That member is the owner!";
       } else if (!member.bannable) {
-        return void reply("That member is not bannable (being generic here). \
-Check the conditions for being banned (e.g. must not be owner, etc)!");
+        rply = "That member is not bannable (being generic here). \
+Check the conditions for being banned (e.g. must not be owner, etc)!";
       }
+      return void reply(rply);
     }
 
     if (usePrompt) {
@@ -131,7 +135,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     const executeBan = () => {
       // const availableLength = 512 - (reason.length + banPrefix.length);
       const compressedText = textAbstract(endChar(auctPrefix) + (reason || "No reason given"), 512);
-      guild.ban(
+      guild.members.ban(
         member,
         { days: days == null ? 1 : days, reason: compressedText },
       ).then(result => {

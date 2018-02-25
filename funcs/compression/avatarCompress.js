@@ -1,5 +1,10 @@
 const compress = require("./compress");
 
+/**
+ * Compress an avatar URL
+ * @param {string} url URL of the avatar
+ * @returns {string} Compressed URL
+ */
 module.exports = function avatarCompress(url) {
   var end;
   if (url.match("embed")) {

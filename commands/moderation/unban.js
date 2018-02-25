@@ -93,7 +93,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
   };
   const executeUnban = () => {
     const compressedText = d.textAbstract(`[Unban command executed by ${author.tag}] ${reason || "No reason given"}`, 512);
-    guild.unban(memberToUse, compressedText).then(finish).catch(fail);
+    guild.members.unban(memberToUse, compressedText).then(finish).catch(fail);
   };
   let sent = false;
   let timeoutRan = false;

@@ -97,5 +97,23 @@ module.exports = new Command({
   category: "Moderation",
   args: { member: false, reason: true },
   guildOnly: true,
-  default: false
+  default: false,
+  aliases: {
+    idban: {
+      perms: "ban",
+      banType: "idban",
+      default: false,
+      description: "Ban someone, but using an ID. This allows you to ban people outside the server.",
+      example: "{p}idban 80351110224678912 Being b1nzy",
+      show: true
+    },
+    nodelban: {
+      perms: "ban",
+      default: false,
+      description: "Ban someone, but without deleting any of their messages with it.",
+      example: "{p}nodelban @EvilGuy#0100 Being evil but not as much",
+      days: 0,
+      show: true
+    }
+  }
 });

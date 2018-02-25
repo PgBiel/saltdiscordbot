@@ -6,6 +6,7 @@ const logger = require("../../classes/logger");
  * @param {string} cmdName Name of the command
  * @param {string} guildId ID of the guild
  * @param {string} channelId ID of the channel
+ * @returns {object} Result
  */
 module.exports = async function fetchDisable(cmdName, guildId, channelId) {
   try {

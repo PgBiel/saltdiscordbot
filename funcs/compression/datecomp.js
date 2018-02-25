@@ -1,3 +1,8 @@
+/**
+ * Compress a Date
+ * @param {Date} num Date to compress
+ * @returns {string} Compressed date
+ */
 module.exports = function datecomp(num = Date.now()) {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul","Aug", "Sep", "Oct", "Nov", "Dec"];
   var curTime = new Date(num).toUTCString().split` `;

@@ -110,7 +110,8 @@ module.exports = class Command {
       description: data.description || cmd.description,
       example: data.example || null,
       guildOnly: data.guildOnly == null ? cmd.guildOnly : data.guildOnly,
-      args: data.args || cmd.args
+      args: data.args || cmd.args,
+      show: data.show
     });
     return newCmd;
   }
@@ -198,25 +199,19 @@ module.exports = class Command {
   }
 
   config(options) {
-    if (!options.name) {
-      throw new Error("No name given.");
-    }
+    if (!options) throw new Error("No options given.");
+    if (!options.name) throw new Error("No name given.");
     if (!options.func && (options.aliasData ? !options.aliasData.__aliasOf : true)) {
       throw new Error(`No function given for ${options.name}.`);
     }
 
     this.name = options.name;
 
+    this.show = options.show;
+
     this.func = options.func;
 
     this.perms = options.perms;
-
-    this.aliases = typeof options.aliases === "object" ?
-      _.fromPairs(Object.entries(options.aliases).map(([k, v]) => typeof v === "object" ?
-        [k, Command.aliasFrom(this, k, Object.assign({ show: false }, v))] :
-        [k, null]
-      )) :
-      null;
 
     this.aliasData = options.aliasData;
 
@@ -239,6 +234,13 @@ module.exports = class Command {
     this.guildOnly = options.guildOnly == null ? true : Boolean(options.guildOnly);
 
     this.customPrefix = options.customPrefix || null;
+
+    this.aliases = typeof options.aliases === "object" ?
+      _.fromPairs(Object.entries(options.aliases).map(([k, v]) => typeof v === "object" ?
+        [k, Command.aliasFrom(this, k, Object.assign({ show: false }, v))] :
+        [k, null]
+      )) :
+      null;
   }
 
   /**
@@ -329,25 +331,38 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
     }
     if (this.perms) {
       let string = "";
+      let filtered, onlyFalse;
       if (typeof this.perms === "string") {
         string = `\`${this.perms.replace(/\./g, "")}\``;
         if (this.default) string += " (available by default)";
       } else {
-        for (const [key, val] of Object.entries(this.perms).filter(([_n, perm]) => typeof perm === "boolean" ?
+        filtered = Object.entries(this.perms).filter(([_n, perm]) => typeof perm === "boolean" ?
           true :
           (perm.show == null || perm.show)
-        )) {
+        );
+        onlyFalse = filtered.filter(perm => !(typeof perm === "boolean" ? perm : perm.default));
+        for (const [key, val] of filtered) {
           string += `\`${key.replace(/\./g, " ")}\``;
           if (
-            (typeof val === "boolean" && val) ||
-            val && val.default
+            (
+              (
+                typeof val === "boolean" && val
+              ) ||
+              (
+                val && val.default
+              )
+            ) &&
+            onlyFalse.length
           ) {
             string += " (available by default)";
           }
           string += ", ";
         }
       }
-      embed.addField("Permissions", string.replace(/,\s+$/, ""));
+      embed.addField(
+        `Permissions${onlyFalse && onlyFalse.length ? "" : " (All available by default)"}`,
+        string.replace(/,\s+$/, "")
+      );
     }
     if (this.example) {
       embed.addField("Example", _.trim(this.example).replace(/{p}/g, p), true);

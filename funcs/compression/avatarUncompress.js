@@ -1,5 +1,11 @@
 const uncompress = require("./uncompress");
 
+/**
+ * Uncompress compressed avatar URLs
+ * @param {string} end The compressed URL
+ * @param {string} id ID of the User
+ * @returns {string} The complete URL
+ */
 module.exports = function avatarUncompress(end, id) {
   if (end[0] == "-") {
     return `https://cdn.discordapp.com/embed/avatars/${end[1]}.png`;
