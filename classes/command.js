@@ -333,7 +333,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
       let string = "";
       let filtered, onlyFalse;
       if (typeof this.perms === "string") {
-        string = `\`${this.perms.replace(/\./g, "")}\``;
+        string = `\`${this.perms.replace(/\./g, " ")}\``;
         if (this.default) string += " (available by default)";
       } else {
         filtered = Object.entries(this.perms).filter(([_n, perm]) => typeof perm === "boolean" ?

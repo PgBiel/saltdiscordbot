@@ -19,7 +19,7 @@ const func = async function (msg, {
     "voicechannel", "voice", "voicechannels",
     "category", "categories",
     "perms", "dperms", "discordperms",
-    "saltperms" // I was going to alias it with "sperm" but then I realized...
+    "saltperms", "listperms" // I was going to alias it with "sperm" but then I realized...
   ]);
   const is = (...list) => list.includes(action);
   const usableActions = guild ? gActions : noGActions;
@@ -35,7 +35,8 @@ const func = async function (msg, {
   const trArg = d._.trim(arg);
   if (is("user", "member", "id", "userid")) {
     if (!perms["info.user"]) return reply("Missing permission `info user`! :frowning:");
-    let isLocal = true;
+    let isLocal = false;
+    let isCommon = true;
     let idHolder;
     if (!arg) {
       idHolder = author;
@@ -91,6 +92,7 @@ user idHolder.id (e.g. \`80351110224678912\`) or a mention (e.g. <@${author.id}>
         idHolder.user ||
         idHolder
       );
+    if (d.bot.guilds.filter(g => g.members.has(user.id)).size < 1) isCommon = false;
     if (is("id", "userid")) {
       return reply(`${user.tag}'s ID is \`${user.id}\`.`);
     } else {
@@ -100,27 +102,40 @@ user idHolder.id (e.g. \`80351110224678912\`) or a mention (e.g. <@${author.id}>
       const embed = new d.Embed()
         .setAuthor(`Info for user ${user.tag}`, av, av)
         .setThumbnail(av)
-        .setDescription(`Joined Discord on ${d.momentUTC(user.createdAt)} (${d.ago(user.createdAt, Date.now())} ago)`)
-        .addField("Status", d.capitalize(agent.presence.status), true)
-        .addField("Activity", d.formatActivity(agent.presence.activity, true) || "None", true)
-        .setFooter(`Click the title for avatar URL | ID: ${user.id}`);
-      if (member) {
-        const rolesJoined = member.roles.array().sort((a, b) => b.position - a.position).join(", ");
-        const color = (member.displayHexColor ||
-          d.Constants.strings.DEFAULT_ROLE_COLOR) === d.Constants.strings.DEFAULT_ROLE_COLOR ?
-            d.Constants.strings.DISPLAY_DEFAULT_ROLE_COLOR :
-            member.displayHexColor;
-        embed.addField("Nickname", member.displayName, true)
-          .addField("Display Color (See sidebar)", color, true)
-          .addField(`Permissions (use ${p}perms)`, member.permissions.bitfield, true)
-          .addField("Joined Server (UTC)", d.momentUTC(member.joinedAt, { addUTC: false }), true)
-          .addField(
-            `Roles (${member.roles.size})`,
-            rolesJoined.length > d.Constants.numbers.MAX_FIELD_CHARS ?
-              `Use \`${p}info roles <@!${user.id}>\` to see (too long)` :
-              rolesJoined
-          )
-          .setColor(color);
+        .setDescription(
+          `Joined Discord on ${d.momentUTC(user.createdAt)} (${d.ago(user.createdAt, Date.now(), true) || "some time"} ago)`
+        )
+        .setFooter(`Click the title for avatar URL | User ID: ${user.id}`);
+      if (isCommon) {
+        embed
+          .addField("Status", d.capitalize(agent.presence.status), true)
+          .addField("Activity", d.formatActivity(agent.presence.activity, true) || "None", true);
+        if (member) {
+          const rolesArr = member.roles
+            .array()
+            .filter(r => r.id !== guild.id)
+            .sort((a, b) => b.position - a.position);
+          const rolesJoined = rolesArr.join(", ");
+          const color = (member.displayHexColor ||
+            d.Constants.strings.DEFAULT_ROLE_COLOR) === d.Constants.strings.DEFAULT_ROLE_COLOR ?
+              d.Constants.strings.DISPLAY_DEFAULT_ROLE_COLOR :
+              member.displayHexColor;
+          embed
+            .addField("Nickname", member.displayName, true)
+            .addField("Display Color (See sidebar)", color, true)
+            .addField(`Permissions (use ${p}perms)`, member.permissions.bitfield, true)
+            .addField("Joined Server (UTC)", d.momentUTC(member.joinedAt, { addUTC: false }), true)
+            .addField(
+              `Roles${rolesArr.length ? ` (${rolesArr.length})` : ""}`,
+              rolesJoined.length > d.Constants.numbers.MAX_FIELD_CHARS ?
+                `Use \`${p}info roles <@!${user.id}>\` to see (too long)` :
+                (
+                  rolesJoined ||
+                  "No roles"
+                )
+            )
+            .setColor(color);
+        }
       }
       return send({ embed, deletable: true });
     }
@@ -131,7 +146,8 @@ module.exports = new Command({
   name: "info",
   perms: {
     "info.user": true, "info.role": true, "info.channel": true, "info.server": true,
-    "info.bot": true, "info.roles": true, "info.channels": true
+    "info.bot": true, "info.roles": true, "info.channels": true, "info.perms": true,
+    "info.saltperms": true
   },
   default: true,
   description: "Show information about commands/a command/a category of commands.",
@@ -143,6 +159,7 @@ module.exports = new Command({
       description: "Alias to info user. Specify an user to view its info",
       action: "user",
       perms: "info.user",
+      args: { user: true },
       example: `
 {p}userinfo Guy#0011
 {p}userinfo 1
@@ -153,10 +170,33 @@ module.exports = new Command({
       description: "Alias to info user. Specify an user to view its info",
       action: "user",
       perms: "info.user",
+      args: { user: true },
       example: `
 {p}user Guy#0011
 {p}user 1
 {p}user @Sir#0145`,
+      default: true
+    },
+    id: {
+      description: "Alias to info id. Specify an user to view its id",
+      action: "id",
+      perms: "info.user",
+      args: { user: true },
+      example: `
+{p}id Guy#0011
+{p}id 1
+{p}id @Sir#0145`,
+      default: true
+    },
+    userid: {
+      description: "Alias to info id. Specify an user to view its id",
+      action: "id",
+      perms: "info.user",
+      args: { user: true },
+      example: `
+{p}userid Guy#0011
+{p}userid 1
+{p}userid @Sir#0145`,
       default: true
     }
   },

@@ -8,5 +8,6 @@ const capitalize = require("./capitalize");
  */
 module.exports = function formatActivity(activity, bold = false) {
   if (!activity || typeof activity !== "object") return "";
-  return capitalize(activity.type, { lowerCase: true }) + " " + (bold ? `**${activity.name}**` : activity.name);
+  const cap = capitalize(activity.type, { lowerCase: true });
+  return (cap === "Listening" ? "Listening to" : cap) + " " + (bold ? `**${activity.name}**` : activity.name);
 };
