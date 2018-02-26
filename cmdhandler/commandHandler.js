@@ -152,6 +152,7 @@ module.exports = async msg => {
         logger.error(`At Execution: ${err.stack}`);
         return userError("AT EXECUTION");
       }
+      if (channel.typing) channel.stopTyping();
       commandExed = true;
       break;
     }

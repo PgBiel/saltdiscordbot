@@ -21,6 +21,7 @@ const func = async function (msg, {
   channel, guildId, author, args, arrArgs, send, reply, searcher, promptAmbig, perms, guild
 }) {
   if (guild && !perms.avatar) return reply("Missing permission `avatar`! :frowning:");
+  channel.startTyping();
   if (!args) {
     send({ embed: getAvatarEmb(author), deletable: true });
   } else if (!(channel instanceof d.TextChannel)) {

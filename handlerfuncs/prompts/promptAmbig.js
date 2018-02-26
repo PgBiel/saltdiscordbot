@@ -1,17 +1,29 @@
-const { capitalize, Constants, Discord, logger, Searcher, TextChannel } = require("../../misc/d");
+const { capitalize, Constants, Discord, logger, rejct, Searcher, TextChannel } = require("../../misc/d");
 const _reply = require("../senders/reply");
 const _send = require("../senders/send");
 
 module.exports = msg => {
   const { channel } = msg;
   const { Collection, GuildChannel, Role, VoiceChannel } = Discord;
+  /**
+   * Prompt ambig
+   * @param {Array<*>} subjects List of possibilities
+   * @param {string} [pluralName="members"] Plural name
+   * @param {object} [opts] Options
+   * @param {string} [type="member"] Type (one of member, role, channel)
+   * @param {boolean} [deletable=true] If should delete msgs
+   * @param {string} [channelType="text"] Channel type (used only for channels, one of text, voice, category)
+   * @returns {object} Result
+   */
   return async (subjects, pluralName = "members", opts = { type: "member" }) => {
     const send = _send(msg);
     const reply = _reply(msg);
     let satisfied = false;
     let cancelled = false;
     let currentOptions = [];
-    const { type, channelType = "text" } = opts;
+    const msgs = [];
+    const { type = "member", deletable = true, channelType = "text" } = opts;
+    console.log("D", deletable);
 
     const getTag = gm => {
       if (gm instanceof TextChannel) {
@@ -38,6 +50,8 @@ module.exports = msg => {
         cancelled = true;
         return true;
       }
+      logger.debug("PUSH MSG2");
+      msgs.push(msg2);
       if (/^#\d+$/.test(cont)) {
         const nNumber = cont.match(/^#(\d+)$/)[1];
         if (nNumber.length < 5) {
@@ -84,10 +98,13 @@ module.exports = msg => {
       currentOptions = resultingMembers;
       return true;
     };
-    reply(`Multiple ${pluralName} have matched that search. Please specify one, or a number preceded by \`#\` (e.g. \`#1\`).
-This command will automatically cancel after 25 seconds. Type \`cancel\` to cancel.
+    msgs.push(
+      await reply(`Multiple ${pluralName} have matched that search. Please specify one, or a number preceded by \`#\` \
+(e.g. \`#1\`). This command will automatically cancel after 25 seconds. Type \`cancel\` to cancel.
 **${capitalize(pluralName)} Matched**:
-${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`);
+${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`)
+    );
+    let obj = { cancelled: 1 };
     for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
       try {
         const result = await channel.awaitMessages(
@@ -97,37 +114,46 @@ ${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'"
           },
         );
         if (satisfied) {
-          return {
+          obj = {
             subject: currentOptions[0],
             cancelled: false
           };
+          break;
         }
         if (cancelled) {
           send("Command cancelled.");
-          return {
+          obj = {
             subject: null,
             cancelled: true
           };
+          break;
         }
         if (i < 5) {
-          reply(`Multiple ${pluralName} have matched that search. Please specify one. Please specify one, or a number preceded by \`#\` (e.g. \`#1\`).
-This command will automatically cancel after 25 seconds. Type \`cancel\` to cancel.
+          msgs.push(
+            await reply(`Multiple ${pluralName} have matched that search. Please specify one. Please specify one, \
+or a number preceded by \`#\` (e.g. \`#1\`). This command will automatically cancel after 25 seconds. Type \`cancel\` \
+to cancel.
 **${capitalize(pluralName)} Matched**:
-${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`);
+${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`)
+          );
         }
       } catch (err) {
-        logger.error(`At PromptAmbig: ${err}`);
+        // logger.error(`At PromptAmbig: ${err}`);
         send("Command cancelled.");
-        return {
+        obj = {
           subject: null,
           cancelled: true
         };
       }
     }
-    send("Automatically cancelled command.");
-    return {
-      subject: null,
-      cancelled: true
-    };
+    if (obj.cancelled === 1) {
+      send("Automatically cancelled command.");
+      return { subject: null, cancelled: true };
+    }
+    if (msgs.length > 1 && deletable && !cancelled) {
+      channel.bulkDelete(msgs)
+        .catch(err => rejct(err, "[PROMPTAMBIG-BULKDEL]"));
+    }
+    return obj;
   };
 };
