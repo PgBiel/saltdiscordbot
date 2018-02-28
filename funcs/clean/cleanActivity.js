@@ -14,7 +14,9 @@ module.exports = function cleanActivity(activity) {
     details,
     state,
     application_id: applicationID,
-    timestamps: timestamps ? { start: timestamps.start.getTime(), end: timestamps.end.getTime() } : null,
+    timestamps: timestamps && timestamps.start && timestamps.end ?
+      { start: timestamps.start.getTime(), end: timestamps.end.getTime() } :
+      null,
     party,
     assets: assets ? {
       large_text: assets.largeText,
