@@ -12,7 +12,7 @@ function changeOutput(obj) {
     INVALID: 2
   };
   function loop(val) {
-    if (val === undefined) return [undefined, returnCodes.INVALID];
+    if (val == null) return [undefined, returnCodes.INVALID];
     if (val instanceof d.mathjs.type.ResultSet) {
       let arrToAdd = [];
       for (const val2 of val.entries) {
