@@ -1,3 +1,5 @@
+const cleanReaction = require("./cleanReaction");
+
 module.exports = function cleanEmoji(emoji, guildId = (emoji.guild || {}).id) {
   if (emoji == null || typeof emoji !== "object") return emoji;
   const { id, animated, reaction, name, requiresColons, managed, roles } = emoji;
@@ -14,7 +16,7 @@ module.exports = function cleanEmoji(emoji, guildId = (emoji.guild || {}).id) {
       roles: roles.map(r => r.id)
     });
   } else if (reaction) { // is ReactionEmoji
-    obj.reaction = reaction;
+    obj.reaction = cleanReaction(reaction);
   }
   return obj;
 };

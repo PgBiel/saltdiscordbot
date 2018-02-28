@@ -4,15 +4,15 @@ const cleanUser = require("./cleanUser");
 module.exports = function cleanChannel(channel, guildId = (channel.guild || {}).id) {
   if (channel == null || typeof channel !== "object") return channel;
   const {
-    id, type: _type, name, rawPosition, parentID, permissionOverwrites, topic, nsfw, lastMessageID, bitrate, userLimit,
+    id, type, name, rawPosition, parentID, permissionOverwrites, topic, nsfw, lastMessageID, bitrate, userLimit,
     recipient, recipients, icon, ownerID, managed, applicationID, nicks
   } = channel;
   const typeE = Object.entries(ChannelTypes);
-  const type = typeE.find(([k, v]) => k === String(_type).replace(/\s/g, "_").toUpperCase())[1];
+  const typeVar = typeE.find(([k, v]) => k === String(type).replace(/\s/g, "_").toUpperCase())[1];
   const obj = {
     guild: guildId,
     id,
-    type,
+    type: typeVar,
     name,
     position: rawPosition,
     parent_id: parentID,
@@ -20,13 +20,13 @@ module.exports = function cleanChannel(channel, guildId = (channel.guild || {}).
       po => ({ allow: po.allowed.bitfield, deny: po.denied.bitfield, type: po.type, id: po.id })
     )
   };
-  if (["text", "dm", "group"].includes(_type)) {
+  if (["text", "dm", "group"].includes(type)) {
     Object.assign(obj, { last_message_id: lastMessageID });
-    if (_type === "text") {
+    if (type === "text") {
       Object.assign(obj, { topic, nsfw });
-    } else if (_type === "dm") {
+    } else if (type === "dm") {
       obj.recipients = [cleanUser(recipient)]; 
-    } else if (_type === "group") {
+    } else if (type === "group") {
       Object.assign(
         obj, 
         {
@@ -39,7 +39,7 @@ module.exports = function cleanChannel(channel, guildId = (channel.guild || {}).
         }
       );
     }
-  } else if (_type === "voice") {
+  } else if (type === "voice") {
     Object.assign(obj, { bitrate, user_limit: userLimit });
   }
   return obj;

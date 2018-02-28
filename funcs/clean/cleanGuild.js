@@ -2,6 +2,7 @@ const cleanRole = require("./cleanRole");
 const cleanChannel = require("./cleanChannel");
 const cleanEmoji = require("./cleanEmoji");
 const cleanPresence = require("./cleanPresence");
+const cleanGuildMember = require("./cleanGuildMember");
 
 module.exports = function cleanGuild(guild) {
   if (guild == null || typeof guild !== "object") return guild;
@@ -14,7 +15,7 @@ module.exports = function cleanGuild(guild) {
     const {
       name, icon, splash, region, memberCount, large, features, applicationID, afkTimeout, afkChannelID,
       systemChannelID, embedEnabled, verificationLevel, explicitContentFilter, joinedTimestamp, channels,
-      roles, ownerID, presences, emojis, voiceStates
+      roles, ownerID, emojis, voiceStates, members
     } = guild;
     Object.assign(obj, {
       name,
@@ -36,8 +37,8 @@ module.exports = function cleanGuild(guild) {
 
       channels: channels.map(c => cleanChannel(c, id)),
       roles: roles.map(r => cleanRole(r, id)),
-      presences: presences.map(p => cleanPresence(p)),
       emojis: emojis.map(e => cleanEmoji(e, id)),
+      members: members.map(m => cleanGuildMember(m, id)),
       voice_states: voiceStates ? voiceStates.array() : null
     });
   }
