@@ -51,7 +51,7 @@ module.exports = async function wordFilterer(msg, context, act = true) {
           const punishment = mods.filterPunishment;
           if (punishment && typeof punishment === "string" && punishment[0] in Constants.maps.PUNISHMENTS && context) { 
             msg.reply(`For saying a filtered word, this server defines a punishment of a \
-**${Constants.maps.PUNISHMENTS[punishment[0]].replace("pmute", "permanent mute")}**. Thus, you will receive that \
+**${Constants.maps.PUNISHMENTS[punishment[0]][0].replace("pmute", "permanent mute")}**. Thus, you will receive that \
 punishment.`);
             const name = punishment[0];
             if (/p|m/.test(name)) {

@@ -66,7 +66,7 @@ Roles` Discord permission.");
   } else if (muteRole.position === botmember.roles.highest.position) {
     return reply("The role used for muting is my highest role!");
   }
-  const sentMuteMsg = await send(`Unmuting ${memberToUse.user.tag}... (Sending DM...)`);
+  const sentMuteMsg = await send(`Unmuting ${memberToUse.user.tag}... (Sending DM...)`, { autoCatch: false });
   const reasonEmbed = new d.Embed();
   reasonEmbed
     .setColor("GREEN")

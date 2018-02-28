@@ -4,7 +4,7 @@ const { https, http } = d;
 
 const func = async function (msg, {
   args, author, arrArgs, send, reply, prefix: p, botmember, dummy, guild, guildId, perms, searcher, promptAmbig,
-  channel
+  channel, self, member
 }) {
   const sendIt = (emb => {
     return send({ embed: emb, autoCatch: false, deletable: true }).catch(err => [403, 50013].includes(err.code) ?
@@ -19,7 +19,7 @@ const func = async function (msg, {
     "members",
     "emoji", "emojiid",
     "role", "roleid", "roles",
-    "channel", "textchannel", "channels", "textchannels", "channelid", "textchannelid",
+    "channel", "textchannel", "text", "channels", "textchannels", "channelid", "textid", "textchannelid",
     "voicechannel", "voice", "voicechannels", "voiceid", "voicechannelid",
     "category", "categories", "categoryid",
     "perms", "dperms", "discordperms",
@@ -46,10 +46,6 @@ const func = async function (msg, {
     return reply("I need the permission `Embed Links` on this channel to be able to send embeds! :frowning:");
   }
   const trArg = d._.trim(arg);
-  const infoSubject = function(type, mentionRegex, ) {
-
-  }
-  channel.startTyping();
   if (is("user", "member", "id", "userid")) {
     if (!perms["info.user"]) return reply("Missing permission `info user`! :frowning:");
     let isLocal = false;
@@ -59,49 +55,15 @@ const func = async function (msg, {
       idHolder = author;
     } else if (["1", "<@1>", "clyde"].includes(arg.toLowerCase())) {
       idHolder = d.bot.users.get("1");
-    } else { // TODO: Add SEARCH
-      if (d.Constants.regex.NAME_AND_DISCRIM.test(trArg)) {
-        idHolder = d.bot.users.find("tag", trArg);
-      } else if (d.Constants.regex.ID.test(trArg) || d.Constants.regex.MENTION.test(trArg)) {
-        try {
-          const matched = trArg.match(d.Constants.regex.ID.test(trArg) ? d.Constants.regex.ID : d.Constants.regex.MENTION)[1];
-          if (d.bot.users.has(matched)) {
-            idHolder = d.bot.users.get(matched);
-          } else {
-            idHolder = await d.bot.users.fetch(matched);
-          }
-        } catch(err) {
-          return reply("Unknown user!");
-        }
-      }
-      if (!idHolder || !idHolder.id) {
-        if (!guild) {
-          return reply(`Please specify a validHolder.id username followed by a validHolder.id discriminator (e.g. \`User#1234\`), a validHolder.id \
-user idHolder.id (e.g. \`80351110224678912\`) or a mention (e.g. <@${author.id}>).`);
-        } else {
-          const membersMatched = searcher.searchMember(trArg);
-          let memberToUse;
-          if (membersMatched) {
-            if (membersMatched.length < 1) {
-              return reply("Member not found!");
-            } else if (membersMatched.length === 1) {
-              memberToUse = membersMatched[0];
-            } else if (membersMatched.length > 1 && membersMatched.length < 10) {
-              const result = await promptAmbig(membersMatched);
-              if (result.cancelled) {
-                return;
-              }
-              memberToUse = result.subject;
-            } else {
-              return reply("Multiple members have matched your search. Please be more specific.");
-            }
-          }
-          if (!memberToUse || !memberToUse.user) return reply("Member not found! :thinking:");
-          idHolder = memberToUse.user;
-        }
+    } else {
+      const searched = await (d.search(trArg, "user", self, { allowForeign: true }));
+      if (searched.subject) {
+        idHolder = searched.subject;
+      } else {
+        return;
       }
     }
-    if (!idHolder || !idHolder.id) return reply("It appears no user was found. :frowning:"); // :thonk:
+    if (!idHolder || !idHolder.id) return; // :thonk:
     if (idHolder.id !== 1 && guild && guild.members.has(idHolder.id)) isLocal = true;
     const user = idHolder instanceof d.Discord.User ?
       idHolder :
@@ -113,6 +75,7 @@ user idHolder.id (e.g. \`80351110224678912\`) or a mention (e.g. <@${author.id}>
     if (is("id", "userid")) {
       return reply(`${user.tag}'s ID is \`${user.id}\`.`);
     } else {
+      channel.startTyping();
       const member = guild && guild.members.has(user.id) ? guild.members.get(user.id) : null;
       const agent = member || user;
       const av = user.displayAvatarURL();
@@ -155,7 +118,7 @@ user idHolder.id (e.g. \`80351110224678912\`) or a mention (e.g. <@${author.id}>
             .setColor(color);
         }
       }
-      return send({ embed, deletable: true });
+      return sendIt(embed);
     }
   } else if (is("role", "roleid")) {
     if (!perms["info.role"]) return reply("Missing permission `info role`! :frowning:");
@@ -163,44 +126,16 @@ user idHolder.id (e.g. \`80351110224678912\`) or a mention (e.g. <@${author.id}>
     if (!trArg) {
       role = guild.roles.get(guild.id);
     } else {
-      if (d.Constants.regex.ID.test(trArg) || d.Constants.regex.ROLE_MENTION.test(trArg)) {
-        try {
-          const matched = trArg.match(
-            d.Constants.regex.ID.test(trArg) ?
-              d.Constants.regex.ID :
-              d.Constants.regex.MENTION
-          )[1];
-          if (guild.roles.has(matched)) {
-            role = guild.roles.get(matched);
-          }
-        } catch(err) {
-          d.rejct(err, "[INFOROLE-MATCH]");
-        }
-      }
-      if (!role) {
-        const rolesMatched = searcher.searchRole(trArg);
-        let roleToUse;
-        if (rolesMatched) {
-          if (rolesMatched.length < 1) {
-            return reply("Role not found!");
-          } else if (rolesMatched.length === 1) {
-            roleToUse = rolesMatched[0];
-          } else if (rolesMatched.length > 1 && rolesMatched.length < 10) {
-            const result = await promptAmbig(rolesMatched, "roles", { type: "role" });
-            if (result.cancelled) {
-              return;
-            }
-            roleToUse = result.subject;
-          } else {
-            return reply("Multiple roles have matched your search. Please be more specific.");
-          }
-        }
-        if (!roleToUse) return reply("Role not found! :thinking:");
-        role = roleToUse;
+      const { subject } = await (d.search(trArg, "role", self));
+      if (subject) {
+        role = subject;
+      } else {
+        return;
       }
     }
     if (!role) return;
     if (is("roleid")) return reply(`The ID of the role **${d.escMarkdown(role.name)}** is \`${role.id}\`.`);
+    channel.startTyping();
     const membersArr = role.members
       .array()
       .sort((a, b) => a.displayName > b.displayName);
@@ -211,6 +146,11 @@ user idHolder.id (e.g. \`80351110224678912\`) or a mention (e.g. <@${author.id}>
         role.hexColor;
     const isDefault = color === d.Constants.strings.DISPLAY_DEFAULT_ROLE_COLOR;
     const colorURL = http.www.colourlovers.com(`/img/${color.replace(/^#/, "")}/100/100`).toString();
+    const permsz = role.permissions.has(["ADMINISTRATOR"]) ?
+      "All (Administrator)" :
+        role.permissions.bitfield === 2146958583 ?
+          "All but Administrator" :
+          role.permissions.bitfield;
     const position = role.position < 1 ?
       "Bottom" :
       (
@@ -225,7 +165,7 @@ user idHolder.id (e.g. \`80351110224678912\`) or a mention (e.g. <@${author.id}>
       .setDescription(
         `Was created at ${d.momentUTC(role.createdAt)} (${d.ago(role.createdAt, Date.now(), true) || "some time"} ago)`
       )
-      .addField(`Permissions (use ${p}perms)`, role.permissions.bitfield, true)
+      .addField(`Permissions (use ${p}perms)`, permsz, true)
       .addField(`Is externally managed`, d.Constants.maps.YESNO[Boolean(role.managed)], true)
       .addField("Display Color (See sidebar)", color + (isDefault ? " (Default)" : ""), true)
       .addField(`Is displayed separately`, d.Constants.maps.YESNO[Boolean(role.hoist)], true)
@@ -241,7 +181,137 @@ user idHolder.id (e.g. \`80351110224678912\`) or a mention (e.g. <@${author.id}>
           )
       )
       .setFooter(`Role ID: ${role.id}`);
-    send({ embed, deletable: true });
+    return sendIt(embed);
+  } else if (is(
+    "channel", "textchannel", "text", "textid", "channelid", "textchannelid", "voice", "voicechannel", "voiceid",
+    "voicechannelid", "category", "categoryid"
+  )) {
+    if (
+      is("category", "categoryid") && guild.channels.filter(c => c.type === "category").size < 1 ||
+      is("voice", "voicechannel", "voiceid", "voicechannelid") && guild.channels.filter(c => c.type === "voice").size < 1
+    ) {
+      if (is("category", "categoryid")) return reply("There are no categories in this server!");
+      return reply("There are no voice channels in this server!");
+    }
+    let isID = action.endsWith("id");
+    let type, typeUsed, chnl;
+    if (action.startsWith("text") || (action.startsWith("channel") && !trArg.startsWith("&"))) {
+      type = "text";
+    } else if (action.startsWith("voice") || (action.startsWith("channel") && trArg.startsWith("&"))) {
+      type = "voice";
+    } else {
+      type = "category";
+    }
+    const valid = guild.channels.filter(c => c.type === type).sort((a, b) => b.position - a.position);
+    const lArg = trArg.replace(/^[#&]/, "");
+    if (!lArg) {
+      if (type === "text") {
+        chnl = channel;
+      } else if (type === "voice" && member.voiceChannel) {
+        chnl = member.voiceChannel;
+      } else {
+        chnl = valid.last();
+      }
+    } else {
+      const { subject } = await (d.search(lArg, "channel", self, { channelType: type }));
+      if (!subject) return;
+      chnl = subject;
+    }
+    typeUsed = chnl.type;
+    if (isID) {
+      return reply(`The ID of the ${typeUsed === "category" ? "category" : `${typeUsed} channel`} named \
+\`${d.escMarkdown(chnl.name)}\` is ${chnl.id}.`);
+    }
+    channel.startTyping();
+    const basedir = c => https.cdn.discordapp.com("/").attachments(c);
+    const files = {
+      text: basedir("/417865953121009665/417866036990312448/hashtag.png").toString(),
+      voice: basedir("/417865953121009665/417866042619199489/volume.png").toString(),
+      category: basedir("/417865953121009665/417866038361980929/list.png").toString() 
+    };
+    const dir = files[typeUsed];
+    
+    const embed = new d.Embed() // general embed
+      .setAuthor(`Info for ${typeUsed === "category" ? "category" : typeUsed + " channel"} "${chnl.name}"`)
+      .setDescription(
+        `Was created at ${d.momentUTC(chnl.createdAt)} (${d.ago(chnl.createdAt, Date.now(), true) || "some time"} ago)\
+${guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another server."}`
+      )
+      .setThumbnail(dir)
+      .setColor("RANDOM")
+      .setFooter(`${type === "category" ? "Category" : "Channel"} ID: ${chnl.id}`)
+      .addField(
+        `Position\
+${chnl.parent || typeUsed === "voice" ? ` (Relative to ${typeUsed === "voice" ? "nearby VCs" : "its category"})` : ""}`,
+        chnl.position,
+        true
+      )
+      .addField(`Permission Overwrites`, chnl.permissionOverwrites.size, true);
+    if (chnl.parent) embed.addField(`Category`, chnl.parent.name, true);
+    if (type === "text" || type === "voice") {
+      let invs;
+      try {
+        invs = await chnl.fetchInvites();
+      } catch (err) { /* shrug */ }
+      const membersArr = chnl.members
+        .array()
+        .sort((a, b) => a.displayName > b.displayName);
+      const membersJoined = membersArr.length === guild.members.size ? "All members" : membersArr.join(", ");
+      if (typeUsed === "text") {
+        let whs;
+        try {
+          whs = await chnl.fetchWebhooks();
+        } catch (err) { /* shrug */ }
+        embed
+          .addField("Is NSFW", d.Constants.maps.YESNO[Boolean(chnl.nsfw)], true)
+          .addField("Webhook Amount", whs ? whs.size : "Unable to view", true)
+          .addField("Topic", chnl.topic || "None", true)
+          .addField(
+            `Members${membersArr.length < 1 ? "" : ` (${membersArr.length})`}`,
+            membersJoined.length > d.Constants.numbers.MAX_FIELD_CHARS ?
+              `Use \`\`${p}info channelmembers ${d.escMarkdown(chnl.name)}\`\` to see (too long)` :
+              (
+                membersJoined ||
+                "No members"
+              ),
+            false
+          );
+      } else if (typeUsed === "voice") {
+        embed
+          .addField("Bitrate", `${chnl.bitrate / 1000} kbps`, true)
+          .addField("User Limit", chnl.userLimit || "Unlimited", true)
+          .addField("Is full", d.Constants.maps.YESNO[Boolean(chnl.full)], true)
+          .addField(
+            `Members Connected\
+${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${chnl.userLimit}` : "")})`}`,
+            membersJoined.length > d.Constants.numbers.MAX_FIELD_CHARS ?
+              `Use \`\`${p}info voicemembers ${d.escMarkdown(chnl.name)}\`\` to see (too long)` :
+              (
+                membersJoined ||
+                "No members"
+              ), 
+            false
+          );
+      }
+    } else if (typeUsed === "category") {
+      const globalPos = d.globalPosition(guild);
+      const chArr = chnl.children
+        .array()
+        .sort((a, b) => globalPos.get(b.id).position - globalPos.get(a.id).position);
+      const chJoined = chArr.length === globalPos.size ? "All channels" : chArr.join(", ");
+
+      embed
+        .addField(
+          `Channels Within${chArr.length < 1 ? "" : ` (${chArr.length})`}`,
+          chJoined.length > d.Constants.numbers.MAX_FIELD_CHARS ?
+            `Use \`\`${p}info categorychildren ${d.escMarkdown(chnl.name)}\`\` to see (too long)` :
+            (
+              chJoined ||
+              "No sub-channels"
+            )
+        );
+    }
+    return sendIt(embed);
   }
   return;
 };
@@ -329,6 +399,76 @@ module.exports = new Command({
 {p}roleid Cool People
 {p}roleid everyone
 {p}roleid 123456789`,
+      default: true
+    },
+    channelinfo: {
+      description: "Alias to info channel (See `channel` for managing channels). Specify a channel to view its info",
+      action: "channel",
+      perms: "info.channel",
+      args: { channel: true },
+      example: `
+{p}channelinfo
+{p}channelinfo #text-channel
+{p}channelinfo &Voice Channel
+{p}channelinfo 123456789`,
+      default: true
+    },
+    channelid: {
+      description: "Alias to info channelid. Specify a channel to view its ID",
+      action: "channelid",
+      perms: "info.channel",
+      args: { channel: true },
+      example: `
+{p}channelid
+{p}channelid #text-channel
+{p}channelid &Voice Channel
+{p}channelid 123456789`,
+      default: true
+    },
+    voiceinfo: {
+      description: "Alias to info voice (See `voicechannel` for managing voicechannels). Specify a voicechannel to view its \
+info",
+      action: "voice",
+      perms: "info.channel",
+      args: { voicechannel: true },
+      example: `
+{p}voiceinfo
+{p}voiceinfo Music
+{p}voiceinfo 123456789`,
+      default: true
+    },
+    voiceid: {
+      description: "Alias to info voiceid. Specify a voice channel to view its ID",
+      action: "voiceid",
+      perms: "info.channel",
+      args: { voicechannel: true },
+      example: `
+{p}voiceid
+{p}voiceid Music
+{p}voiceid 123456789`,
+      default: true
+    },
+    categoryinfo: {
+      description: "Alias to info category (See `category` for managing categories). Specify a category to view its \
+info",
+      action: "category",
+      perms: "info.channel",
+      args: { category: true },
+      example: `
+{p}categoryinfo
+{p}categoryinfo Cool Channels
+{p}categoryinfo 123456789`,
+      default: true
+    },
+    categoryid: {
+      description: "Alias to info categoryid. Specify a category channel to view its ID",
+      action: "categoryid",
+      perms: "info.channel",
+      args: { category: true },
+      example: `
+{p}categoryid
+{p}categoryid Cool Channels
+{p}categoryid 123456789`,
       default: true
     }
   },

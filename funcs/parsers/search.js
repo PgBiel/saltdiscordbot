@@ -5,22 +5,55 @@ const reasons = {
   NOT_FOUND: 1,
   ALREADY_ANSWERED: 2,
   NONE_AVAILABLE: 3,
+  BE_MORE_SPECIFIC: 4,
+  OUTSIDE_GUILD: 5,
   UNKNOWN: 4
 };
-// TODO: FINISH
+
+/**
+ * 
+ * @param {string} args Info provided for lookup
+ * @param {"user" | "channel" | "roles" | "emoji"} type Type of search
+ * @param {object} context Context (guild, send, reply, promptAmbig)
+ * @param {object} options Options
+ * @param {"text"|"voice"|"category"|"all"} [options.channelType="text"] Channel type
+ * @param {boolean} [options.allowForeign=false] Allow foreign subjects
+ * @param {boolean} [options.autoAnswer=true] If should automatically answer
+ */
 const func = async function search(
-  args, type, { context: { guild, send, reply, promptAmbig }, channelType = "text", allowForeign = false }
+  args, type, { guild, send, reply, promptAmbig }, {
+    channelType = "text", allowForeign = false, autoAnswer = true
+  } = {}
 ) {
   type = String(type).toLowerCase();
   const searcher = new Searcher({ guild });
   const plural = {
-    user: "subjects",
+    user: "members",
     channel: "channels",
     role: "roles",
     emoji: "emojis"
   };
+  const term = type === "user" ?
+    "member" :
+    (
+      type === "channel" ?
+        (
+          channelType === "category" ?
+            channelType :
+            "channel"
+        ) :
+      type
+    );
   let subject, mentionRegex, field, valid, foreignMsg;
   let result = { subject: null, reason: reasons.UNKNOWN };
+  const finish = function(reason, answer) {
+    result.reason = reason;
+    if (autoAnswer && answer) {
+      reply(answer);
+      result.reason = reasons.ALREADY_ANSWERED;
+    }
+    return result;
+  };
   switch (type) {
     case "user":
       mentionRegex = Constants.regex.MENTION;
@@ -31,8 +64,8 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
 
     case "channel":
       mentionRegex = Constants.regex.CHANNEL_MENTION;
-      field = bot.channels;
-      foreignMsg = `Please specify a valid ${channelType === "category" ? "category" : "${channelType} channel"} name \
+      field = valid = bot.channels;
+      foreignMsg = `Please specify a valid ${channelType === "category" ? "category" : channelType + " channel"} name \
 (e.g. ${channelType === "text" ? "#place" : "Place"}) or mention (e.g. <\\#276430581468889089>).`;
       break;
 
@@ -56,9 +89,9 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
     valid = valid.filter(s => guild[plural[type]].has(s.id));
   }
   if (!valid || valid.size < 1) {
-    result.reason = reasons.NONE_AVAILABLE;
-    return result;
+    return finish(reasons.NONE_AVAILABLE, `No ${type}s available for search! :frowning:`);
   }
+  Constants.regex.ID.test((args), mentionRegex.test(args), args);
   if (type === "user" && Constants.regex.NAME_AND_DISCRIM.test(args)) {
     subject = valid.find("tag", args);
   } else if (Constants.regex.ID.test(args) || mentionRegex.test(args)) {
@@ -70,26 +103,21 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
         subject = await field.fetch(matched);
       }
     } catch(err) {
-      reply(`Unknown ${type}!`);
-      result.reason = reasons.ALREADY_ANSWERED;
-      return result;
+      return finish(reasons.NOT_FOUND, `Unknown ${type}!`);
     }
   }
   if (!subject) {
     if (!guild) {
-      if (allowForeign) {
-        reply(foreignMsg);
-      } else {
-        reply("Please run this command on a guild!");
-      }
-      result.reason = reasons.ALREADY_ANSWERED;
-      return result;
+      return finish(reasons.OUTSIDE_GUILD, `Please run this command in a server!`);
     } else {
-      const subjectsMatched = searcher[search + capitalize(type === "user" ? "member" : type)](args);
+      const subjectsMatched = searcher["search" + capitalize(type === "user" ? "member" : type)](
+        args,
+        type === "channel" ? channelType : undefined
+      );
       let subjectToUse;
       if (subjectsMatched) {
         if (subjectsMatched.length < 1) {
-          return reply("Member not found!");
+          return finish(reasons.NOT_FOUND, `${capitalize(term)} not found!`);
         } else if (subjectsMatched.length === 1) {
           subjectToUse = subjectsMatched[0];
         } else if (subjectsMatched.length > 1 && subjectsMatched.length < 10) {
@@ -99,13 +127,18 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
           }
           subjectToUse = result.subject;
         } else {
-          reply(`Multiple ${type}s have matched your search. Please be more specific.`);
-          result.reason = reasons.ALREADY_ANSWERED;
-          return result;
+          return finish(reasons.BE_MORE_SPECIFIC, `Multiple ${type === "category" ? "categorie" : type}s have matched your \
+search. Please be more specific.`);
         }
       }
-      if (!subjectToUse || !subjectToUse.user) return reply(capitalize(type) + " not found! :thinking:");
-      subject = subjectToUse.user;
+      if (!subjectToUse) return reply(capitalize(type) + " not found! :thinking:");
+      subject = subjectToUse.user || subjectToUse;
     }
   }
-}
+  if (!subject) return finish(reasons.NOT_FOUND, `${capitalize(term)} not found!`);
+  result.subject = subject;
+  return finish(reasons.OK);
+};
+func.reasons = reasons;
+
+module.exports = func;

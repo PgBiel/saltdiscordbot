@@ -102,7 +102,7 @@ module.exports = msg => {
       await reply(`Multiple ${pluralName} have matched that search. Please specify one, or a number preceded by \`#\` \
 (e.g. \`#1\`). This command will automatically cancel after 25 seconds. Type \`cancel\` to cancel.
 **${capitalize(pluralName)} Matched**:
-${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`)
+${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`, { autoCatch: false })
     );
     let obj = { cancelled: 1 };
     for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
@@ -134,7 +134,7 @@ ${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'"
 or a number preceded by \`#\` (e.g. \`#1\`). This command will automatically cancel after 25 seconds. Type \`cancel\` \
 to cancel.
 **${capitalize(pluralName)} Matched**:
-${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`)
+${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`, { autoCatch: false })
           );
         }
       } catch (err) {

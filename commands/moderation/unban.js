@@ -72,7 +72,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     send("Command cancelled.");
     return;
   }
-  const sentUnbanMsg = await send(`Unbanning ${memberToUse.tag}... (Sending DM...)`);
+  const sentUnbanMsg = await send(`Unbanning ${memberToUse.tag}... (Sending DM...)`, { autoCatch: false });
   const reasonEmbed = new d.Embed();
   reasonEmbed
     .setColor("DARK_GREEN")
