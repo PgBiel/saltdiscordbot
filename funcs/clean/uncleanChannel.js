@@ -33,7 +33,7 @@ module.exports = function uncleanChannel(channel, guild) {
       }
       break;
   }
-  const useG = guild || (bot.guilds ? bot.guilds.get(channel.guild) : null);
+  const useG = guild || (bot.guilds ? bot.guilds.get(channel.guildId) : null);
   if (classe === TextChannel || classe === VoiceChannel || classe === CategoryChannel || classe === GuildChannel) {
     return new classe(useG, channel);
   }

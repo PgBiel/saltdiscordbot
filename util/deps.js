@@ -3,6 +3,7 @@ exports.applyDeps = function applyDeps() {
 };
 // dependencies
 exports.db = require("../classes/database");
+exports.cross = require("../classes/cross");
 exports.mathjs = require("mathjs");
 exports.Storage = require("saltjs").Storage;
 exports._ = require("lodash");

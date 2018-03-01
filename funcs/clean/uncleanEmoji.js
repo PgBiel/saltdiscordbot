@@ -13,5 +13,5 @@ module.exports = function uncleanEmoji(emoji, guild) {
   if (classe === ReactionEmoji) {
     return new classe(Object.assign({ message: { client: bot } }, emoji.reaction), emoji);
   }
-  return new classe(bot, emoji, guild || (bot.guilds ? bot.guilds.get(emoji.guild) : null));
+  return new classe(bot, emoji, guild || (bot.guilds ? bot.guilds.get(emoji.guildId) : null));
 };

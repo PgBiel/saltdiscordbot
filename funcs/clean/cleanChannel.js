@@ -1,16 +1,17 @@
 const { Constants: { ChannelTypes } } = require("discord.js");
 const cleanUser = require("./cleanUser");
 
-module.exports = function cleanChannel(channel, guildId = (channel.guild || {}).id) {
+module.exports = function cleanChannel(channel, _guildId) {
   if (channel == null || typeof channel !== "object") return channel;
   const {
     id, type, name, rawPosition, parentID, permissionOverwrites, topic, nsfw, lastMessageID, bitrate, userLimit,
     recipient, recipients, icon, ownerID, managed, applicationID, nicks
   } = channel;
+  const guildId = (channel.guild || {}).id;
   const typeE = Object.entries(ChannelTypes);
   const typeVar = typeE.find(([k, v]) => k === String(type).replace(/\s/g, "_").toUpperCase())[1];
   const obj = {
-    guild: guildId,
+    guildId,
     id,
     type: typeVar,
     name,

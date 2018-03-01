@@ -10,7 +10,7 @@ module.exports = function cleanEmoji(emoji, guildId = (emoji.guild || {}).id) {
   };
   if (emoji.guild) { // is GuildEmoji
     Object.assign(obj, {
-      guild: guildId,
+      guildId,
       require_colons: requiresColons,
       managed,
       roles: roles.map(r => r.id)

@@ -3,7 +3,7 @@ module.exports = function cleanRole(role, guildId = (role.guild || {}).id) {
   // ALL DATA CONVERTED tO DISCORD STANDARDS.
   const { id, name, color, hoist, rawPosition, permissions, managed, mentionable } = role;
   return {
-    guild: guildId,
+    guildId,
     id,
     name,
     color,

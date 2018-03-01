@@ -7,4 +7,8 @@ module.exports = class CommandClient extends Client {
     super(options);
     this.commands = {};
   }
+
+  get funcs() {
+    return require("../funcs/funcs"); // lazy require cuz me no want B U G S
+  }
 };

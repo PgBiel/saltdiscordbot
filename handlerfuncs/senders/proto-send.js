@@ -1,4 +1,6 @@
-const { collectReact, Constants, rejct } = require("../../misc/d");
+const { Constants } = require("../../util/deps");
+const collectReact = require("../../funcs/bot/collectReact");
+const rejct = require("../../funcs/util/rejct");
 
 module.exports = msg => {
   const { author, channel, guild } = msg;
