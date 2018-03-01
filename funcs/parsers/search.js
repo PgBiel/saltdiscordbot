@@ -1,4 +1,4 @@
-const { bot, Constants, Searcher } = require("../../util/deps");
+const { bot, cross, Constants, Searcher } = require("../../util/deps");
 const capitalize = require("../strings/capitalize");
 const reasons = {
   OK: 0,
@@ -57,14 +57,14 @@ const func = async function search(
   switch (type) {
     case "user":
       mentionRegex = Constants.regex.MENTION;
-      field = valid = bot.users;
+      field = valid = cross.users;
       foreignMsg = `Please specify a valid username followed by a valid discriminator (e.g. \`User#1234\`), a valid \
 user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
       break;
 
     case "channel":
       mentionRegex = Constants.regex.CHANNEL_MENTION;
-      field = valid = bot.channels;
+      field = valid = cross.channels;
       foreignMsg = `Please specify a valid ${channelType === "category" ? "category" : channelType + " channel"} name \
 (e.g. ${channelType === "text" ? "#place" : "Place"}) or mention (e.g. <\\#276430581468889089>).`;
       break;
@@ -79,28 +79,28 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
     case "emoji":
       mentionRegex = Constants.regex.EMOJI_MENTION;
       foreignMsg = `Please specify a valid custom emoji.`;
-      field = valid = bot.emojis;
+      field = valid = cross.emojis;
       break;
 
     default:
       throw new TypeError(`Invalid type "${type}"! Must be user, channel, emoji or role.`);
   }
   if (type !== "role" && !allowForeign) {
-    valid = valid.filter(s => guild[plural[type]].has(s.id));
+    valid = valid.filter(s => guild[plural[type]].has(s.id), { plural, type });
   }
   if (!valid || valid.size < 1) {
     return finish(reasons.NONE_AVAILABLE, `No ${type}s available for search! :frowning:`);
   }
   Constants.regex.ID.test((args), mentionRegex.test(args), args);
   if (type === "user" && Constants.regex.NAME_AND_DISCRIM.test(args)) {
-    subject = valid.find("tag", args);
+    subject = await (valid.find("tag", args));
   } else if (Constants.regex.ID.test(args) || mentionRegex.test(args)) {
     try {
       const matched = args.match(Constants.regex.ID.test(args) ? Constants.regex.ID : mentionRegex)[1];
-      if (valid.has(matched)) {
-        subject = valid.get(matched);
+      if (await (valid.has(matched))) {
+        subject = await (valid.get(matched));
       } else if (allowForeign && type === "user") {
-        subject = await field.fetch(matched);
+        subject = await bot.users.fetch(matched);
       }
     } catch(err) {
       return finish(reasons.NOT_FOUND, `Unknown ${type}!`);
@@ -108,7 +108,7 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
   }
   if (!subject) {
     if (!guild) {
-      return finish(reasons.OUTSIDE_GUILD, `Please run this command in a server!`);
+      return finish(reasons.OUTSIDE_GUILD, allowForeign ? foreignMsg : `Please run this command in a server!`);
     } else {
       const subjectsMatched = searcher["search" + capitalize(type === "user" ? "member" : type)](
         args,
