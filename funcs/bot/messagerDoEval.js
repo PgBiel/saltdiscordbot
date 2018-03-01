@@ -17,7 +17,7 @@ module.exports = function messagerDoEval(evaler) {
       bot, message, msg, input, channel, guild, deps, funcs, guildId, send, reply, db, context, prompt,
       genPrompt, genPromptD
     } = data.vars;
-    const { _, Storage, util } = deps;
+    const { _, Storage, util, Discord, cross: cs } = deps;
     const { member, author } = context;
     for (const [name, func] of Object.entries(funcs)) {
       try {
