@@ -31,9 +31,17 @@ Manager.spawn().then(shards => {
   shards.forEach(shard => {
     shard.on("message", message => {
       console.log(`Received message from shard ${shard.id}`);
-      if (message && message.type === "dbUpdate" && message.table && message.statement) {
-        console.log("Message is ok");
-        Manager.broadcast(message);
+      if (message) {
+        if (message.type === "dbUpdate" && message.table && message.statement) {
+          console.log("Message is DB");
+          Manager.broadcast(message);
+        } else if (
+          message.type === "coll" && message.shard && message.resID
+        ) {
+          Manager.broadcast(Object.assign({ shardCount: shards.length }, message));
+        } else if (message.type === "resColl" && message.shard && message.resID) {
+          Manager.broadcast(Object.assign({ shardCount: shards.length }, message));
+        }
       }
     });
   });

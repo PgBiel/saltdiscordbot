@@ -71,16 +71,25 @@ const func = async function (msg, {
         idHolder.user ||
         idHolder
       );
-    if (d.bot.guilds.filter(g => g.members.has(user.id)).size < 1) isCommon = false;
     if (is("id", "userid")) {
       return reply(`${user.tag}'s ID is \`${user.id}\`.`);
     } else {
       channel.startTyping();
+      const userId = user.id;
+      if (d.bot.guilds.filter(g => g.members.has(userId)).size < 1) isCommon = false;
+      if (!isCommon) {
+        try {
+          const filtered = await (d.cross.guilds.filter(g => g.members.has(userId), { userId }));
+          isCommon = Boolean(await (filtered.size()));
+        } catch (err) {
+          d.rejct(err, "[ISCOMMON-USER]");
+        }
+      }
       const member = guild && guild.members.has(user.id) ? guild.members.get(user.id) : null;
       const agent = member || user;
       const av = user.displayAvatarURL();
       const embed = new d.Embed()
-        .setAuthor(`Info for user ${user.tag}`, av, av)
+        .setAuthor(`Info for user ${user.tag}${user.bot ? " [BOT]" : ""}`, av, av)
         .setThumbnail(av)
         .setDescription(
           `Joined Discord on ${d.momentUTC(user.createdAt)} (${d.ago(user.createdAt, Date.now(), true) || "some time"} ago)`
@@ -213,7 +222,7 @@ const func = async function (msg, {
         chnl = valid.last();
       }
     } else {
-      const { subject } = await (d.search(lArg, "channel", self, { channelType: type }));
+      const { subject } = await (d.search(lArg, "channel", self, { channelType: type, allowForeign: true }));
       if (!subject) return;
       chnl = subject;
     }

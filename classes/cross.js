@@ -77,13 +77,22 @@ class CrossItem {
       regexStr += regexStr === "([^\\w])(" ? varr : " | " + varr;
     }
     const regex = new RegExp(regexStr += ")(?=[^\\w])", "g");
+    console.log(regex);
     return newItem(
       this.name, this.cleaner, this.uncleaner,
       {
         name: "filter",
-        func: bot.funcs.endChar(funcStr, " ").replace(regex, (_m, s, v) => s + this._insp(vars[v], true))
+        func: bot.funcs
+          .endChar(funcStr, " ")
+          .replace(regex, (_m, s, v, ...args) => (s || "") + (console.log("YOLLO", _m, s, v, args) || "") + this._insp(vars[v], true))
       }
     );
+  }
+
+  async size() {
+    const results = await (bot.shard.broadcastEval(this._build("size", { isFunc: false })));
+    if (!Array.isArray(results)) return null;
+    return results.reduce((prev, curr) => prev + curr, 0);
   }
 
   /**
@@ -91,20 +100,21 @@ class CrossItem {
    * @param {object} data Data
    * @param {string} funcUsed Function to use
    * @param {object} [opts] Options
+   * @param {boolean} [isFunc=true] If FuncUsed should be called
    * @param {string} [opts.varName=this] Var name
    * @param {string[]} [opts.args] Args to that function
    * @returns {string} Generated eval string
    * @private
    */
-  _build(funcUsed, { varName = "this", args = [] } = {}) {
+  _build(funcUsed, { isFunc = true, varName = "this", args = [] } = {}) {
     args = _.castArray(args).map(el => this._insp(el));
     varName = String(varName);
     funcUsed = String(funcUsed);
     return `${varName}.funcs`
       + `[${this._insp(this.cleaner)}]`
       + `(${varName}[${this._insp(this.name)}]` // open parenthesis
-      + `.${funcUsed}(${args})`
       + (this.partial ? `.${(this.partial.name)}(${this._insp(this.partial.func)})` : "")
+      + `.${funcUsed}${isFunc ? `(${args})` : ""}`
       + `)`; // close parenthesis
   }
 
@@ -154,7 +164,7 @@ CrossItems = CrossItem;
 const crosses = module.exports = {
   CrossItem,
   guilds: new CrossItems("guilds", "cleanGuild", "uncleanGuild"),
-  users: new CrossItems("user", "cleanUser", "uncleanUser"),
+  users: new CrossItems("users", "cleanUser", "uncleanUser"),
   channels: new CrossItems("channels", "cleanChannel", "uncleanChannel"),
   emojis: new CrossItems("emojis", "cleanEmoji", "uncleanEmoji")
 };

@@ -1,5 +1,6 @@
 const { bot, cross, Constants, Searcher } = require("../../util/deps");
 const capitalize = require("../strings/capitalize");
+const rejct = require("../util/rejct");
 const reasons = {
   OK: 0,
   NOT_FOUND: 1,
@@ -86,7 +87,7 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
       throw new TypeError(`Invalid type "${type}"! Must be user, channel, emoji or role.`);
   }
   if (type !== "role" && !allowForeign) {
-    valid = valid.filter(s => guild[plural[type]].has(s.id), { plural, type });
+    valid = guild[plural[type]];
   }
   if (!valid || valid.size < 1) {
     return finish(reasons.NONE_AVAILABLE, `No ${type}s available for search! :frowning:`);
@@ -103,6 +104,7 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
         subject = await bot.users.fetch(matched);
       }
     } catch(err) {
+      if (!/Unknown/i.test(err)) rejct(err, "[SEARCH-GETID]");
       return finish(reasons.NOT_FOUND, `Unknown ${type}!`);
     }
   }
