@@ -23,13 +23,14 @@ module.exports = function processMessage(data) {
       }
     }
     try {
+      const data = (isFunc == null || isFunc) ?
+        bot.funcs[cleaner](coll[func](...(_.castArray(vm.runInContext(args, vars))))) : 
+        bot.funcs[cleaner](coll[func]);
       bot.shard.send({
         type: "resColl",
         resID,
         shard,
-        data: isFunc == null || isFunc ?
-            bot.funcs[cleaner](coll[func](...(_.castArray(vm.runInContext(args, vars))))) : 
-            bot.funcs[cleaner](coll[func])
+        data
       });
     } catch (err) {
       bot.shard.send({ type: "resColl", resID, shard, err: inspect(err) });

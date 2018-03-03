@@ -71,7 +71,7 @@ class CrossItem {
       for (const res of results) if (res) return true;
       return false;
     }
-    return this._unravel(results.data);
+    return this._unravel(results);
   }
 
   async filter(func, vars = {}) {

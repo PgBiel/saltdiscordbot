@@ -97,7 +97,7 @@ const func = async function (msg, {
         .setFooter(`Click the title for avatar URL | User ID: ${user.id}`);
       if (isCommon) {
         embed
-          .addField("Status", d.capitalize(agent.presence.status), true)
+          .addField("Status", d.formatStatus(agent.presence.status), true)
           .addField("Activity", d.formatActivity(agent.presence.activity, true) || "None", true);
         if (member) {
           const rolesArr = member.roles
