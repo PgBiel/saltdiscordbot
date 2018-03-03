@@ -35,12 +35,8 @@ Manager.spawn().then(shards => {
         if (message.type === "dbUpdate" && message.table && message.statement) {
           console.log("Message is DB");
           Manager.broadcast(message);
-        } else if (
-          message.type === "coll" && message.shard && message.resID
-        ) {
-          Manager.broadcast(Object.assign({ shardCount: shards.length }, message));
-        } else if (message.type === "resColl" && message.shard && message.resID) {
-          Manager.broadcast(Object.assign({ shardCount: shards.length }, message));
+        } else if (message.shard != null && message.resID && ["coll", "resColl"].includes(message.type)) {
+          Manager.broadcast(Object.assign({}, message, { shardCount: shards.size }));
         }
       }
     });

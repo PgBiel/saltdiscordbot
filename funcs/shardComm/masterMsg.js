@@ -2,7 +2,7 @@ const { _, bot, Time } = require("../../util/deps");
 
 /**
  * Send a message to master and expect or not a response
- * @param {*} message Message
+ * @param {*} data Message
  * @param {object} [opts] Options
  * @param {number} [opts.timeout=15000] Time in milliseconds to expire and reject (0 for none)
  * @param {boolean} [opts.awaitRes=true] If should await response
@@ -13,41 +13,45 @@ const { _, bot, Time } = require("../../util/deps");
  * @returns {Promise<*>} Response (if awaiting one, undefined otherwise)
  */
 module.exports = function masterMsg(
-  message, { type = null, awaitRes = true, awaitType = null, timeout = Time.seconds(15), receiveMultiple = false } = {}
+  data, { type = null, awaitRes = true, awaitType = null, timeout = Time.seconds(15), receiveMultiple = false } = {}
 ) {
   return new Promise((res, rej) => {
     const resID = Date.now();
     if (awaitRes) {
+      let success = false;
       const responses = [];
       let maxNum = null;
-      let num = -1;
       const handler = response => {
-        if (response.shard === bot.shard.id && response.resID === resID) {
-          if (receiveMultiple != null && num === -1) {
-            if (typeof receiveMultiple === "boolean") {
-              maxNum = response.shardCount || 5;
-            } else {
-              maxNum = receiveMultiple;
+        if (
+          response.shard === bot.shard.id && response.resID === resID && (awaitType ? response.type === awaitType : true)
+        ) {
+          if (receiveMultiple) {
+            responses.push(response);
+            if (responses.length < 2) {
+              if (typeof receiveMultiple === "boolean") {
+                maxNum = response.shardCount || 5;
+              } else {
+                maxNum = receiveMultiple;
+              }
             }
-            num = 0;
           }
-          if (
-            (awaitType ? response.type === awaitType : true) &&
-            (receiveMultiple ? ++num > maxNum : true)
-          ) {
+          if (receiveMultiple ? responses.length >= maxNum : true) {
+            success = true;
             process.removeListener("message", handler);
-            res(receiveMultiple ? _.castArray(response) : response);
+            res(receiveMultiple ? responses : response);
           }
         }
       };
       process.on("message", handler);
       if (timeout && !isNaN(timeout)) {
         setTimeout(() => {
-          process.removeListener("message", handler);
-          rej(new Error("Timeout"));
+          if (!success) {
+            process.removeListener("message", handler);
+            rej(new Error("Timeout"));
+          }
         }, timeout);
       }
     }
-    bot.shard.send({ type, shard: bot.shard.id, resID, message });
+    bot.shard.send({ type, shard: bot.shard.id, resID, data });
   });
 };
