@@ -13,14 +13,16 @@ const func = async function (msg, {
   });
   const action = (dummy && dummy.action ? dummy.action : String(arrArgs[0] || "")).toLowerCase();
   const arg = arrArgs.slice(dummy && dummy.action ? 0 : 1).join(" ");
-  const noGActions = ["user", "member", "id", "userid", "stats", "bot"];
+  const noGActions = [
+    "user", "member", "id", "userid",
+    "channel", "textchannel", "text", "channels", "textchannels", "channelid", "textid", "textchannelid",
+    "voicechannel", "voice", "voicechannels", "voiceid", "voicechannelid",
+    "stats", "bot"];
   const gActions = noGActions.concat([
-    "server", "guild",
+    "server", "guild", "serverid", "guildid",
     "members",
     "emoji", "emojiid",
     "role", "roleid", "roles",
-    "channel", "textchannel", "text", "channels", "textchannels", "channelid", "textid", "textchannelid",
-    "voicechannel", "voice", "voicechannels", "voiceid", "voicechannelid",
     "category", "categories", "categoryid",
     "perms", "dperms", "discordperms",
     "saltperms", "listperms" // I was going to alias it with "sperm" but then I realized...
@@ -92,7 +94,7 @@ const func = async function (msg, {
         .setAuthor(`Info for user ${user.tag}${user.bot ? " [BOT]" : ""}`, av, av)
         .setThumbnail(av)
         .setDescription(
-          `Joined Discord on ${d.momentUTC(user.createdAt)} (${d.ago(user.createdAt, Date.now(), true) || "some time"} ago)`
+          `Joined Discord ${d.ago(user.createdAt, Date.now(), true) || "some time"} ago (${d.momentUTC(user.createdAt)})`
         )
         .setFooter(`Click the title for avatar URL | User ID: ${user.id}`);
       if (isCommon) {
@@ -172,7 +174,7 @@ const func = async function (msg, {
       .setThumbnail(colorURL)
       .setColor(color)
       .setDescription(
-        `Was created at ${d.momentUTC(role.createdAt)} (${d.ago(role.createdAt, Date.now(), true) || "some time"} ago)`
+        `Was created ${d.ago(role.createdAt, Date.now(), true) || "some time"} ago (${d.momentUTC(role.createdAt)})`
       )
       .addField(`Permissions (use ${p}perms)`, permsz, true)
       .addField(`Is externally managed`, d.Constants.maps.YESNO[Boolean(role.managed)], true)
@@ -196,8 +198,11 @@ const func = async function (msg, {
     "voicechannelid", "category", "categoryid"
   )) {
     if (
-      is("category", "categoryid") && guild.channels.filter(c => c.type === "category").size < 1 ||
-      is("voice", "voicechannel", "voiceid", "voicechannelid") && guild.channels.filter(c => c.type === "voice").size < 1
+      guild &&
+      (
+        is("category", "categoryid") && guild.channels.filter(c => c.type === "category").size < 1 ||
+        is("voice", "voicechannel", "voiceid", "voicechannelid") && guild.channels.filter(c => c.type === "voice").size < 1
+      )
     ) {
       if (is("category", "categoryid")) return reply("There are no categories in this server!");
       return reply("There are no voice channels in this server!");
@@ -211,15 +216,18 @@ const func = async function (msg, {
     } else {
       type = "category";
     }
-    const valid = guild.channels.filter(c => c.type === type).sort((a, b) => b.position - a.position);
     const lArg = trArg.replace(/^[#&]/, "");
     if (!lArg) {
-      if (type === "text") {
-        chnl = channel;
-      } else if (type === "voice" && member.voiceChannel) {
-        chnl = member.voiceChannel;
+      if (guild) {
+        if (type === "text") {
+          chnl = channel;
+        } else if (type === "voice" && member.voiceChannel) {
+          chnl = member.voiceChannel;
+        } else {
+          chnl = guild.channels.filter(c => c.type === type).sort((a, b) => b.position - a.position).last();
+        }
       } else {
-        chnl = valid.last();
+        return send("Please specify a channel (by mentioning it) or a channel ID!");
       }
     } else {
       const { subject } = await (d.search(lArg, "channel", self, { channelType: type, allowForeign: true }));
@@ -232,19 +240,19 @@ const func = async function (msg, {
 \`${d.escMarkdown(chnl.name)}\` is ${chnl.id}.`);
     }
     channel.startTyping();
-    const basedir = c => https.cdn.discordapp.com("/").attachments(c);
+    const basedir = c => https.cdn.discordapp.com("/").attachments(c).toString();
     const files = {
-      text: basedir("/417865953121009665/417866036990312448/hashtag.png").toString(),
-      voice: basedir("/417865953121009665/417866042619199489/volume.png").toString(),
-      category: basedir("/417865953121009665/417866038361980929/list.png").toString() 
+      text: basedir("/417865953121009665/417866036990312448/hashtag.png"),
+      voice: basedir("/417865953121009665/417866042619199489/volume.png"),
+      category: basedir("/417865953121009665/417866038361980929/list.png")
     };
     const dir = files[typeUsed];
     
     const embed = new d.Embed() // general embed
       .setAuthor(`Info for ${typeUsed === "category" ? "category" : typeUsed + " channel"} "${chnl.name}"`)
       .setDescription(
-        `Was created at ${d.momentUTC(chnl.createdAt)} (${d.ago(chnl.createdAt, Date.now(), true) || "some time"} ago)\
-${guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another server."}`
+        `Was created ${d.ago(chnl.createdAt, Date.now(), true) || "some time"} ago (${d.momentUTC(chnl.createdAt)})\
+${guild && guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another server."}`
       )
       .setThumbnail(dir)
       .setColor("RANDOM")
@@ -321,6 +329,21 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
         );
     }
     return sendIt(embed);
+  } else if (is("server", "guild", "guildid", "serverid")) {
+    if (is("serverid", "guildid")) return reply(`The ID of the current server is ${guildId}.`);
+    const emb = new d.Embed()
+      .setAuthor(guild.name, guild.iconURL(), guild.iconURL())
+      .setDescription(
+        `Was created ${d.ago(guild.createdAt, Date.now(), true) || "some time"} ago (${d.momentUTC(guild.createdAt)})`
+      )
+      .setThumbnail(guild.iconURL())
+      .setColor("RANDOM")
+      .addField("Owner", `<@!${guild.ownerID}>`)
+      .addField("Oldest Channel", guild.channels.sort((a, b) => a.createdTimestamp - b.createdTimestamp))
+      .addField(
+        "Member Amount",
+        `${guild.members.filter(m => m.status !== "offline").size} on, ${guild.members.size} total`
+      );
   }
   return;
 };
@@ -478,6 +501,42 @@ info",
 {p}categoryid
 {p}categoryid Cool Channels
 {p}categoryid 123456789`,
+      default: true
+    },
+    serverinfo: {
+      description: "Alias to info server. View info of current server",
+      action: "server",
+      perms: "info.server",
+      args: {},
+      example: `
+{p}serverinfo`,
+      default: true
+    },
+    guildinfo: {
+      description: "Alias to info guild. View info of current server",
+      action: "guild",
+      perms: "info.server",
+      args: {},
+      example: `
+{p}guildinfo`,
+      default: true
+    },
+    serverid: {
+      description: "Alias to info serverid. View ID of current server",
+      action: "serverid",
+      perms: "info.server",
+      args: {},
+      example: `
+{p}serverid`,
+      default: true
+    },
+    guildid: {
+      description: "Alias to info guildid. View ID of current server",
+      action: "guildid",
+      perms: "info.server",
+      args: {},
+      example: `
+{p}guildid`,
       default: true
     }
   },

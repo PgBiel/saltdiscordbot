@@ -1,4 +1,5 @@
 const { Interval, moment } = require("../../util/deps");
+const pluralize = require("../strings/pluralize");
 
 /**
  * Amount of time between two dates
@@ -6,13 +7,20 @@ const { Interval, moment } = require("../../util/deps");
  * @param {Date} afterDate After
  * @returns {string}
  */
-module.exports = function ago(beforeDate, afterDate, upToDays = false) {
+module.exports = function ago(beforeDate, afterDate, scale = false) {
   const diffe = new Interval(moment(afterDate).diff(beforeDate));
-  if (upToDays) {
+  if (scale) {
     let string = "";
-    if (diffe.years) string += diffe.years + " year" + (diffe.years > 1 ? "s" : "");
-    if (diffe.months) string += `${diffe.years ? (diffe.days ? ", " : " and ") : ""}${diffe.months} month${diffe.months > 1 ? "s" : ""}`;
-    if (diffe.days) string += `${(diffe.months || diffe.years) ? " and " : ""}${diffe.days} day${diffe.days > 1 ? "s" : ""}`;
+    if (diffe.days) {
+      if (diffe.years) string += diffe.years + pluralize(" year", diffe.years);
+      if (diffe.months) string += `${diffe.years ? (diffe.days ? ", " : " and ") : ""}${diffe.months} ${pluralize("month", diffe.months)}`;
+      string += `${(diffe.months || diffe.years) ? " and " : ""}${diffe.days} ${pluralize("day", diffe.days)}`;
+    } else if (diffe.hours || diffe.minutes) {
+      if (diffe.hours) string += diffe.hours + pluralize(" hour", diffe.hours);
+      if (diffe.minutes) string += `${diffe.hours ? " and " : ""}${diffe.minutes} ${pluralize("minute", diffe.minutes)}`;
+    } else if (diffe.seconds) {
+      string += diffe.seconds + pluralize(" second", diffe.seconds);
+    }
     return string;
   } else {
     return diffe.toString();
