@@ -191,7 +191,7 @@ const func = async function (msg, {
             "No members"
           )
       )
-      .setFooter(`Role ID: ${role.id}`);
+      .setFooter(`Role ID: ${role.id} | Server ID: ${guild.id}`);
     return sendIt(embed);
   } else if (is(
     "channel", "textchannel", "text", "textid", "channelid", "textchannelid", "voice", "voicechannel", "voiceid",
@@ -338,12 +338,21 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
       )
       .setThumbnail(guild.iconURL())
       .setColor("RANDOM")
-      .addField("Owner", `<@!${guild.ownerID}>`)
-      .addField("Oldest Channel", guild.channels.sort((a, b) => a.createdTimestamp - b.createdTimestamp))
+      .setFooter(`Server ID: ${guild.id}`)
+      .addField("Owner", `<@!${guild.ownerID}>`, true)
+      .addField("Oldest Channel", guild.channels.sort((a, b) => a.createdTimestamp - b.createdTimestamp).first(), true)
       .addField(
         "Member Amount",
-        `${guild.members.filter(m => m.status !== "offline").size} on, ${guild.members.size} total`
-      );
+        `${guild.members.filter(m => m.status !== "offline").size} online, ${guild.members.size} total`,
+        true
+      )
+      .addField("Channel Amount", guild.channels.size, true)
+      .addField("Role Amount", guild.roles.size, true)
+      .addField("Emoji Amount", guild.emojis.size, true)
+      .addField("Region", d.adaptSnake(guild.region), true)
+      .addField("Verification Level", d.Constants.maps.VERIF[guild.verificationLevel], true)
+      .addField("Features (granted by Partnership)", d.adaptSnake(guild.features) || "None");
+    sendIt(emb);
   }
   return;
 };

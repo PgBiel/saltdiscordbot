@@ -28,7 +28,7 @@ module.exports = msg => {
     const getTag = gm => {
       if (gm instanceof TextChannel) {
         return `#${gm.name}`;
-      } else if (gm instanceof VoiceChannel) {
+      } else if (gm instanceof VoiceChannel || gm instanceof Role) {
         return `${gm.name}`;
       } else if (gm.user) {
         return gm.user.tag;
@@ -144,6 +144,7 @@ ${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'"
           subject: null,
           cancelled: true
         };
+        break;
       }
     }
     if (obj.cancelled === 1) {

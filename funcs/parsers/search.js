@@ -123,9 +123,9 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
         } else if (subjectsMatched.length === 1) {
           subjectToUse = subjectsMatched[0];
         } else if (subjectsMatched.length > 1 && subjectsMatched.length < 10) {
-          const result = await promptAmbig(subjectsMatched);
+          const result = await promptAmbig(subjectsMatched, plural[type], { type, channelType });
           if (result.cancelled) {
-            return;
+            return finish(reasons.ALREADY_ANSWERED);
           }
           subjectToUse = result.subject;
         } else {

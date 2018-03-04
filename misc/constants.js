@@ -14,6 +14,13 @@ exports.maps = {
     true: "Yes",
     false: "No"
   },
+  VERIF: [
+    "None",
+    "Low",
+    "Medium",
+    "(╯°□°）╯︵ ┻━┻",
+    "┻━┻ ﾐヽ(ಠ益ಠ)ノ彡┻━┻"
+  ],
   PUNISHMENTS: {
     m: ["mute", "**{target}** was muted", "GOLD", [["Muted For", "<d>"]]],
     p: ["mute", "**{target}** was muted", "GOLD", [["Muted For", "Until they're unmuted"]]],
