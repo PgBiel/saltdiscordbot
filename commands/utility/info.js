@@ -16,14 +16,14 @@ const func = async function (msg, {
   const noGActions = [
     "user", "member", "id", "userid",
     "channel", "textchannel", "text", "channels", "textchannels", "channelid", "textid", "textchannelid",
-    "voicechannel", "voice", "voicechannels", "voiceid", "voicechannelid",
+    "voicechannel", "voice", "voicechannels", "voiceid", "voicechannelid", 
+    "category", "categories", "categoryid", "ctg", "ctgs", "ctgid",
     "stats", "bot"];
   const gActions = noGActions.concat([
     "server", "guild", "serverid", "guildid",
     "members",
     "emoji", "emojiid",
     "role", "roleid", "roles",
-    "category", "categories", "categoryid",
     "perms", "dperms", "discordperms",
     "saltperms", "listperms" // I was going to alias it with "sperm" but then I realized...
   ]);
@@ -39,6 +39,7 @@ const func = async function (msg, {
     return reply("Unknown action (info to view)! (See the help command if you need help.)");
   }
   if (
+    guild &&
     !is(
       "roleid", "id", "userid", "perms", "dperms", "discordperms", "channelid", "serverid", "guildid",
       "categoryid", "textchannelid", "voiceid", "voicechannelid", "emojiid"
@@ -195,7 +196,7 @@ const func = async function (msg, {
     return sendIt(embed);
   } else if (is(
     "channel", "textchannel", "text", "textid", "channelid", "textchannelid", "voice", "voicechannel", "voiceid",
-    "voicechannelid", "category", "categoryid"
+    "voicechannelid", "category", "categoryid", "ctg", "ctgid"
   )) {
     if (
       guild &&
@@ -204,7 +205,7 @@ const func = async function (msg, {
         is("voice", "voicechannel", "voiceid", "voicechannelid") && guild.channels.filter(c => c.type === "voice").size < 1
       )
     ) {
-      if (is("category", "categoryid")) return reply("There are no categories in this server!");
+      if (is("category", "ctg", "ctgid", "categoryid")) return reply("There are no categories in this server!");
       return reply("There are no voice channels in this server!");
     }
     let isID = action.endsWith("id");
@@ -249,7 +250,7 @@ const func = async function (msg, {
       )
       .setDescription(
         `Was created ${d.ago(chnl.createdAt, Date.now(), true) || "some time"} ago (${d.momentUTC(chnl.createdAt)})\
-${guild && guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another server."}`
+${guild ? (guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another server.") : ""}`
       )
       .setThumbnail(dir)
       .setColor("#CABE40")
@@ -261,7 +262,7 @@ ${guild && guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another 
       )
       .addField(`Permission Overwrites`, chnl.permissionOverwrites.size, true);
     if (chnl.parent) embed.addField(`Category`, chnl.parent.name, true);
-    if (type === "text" || type === "voice") {
+    if (typeUsed === "text" || typeUsed === "voice") {
       let invs;
       try {
         invs = await chnl.fetchInvites();
@@ -307,7 +308,7 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
           );
       }
     } else if (typeUsed === "category") {
-      const globalPos = d.globalPosition(guild);
+      const globalPos = d.globalPosition(chnl.guild);
       const chArr = chnl.children
         .array()
         .sort((a, b) => globalPos.get(b.id).position - globalPos.get(a.id).position);
@@ -507,6 +508,18 @@ info",
 {p}categoryinfo 123456789`,
       default: true
     },
+    ctginfo: {
+      description: "Alias to info category (See `category` for managing categories). Specify a category to view its \
+info",
+      action: "category",
+      perms: "info.channel",
+      args: { category: true },
+      example: `
+{p}ctginfo
+{p}ctginfo Cool Channels
+{p}ctginfo 123456789`,
+      default: true
+    },
     categoryid: {
       description: "Alias to info categoryid. Specify a category channel to view its ID",
       action: "categoryid",
@@ -516,6 +529,17 @@ info",
 {p}categoryid
 {p}categoryid Cool Channels
 {p}categoryid 123456789`,
+      default: true
+    },
+    ctgid: {
+      description: "Alias to info categoryid. Specify a category channel to view its ID",
+      action: "categoryid",
+      perms: "info.channel",
+      args: { category: true },
+      example: `
+{p}ctgid
+{p}ctgid Cool Channels
+{p}ctgid 123456789`,
       default: true
     },
     serverinfo: {
