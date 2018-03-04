@@ -1,6 +1,6 @@
 const { bot, Constants, db, Interval, logger, Time } = require("../util/deps");
 const perms = require("../classes/permissions");
-const { cleanify, durationdecompress, rejct } = require("../funcs/funcs");
+const { cleanify, durationdecompress, rejctF } = require("../funcs/funcs");
 const muteP = require("../punishments/mute");
 const warnP = require("../punishments/warn");
 const kickP = require("../punishments/kick");
@@ -47,12 +47,12 @@ module.exports = async function wordFilterer(msg, context, act = true) {
           msg.delete();
           msg.reply(mods.filterMessage || "Your message was caught in the word filter!")
             .then(m => m.delete({ timeout: Time.seconds(7) }))
-            .catch(rejct);
+            .catch(rejctF("[WORDFILTERER-FILTERMSG]"));
           const punishment = mods.filterPunishment;
           if (punishment && typeof punishment === "string" && punishment[0] in Constants.maps.PUNISHMENTS && context) { 
-            msg.reply(`For saying a filtered word, this server defines a punishment of a \
-**${Constants.maps.PUNISHMENTS[punishment[0]][0].replace("pmute", "permanent mute")}**. Thus, you will receive that \
-punishment.`);
+            msg.reply(`For saying a filtered word, you will receive the punishment of a \
+**${Constants.maps.PUNISHMENTS[punishment[0]][0].replace("pmute", "permanent mute")}** (defined by this server's \
+settings.`);
             const name = punishment[0];
             if (/p|m/.test(name)) {
               muteP.punish(msg.member, {

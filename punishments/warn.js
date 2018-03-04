@@ -1,7 +1,7 @@
 const { MessageEmbed } = require("discord.js");
 const { Constants, db, logger, Time, util } = require("../util/deps");
 const {
-  compress, datecomp, dateuncomp, escMarkdown, rejct, textAbstract, uncompress, durationcompress
+  compress, datecomp, dateuncomp, escMarkdown, rejct, rejctF, textAbstract, uncompress, durationcompress
 } = require("../funcs/funcs");
 const Punishment = require("./punishment");
 
@@ -40,18 +40,18 @@ class Warn extends Punishment {
       .setDescription(reason || "None")
       .setTimestamp(new Date());
     const finish = () => {
-      sentWarnMsg.edit(`Warned ${member.user.tag} successfully.`).catch(rejct);
+      sentWarnMsg.edit(`Warned ${member.user.tag} successfully.`).catch(rejctF("[WARN-SUCCESSFUL-EDIT-MSG]"));
       actionLog({
         target: member,
         type: "w",
         author,
         color: "AQUA",
         reason: reason || "None"
-      }).catch(rejct);
+      }).catch(rejctF("[WARN-AUDITLOG]"));
     };
     const fail = err => {
       rejct(err ? (err.err || err) : err);
-      sentWarnMsg.edit(`The warn failed! :frowning:`).catch(rejct);
+      sentWarnMsg.edit(`The warn failed! :frowning:`).catch(rejctF("[WARN-FAIL-EDIT-MSG]"));
     };
     const executeWarnAsync = async () => {
       try {
@@ -146,7 +146,8 @@ reason of:`,
           return;
         }
         sent = true;
-        sentWarnMsg.edit(`Warning ${member.user.tag}... (DM Sent. Executing the warn...)`).catch(rejct);
+        sentWarnMsg.edit(`Warning ${member.user.tag}... (DM Sent. Executing the warn...)`)
+          .catch(rejctF("[WARN-DM SENT-EDIT-MSG]"));
         executeWarn();
       }).catch(err => {
         rejct(err);
@@ -154,7 +155,8 @@ reason of:`,
           return;
         }
         sent = true;
-        sentWarnMsg.edit(`Muting ${member.user.tag}... (DM Failed. Executing the warn anyways...)`).catch(rejct);
+        sentWarnMsg.edit(`Muting ${member.user.tag}... (DM Failed. Executing the warn anyways...)`)
+          .catch(rejctF("[WARN-DM FAIL-EDIT-MSG]"));
         executeWarn();
       });
       setTimeout(() => {

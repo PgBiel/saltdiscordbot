@@ -161,7 +161,6 @@ const func = async function (
   },
 ) {
   const punishments = await (d.db.table("punishments").get(guildId));
-  guild.members.fetch().catch(d.rejct);
   const maxCases = d.Constants.numbers.MAX_CASES(guild.members.size);
   if (dummy.warns) { // +listwarns
     if (!punishments || punishments.length < 1) return reply(`Nobody has been warned in this guild!`);

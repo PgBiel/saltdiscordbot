@@ -1,6 +1,6 @@
 const { Guild, GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
 const { Time } = require("ztimespan");
-const { endChar, escMarkdown, rejct, textAbstract } = require("../funcs/funcs");
+const { endChar, escMarkdown, rejct, rejctF, textAbstract } = require("../funcs/funcs");
 const Punishment = require("./punishment");
 
 class Ban extends Punishment {
@@ -95,8 +95,8 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
       let targetToUse;
       if (typeof target === "string") {
         sentBanMsg
-        .edit(`${actions[0]} ${id || user.tag}... (Banned successfully. Fetching username...)`)
-        .catch(rejct);
+        .edit(`${actions[0]} ${id || user.tag}... (${actions[1]} successfully. Fetching username...)`)
+        .catch(rejctF("[BAN-FETCH USER-MSG]"));
         try {
           let bans = await guild.fetchBans();
           targetToUse = (bans.get(target) || { user: target }).user;
@@ -111,7 +111,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
           targetToUse instanceof User ?
           targetToUse.tag :
           targetToUse;
-      sentBanMsg.edit(`${actions[1]} ${name} successfully.`).catch(rejct);
+      sentBanMsg.edit(`${actions[1]} ${name} successfully.`).catch(rejctF("[BAN-SUCCESSFUL-MSG]"));
       const userTarget = targetToUse instanceof GuildMember ? targetToUse.user : targetToUse;
       const logObj = {
         type: isSoft ? "s" : "b",
@@ -119,17 +119,17 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         reason: reason || "None",
         target: userTarget
       };
-      actionLog(logObj).catch(rejct);
+      actionLog(logObj).catch(rejctF("[BAN-ACTIONLOG]"));
     };
     const finish = target => {
       finishAsync(target).catch(err => { throw err; });
     };
     const fail = err => {
       if (/Unknown ?User/i.test(err.toString()) && id) {
-        sentBanMsg.edit(`A user with that ID does not exist!`).catch(rejct);
+        sentBanMsg.edit(`A user with that ID does not exist!`).catch(rejctF("[BAN-NO ID-EDIT-MSG]"));
       } else {
-        rejct(err);
-        sentBanMsg.edit(`The ${actions[4]} failed! :frowning:`).catch(rejct);
+        rejct(err, "[BAN-FAIL]");
+        sentBanMsg.edit(`The ${actions[4]} failed! :frowning:`).catch(rejctF("[BAN-FAIL-EDIT MSG]"));
       }
     };
     const executeBan = () => {
@@ -140,7 +140,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         { days: days == null ? 1 : days, reason: compressedText },
       ).then(result => {
           if (isSoft) {
-            sentBanMsg.edit(`${actions[0]} ${user.tag}... (Waiting for unban...)`).catch(rejct);
+            sentBanMsg.edit(`${actions[0]} ${user.tag}... (Waiting for unban...)`).catch(rejctF("[SOFTBAN-EDIT-MSG]"));
             guild.unban(user).then(finish).catch(fail);
           } else {
             finish(result);
@@ -159,7 +159,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         sent = true;
         sentBanMsg.edit(
           `${actions[0]} ${user.tag}... (DM Sent. Swinging ban hammer...)`,
-        ).catch(rejct);
+        ).catch(rejctF("[BAN-DM SENT-EDIT-MSG]"));
         executeBan();
       }).catch(err => {
         rejct(err);
@@ -167,7 +167,8 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
           return;
         }
         sent = true;
-        sentBanMsg.edit(`${actions[0]} ${user.tag}... (DM Failed. Swinging ban hammer anyway...)`).catch(rejct);
+        sentBanMsg.edit(`${actions[0]} ${user.tag}... (DM Failed. Swinging ban hammer anyway...)`)
+          .catch(rejctF("[BAN-DM FAIL-EDIT-MSG]"));
         executeBan();
       });
     } else {

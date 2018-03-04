@@ -79,17 +79,17 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     .setDescription(reason || "None")
     .setTimestamp(new Date());
   const finish = () => {
-    sentUnbanMsg.edit(`Unbanned ${memberToUse.tag} successfully.`).catch(d.rejct);
+    sentUnbanMsg.edit(`Unbanned ${memberToUse.tag} successfully.`).catch(d.rejctF("[UNBAN-SENDMSG]"));
     actionLog({
       target: memberToUse,
       type: "U",
       author: member,
       reason: reason || "None"
-    }).catch(d.rejct);
+    }).catch(d.rejctF("[UNBAN-ACTIONLOG]"));
   };
   const fail = err => {
     d.rejct(err);
-    sentUnbanMsg.edit(`The unban failed! :frowning:`).catch(d.rejct);
+    sentUnbanMsg.edit(`The unban failed! :frowning:`).catch(d.rejctF("[UNBAN-FAILEDITMSG]"));
   };
   const executeUnban = () => {
     const compressedText = d.textAbstract(`[Unban command executed by ${author.tag}] ${reason || "No reason given"}`, 512);
@@ -104,7 +104,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
       return;
     }
     sent = true;
-    sentUnbanMsg.edit(`Unbanning ${memberToUse.tag}... (DM Sent. Unbanning user...)`).catch(d.rejct);
+    sentUnbanMsg.edit(`Unbanning ${memberToUse.tag}... (DM Sent. Unbanning user...)`).catch(d.rejctF("[UNBAN-DM-SENT-EDIT-MSG]"));
     executeUnban();
   }).catch(err => {
     d.rejct(err);
@@ -112,7 +112,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
       return;
     }
     sent = true;
-    sentUnbanMsg.edit(`Unbanning ${memberToUse.tag}... (DM Failed. Unbanning anyway...)`).catch(d.rejct);
+    sentUnbanMsg.edit(`Unbanning ${memberToUse.tag}... (DM Failed. Unbanning anyway...)`).catch(d.rejctF("[UNBAN-DM-FAIL-EDIT-MSG]"));
     executeUnban();
   });
   setTimeout(() => {

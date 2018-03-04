@@ -73,17 +73,17 @@ Roles` Discord permission.");
     .setDescription(reason || "None")
     .setTimestamp(new Date());
   const finish = () => {
-    sentMuteMsg.edit(`Unmuted ${memberToUse.user.tag} successfully.`).catch(d.rejct);
+    sentMuteMsg.edit(`Unmuted ${memberToUse.user.tag} successfully.`).catch(d.rejctF("[UNMUTE-SUCCESS-MSG-EDIT]"));
     actionLog({
       target: memberToUse,
       type: "u",
       author: member,
       reason: reason || "None"
-    }).catch(d.rejct);
+    }).catch(d.rejctF("[UNMUTE-ACTIONLOG]"));
   };
   const fail = err => {
     d.rejct(err);
-    sentMuteMsg.edit(`The unmute failed! :frowning:`).catch(d.rejct);
+    sentMuteMsg.edit(`The unmute failed! :frowning:`).catch(d.rejctF("[UNMUTE-FAIL-EDIT-MSG]"));
   };
   const executeUnmute = () => {
     d.db.table("activemutes").remArr(guild.id, activeMute).then(() => {
@@ -101,7 +101,7 @@ Roles` Discord permission.");
       return;
     }
     sent = true;
-    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Sent. Removing muting role...)`).catch(d.rejct);
+    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Sent. Removing muting role...)`).catch(d.rejctF("[UNMUTE-DM-SENT-EDIT-MSG]"));
     executeUnmute();
   }).catch(err => {
     d.rejct(err);
@@ -109,7 +109,7 @@ Roles` Discord permission.");
       return;
     }
     sent = true;
-    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Failed. Removing muting role anyway...)`).catch(d.rejct);
+    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Failed. Removing muting role anyway...)`).catch(d.rejctF("[UNMUTE-DM-FAIL-EDIT-MSG]"));
     executeUnmute();
   });
   setTimeout(() => {

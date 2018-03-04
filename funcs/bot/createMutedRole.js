@@ -1,4 +1,4 @@
-const rejct = require("../util/rejct");
+const rejctF = require("../util/rejctF");
 
 /**
  * Make a mute role.
@@ -11,7 +11,7 @@ module.exports = async function createMutedRole(guild) {
     permissions: []
   });
   for (const [id, channel] of guild.channels) {
-    channel.overwritePermissions(newRole, { SEND_MESSAGES: false }).catch(rejct);
+    channel.overwritePermissions(newRole, { SEND_MESSAGES: false }).catch(rejctF(`[CREATE MUTED ROLE-${id}]`));
   }
   return newRole;
 };

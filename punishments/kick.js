@@ -1,6 +1,6 @@
 const { GuildMember, Message, MessageEmbed, TextChannel, User } = require("discord.js");
 const { Time } = require("ztimespan");
-const { endChar, escMarkdown, rejct, textAbstract } = require("../funcs/funcs");
+const { endChar, escMarkdown, rejct, rejctF, textAbstract } = require("../funcs/funcs");
 const Punishment = require("./punishment");
 
 class Kick extends Punishment {
@@ -26,6 +26,8 @@ class Kick extends Punishment {
     if (author) {
       if (member.roles.highest.position > botmember.roles.highest.position) {
         return void reply("That member's highest role is higher in position than mine!");
+      } else if (member.id === botmember.id) {
+        return void reply("I refuse to kick myself! :frowning:");
       } else if (member.roles.highest.position === botmember.roles.highest.position) {
         return void reply("That member's highest role is the same in position as mine!");
       } else if (member.roles.highest.position > author.roles.highest.position && author.id !== guild.owner.id) {
@@ -47,17 +49,17 @@ Check the conditions for being kicked (e.g. must not be owner, etc)!");
       .setDescription(reason || "None")
       .setTimestamp(new Date());
     const finish = () => {
-      edit(`Kicked ${member.user.tag} successfully.`).catch(rejct);
+      edit(`Kicked ${member.user.tag} successfully.`).catch(rejctF("[KICK-SUCCESSFUL-EDIT-MSG]"));
       actionLog({
         target: member,
         type: "k",
         author: member,
         reason: reason || "None"
-      }).catch(rejct);
+      }).catch(rejctF("[KICK-ACTIONLOG]"));
     };
     const fail = err => {
       rejct(err);
-      edit(`The kick failed! :frowning:`).catch(rejct);
+      edit(`The kick failed! :frowning:`).catch(rejctF("[KICK-FAIL-EDIT-MSG]"));
     };
     const executeKick = () => {
       // const kickPrefix = origin ? `[Kick command executed by ${origin.tag}] ` : "";
@@ -73,7 +75,7 @@ Check the conditions for being kicked (e.g. must not be owner, etc)!");
           return;
         }
         sent = true;
-        edit(`Kicking ${member.user.tag}... (DM Sent. Kicking...)`).catch(rejct);
+        edit(`Kicking ${member.user.tag}... (DM Sent. Kicking...)`).catch(rejctF("[KICK-DM SENT-MSG-EDIT]"));
         executeKick();
       }).catch(err => {
         rejct(err);

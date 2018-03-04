@@ -1,5 +1,6 @@
 const { _, bot, db } = require("../../util/deps");
 const rejct = require("../util/rejct");
+const rejctF = require("../util/rejctF");
 const uncompress = require("../compression/uncompress");
 const dateuncomp = require("../compression/dateuncomp");
 const escMarkdown = require("../strings/escMarkdown");
@@ -40,31 +41,35 @@ module.exports = async function checkMutes() {
       if (member.roles.has(muteRole.id)) {
         member.roles.remove(muteRole).then(() => {
           member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
-          .catch(rejct);
+            .catch(rejctF("[AUTO-MUTE-REMOVE-ROLE-MSG SEND]"));
         }).catch(err => {
           if (!botmember.hasPermission(["MANAGE_ROLES"])) {
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
-However, I was unable to take the role away from you due to having no \`Manage Roles\` permission. :frowning:`).catch(rejct);
+However, I was unable to take the role away from you due to having no \`Manage Roles\` permission. :frowning:`)
+              .catch(rejctF("[AUTO-MUTE-REMOVE-ROLE-NO MANAGE ROLES-MSG]"));
           } else if (botmember.roles.highest.position < muteRole.position) {
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
 However, I was unable to take the role away from you due to the mute role being higher than my highest role. \
-:frowning:`).catch(rejct);
+:frowning:`)
+            .catch(rejctF("[AUTO-MUTE-REMOVE-ROLE-ROLE LOWER-MSG]"));
           } else if (botmember.roles.highest.id === muteRole.id) {
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
-However, I was unable to take the role away from you due to the mute role being my highest role. :frowning:`).catch(rejct);
+However, I was unable to take the role away from you due to the mute role being my highest role. :frowning:`)
+            .catch(rejctF("[AUTO-MUTE-REMOVE-ROLE-ROLE EQUAL-MSG]"));
           } else {
             rejct(err, "At mute auto-remove role:");
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
-However, I was unable to take the role away from you for an yet unknown reason. :frowning:`).catch(rejct);
+However, I was unable to take the role away from you for an yet unknown reason. :frowning:`)
+              .catch(rejctF("[AUTO-MUTE-REMOVE-ROLE-UNKNOWN REASON-MSG]"));
           }
         });
       } else {
         member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
-        .catch(rejct);
+          .catch(rejctF("[AUTO-MUTE-REMOVE-ROLE-NORMAL-MSG]"));
       }
     } else if (!member.roles.has(muteRole.id)) {
       member.roles.add(muteRole)
-      .catch(rejct);
+        .catch(rejctF("[AUTO-MUTE-ADD-ROLE]"));
     }
   }
 };

@@ -1,6 +1,6 @@
 const { Constants } = require("../../util/deps");
 const collectReact = require("../../funcs/bot/collectReact");
-const rejct = require("../../funcs/util/rejct");
+const rejctF = require("../../funcs/util/rejctF");
 
 module.exports = msg => {
   const { author, channel, guild } = msg;
@@ -14,7 +14,7 @@ module.exports = msg => {
       }
       const result = func(content, options);
       if (options.autoCatch == null || options.autoCatch) {
-        result.catch(rejct);
+        result.catch(rejctF("[PROTOSEND-AUTOCATCH]"));
       }
       return result.then(messg => {
         if (channel.typing) channel.stopTyping();
@@ -28,7 +28,7 @@ module.exports = msg => {
             channel.permissionsFor(guild.me).has(["ADD_REACTIONS"]) // I can definitely add reactions
           ) {
             collectReact(messg, Constants.emoji.WASTEBASKET, author.id)
-              .catch(err => rejct(err, "[TRASH-REACT-1]"));
+              .catch(rejctF("[TRASH-REACT-1]"));
           }
         }
         return messg;

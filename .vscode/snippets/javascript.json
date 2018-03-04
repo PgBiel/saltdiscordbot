@@ -1,0 +1,9 @@
+{
+  "RejctF": {
+    "prefix": "rjf",
+    "body": [
+      "rejctF(\"[$1]\")"
+    ],
+    "description": "RejctF"
+  }
+}

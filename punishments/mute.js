@@ -2,7 +2,7 @@ const { GuildMember, Message, MessageEmbed, Role, TextChannel, User } = require(
 const { db, moment, logger, Time, Interval } = require("../util/deps");
 const {
   durationcompress, datecomp, createMutedRole, endChar, escMarkdown, rejct, textAbstract, durationdecompress,
-  uncompress, compress
+  uncompress, compress, rejctF
 } = require("../funcs/funcs");
 const Punishment = require("./punishment");
 
@@ -66,18 +66,18 @@ class Mute extends Punishment {
         permanent ?
         `Permanently muted ${member.user.tag} successfully.` :
         `Muted ${member.user.tag} for **${time}** ${time ? "" : "(default) "}successfully.`,
-      ).catch(rejct);
+      ).catch(rejctF("[MUTE-SUCCESSFUL-EDIT-MSG]"));
       actionLog({
         target: member,
         time,
         type: permanent ? "p" : "m",
         author,
         reason: reason || "None"
-      }).catch(rejct);
+      }).catch(rejctF("[MUTE-ACTIONLOG]"));
     };
     const fail = err => {
       rejct(err ? (err.err || err) : err);
-      sentMuteMsg.edit(`The mute failed! :frowning:`).catch(rejct);
+      sentMuteMsg.edit(`The mute failed! :frowning:`).catch(rejctF("[MUTE-FAIL-EDIT-MSG]"));
     };
     const executeMute = () => {
       let timestamp;
@@ -103,7 +103,8 @@ class Mute extends Punishment {
         return;
       }
       sent = true;
-      sentMuteMsg.edit(`Muting ${member.user.tag}... (DM Sent. Adding role for muting...)`).catch(rejct);
+      sentMuteMsg.edit(`Muting ${member.user.tag}... (DM Sent. Adding role for muting...)`)
+        .catch(rejctF("[MUTE-DM SENT-EDIT-MSG]"));
       executeMute();
     }).catch(err => {
       rejct(err);
@@ -111,7 +112,8 @@ class Mute extends Punishment {
         return;
       }
       sent = true;
-      sentMuteMsg.edit(`Muting ${member.user.tag}... (DM Failed. Adding role for muting anyway...)`).catch(rejct);
+      sentMuteMsg.edit(`Muting ${member.user.tag}... (DM Failed. Adding role for muting anyway...)`)
+        .catch(rejctF("[MUTE-DM FAIL-EDIT-MSG]"));
       executeMute();
     });
     setTimeout(() => {

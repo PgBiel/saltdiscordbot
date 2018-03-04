@@ -240,26 +240,22 @@ const func = async function (msg, {
 \`${d.escMarkdown(chnl.name)}\` is ${chnl.id}.`);
     }
     channel.startTyping();
-    const basedir = c => https.cdn.discordapp.com("/").attachments(c).toString();
-    const files = {
-      text: basedir("/417865953121009665/417866036990312448/hashtag.png"),
-      voice: basedir("/417865953121009665/417866042619199489/volume.png"),
-      category: basedir("/417865953121009665/417866038361980929/list.png")
-    };
-    const dir = files[typeUsed];
+    const dir = d.Constants.images.CHANNEL_INFO[chnl.nsfw ? "TEXT_NSFW" : typeUsed.toUpperCase()];
     
     const embed = new d.Embed() // general embed
-      .setAuthor(`Info for ${typeUsed === "category" ? "category" : typeUsed + " channel"} "${chnl.name}"`)
+      .setAuthor(
+        `Info for ${typeUsed === "category" ? "category" : typeUsed + " channel"} "${chnl.name}"`,
+        d.Constants.images.CHANNEL_INFO[typeUsed.toUpperCase()]
+      )
       .setDescription(
         `Was created ${d.ago(chnl.createdAt, Date.now(), true) || "some time"} ago (${d.momentUTC(chnl.createdAt)})\
 ${guild && guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another server."}`
       )
       .setThumbnail(dir)
-      .setColor("RANDOM")
+      .setColor("#CABE40")
       .setFooter(`${type === "category" ? "Category" : "Channel"} ID: ${chnl.id}`)
       .addField(
-        `Position\
-${chnl.parent || typeUsed === "voice" ? ` (Relative to ${typeUsed === "voice" ? "nearby VCs" : "its category"})` : ""}`,
+        `${chnl.parent ? "Relative " : ""}${typeUsed === "voice" ? "Voice " : ""}Position`,
         chnl.position,
         true
       )
@@ -284,7 +280,7 @@ ${chnl.parent || typeUsed === "voice" ? ` (Relative to ${typeUsed === "voice" ? 
           .addField("Webhook Amount", whs ? whs.size : "Unable to view", true)
           .addField("Topic", chnl.topic || "None", true)
           .addField(
-            `Members${membersArr.length < 1 ? "" : ` (${membersArr.length})`}`,
+            `Members who can read this channel${membersArr.length < 1 ? "" : ` (${membersArr.length})`}`,
             membersJoined.length > d.Constants.numbers.MAX_FIELD_CHARS ?
               `Use \`\`${p}info channelmembers ${d.escMarkdown(chnl.name)}\`\` to see (too long)` :
               (
@@ -331,28 +327,38 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
     return sendIt(embed);
   } else if (is("server", "guild", "guildid", "serverid")) {
     if (is("serverid", "guildid")) return reply(`The ID of the current server is ${guildId}.`);
+    channel.startTyping();
+    const icon = guild.iconURL();
     const emb = new d.Embed()
-      .setAuthor(guild.name, guild.iconURL(), guild.iconURL())
+      .setAuthor(
+        guild.name,
+        icon,
+        icon
+      )
       .setDescription(
         `Was created ${d.ago(guild.createdAt, Date.now(), true) || "some time"} ago (${d.momentUTC(guild.createdAt)})`
       )
-      .setThumbnail(guild.iconURL())
+      .setThumbnail(icon || d.Constants.images.SERVER_INFO.NO_ICON)
       .setColor("RANDOM")
-      .setFooter(`Server ID: ${guild.id}`)
+      .setFooter(`${icon ? "Click the title for Icon URL | " : ""}Server ID: ${guild.id}`)
       .addField("Owner", `<@!${guild.ownerID}>`, true)
-      .addField("Oldest Channel", guild.channels.sort((a, b) => a.createdTimestamp - b.createdTimestamp).first(), true)
+      .addField(
+        "Oldest Channel",
+        guild.channels.filter(c => c.type === "text").sort((a, b) => a.createdTimestamp - b.createdTimestamp).first(),
+        true
+      )
       .addField(
         "Member Amount",
-        `${guild.members.filter(m => m.status !== "offline").size} online, ${guild.members.size} total`,
+        `${guild.members.filter(m => m.presence.status !== "offline").size} online, ${guild.members.size} total`,
         true
       )
       .addField("Channel Amount", guild.channels.size, true)
       .addField("Role Amount", guild.roles.size, true)
       .addField("Emoji Amount", guild.emojis.size, true)
       .addField("Region", d.adaptSnake(guild.region), true)
-      .addField("Verification Level", d.Constants.maps.VERIF[guild.verificationLevel], true)
-      .addField("Features (granted by Partnership)", d.adaptSnake(guild.features) || "None");
-    sendIt(emb);
+      .addField("Verification Level", d.Constants.maps.VERIF[guild.verificationLevel], true);
+      if (guild.features.length) emb.addField("Features", d.adaptSnake(guild.features) || "None");
+    return sendIt(emb);
   }
   return;
 };

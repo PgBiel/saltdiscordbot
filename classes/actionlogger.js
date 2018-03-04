@@ -124,12 +124,14 @@ class ActionLog {
       const logChannel = await this._getLog(guild);
       const isOn = await (db.table("mods").prop(guild.id || guild, "logsOn"));
       if (logChannel && (isOn || isOn == null)) {
-        const semiMsgSent = await logChannel.send({ embed });
-        if (Array.isArray(semiMsgSent)) {
-          msgSent = semiMsgSent[0];
-        } else {
-          msgSent = semiMsgSent;
-        }
+        try {
+          const semiMsgSent = await logChannel.send({ embed });
+          if (Array.isArray(semiMsgSent)) {
+            msgSent = semiMsgSent[0];
+          } else {
+            msgSent = semiMsgSent;
+          }
+        } catch (err) { rejct(err, "[ACTIONLOG-SENDLOG]"); }
       }
     } catch (err) {
       rejct(err);
@@ -137,7 +139,6 @@ class ActionLog {
     }
     if (msgSent && msgSent.id) caseObj.messageid = compress(msgSent.id);
     db.table("punishments").add(guild.id, caseObj);
-    guild.members.fetch().catch(rejct);
     const maxCases = Constants.numbers.MAX_CASES(guild.members.size);
     if ((await (db.table("punishments").get(guild.id, [])).length) > maxCases) {
       db.table("punishments").spliceArr(guild.id, 0, 1);

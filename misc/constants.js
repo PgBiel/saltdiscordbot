@@ -1,4 +1,5 @@
 const { Time } = require("../classes/time");
+const { https } = require("burlp");
 const { combineRegex } = require("../funcs/funcs");
 
 exports.sql = {
@@ -7,6 +8,19 @@ exports.sql = {
 
 exports.times = {
   AMBIGUITY_EXPIRE: Time.seconds(25)
+};
+
+const imagedir = c => https.cdn.discordapp.com("/").attachments(c).toString();
+exports.images = {
+  CHANNEL_INFO: {
+    TEXT: imagedir("/417865953121009665/419704103200096278/text.png"),
+    TEXT_NSFW: imagedir("/417865953121009665/419704104911241227/text-nsfw.png"),
+    VOICE: imagedir("/417865953121009665/419704101530632192/voice.png"),
+    CATEGORY: imagedir("/417865953121009665/419704124276342784/category.png")
+  },
+  SERVER_INFO: {
+    NO_ICON: imagedir("/417865953121009665/419669044346617867/NOICON.png")
+  }
 };
 
 exports.maps = {
