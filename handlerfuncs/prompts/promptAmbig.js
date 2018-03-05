@@ -1,4 +1,6 @@
 const { _, capitalize, collectReact, Constants, Discord, logger, rejct, Searcher, TextChannel } = require("../../misc/d");
+const sleep = require("../../funcs/util/sleep");
+const rejctF = require("../../funcs/util/rejctF");
 const _reply = require("../senders/reply");
 const _send = require("../senders/send");
 
@@ -17,7 +19,8 @@ module.exports = msg => {
    */
   return async (subjectArr, pluralName = "members", opts = { type: "member" }) => {
     let mode = "r";
-    if (channel.guild && !channel.permissionsFor(channel.guild.me).has(["EMBED_LINKS"])) mode = "m";
+    const isInGuild = Boolean(channel.guild);
+    if (isInGuild && !channel.permissionsFor(channel.guild.me).has(["EMBED_LINKS"])) mode = "m";
     // TODO: make "m" message mode and "r" keep
     const subjects = subjectArr.slice(0);
     subjects.splice(10, 2);
@@ -28,7 +31,6 @@ module.exports = msg => {
     let currentOptions = [];
     const msgs = [];
     const { type = "member", deletable = true, channelType = "text" } = opts;
-    console.log("D", deletable);
 
     const getTag = gm => {
       if (gm instanceof TextChannel) {
@@ -43,24 +45,30 @@ module.exports = msg => {
         return gm.toString();
       }
     };
-
+    const canceller = Constants.emoji.rjt.CANCEL;
     subjects.forEach(gm => currentOptions.push(gm));
-    const rFilter = ret => {
-      const re 
-      console.log("USER OK");
-      if (re.emoji.name === Constants.emoji.RJT.CANCEL) {
+    const rFilter = (ret, coll) => {
+      const re = coll[0];
+      const str = re.emoji.id ? `<:${re.emoji.name}:${re.emoji.id}>` : re.emoji.name;
+      const removeAll = async () => {
+        for (const reacted of ret) {
+          await sleep(150);
+          await reacted.users.remove();
+        }
+      };
+      if (str === canceller) {
         cancelled = true;
+        removeAll().catch(rejctF("[PROMPTAMBIG R-CANCEL RMV-ALL]"));
         return true;
       }
-      console.log("nOT CANCEL");
+      if (!deletable) removeAll().catch(rejctF("[PROMPTAMBIG R-OK RMV-ALL]"));
       const options = currentOptions;
-      const ind = Constants.emoji.RJT.PURPLE.NUMBERS.indexOf(re.emoji.name);
+      const ind = Constants.emoji.numbers.indexOf(str);
       if (ind > -1) {
         satisfied = true;
         currentOptions = [options[ind - 1]];
         return true;
       }
-      console.log("RIP");
       return false;
     };
     const uFilter =  msg2 => {
@@ -73,7 +81,6 @@ module.exports = msg => {
         cancelled = true;
         return true;
       }
-      logger.debug("PUSH MSG2");
       msgs.push(msg2);
       if (/^#\d+$/.test(cont)) {
         const nNumber = cont.match(/^#(\d+)$/)[1];
@@ -125,7 +132,8 @@ module.exports = msg => {
       const endText = mode.startsWith("m") ?
         "Please specify one, or a number preceded by `#` (e.g. `#1`). This command will automatically cancel \
 after 25 seconds. Type `cancel` to cancel." :
-        "Please react with one of the numbers, or X to cancel. This command will automatically cancel after 25 seconds.";
+        `Please react with one of the numbers, or ${canceller} to cancel. This command will automatically cancel after \
+25 seconds.`;
       const mssg = await reply(`Multiple ${pluralName} have matched that search. ${endText}
 **${capitalize(pluralName)} Matched**:
 ${currentOptions.map((gm, i) => `#${i + 1}: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`, { autoCatch: false });
@@ -137,16 +145,17 @@ ${currentOptions.map((gm, i) => `#${i + 1}: \`${getTag(gm).replace(/`/g, "'")}\`
       try {
         if (mode === "r") {
           const emojis = [
-            Constants.emoji.RJT.CANCEL
+            canceller
           ];
-          for (let i = 1; i <= currentOptions.length; i++) emojis.push(Constants.emoji.RJT.PURPLE.NUMBERS[i]);
-          console.log(emojis);
-          const result = await collectReact(
+          for (let i = 1; i <= currentOptions.length; i++) emojis.push(Constants.emoji.numbers[i]);
+          const { reason, results: ret, collected: coll } = await collectReact(
             await sendIt(),
             emojis,
             msg.author.id,
-            { onSuccess: rFilter, onTimeout: _.identity, timeout: Constants.times.AMBIGUITY_EXPIRE }
+            { onSuccess: _.identity, timeout: Constants.times.AMBIGUITY_EXPIRE, rawReact: false }
           );
+          if (reason === "time") throw "no u";
+          rFilter(ret, coll.array());
         }
         if (satisfied) {
           obj = {
@@ -164,7 +173,8 @@ ${currentOptions.map((gm, i) => `#${i + 1}: \`${getTag(gm).replace(/`/g, "'")}\`
           break;
         }
       } catch (err) {
-        // logger.error(`At PromptAmbig: ${err}`);
+        if (err !== "no u") logger.error(`At PromptAmbig: ${err}`);
+        cancelled = true;
         send("Command cancelled.");
         obj = {
           subject: null,
@@ -177,7 +187,7 @@ ${currentOptions.map((gm, i) => `#${i + 1}: \`${getTag(gm).replace(/`/g, "'")}\`
       send("Automatically cancelled command.");
       return { subject: null, cancelled: true };
     }
-    if (msgs.length > 1 && deletable && !cancelled) {
+    if (msgs.length && deletable && !cancelled) {
       channel.bulkDelete(msgs)
         .catch(err => rejct(err, "[PROMPTAMBIG-BULKDEL]"));
     }

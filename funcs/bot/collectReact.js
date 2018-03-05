@@ -1,4 +1,5 @@
 const { _, Constants, bot, Time } = require("../../util/deps");
+const customReact = require("./customReact");
 const rejct = require("../util/rejct");
 const sleep = require("../util/sleep");
 
@@ -11,11 +12,13 @@ const sleep = require("../util/sleep");
  * @param {Function} [options.onSuccess=msg.delete()] Function to run when successful reaction
  * @param {Function} [options.onTimeout] Function to run when it timeouts (defaults to remove all reactions)
  * @param {number} [options.timeout=60000] Timeout in milliseconds (defaults to 60000, 0 for no timeout)
+ * @param {boolean} [rawReact=false] If should request directly to API to react
  * @returns {Promise<string>} What happened?
  */
-module.exports = function collectReact(
+const func = function collectReact(
   msg, emojis, validUsers, {
-    onSuccess = () => msg.delete(), onTimeout = rs => rs.forEach(r => r.users.remove()), timeout = Time.minutes(1)
+    onSuccess = func.DELETE_MSG, onTimeout = func.REMOVE_ALL, timeout = Time.minutes(1),
+    rawReact = false
   } = {}
 ) {
   return new Promise(async (res, rej) => {
@@ -24,31 +27,54 @@ module.exports = function collectReact(
     validUsers = _.compact(_.castArray(validUsers));
     const results = [];
     const collector = msg.createReactionCollector(
-      (reaction, usr) => emojis.includes(reaction.emoji.name) && (validUsers.length < 1 ? true : validUsers.includes(usr.id)),
+      (reaction, usr) => (
+          emojis.includes(reaction.emoji.name) || emojis.includes(`<:${reaction.emoji.name}:${reaction.emoji.id}>`)
+        ) &&
+        (validUsers.length < 1 ? true : validUsers.includes(usr.id)),
       Object.assign({ max: 1 }, timeout >= 0 ? { time: timeout + 1 } : {})
     );
     collector.on("end", async (collected, reason) => {
       stop = true;
-      console.log("END", reason, collected);
       if (reason === "time") {
-        if (typeof onTimeout === "function") onTimeout((collected || { array: _ => _ }).array(), collected.array());
-        res("time");
+        if (typeof onTimeout === "function") onTimeout(results, collected.array(), msg);
+        res({
+          reason: "time",
+          results,
+          collected,
+          msg
+        });
       } else if (/limit/i.test(reason)) {
-        if (typeof onSuccess === "function") onSuccess((collected || { array: _ => _ }).array(), collected.array());
-        res("collect");
+        if (typeof onSuccess === "function") onSuccess(results, collected.array(), msg);
+        res({
+          reason: "collected",
+          results,
+          collected,
+          msg
+        });
       } else {
-        rej(reason);
+        rej({
+          reason,
+          results,
+          collected,
+          msg
+        });
       }
     });
-    for (let i = 0; i < emojis.length; i++) {
+    let calculatedPing = (bot.pings || [])[0];
+    calculatedPing = calculatedPing > 1000 || isNaN(calculatedPing) ? 200 : Number(calculatedPing);
+    calculatedPing = calculatedPing + ((calculatedPing || 1000) / 10);
+    const emojiToUse = emojis.map(e => typeof e === "string" && Constants.regex.EMOJI_MENTION.test(e) ?
+      e.match(Constants.regex.EMOJI_MENTION)[1] :
+      e
+    );
+    for (let i = 0; i < emojiToUse.length; i++) {
       if (stop) break;
-      const emoji = emojis[i];
-      const emojiToUse = typeof emoji === "string" && Constants.regex.EMOJI_MENTION.test(emoji) ?
-        emoji.match(Constants.regex.EMOJI_MENTION)[1] :
-        emoji;
-      results.push(await msg.react(emojiToUse));
-      console.log("EMJLENGTH", emojis.length, i, emojis.length > 1 && 1 < emojis.length - 1);
-      if (emojis.length > 1 && i < emojis.length - 1) await sleep(250); 
+      await sleep(calculatedPing);
+      results.push(await (rawReact ? customReact : (msg.react.bind(msg)))(emojiToUse[i], msg));
     }
   });
 };
+func.REMOVE_ALL = rs => rs.forEach(r => r.users.remove());
+func.DELETE_MSG = (_re, _coll, msg) => msg.delete();
+
+module.exports = func;

@@ -6,6 +6,8 @@ module.exports = {
   ROLE_MENTION: /^<@&(\d{16,21})>$/,
   CHANNEL_MENTION: /^<#(\d{16,21})>$/,
   EMOJI_MENTION: /^<:\w+:(\d{16,21})>$/,
+  EMOJI_TEXT: /^<:(\w+):(\d{16,21})>$/,
+  EMOJI_RESOLVED: /^(\w+):(\d{16,21})$/,
   BAN_MATCH: /^([^]+?(?:#\d{4})?)(?:\s+([^]*))?$/,
   CASE_MATCH: /^(?:([\s\S]+)\s+(\d+)\s+([\s\S]+)|([\s\S]+)\s+([\s\S]+)|([\s\S]+))/,
   LIST_WARNS_MATCH: /^([\s\S]{1,32}|[\s\S]{1,32}\#\d{4})\s+(\d+)|([\s\S]{1,32}|[\s\S]{1,32}\#\d{4})$/,
