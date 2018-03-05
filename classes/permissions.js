@@ -3,7 +3,7 @@ const _ = require("lodash");
 
 // const { disabledcmds, permissions } = require("../sequelize/sequelize");
 const { bot } = require("../util/bot");
-const Constants = require("../misc/Constants");
+const Constants = require("../constants/constants");
 const { db } = require("../util/deps");
 
 function uncompress(str) {

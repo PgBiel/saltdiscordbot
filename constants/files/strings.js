@@ -1,0 +1,5 @@
+module.exports = {
+  DATE_FORMAT: "ddd MMM DD YYYY hh:mm:ss A",
+  DEFAULT_ROLE_COLOR: "#000000",
+  DISPLAY_DEFAULT_ROLE_COLOR: "#9CAAB3"
+};

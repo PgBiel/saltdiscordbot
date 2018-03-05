@@ -1,4 +1,4 @@
-const { capitalize, Constants, Discord, logger, rejct, Searcher, TextChannel } = require("../../misc/d");
+const { _, capitalize, collectReact, Constants, Discord, logger, rejct, Searcher, TextChannel } = require("../../misc/d");
 const _reply = require("../senders/reply");
 const _send = require("../senders/send");
 
@@ -7,7 +7,7 @@ module.exports = msg => {
   const { Collection, GuildChannel, Role, VoiceChannel } = Discord;
   /**
    * Prompt ambig
-   * @param {Array<*>} subjects List of possibilities
+   * @param {Array<*>} subjectArr List of possibilities
    * @param {string} [pluralName="members"] Plural name
    * @param {object} [opts] Options
    * @param {string} [type="member"] Type (one of member, role, channel)
@@ -15,7 +15,12 @@ module.exports = msg => {
    * @param {string} [channelType="text"] Channel type (used only for channels, one of text, voice, category)
    * @returns {object} Result
    */
-  return async (subjects, pluralName = "members", opts = { type: "member" }) => {
+  return async (subjectArr, pluralName = "members", opts = { type: "member" }) => {
+    let mode = "r";
+    if (channel.guild && !channel.permissionsFor(channel.guild.me).has(["EMBED_LINKS"])) mode = "m";
+    // TODO: make "m" message mode and "r" keep
+    const subjects = subjectArr.slice(0);
+    subjects.splice(10, 2);
     const send = _send(msg);
     const reply = _reply(msg);
     let satisfied = false;
@@ -40,7 +45,25 @@ module.exports = msg => {
     };
 
     subjects.forEach(gm => currentOptions.push(gm));
-    const filter = msg2 => {
+    const rFilter = ret => {
+      const re 
+      console.log("USER OK");
+      if (re.emoji.name === Constants.emoji.RJT.CANCEL) {
+        cancelled = true;
+        return true;
+      }
+      console.log("nOT CANCEL");
+      const options = currentOptions;
+      const ind = Constants.emoji.RJT.PURPLE.NUMBERS.indexOf(re.emoji.name);
+      if (ind > -1) {
+        satisfied = true;
+        currentOptions = [options[ind - 1]];
+        return true;
+      }
+      console.log("RIP");
+      return false;
+    };
+    const uFilter =  msg2 => {
       const cont = msg2.content;
       const options = currentOptions;
       if (msg2.author.id !== msg.author.id) {
@@ -98,21 +121,33 @@ module.exports = msg => {
       currentOptions = resultingMembers;
       return true;
     };
-    msgs.push(
-      await reply(`Multiple ${pluralName} have matched that search. Please specify one, or a number preceded by \`#\` \
-(e.g. \`#1\`). This command will automatically cancel after 25 seconds. Type \`cancel\` to cancel.
+    const sendIt = async () => {
+      const endText = mode.startsWith("m") ?
+        "Please specify one, or a number preceded by `#` (e.g. `#1`). This command will automatically cancel \
+after 25 seconds. Type `cancel` to cancel." :
+        "Please react with one of the numbers, or X to cancel. This command will automatically cancel after 25 seconds.";
+      const mssg = await reply(`Multiple ${pluralName} have matched that search. ${endText}
 **${capitalize(pluralName)} Matched**:
-${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`, { autoCatch: false })
-    );
+${currentOptions.map((gm, i) => `#${i + 1}: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`, { autoCatch: false });
+      msgs.push(mssg);
+      return mssg;
+    };
     let obj = { cancelled: 1 };
-    for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
+    for (let i = 0; i < (mode === "r" ? 1 : Constants.numbers.MAX_PROMPT); i++) {
       try {
-        const result = await channel.awaitMessages(
-          filter, {
-            time: Constants.times.AMBIGUITY_EXPIRE, max: 1,
-            errors: ["time"]
-          },
-        );
+        if (mode === "r") {
+          const emojis = [
+            Constants.emoji.RJT.CANCEL
+          ];
+          for (let i = 1; i <= currentOptions.length; i++) emojis.push(Constants.emoji.RJT.PURPLE.NUMBERS[i]);
+          console.log(emojis);
+          const result = await collectReact(
+            await sendIt(),
+            emojis,
+            msg.author.id,
+            { onSuccess: rFilter, onTimeout: _.identity, timeout: Constants.times.AMBIGUITY_EXPIRE }
+          );
+        }
         if (satisfied) {
           obj = {
             subject: currentOptions[0],
@@ -127,15 +162,6 @@ ${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'"
             cancelled: true
           };
           break;
-        }
-        if (i < 5) {
-          msgs.push(
-            await reply(`Multiple ${pluralName} have matched that search. Please specify one. Please specify one, \
-or a number preceded by \`#\` (e.g. \`#1\`). This command will automatically cancel after 25 seconds. Type \`cancel\` \
-to cancel.
-**${capitalize(pluralName)} Matched**:
-${currentOptions.map((gm, i) => `\`#${i + 1}\`: \`${getTag(gm).replace(/`/g, "'")}\``).join(", ")}`, { autoCatch: false })
-          );
         }
       } catch (err) {
         // logger.error(`At PromptAmbig: ${err}`);

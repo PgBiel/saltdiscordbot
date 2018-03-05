@@ -47,7 +47,7 @@ exports.colors = exports.chalk;
 // exports.commandHandler = require("../commandHandler");
 
 // exports.commandHandle = exports.commandHandler;
-exports.Constants = require("../misc/constants");
+exports.Constants = require("../constants/constants");
 exports.decodeT = require("../misc/decodeT");
 
 exports.CommandClient = require("../classes/commandClient");
