@@ -5,5 +5,19 @@
       "rejctF(\"[$1]\")"
     ],
     "description": "RejctF"
+  },
+  "Make emoji": {
+    "prefix": "mkem",
+    "body": [
+      "mkEmj(\"$1\", \"$2\"),"
+    ],
+    "description": "Make emoji func"
+  },
+  "Make emoji constant": {
+    "prefix": "mkemnt",
+    "body": [
+      "$1: mkEmj(\"$2\", \"$3\"),"
+    ],
+    "description": "Make emoji const"
   }
 }
