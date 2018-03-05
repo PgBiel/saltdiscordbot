@@ -74,7 +74,7 @@ class CrossItem {
     return this._unravel(results);
   }
 
-  async filter(func, vars = {}) {
+  filter(func, vars = {}) {
     const funcStr = String(func);
     return newItem(
       this.name, this.cleaner, this.uncleaner,

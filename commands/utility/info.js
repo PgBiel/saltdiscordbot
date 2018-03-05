@@ -340,7 +340,6 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
         `Was created ${d.ago(guild.createdAt, Date.now(), true) || "some time"} ago (${d.momentUTC(guild.createdAt)})`
       )
       .setThumbnail(icon || d.Constants.images.SERVER_INFO.NO_ICON)
-      .setColor("RANDOM")
       .setFooter(`${icon ? "Click the title for Icon URL | " : ""}Server ID: ${guild.id}`)
       .addField("Owner", `<@!${guild.ownerID}>`, true)
       .addField(
@@ -359,6 +358,46 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
       .addField("Region", d.adaptSnake(guild.region), true)
       .addField("Verification Level", d.Constants.maps.VERIF[guild.verificationLevel], true);
       if (guild.features.length) emb.addField("Features", d.adaptSnake(guild.features) || "None");
+    return sendIt(emb);
+  } else if (is("bot", "stats", "botid", "statsid")) {
+    if (is("botid", "statsid")) return reply(`My ID is ${d.bot.user.id}.`);
+    channel.startTyping();
+    const av = d.bot.user.displayAvatarURL();
+    const created = d.bot.createdAt;
+    const pgHere = guild.members.has(d.Constants.identifiers.OWNER);
+    const apletHere = guild.members.has(d.Constants.identifiers.APLET);
+    const checkTotal = async (name, prop, possible, not = false) => {
+      try {
+        if (prop) return await (d.cross[name].filter(s => {
+          const incl = possible.includes(s[prop]);
+          if (not) return !incl;
+          return incl;
+        }, { prop, possible, not }).size());
+        return await (d.cross[name].size());
+      } catch (err) { d.rejct(err, `[CHECK-TOTAL ${name}]`); }
+    };
+    const totalChannels = await checkTotal("channels", "type", ["text", "voice"]);
+    const totalGuilds = await checkTotal("guilds");
+    const totalCategories = await checkTotal("channels", "type", ["category"]);
+    const totalText = await checkTotal("channels", "type", ["text"]);
+    const totalVoice = await checkTotal("channels", "type", ["voice"]);
+    const totalUsers = await checkTotal("users");
+    const emb = new d.Embed()
+      .setAuthor(d.bot.user.username, av, av)
+      .setThumbnail(av)
+      .setFooter(`Click the title for avatar URL | My ID: ${d.bot.user.id} | Happy to be alive! ^-^`)
+      .setDescription(`Was created ${d.ago(created, Date.now(), true) || "some time"} ago (${d.momentUTC(created)}))`)
+      .addField("Developers", `🔥PgSuper🔥#3693 (<@${pgHere ? "!" : ""}${d.Constants.identifiers.OWNER}>) and \
+Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, false)
+      .addField("Uptime", new d.Interval(d.bot.uptime).toString(true), true)
+      .addField("Programming Language", "JavaScript", true)
+      .addField("Library", "discord.js", true)
+      .addField("Servers", totalGuilds, true)
+      .addField("Users", totalUsers, true)
+      .addField("Total Channels", totalChannels, true)
+      .addField("Total Categories", totalCategories, true)
+      .addField("Text Channels", totalText, true)
+      .addField("Voice Channels", totalVoice, true);
     return sendIt(emb);
   }
   return;
@@ -576,6 +615,60 @@ info",
       args: {},
       example: `
 {p}guildid`,
+      default: true
+    },
+    bot: {
+      description: "Alias to info bot. View my info",
+      action: "bot",
+      perms: "info.bot",
+      args: {},
+      example: `
+{p}bot`,
+      default: true
+    },
+    botinfo: {
+      description: "Alias to info bot. View my info",
+      action: "bot",
+      perms: "info.bot",
+      args: {},
+      example: `
+{p}botinfo`,
+      default: true
+    },
+    botid: {
+      description: "Alias to info botid. View my ID",
+      action: "botid",
+      perms: "info.bot",
+      args: {},
+      example: `
+{p}botid`,
+      default: true
+    },
+    stats: {
+      description: "Alias to info stats. View my info",
+      action: "stats",
+      perms: "info.bot",
+      args: {},
+      example: `
+{p}stats`,
+      default: true
+    },
+    statsinfo: {
+      description: "Alias to info stats. View my info",
+      action: "stats",
+      perms: "info.bot",
+      args: {},
+      example: `
+{p}statsinfo`,
+      default: true
+    },
+    statsid: {
+      description: "Alias to info statsid. View my ID",
+      action: "statsid",
+      perms: "info.bot",
+      args: {},
+      example: `
+{p}statsid`,
       default: true
     }
   },

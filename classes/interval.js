@@ -1,6 +1,7 @@
 const _ = require("lodash");
 const moment = require("moment");
 const Time = require("./time");
+const pluralize = require("../funcs/strings/pluralize");
 const dur = (...args) => moment.duration(...args);
 
 const ALIASES = {
@@ -136,24 +137,47 @@ class Interval {
     return this;
   }
   
-  toString() {
-    const units = this.units;
+  /**
+   * Converts this Interval into a string
+   * @param {boolean} [scale=false] If shouldn't be too specific
+   * @returns {string} 
+   */
+  toString(scale = false) {
     let result = "";
-    for (const [unit, num] of Object.entries(units)) {
-      if (num === 0) {
-        if (!result && unit === "seconds") {
-          result = "0 seconds";
+    if (scale) {
+      if (this.years || this.months || this.days) {
+        const daysToUse = this.days + (this.hours > 11 ? 1 : 0);
+        if (this.years) result += this.years + pluralize(" year", this.years);
+        if (this.months) result += `${this.years ? (daysToUse ? ", " : " and ") : ""}${this.months} ${pluralize("month", this.months)}`;
+        if (this.days) { 
+          const hasBefore = this.months || this.years;
+          result += `${hasBefore ? " and " : ""}${daysToUse} ${pluralize("day", daysToUse)}`;
+          if (this.hours && !hasBefore) result += ` and ${this.hours} ${pluralize("hour", this.hours)}`;
         }
-        continue;
+      } else if (this.hours || this.minutes) {
+        if (this.hours) result += this.hours + pluralize(" hour", this.hours);
+        if (this.minutes) result += `${this.hours ? " and " : ""}${this.minutes} ${pluralize("minute", this.minutes)}`;
+      } else if (this.seconds) {
+        result += this.seconds + pluralize(" second", this.seconds);
       }
-      const strToUse = num === 1 ? unit.replace(/s$/i, "") : unit;
-      if (!result) {
-        result = `${num} ${strToUse}`;
-      } else if (result.includes("and")) {
-        result = result.replace(/\s*and(\s*\d+\s*\w+)$/i, ",$1 and");
-        result += ` ${num} ${strToUse}`;
-      } else {
-        result += ` and ${num} ${strToUse}`;
+    } else {
+      const units = this.units;
+      for (const [unit, num] of Object.entries(units)) {
+        if (num === 0) {
+          if (!result && unit === "seconds") {
+            result = "0 seconds";
+          }
+          continue;
+        }
+        const strToUse = num === 1 ? unit.replace(/s$/i, "") : unit;
+        if (!result) {
+          result = `${num} ${strToUse}`;
+        } else if (result.includes("and")) {
+          result = result.replace(/\s*and(\s*\d+\s*\w+)$/i, ",$1 and");
+          result += ` ${num} ${strToUse}`;
+        } else {
+          result += ` and ${num} ${strToUse}`;
+        }
       }
     }
     return result;

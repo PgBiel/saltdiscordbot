@@ -7,7 +7,7 @@ module.exports = function adaptSnake(text, returnArr = false) {
     const genArr = [];
     const str = String(el);
     for (const mStr of str.split(/[_-\s]/)) {
-      if (/^(VIP|MVP|UR[LI])$/i.test(mStr)) {
+      if (/^(VIP|MVP|UR[LI]|US|EU)$/i.test(mStr)) {
         genArr.push(mStr.toUpperCase());
       } else {
         genArr.push(capitalize(mStr, { lowerCase: true }));
