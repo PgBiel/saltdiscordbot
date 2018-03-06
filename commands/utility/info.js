@@ -363,7 +363,7 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
     if (is("botid", "statsid")) return reply(`My ID is ${d.bot.user.id}.`);
     channel.startTyping();
     const av = d.bot.user.displayAvatarURL();
-    const created = d.bot.createdAt;
+    const created = d.bot.user.createdAt;
     const pgHere = guild.members.has(d.Constants.identifiers.OWNER);
     const apletHere = guild.members.has(d.Constants.identifiers.APLET);
     const checkTotal = async (name, prop, possible, not = false) => {
@@ -386,7 +386,7 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
       .setAuthor(d.bot.user.username, av, av)
       .setThumbnail(av)
       .setFooter(`Click the title for avatar URL | My ID: ${d.bot.user.id} | Happy to be alive! ^-^`)
-      .setDescription(`Was created ${d.ago(created, Date.now(), true) || "some time"} ago (${d.momentUTC(created)}))`)
+      .setDescription(`Was created ${d.ago(created, Date.now(), true) || "some time"} ago (${d.momentUTC(created)})`)
       .addField("Developers", `🔥PgSuper🔥#3693 (<@${pgHere ? "!" : ""}${d.Constants.identifiers.OWNER}>) and \
 Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, false)
       .addField("Uptime", new d.Interval(d.bot.uptime).toString(true), true)

@@ -20,8 +20,7 @@ module.exports = msg => {
   return async (subjectArr, pluralName = "members", opts = { type: "member" }) => {
     let mode = "r";
     const isInGuild = Boolean(channel.guild);
-    if (isInGuild && !channel.permissionsFor(channel.guild.me).has(["EMBED_LINKS"])) mode = "m";
-    // TODO: make "m" message mode and "r" keep
+    if (isInGuild && !channel.permissionsFor(channel.guild.me).has(["ADD_REACTIONS"])) mode = "m";
     const subjects = subjectArr.slice(0);
     subjects.splice(10, 2);
     const send = _send(msg);
@@ -47,13 +46,17 @@ module.exports = msg => {
     };
     const canceller = Constants.emoji.rjt.CANCEL;
     subjects.forEach(gm => currentOptions.push(gm));
-    const rFilter = (ret, coll) => {
+    const rFilter = (ret, coll, mssg) => {
       const re = coll[0];
       const str = re.emoji.id ? `<:${re.emoji.name}:${re.emoji.id}>` : re.emoji.name;
       const removeAll = async () => {
-        for (const reacted of ret) {
-          await sleep(150);
-          await reacted.users.remove();
+        if (mssg.guild && mssg.channel.permissionsFor(mssg.guild.me).has(["MANAGE_MESSAGES"])) {
+          await mssg.reactions.removeAll();
+        } else {
+          for (const reacted of ret) {
+            await sleep(150);
+            await reacted.users.remove();
+          }
         }
       };
       if (str === canceller) {
@@ -71,7 +74,7 @@ module.exports = msg => {
       }
       return false;
     };
-    const uFilter =  msg2 => {
+    const mFilter =  msg2 => {
       const cont = msg2.content;
       const options = currentOptions;
       if (msg2.author.id !== msg.author.id) {
@@ -145,17 +148,25 @@ ${currentOptions.map((gm, i) => `#${i + 1}: \`${getTag(gm).replace(/`/g, "'")}\`
       try {
         if (mode === "r") {
           const emojis = [
-            canceller
+            Constants.emoji.resolved.rjt.CANCEL
           ];
           for (let i = 1; i <= currentOptions.length; i++) emojis.push(Constants.emoji.numbers[i]);
-          const { reason, results: ret, collected: coll } = await collectReact(
+          const { reason, results: ret, collected: coll, msg: mssg } = await collectReact(
             await sendIt(),
             emojis,
             msg.author.id,
-            { onSuccess: _.identity, timeout: Constants.times.AMBIGUITY_EXPIRE, rawReact: false }
+            { onSuccess: _.identity, timeout: Constants.times.AMBIGUITY_EXPIRE, rawReact: true }
           );
           if (reason === "time") throw "no u";
-          rFilter(ret, coll.array());
+          rFilter(ret, coll.array(), mssg);
+        } else /* if (mode === "m") */ {
+          await sendIt();
+          await channel.awaitMessages(
+            mFilter, {
+              time: Constants.times.AMBIGUITY_EXPIRE, max: 1,
+              errors: ["time"]
+            },
+          );
         }
         if (satisfied) {
           obj = {
@@ -187,7 +198,11 @@ ${currentOptions.map((gm, i) => `#${i + 1}: \`${getTag(gm).replace(/`/g, "'")}\`
       send("Automatically cancelled command.");
       return { subject: null, cancelled: true };
     }
-    if (msgs.length && deletable && !cancelled) {
+    const cMsgs = _.compact(msgs);
+    if (
+      isInGuild && cMsgs.length && deletable && channel.permissionsFor(channel.guild.me).has(["MANAGE_MESSAGES"]) &&
+      !cancelled
+    ) {
       channel.bulkDelete(msgs)
         .catch(err => rejct(err, "[PROMPTAMBIG-BULKDEL]"));
     }

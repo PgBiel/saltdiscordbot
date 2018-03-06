@@ -28,7 +28,9 @@ const func = function collectReact(
     const results = [];
     const collector = msg.createReactionCollector(
       (reaction, usr) => (
-          emojis.includes(reaction.emoji.name) || emojis.includes(`<:${reaction.emoji.name}:${reaction.emoji.id}>`)
+          emojis.includes(reaction.emoji.name)
+          || emojis.includes(`<:${reaction.emoji.name}:${reaction.emoji.id}>`)
+          || emojis.includes(`${reaction.emoji.name}:${reaction.emoji.id}`)
         ) &&
         (validUsers.length < 1 ? true : validUsers.includes(usr.id)),
       Object.assign({ max: 1 }, timeout >= 0 ? { time: timeout + 1 } : {})
@@ -70,7 +72,12 @@ const func = function collectReact(
     for (let i = 0; i < emojiToUse.length; i++) {
       if (stop) break;
       await sleep(calculatedPing);
-      results.push(await (rawReact ? customReact : (msg.react.bind(msg)))(emojiToUse[i], msg));
+      const emoji = emojiToUse[i];
+      if (rawReact) {
+        results.push(await customReact(encodeURIComponent(emojiToUse[i]), msg));
+      } else {
+        results.push(await msg.react(emoji));
+      }
     }
   });
 };
