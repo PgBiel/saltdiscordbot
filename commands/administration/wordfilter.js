@@ -63,12 +63,12 @@ const func = async function (
     const pages = words.length === 1 ?
       [words[0]] :
       d.paginate(
-        words.map(w => d.textAbstract(w, Math.floor(d.Constants.numbers.MAX_DESC_CHARS / 11))).join(" "),
+        words.map(w => d.textAbstract(w, Math.floor(d.Constants.numbers.max.chars.DESC / 11))).join(" "),
         10
       );
     const page = irregArg &&
       irregArg.length > 0 &&
-      irregArg[0].length < d.Constants.numbers.MAX_PAGE_LENGTH &&
+      irregArg[0].length < d.Constants.numbers.max.length.PAGE &&
       !isNaN(irregArg) ?
         Number(irregArg[0]) :
         1;
@@ -108,7 +108,7 @@ const func = async function (
 Administrator saltrole or the `Manage Messages` Discord permission.");
         await d.db.table("mods").assign(
           guildId,
-          { filterMessage: d.textAbstract(arg, d.Constants.numbers.MAX_MSG_CHARS - 24) },
+          { filterMessage: d.textAbstract(arg, d.Constants.numbers.max.chars.MSG - 24) },
           true
         );
         reply("Successfully changed the filtering message!");
@@ -408,7 +408,7 @@ ${unavailable.join(", ")}.`}`);
         }
         const obj = { filterSetUp: () => true, filterEnabled: enabled => enabled || false };
         if (sendStrict != null) obj.filterStrict = () => sendStrict;
-        if (messag) obj.filterMessage = () => d.textAbstract(messag, d.Constants.numbers.MAX_MSG_CHARS - 24);
+        if (messag) obj.filterMessage = () => d.textAbstract(messag, d.Constants.numbers.max.chars.MSG - 24);
         if (sendPunish) obj.filterPunishment = () => sendPunish;
         if (sendTime) obj.filterPunishmentMute = () => sendTime;
         try {

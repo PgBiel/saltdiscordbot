@@ -139,7 +139,7 @@ class ActionLog {
     }
     if (msgSent && msgSent.id) caseObj.messageid = compress(msgSent.id);
     db.table("punishments").add(guild.id, caseObj);
-    const maxCases = Constants.numbers.MAX_CASES(guild.members.size);
+    const maxCases = Constants.numbers.max.CASES(guild.members.size);
     if ((await (db.table("punishments").get(guild.id, [])).length) > maxCases) {
       db.table("punishments").spliceArr(guild.id, 0, 1);
     }

@@ -59,22 +59,28 @@ function main({ user, isAuthor, punishments, p, reply, send, maxCases }) {
   }
 }
 
-async function specific({
-  user, isAuthor, punishments, p, type: aType, reply, send, page: ogPage, maxCases, isWarn, guildId
+async function specific(msg, {
+  user, isAuthor, punishments, p, type: aType, reply, send, page: ogPage, maxCases, isWarn, guildId,
+  presetPages, presetFiltered, presetTyped, isEdit, sentContent
 }) {
   let filtered, typed;
-  if (isWarn) {
-    filtered = typed = await (d.db.table("warns").get(guildId, []));
-    if (!filtered || filtered.length < 1) return reply(`There are no active warns on this guild!`);
-    typed = typed.filter(w => d.uncompress(w.userid) === user.id).reverse();
-    if (typed.length < 1) return reply(`${isAuthor ? "You have" : "That user has"} no active warns on this guild!`);
+  if (presetFiltered || presetTyped) { // if filtered / typed is already done (for pagination)
+    if (presetFiltered) filtered = presetFiltered;
+    if (presetTyped) typed = presetTyped;
   } else {
-    filtered = filterPunishes(punishments, user.id, d.uncompress);
-    if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
-      "You haven't" :
-      "That user hasn't"} ever been punished! :smiley:`);
-    typed = filtered[d.endChar((aType || "").toLowerCase(), "s")];
-    if (!typed) return reply(`Unknown punishment.`);
+    if (isWarn) { // if this is +listwarns
+      filtered = typed = await (d.db.table("warns").get(guildId, []));
+      if (!filtered || filtered.length < 1) return reply(`There are no active warns on this guild!`);
+      typed = typed.filter(w => d.uncompress(w.userid) === user.id).reverse();
+      if (typed.length < 1) return reply(`${isAuthor ? "You have" : "That user has"} no active warns on this guild!`);
+    } else { // if this is +listpunish
+      filtered = filterPunishes(punishments, user.id, d.uncompress);
+      if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
+        "You haven't" :
+        "That user hasn't"} ever been punished! :smiley:`);
+      typed = filtered[d.endChar((aType || "").toLowerCase(), "s")];
+      if (!typed) return reply(`Unknown punishment.`);
+    }
   }
   if (typed.length < 1) {
     return reply(`${isAuthor ? "You haven't" : "That user hasn't"} ever received that punishment! :smiley:`);
@@ -94,9 +100,10 @@ async function specific({
     cprop = "case";
     mprop = "moderator";
   }
-  const pages = typed.length === 1 ?
+  const pages = presetPages || (typed.length === 1 ?
     [typed[0][cprop].toString()] :
-    d.paginate(typed.map(c => c[cprop].toString()).join(" "), 4);
+    d.paginate(typed.map(c => c[cprop].toString()).join(" "), 4)
+  );
   if (isNaN(ogPage)) return reply(`That page doesn't exist!`);
   const page = ogPage - 1;
   if (page < 0) return reply(`That page doesn't exist!`);
@@ -147,10 +154,33 @@ Page ${page + 1}/${pages.length}`)
     ];
     embed.addField(field[0], field[1]);
   }
-  if (isAuthor && page < 1) {
-    reply(`Here is a list of your ${head}:`, { embed });
+  const args = arguments;
+  const paginate = {
+    page: ogPage,
+    maxPage: pages.length,
+    pages,
+    data: { filtered, typed },
+    func: (pageToUse, { pages, filtered, typed, ret, coll, msg: mssg }) => {
+      specific(
+        mssg, Object.assign({}, args[1], {
+          page: pageToUse,
+          presetPages: pages, presetFiltered: filtered, presetTyped: typed, isEdit: true, sentContent: (mssg || {}).content
+        })
+      );
+    }
+  };
+  if (isEdit) {
+    d.edit(
+      Object.assign(msg, { [d.edit.data]: { author: user, channel: msg.channel, guild: msg.guild } }),
+        sentContent,
+        { embed, paginate, deletable: true }
+      );
   } else {
-    send({ embed });
+    if (isAuthor && page < 1) {
+      reply(`Here is a list of your ${head}:`, { embed, paginate, deletable: true });
+    } else {
+      send({ embed, paginate });
+    }
   }
 }
 
@@ -161,12 +191,12 @@ const func = async function (
   },
 ) {
   const punishments = await (d.db.table("punishments").get(guildId));
-  const maxCases = d.Constants.numbers.MAX_CASES(guild.members.size);
+  const maxCases = d.Constants.numbers.max.CASES(guild.members.size);
   if (dummy.warns) { // +listwarns
     if (!punishments || punishments.length < 1) return reply(`Nobody has been warned in this guild!`);
     if (!perms["listwarns"]) return reply(`Missing permission \`listwarns\`! :(`);
     if (!args) {
-      return await specific({
+      return await specific(msg, {
         user: author, isAuthor: true, punishments, p, isWarn: true, reply, send, page: 1, maxCases
       });
     } else {
@@ -182,7 +212,7 @@ const func = async function (
           user = true;
         }
       }
-      page = page && page.length < d.Constants.numbers.MAX_PAGE_LENGTH && !isNaN(d._.trim(page)) ? (Number(page) || 1) : 1;
+      page = page && page.length < d.Constants.numbers.max.length.PAGE && !isNaN(d._.trim(page)) ? (Number(page) || 1) : 1;
       let memberToUse;
       let membersMatched;
       if (user === true) {
@@ -214,7 +244,7 @@ const func = async function (
       if (!memberToUse) {
         return;
       }
-      return await specific({
+      return await specific(msg, {
         user: memberToUse.user, isAuthor: false, punishments, p, isWarn: true, reply, send, page, maxCases
       });
     }
@@ -271,7 +301,7 @@ const func = async function (
           return;
         }
         if (name) {
-          return await specific({
+          return await specific(msg, {
             user: memberToUse.user, isAuthor: false, punishments, p, type: name, reply, send, page, maxCases
           });
         } else {
@@ -280,7 +310,7 @@ const func = async function (
           });
         }
       } else {
-        return await specific({
+        return await specific(msg, {
           user: author, isAuthor: true, punishments, p, type: name, reply, send, page, maxCases
         });
       }

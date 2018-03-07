@@ -302,7 +302,7 @@ ${this.customPrefix || p}${this.name}${this.private ?
   ""}${this.guildOnly ?
     " (Not usable in DMs)" :
     ""}
-${textAbstract(this.description, Constants.numbers.MAX_MSG_CHARS - 100)}
+${textAbstract(this.description, Constants.numbers.max.chars.MSG - 100)}
 Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
   `\n\nExample(s): ${_.trim(this.example).replace(/{p}/g, p)}` :
   ``}
@@ -323,9 +323,9 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
       embed.setDescription(
         textAbstract(
           this.description.replace(
-            /{maxcases}/ig, Constants.numbers.MAX_CASES((guild || { members: { size: 0 } }).members.size)
+            /{maxcases}/ig, Constants.numbers.max.CASES((guild || { members: { size: 0 } }).members.size)
           ),
-          Constants.numbers.MAX_DESC_CHARS
+          Constants.numbers.max.chars.DESC
         )
       );
     }

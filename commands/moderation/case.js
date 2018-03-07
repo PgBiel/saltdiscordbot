@@ -29,7 +29,7 @@ const func = async function (
   }
   const arg2 = part3;
   const latest = (punishments[punishments.length - 1] || { case: 0 }).case;
-  const maxCases = d.Constants.numbers.MAX_CASES(guild.members.size);
+  const maxCases = d.Constants.numbers.max.CASES(guild.members.size);
   if (action === "get" || !isNaN(action) || action === "???") {
     if (!perms["case.get"]) return reply(`Missing permission \`case get\`! :(`);
     if (action === "???" || arg === "???") {

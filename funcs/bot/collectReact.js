@@ -1,4 +1,5 @@
 const { _, Constants, bot, Time } = require("../../util/deps");
+const mkEmj = require("../parsers/mkEmoji");
 const customReact = require("./customReact");
 const rejct = require("../util/rejct");
 const sleep = require("../util/sleep");
@@ -17,7 +18,7 @@ const sleep = require("../util/sleep");
  */
 const func = function collectReact(
   msg, emojis, validUsers, {
-    onSuccess = func.DELETE_MSG, onTimeout = func.REMOVE_ALL, timeout = Time.minutes(1),
+    onSuccess = func.funcs.DELETE_MSG, onTimeout = func.funcs.REMOVE_ALL, timeout = Time.minutes(1),
     rawReact = false
   } = {}
 ) {
@@ -38,7 +39,7 @@ const func = function collectReact(
     collector.on("end", async (collected, reason) => {
       stop = true;
       if (reason === "time") {
-        if (typeof onTimeout === "function") onTimeout(results, collected.array(), msg);
+        if (typeof onTimeout === "function") await onTimeout(results, collected.array(), msg);
         res({
           reason: "time",
           results,
@@ -46,7 +47,7 @@ const func = function collectReact(
           msg
         });
       } else if (/limit/i.test(reason)) {
-        if (typeof onSuccess === "function") onSuccess(results, collected.array(), msg);
+        if (typeof onSuccess === "function") await onSuccess(results, collected.array(), msg);
         res({
           reason: "collected",
           results,
@@ -62,26 +63,34 @@ const func = function collectReact(
         });
       }
     });
-    let calculatedPing = (bot.pings || [])[0];
+    /* let calculatedPing = (bot.pings || [])[0];
     calculatedPing = calculatedPing > 1000 || isNaN(calculatedPing) ? 200 : Number(calculatedPing);
-    calculatedPing = calculatedPing + ((calculatedPing || 1000) / 10);
-    const emojiToUse = emojis.map(e => typeof e === "string" && Constants.regex.EMOJI_MENTION.test(e) ?
-      e.match(Constants.regex.EMOJI_MENTION)[1] :
+    calculatedPing = calculatedPing + ((calculatedPing || 1000) / 10); */
+    const emojiToUse = emojis.map(e => typeof e === "string" && Constants.regex.EMOJI_TEXT.test(e) ?
+      mkEmj(e.match(Constants.regex.EMOJI_TEXT)[2], e.match(Constants.regex.EMOJI_TEXT)[1], { isMention: false }) :
       e
     );
     for (let i = 0; i < emojiToUse.length; i++) {
       if (stop) break;
-      await sleep(calculatedPing);
+      await sleep(Constants.times.REACT_WAIT);
       const emoji = emojiToUse[i];
       if (rawReact) {
-        results.push(await customReact(encodeURIComponent(emojiToUse[i]), msg));
+        results.push(await customReact(encodeURIComponent(emojiToUse[i]), msg, false));
       } else {
         results.push(await msg.react(emoji));
       }
     }
   });
 };
-func.REMOVE_ALL = rs => rs.forEach(r => r.users.remove());
-func.DELETE_MSG = (_re, _coll, msg) => msg.delete();
+func.funcs = {
+  REMOVE_ALL: async (rs, _coll, msg) => {
+    if (msg && msg.guild && msg.channel.permissionsFor(msg.guild.me).has(["MANAGE_MESSAGES"])) return msg.reactions.removeAll();
+    for (const r of rs) {
+      await sleep(Constants.times.REACT_WAIT);
+      await r.users.remove();
+    }
+  },
+  DELETE_MSG: (_re, _coll, msg) => msg.delete()
+};
 
 module.exports = func;

@@ -28,14 +28,14 @@ module.exports = msg => {
       return true;
     };
     const sentmsg = await send(question, options || {});
-    for (let i = 0; i < Constants.numbers.MAX_PROMPT; i++) {
+    for (let i = 0; i < Constants.numbers.max.PROMPT; i++) {
       try {
         const msgs = await msg.channel.awaitMessages(filterToUse, { time: timeout, max: 1, errors: ["time"] });
         if (cancelled || skipped) {
           break;
         }
         if (!satisfied) {
-          if (i < Constants.numbers.MAX_PROMPT) {
+          if (i < Constants.numbers.max.PROMPT) {
             send(invalidMsg);
           } else {
             cancelled = true;

@@ -144,7 +144,7 @@ ${currentOptions.map((gm, i) => `#${i + 1}: \`${getTag(gm).replace(/`/g, "'")}\`
       return mssg;
     };
     let obj = { cancelled: 1 };
-    for (let i = 0; i < (mode === "r" ? 1 : Constants.numbers.MAX_PROMPT); i++) {
+    for (let i = 0; i < (mode === "r" ? 1 : Constants.numbers.max.PROMPT); i++) {
       try {
         if (mode === "r") {
           const emojis = [
