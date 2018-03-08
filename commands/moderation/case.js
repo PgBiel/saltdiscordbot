@@ -30,11 +30,19 @@ const func = async function (
   const arg2 = part3;
   const latest = (punishments[punishments.length - 1] || { case: 0 }).case;
   const maxCases = d.Constants.numbers.max.CASES(guild.members.size);
+  const sendIt = (content, emb, options = {}) => {
+    const { type } = options;
+    const obj = Object.assign({ embed: emb, autoCatch: false, deletable: true }, options);
+    return (type === "reply" ? reply : send)(obj).catch(err => [403, 50013].includes(err.code) ?
+      send("Please make sure I can send embeds in this channel.") :
+      void(d.rejct(err, "[SEND-IT-CASE]")));
+  };
+  msg.channel.startTyping();
   if (action === "get" || !isNaN(action) || action === "???") {
     if (!perms["case.get"]) return reply(`Missing permission \`case get\`! :(`);
     if (action === "???" || arg === "???") {
       const spook = await actionLog.embedAction({});
-      return reply(`Spooky! :ghost:`, { embed: spook });
+      return sendIt(`Spooky! :ghost:`, spook);
     }
     if (isNaN(arg) && isNaN(action)) return reply(`Please specify a case number to get!`);
     if ((arg.length && arg.length > 11) || (action.length && action.length > 11)) return reply(`Invalid case number! \
@@ -46,7 +54,7 @@ There ${latest === 1 ? "is only 1 case" : `are ${latest} cases`}.`);
     const { case: punish, embed } = await actionLog.fetchCase(number, guild);
     if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest ${maxCases} cases are kept stored.)`);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
-    return reply(`Here's Case #${punish.case}:`, { embed });
+    return sendIt(`Here's Case #${punish.case}:`, embed);
   } else if (["edit", "delete", "togglethumb"].includes(action)) {
     const permSecondPart = action === "delete" ? "delete" : "edit";
     if (!perms[`case.${permSecondPart}`]) return reply(`Missing permission \`case ${permSecondPart}\`! :(`);

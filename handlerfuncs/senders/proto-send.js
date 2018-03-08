@@ -5,7 +5,8 @@ const mkEmj = require("../../funcs/parsers/mkEmoji");
 const rejctF = require("../../funcs/util/rejctF");
 
 module.exports = (msg, data) => {
-  const { author, channel, guild } = data || msg;
+  const { author, channel, guild } = msg;
+  const dankAuthor = (data || msg).author;
   return func => { // factory for sending functions
     return (content, options) => {
       if (typeof content === "object" && !options && !(content instanceof Array)) {
@@ -44,13 +45,13 @@ module.exports = (msg, data) => {
               if (deletable) emojis.unshift(Constants.emoji.resolved.rjt.DELETE);
             
               const onSuccess = async (ret, coll, mssg) => {
-                const emjzero = coll[0].emoji;
+                const emjzero = coll[0].emoji; // emoji reacted
                 const re = emjzero.id ? mkEmj(emjzero.id, emjzero.name) : emjzero.name;
                 console.log("RE", re, coll);
                 if (re === Constants.emoji.rjt.DELETE) return collectReact.funcs.DELETE_MSG(ret, coll, mssg);
                 await collectReact.funcs.REMOVE_ALL(ret, coll, mssg);
                 let newPage;
-                const { SKIP: supSkip, SPECIALS: specialSup } = Constants.numbers.pagination.super;
+                const { SKIP: supSkip, SPECIALS: specialSup, DIVIDE_BY: divideBy } = Constants.numbers.pagination.super;
                 if (Object.values(left).includes(re)) {
                   const { END: end, SUP: sup, ONE: one } = left;
                   if (re === end) {
@@ -60,7 +61,7 @@ module.exports = (msg, data) => {
                   } else if (re === sup) {
                     const quant = page < 2 ?
                       0 :
-                      specialSup[page] || supSkip;
+                      _.clamp(Math.floor(maxPage / divideBy), 2, supSkip);
                     newPage = page - quant;
                   }
                 } else if (Object.values(right).includes(re)) {
@@ -76,18 +77,32 @@ module.exports = (msg, data) => {
                     newPage = page + quant;
                   }
                 }
-                await paginate.func(
-                  _.clamp(newPage || page, 1, maxPage),
-                  { pages: paginate.pages, data: paginate.data, ret, coll, msg: mssg }
-                );
+                if (typeof paginate.func === "function") {
+                  await paginate.func(
+                    _.clamp(newPage || page, 1, maxPage),
+                    { pages: paginate.pages, data: paginate.data, ret, coll, msg: mssg }
+                  ); 
+                } else if (paginate.usePages) {
+                  const { content = paginate.content, struct = paginate.struct } = (paginate.pages || [])[(newPage || page) - 1];
+                  let structToUse = struct;
+                  if (typeof paginate.format === "function") structToUse = await paginate.format(struct, newPage, paginate.pages);
+                  const edit = require("../../funcs/bot/edit"); // lazy require to not mess things up
+                  console.log("STRUCT", structToUse, "PAGE", newPage, "PAGINATE", paginate);
+                  await edit(
+                     mssg, 
+                    { author: (data || msg).author },
+                    content || undefined,
+                    { embed: structToUse, deletable, paginate: Object.assign({}, paginate, { page: newPage }) }
+                  );
+                }
               };
-              collectReact(messg, emojis, author.id, {
+              collectReact(messg, emojis, dankAuthor.id, {
                 rawReact: true, onSuccess
               });
             }
           }
           if (deletable && !procceeded) { // react with a deleting emoji
-            collectReact(messg, Constants.emoji.WASTEBASKET, author.id)
+            collectReact(messg, Constants.emoji.WASTEBASKET, dankAuthor.id)
               .catch(rejctF("[TRASH-REACT-1]"));
           }
         }

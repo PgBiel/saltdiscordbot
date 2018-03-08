@@ -1,6 +1,9 @@
 const Command = require("../../classes/command");
 const actionLog = require("../../classes/actionlogger");
 const d = require("../../misc/d");
+function cloneObject (objec) {
+  return Object.assign(Object.create(objec), objec);
+}
 
 function filterPunishes(punishments, id) {
   const punishes = punishments.filter(c => d.uncompress(c.target) === id && !c.deleted).reverse();
@@ -53,9 +56,9 @@ function main({ user, isAuthor, punishments, p, reply, send, maxCases }) {
       "That user"} been punished ${filtered.all.length} times. To see all of ${isAuthor ? "your" : "their"} punishments, \
   type ${p}listpunish ${isAuthor ? "" : "<user> "}all.`);
   if (isAuthor) {
-    reply("Here's your punishment list:", { embed });
+    reply("Here's your punishment list:", { embed, deletable: true });
   } else {
-    send(`Here's the punishment list for ${user.tag}:`, { embed });
+    send(`Here's the punishment list for ${user.tag}:`, { embed, deletable: true });
   }
 }
 
@@ -64,23 +67,18 @@ async function specific(msg, {
   presetPages, presetFiltered, presetTyped, isEdit, sentContent
 }) {
   let filtered, typed;
-  if (presetFiltered || presetTyped) { // if filtered / typed is already done (for pagination)
-    if (presetFiltered) filtered = presetFiltered;
-    if (presetTyped) typed = presetTyped;
-  } else {
-    if (isWarn) { // if this is +listwarns
-      filtered = typed = await (d.db.table("warns").get(guildId, []));
-      if (!filtered || filtered.length < 1) return reply(`There are no active warns on this guild!`);
-      typed = typed.filter(w => d.uncompress(w.userid) === user.id).reverse();
-      if (typed.length < 1) return reply(`${isAuthor ? "You have" : "That user has"} no active warns on this guild!`);
-    } else { // if this is +listpunish
-      filtered = filterPunishes(punishments, user.id, d.uncompress);
-      if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
-        "You haven't" :
-        "That user hasn't"} ever been punished! :smiley:`);
-      typed = filtered[d.endChar((aType || "").toLowerCase(), "s")];
-      if (!typed) return reply(`Unknown punishment.`);
-    }
+  if (isWarn) { // if this is +listwarns
+    filtered = typed = await (d.db.table("warns").get(guildId, []));
+    if (!filtered || filtered.length < 1) return reply(`There are no active warns on this guild!`);
+    typed = typed.filter(w => d.uncompress(w.userid) === user.id).reverse();
+    if (typed.length < 1) return reply(`${isAuthor ? "You have" : "That user has"} no active warns on this guild!`);
+  } else { // if this is +listpunish
+    filtered = filterPunishes(punishments, user.id, d.uncompress);
+    if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
+      "You haven't" :
+      "That user hasn't"} ever been punished! :smiley:`);
+    typed = filtered[d.endChar((aType || "").toLowerCase(), "s")];
+    if (!typed) return reply(`Unknown punishment.`);
   }
   if (typed.length < 1) {
     return reply(`${isAuthor ? "You haven't" : "That user hasn't"} ever received that punishment! :smiley:`);
@@ -100,10 +98,9 @@ async function specific(msg, {
     cprop = "case";
     mprop = "moderator";
   }
-  const pages = presetPages || (typed.length === 1 ?
+  const pages = typed.length === 1 ?
     [typed[0][cprop].toString()] :
-    d.paginate(typed.map(c => c[cprop].toString()).join(" "), 4)
-  );
+    d.paginate(typed.map(c => c[cprop].toString()).join(" "), 4);
   if (isNaN(ogPage)) return reply(`That page doesn't exist!`);
   const page = ogPage - 1;
   if (page < 0) return reply(`That page doesn't exist!`);
@@ -116,71 +113,61 @@ async function specific(msg, {
   } else {
     color = (d.Constants.maps.PUNISHMENTS[type[0].toLowerCase()] || [0, 0, "RANDOM"])[2];
   }
-  const embed = new d.Embed();
   let head;
   if (isWarn) {
     head = "currently active warns";
   } else {
     head = /^all/.test(type) ? "punishments" : type;
   }
-  embed
-    .setTitle(`List of ${head} for ${user.tag}${isWarn ? "" : ` (last ${maxCases} cases)`} - \
-Page ${page + 1}/${pages.length}`)
-    .setColor(color);
-  if (pages.length > 1) embed.setFooter(`To go to a certain page, type ${p}list${isWarn ? "warns" : "punish"} \
-  ${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
-  for (const pagee of pages[page].split(" ")) {
-    if (isNaN(pagee) || !d._.trim(pagee)) continue;
-    const num = Number(d._.trim(pagee));
-    const punish = isWarn ? filtered.find(w => w.casenumber === num) : filtered.all.find(c => c.case === num);
-    const [name, _desc, _color, extraFields] = d.Constants.maps.PUNISHMENTS[isWarn ? "w" : punish.type];
-    let extra;
-    if (extraFields) {
-      const extraPart = punish.type === "p" ?
-      [
-        "Permanently muted"
-      ] :
-      [
-        extraFields[0][0].replace(/^Muted For$/, "Muted for"),
-        extraFields[0][1].replace("<d>", new d.Interval(d.durationdecompress(punish.duration)))
+  const parseCase = async (_e, page) => {
+    const emb = new d.Embed()
+      .setTitle(`List of ${head} for ${user.tag}${isWarn ? "" : ` (last ${maxCases} cases)`} - \
+  Page ${page + 1}/${pages.length}`)
+      .setColor(color);
+    if (pages.length > 1) embed.setFooter(`To go to a certain page, type ${p}list${isWarn ? "warns" : "punish"} \
+${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
+    for (const pagee of pages[page - 1].split(" ")) {
+      if (isNaN(pagee) || !d._.trim(pagee)) continue;
+      const num = Number(d._.trim(pagee));
+      const punish = isWarn ? filtered.find(w => w.casenumber === num) : filtered.all.find(c => c.case === num);
+      const [name, _desc, _color, extraFields] = d.Constants.maps.PUNISHMENTS[isWarn ? "w" : punish.type];
+      let extra;
+      if (extraFields) {
+        const extraPart = punish.type === "p" ?
+        [
+          "Permanently muted"
+        ] :
+        [
+          extraFields[0][0].replace(/^Muted For$/, "Muted for"),
+          extraFields[0][1].replace("<d>", new d.Interval(d.durationdecompress(punish.duration)))
+        ];
+        extra = ` - ${extraPart.join(" ")}`;
+      } else {
+        extra = !["p", "m"].includes(punish.type) && /^all/i.test(type) ? ` - ${d._.capitalize(name)}` : "";
+      }
+      const field = [
+        `Case ${punish[cprop]} by ${((await d.bot.users.fetch(d.uncompress(punish[mprop]))) || { tag: "Unknown" }).tag}${extra}`,
+        `${punish.reason === "None" ? "No reason" : (punish.reason || "No reason")}`
       ];
-      extra = ` - ${extraPart.join(" ")}`;
-    } else {
-      extra = !["p", "m"].includes(punish.type) && /^all/i.test(type) ? ` - ${d._.capitalize(name)}` : "";
+      emb.addField(field[0], field[1]);
     }
-    const field = [
-      `Case ${punish[cprop]} by ${((await d.bot.users.fetch(d.uncompress(punish[mprop]))) || { tag: "Unknown" }).tag}${extra}`,
-      `${punish.reason === "None" ? "No reason" : (punish.reason || "No reason")}`
-    ];
-    embed.addField(field[0], field[1]);
-  }
+    return emb;
+  };
+  const embed = await parseCase(null, page + 1);
   const args = arguments;
+  const content = isAuthor ? `Here is a list of your ${head}:` : "";
   const paginate = {
     page: ogPage,
     maxPage: pages.length,
+    usePages: true,
+    format: parseCase,
     pages,
-    data: { filtered, typed },
-    func: (pageToUse, { pages, filtered, typed, ret, coll, msg: mssg }) => {
-      specific(
-        mssg, Object.assign({}, args[1], {
-          page: pageToUse,
-          presetPages: pages, presetFiltered: filtered, presetTyped: typed, isEdit: true, sentContent: (mssg || {}).content
-        })
-      );
-    }
+    content
   };
-  if (isEdit) {
-    d.edit(
-      Object.assign(msg, { [d.edit.data]: { author: user, channel: msg.channel, guild: msg.guild } }),
-        sentContent,
-        { embed, paginate, deletable: true }
-      );
+  if (isAuthor && page < 1) {
+    reply(content, { embed, paginate, deletable: true });
   } else {
-    if (isAuthor && page < 1) {
-      reply(`Here is a list of your ${head}:`, { embed, paginate, deletable: true });
-    } else {
-      send({ embed, paginate });
-    }
+    send({ embed, paginate, deletable: true });
   }
 }
 

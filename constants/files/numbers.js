@@ -22,6 +22,7 @@ module.exports = {
   pagination: {
     super: {
       SKIP: 5,
+      DIVIDE_BY: 4,
       SPECIALS: [null, null, 1, 2, 2, 3, 4]
     }
   }

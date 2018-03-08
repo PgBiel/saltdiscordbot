@@ -1,8 +1,8 @@
 const protoSend = require("../../handlerfuncs/senders/proto-send");
 
-const func = function edit(msg, ...args) {
+const func = function edit(msg, data, ...args) {
   if (msg && msg.edit) {
-    return protoSend(msg, msg[edit.data])(msg.edit.bind(msg))(...args);
+    return protoSend(msg, data)(msg.edit.bind(msg))(...args);
   }
 };
 func.data = Symbol("editData");

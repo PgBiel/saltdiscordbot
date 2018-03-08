@@ -74,21 +74,33 @@ const func = async function (
         1;
     if (page > pages.length) return reply(`Invalid page! The max page is ${pages.length}.`);
     if (page < 1) return reply(`Invalid page! Page must be at least 1.`);
-    const embed = new d.Embed()
-      .setTitle(`List of filtered words - Page ${page}/${pages.length}`)
-      .setColor("RED");
-    if (pages.length > 1) embed.setFooter(`To go to a certain page, type ${p}wordfilter list <page>.`);
-    let str = "";
-    for (const pagee of pages[page - 1].split(" ")) {
-      if (!d._.trim(pagee)) continue;
-      str += `• ${pagee.replace(/_/g, " ")}\n`;
-    }
-    embed.setDescription(d._.trim(str));
+    const gen = (_e, page) => {
+      const embed = new d.Embed()
+        .setTitle(`List of filtered words - Page ${page}/${pages.length}`)
+        .setColor("RED");
+      if (pages.length > 1) embed.setFooter(`To go to a certain page, type ${p}wordfilter list <page>.`);
+      let str = "";
+      for (const pagee of pages[page - 1].split(" ")) {
+        if (!d._.trim(pagee)) continue;
+        str += `• ${pagee.replace(/_/g, " ")}\n`;
+      }
+      embed.setDescription(d._.trim(str));
+      return embed;
+    };
+    const content = words.length === 1 ?
+      "Here's the only filtered word in this server:" :
+      `Here is a list of all ${words.length} filtered words in this server:`;
+    const paginate = {
+      page,
+      maxPage: pages.length,
+      usePages: true,
+      format: gen,
+      pages,
+      content
+    };
     reply(
-      words.length === 1 ?
-        "Here's the only filtered word in this server:" :
-        `Here is a list of all ${words.length} filtered words in this server:`,
-      { embed, deletable: true }
+      content,
+      { embed: gen(null, page), deletable: true, paginate }
     );
   } else if (["message", "strictness", "punish", "punishment", "enable", "disable", "toggle"].includes(action)) {
     if (!config.filterSetUp) {
