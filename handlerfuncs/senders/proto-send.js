@@ -73,7 +73,7 @@ module.exports = (msg, data) => {
                   } else {
                     const quant = dPage < 2 ?
                       0 :
-                      specialSup[dPage] || supSkip;
+                      _.clamp(Math.floor(maxPage / divideBy), 2, supSkip);
                     newPage = page + quant;
                   }
                 }
@@ -85,9 +85,10 @@ module.exports = (msg, data) => {
                 } else if (paginate.usePages) {
                   const { content = paginate.content, struct = paginate.struct } = (paginate.pages || [])[(newPage || page) - 1];
                   let structToUse = struct;
-                  if (typeof paginate.format === "function") structToUse = await paginate.format(struct, newPage, paginate.pages);
+                  if (typeof paginate.format === "function") {
+                    structToUse = await paginate.format(newPage, struct, paginate.pages);
+                  }
                   const edit = require("../../funcs/bot/edit"); // lazy require to not mess things up
-                  console.log("STRUCT", structToUse, "PAGE", newPage, "PAGINATE", paginate);
                   await edit(
                      mssg, 
                     { author: (data || msg).author },

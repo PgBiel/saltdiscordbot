@@ -6,11 +6,13 @@ const func = async function (msg, {
   args, author, arrArgs, send, reply, prefix: p, botmember, dummy, guild, guildId, perms, searcher, promptAmbig,
   channel, self, member
 }) {
-  const sendIt = (emb => {
-    return send({ embed: emb, autoCatch: false, deletable: true }).catch(err => [403, 50013].includes(err.code) ?
-      send("Please make sure I can send embeds in this channel.") :
-      void(d.rejct(err, "[SEND-IT-INFO]")));
-  });
+  const sendIt = (emb, opts) => {
+    return send(Object.assign({ embed: emb, autoCatch: false, deletable: true }, opts))
+      .catch(err => [403, 50013].includes(err.code) ?
+        send("Please make sure I can send embeds in this channel.") :
+        void(d.rejct(err, "[SEND-IT-INFO]"))
+      );
+  };
   const action = (dummy && dummy.action ? dummy.action : String(arrArgs[0] || "")).toLowerCase();
   const arg = arrArgs.slice(dummy && dummy.action ? 0 : 1).join(" ");
   const noGActions = [
@@ -120,7 +122,7 @@ const func = async function (msg, {
             .addField("Joined Server (UTC)", d.momentUTC(member.joinedAt, { addUTC: false }), true)
             .addField(
               `Roles${rolesArr.length ? ` (${rolesArr.length})` : ""}`,
-              rolesJoined.length > d.Constants.numbers.MAX_FIELD_CHARS ?
+              rolesJoined.length > d.Constants.numbers.max.chars.FIELD ?
                 `Use \`${p}info roles <@!${user.id}>\` to see (too long)` :
                 (
                   rolesJoined ||
@@ -185,7 +187,7 @@ const func = async function (msg, {
       .addField("Is mentionable", d.Constants.maps.YESNO[Boolean(role.mentionable)], true)
       .addField(
         `Members${membersArr.length ? ` (${membersArr.length})` : ""}`,
-        membersJoined.length > d.Constants.numbers.MAX_FIELD_CHARS ?
+        membersJoined.length > d.Constants.numbers.max.chars.FIELD ?
           `Use \`\`${p}info members ${d.escMarkdown(role.name)}\`\` to see (too long)` :
           (
             membersJoined ||
@@ -282,7 +284,7 @@ ${guild ? (guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another 
           .addField("Topic", chnl.topic || "None", true)
           .addField(
             `Members who can read this channel${membersArr.length < 1 ? "" : ` (${membersArr.length})`}`,
-            membersJoined.length > d.Constants.numbers.MAX_FIELD_CHARS ?
+            membersJoined.length > d.Constants.numbers.max.chars.FIELD ?
               `Use \`\`${p}info channelmembers ${d.escMarkdown(chnl.name)}\`\` to see (too long)` :
               (
                 membersJoined ||
@@ -298,7 +300,7 @@ ${guild ? (guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another 
           .addField(
             `Members Connected\
 ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${chnl.userLimit}` : "")})`}`,
-            membersJoined.length > d.Constants.numbers.MAX_FIELD_CHARS ?
+            membersJoined.length > d.Constants.numbers.max.chars.FIELD ?
               `Use \`\`${p}info voicemembers ${d.escMarkdown(chnl.name)}\`\` to see (too long)` :
               (
                 membersJoined ||
@@ -317,7 +319,7 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
       embed
         .addField(
           `Channels Within${chArr.length < 1 ? "" : ` (${chArr.length})`}`,
-          chJoined.length > d.Constants.numbers.MAX_FIELD_CHARS ?
+          chJoined.length > d.Constants.numbers.max.chars.FIELD ?
             `Use \`\`${p}info categorychildren ${d.escMarkdown(chnl.name)}\`\` to see (too long)` :
             (
               chJoined ||
@@ -399,6 +401,76 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
       .addField("Text Channels", totalText, true)
       .addField("Voice Channels", totalVoice, true);
     return sendIt(emb);
+  } else if (is("roles")) {
+    if (!perms["info.roles"]) return reply("Missing permission `info roles`! :frowning:");
+    channel.startTyping();
+    let content, invalid, title, roles, page, argu;
+    const sepArg = trArg.split(" ");
+    if (/^\d+$/.test(sepArg[sepArg.length - 1])) {
+      page = sepArg.pop();
+    } else {
+      page = "1";
+    }
+    argu = sepArg.join(" ");
+    if (!trArg || /^\d{1,5}$/.test(trArg)) {
+      roles = guild.roles;
+      content = "Here are the server's roles:";
+      invalid = "This server has no roles (other than the default)!";
+      title = "All Roles";
+    } else {
+      let member;
+      const searched = await (d.search(trArg, "user", self, { allowForeign: false }));
+      if (searched.subject) {
+        member = guild.member(searched.subject);
+      } else {
+        return;
+      }
+      roles = member.roles;
+      content = `Here are ${member.user.tag}'s roles:`;
+      invalid = "That member has no roles (other than the default)!";
+      title = `${member.user.tag}'s Roles`;
+    }
+    const rolesArr = roles.array().sort((a, b) => b.position - a.position).filter(r => r.id !== guild.id);
+    if (rolesArr.length < 1) return reply(invalid);
+    const isGRoles = roles === guild.roles;
+    const pages = d.paginate(rolesArr);
+    if (page.length > 5) {
+      page = 1;
+    } else {
+      page = Number(page);
+    }
+    const gen = page => {
+      page = d._.clamp(isNaN(page) ? 1 : page, 1, pages.length);
+      const emb = new d.Embed()
+        .setAuthor(title);
+      if (pages.length > 1) emb.setFooter(`To go to a specific page, write ${p}info roles \
+${argu ? argu + "<page>" : "<page>"}.`);
+      let desc = "";
+      for (const role of pages[page - 1]) {
+        if (role.id === guild.id) continue;
+        const rolePos = rolesArr.indexOf(role);
+        const position = rolePos < 1 ?
+        (isGRoles ? "Top" : "Highest") :
+        (
+          rolePos === rolesArr.length - 1 ?
+            (isGRoles ? "Bottom" : "Lowest") :
+            rolesArr.length - 1 - rolePos // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
+        );
+        desc += `**${isNaN(position) ? `${position}:` : `${position}.`}** <@&${role.id}> \n`;
+      }
+      emb.setDescription(d._.trim(desc));
+      return emb;
+    };
+    const paginate = {
+      page,
+      maxPage: pages.length,
+      pages,
+      usePages: true,
+      format: gen,
+      content
+    };
+    await d.sleep(100); // to maek typing count
+    return sendIt(gen(page), { content, paginate });
   }
   return;
 };
@@ -669,6 +741,17 @@ info",
       args: {},
       example: `
 {p}statsid`,
+      default: true
+    },
+    roles: {
+      description: "Alias to info roles. View all or a member's roles.",
+      action: "roles",
+      perms: "info.roles",
+      args: { "member or page": true, "page (if member is specified)": true },
+      example: `
+{p}roles
+{p}roles 2
+{p}roles Guy#0000 3`,
       default: true
     }
   },

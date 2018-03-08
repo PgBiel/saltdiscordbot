@@ -1,7 +1,8 @@
 const { MessageEmbed } = require("discord.js");
-const { Constants, db, logger, Time, util } = require("../util/deps");
+const { Constants, db, logger, Interval, Time, util } = require("../util/deps");
 const {
-  compress, datecomp, dateuncomp, escMarkdown, rejct, rejctF, textAbstract, uncompress, durationcompress
+  compress, datecomp, dateuncomp, escMarkdown, rejct, rejctF, textAbstract, uncompress, durationcompress,
+  durationdecompress
 } = require("../funcs/funcs");
 const Punishment = require("./punishment");
 
@@ -31,9 +32,9 @@ class Warn extends Punishment {
     const def = (...args) => Promise.resolve(null);
     const { reply = def, send = def, actionLog = def } = context;
     const sentWarnMsg = await send(`Warning ${member.user.tag}... (Sending DM...)`);
-    const warns = (await (db.table("warns").get(guild.id, []))).filter(u => u.userid === member.id);
-    const warnSteps = (await (db.table("warnsteps").get(guild.id, []))).sort((step1, step2) => step1.amount - step2.amount);
-    const warnStep = warnSteps.find(step => step.amount === warns.length + 1);
+    const warns = await (db.table("warns").filterArr(guild.id, u => uncompress(u.userid) === member.id));
+    const warnSteps = await (db.table("warnsteps").sortArr(guild.id, (step1, step2) => step1.amount - step2.amount));
+    const warnStep = warnSteps.find(step => step.amount === warns.length + 1); // + 1 'cause we're boutta warn
     const reasonEmbed = new MessageEmbed();
     reasonEmbed
       .setColor("AQUA")
@@ -55,10 +56,18 @@ class Warn extends Punishment {
     };
     const executeWarnAsync = async () => {
       try {
+        db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1)), true); // make sure there's expiring
+        await (db.table("warns").add(guild.id, {
+          userid: compress(member.id),
+          casenumber: (await (db.table("mods").prop(guild.id, "latestCase"))) + 1,
+          reason: reason || "None",
+          moderatorid: compress(author.id),
+          warnedat: datecomp()
+        }, true));
         if (warnStep) {
           const punishment = (Constants.maps.PUNISHMENTS[warnStep.punishment] || ["none"])[0];
-          const timeNum = Number(uncompress(warnStep.time)) * 1000;
-          const time = new Time(isNaN(timeNum) ? Time.minutes(10) : timeNum);
+          const timeDur = durationdecompress(warnStep.time);
+          const time = new Interval(!timeDur ? Time.minutes(10) : timeDur);
           if (punishment === "kick" || punishment === "ban" || punishment === "softban") {
             let reasonStr;
             const ableName = punishment === "kick" ? "kick" : "bann";
@@ -93,36 +102,19 @@ a **${punishment}** (as says this server's current setup).`);
           } else if (/^p?mute/.test(punishment)) {
             const isPerm = /^p/.test(punishment);
             const complText = isPerm ? "permanent mute" : `mute for **${time}**`;
-            sentWarnMsg.edit(`The member ${member} has reached a limit of ${warnStep.amount} warnings which implies a ${complText}.`);
+            sentWarnMsg.edit(`The member ${member} has reached a limit of ${warnStep.amount} warnings which implies \
+a ${complText}.`);
             muteP.punish(member, {
               author, reason, auctPrefix, context, time, permanent: isPerm
             });
           }
-          if (warnStep.amount >= warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount) {
-            // logger.debug("YEa", warnStep.amount, warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount);
-            warns.forEach(warn => {
-              db.table("warns").remArr(guild.id, warn);
-            });
-          } else {
-            // logger.debug("Boi", warnStep.amount, warnSteps.sort((a, b) => a.amount - b.amount)[warnSteps.length - 1].amount);
-            db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1)), true); // make sure there's expiring
-            await (db.table("warns").add(guild.id, {
-              userid: compress(member.id),
-              casenumber: (await (db.table("mods").prop(guild.id, "latestCase"))) + 1,
-              reason: reason || "None",
-              moderatorid: compress(author.id),
-              warnedat: datecomp()
-            }, true));
+          if (warnStep.amount >= warnSteps.sort((a, b) => b.amount - a.amount)[0].amount) { // if reached highest amount
+            const newWarns = await (db.table("warns").filterArr(guild.id, u => uncompress(u.userid) === member.id));
+            for (const warn of newWarns) {// then D E L E T
+              await db.table("warns").remArr(guild.id, warn, true);
+            }
           }
         } else {
-          db.table("warnexpires").get(guild.id, durationcompress(Time.weeks(1)), true); // make sure there's expiring
-          await (db.table("warns").add(guild.id, {
-            userid: compress(member.id),
-            casenumber: (await (db.table("mods").prop(guild.id, "latestCase"))) + 1,
-            reason: reason || "None",
-            moderatorid: compress(author.id),
-            warnedat: datecomp()
-          }, true));
           finish();
         }
       } catch (err) {

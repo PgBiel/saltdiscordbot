@@ -74,7 +74,7 @@ const func = async function (
         1;
     if (page > pages.length) return reply(`Invalid page! The max page is ${pages.length}.`);
     if (page < 1) return reply(`Invalid page! Page must be at least 1.`);
-    const gen = (_e, page) => {
+    const gen = page => {
       const embed = new d.Embed()
         .setTitle(`List of filtered words - Page ${page}/${pages.length}`)
         .setColor("RED");
@@ -100,7 +100,7 @@ const func = async function (
     };
     reply(
       content,
-      { embed: gen(null, page), deletable: true, paginate }
+      { embed: gen(page), deletable: true, paginate }
     );
   } else if (["message", "strictness", "punish", "punishment", "enable", "disable", "toggle"].includes(action)) {
     if (!config.filterSetUp) {
@@ -217,6 +217,24 @@ specify up to 75 words.");
         if (action === "add") {
           await d.db.table("wordfilters").addMult(guildId, sendWords, true);
         } else {
+          if (words.length > 2) {
+            const result = await prompt({
+              question: `Are you sure you want to replace the whole word filtering list? **This cannot be undone.** \
+This will expire in 15 seconds. Type __y__es or __n__o.`,
+              invalidMsg: "__Y__es or __n__o?",
+              filter: msg2 => {
+                return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
+              },
+              timeout: d.Time.seconds(15)
+            });
+            if (!result) {
+              return;
+            }
+            if (/^[nc]/i.test(result)) {
+              send("Command cancelled.");
+              return;
+            }
+          }
           await d.db.table("wordfilters").setRejct(guildId, sendWords);
         }
         return reply(`${action === "add" ? "Added" : "Set"} ${sendWords.length} \

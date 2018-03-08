@@ -19,7 +19,7 @@ module.exports = function parseMute(str) {
     return obj;
   }
   results.forEach((piece, index) => {
-    if (index < 1 || index > 7 || !piece) { return; }
+    if (index < 1 || index > 10 || !piece) { return; }
     if (!obj.user) {
       obj.user = piece;
     } else if (!obj.time || obj.time.time < 1) {

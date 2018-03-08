@@ -162,7 +162,8 @@ class Table extends Storage {
   async remArr(key, obj, reject = false) {
     const arr = await this.get(key) || [];
     if (!Array.isArray(arr)) return { success: false, err: new TypeError("Non-array value.") };
-    return await this.spliceArr(key, this.indexOf(key, obj), 1, reject);
+    const index = await this.indexOf(key, obj);
+    return await this.spliceArr(key, index, 1, reject);
   }
 
   /**
@@ -206,6 +207,55 @@ class Table extends Storage {
     return val[prop];
   }
 
+  async sortArr(key, func, modify = false, rejct = false) {
+    const arr = (await this.get(key)) || [];
+    if (Array.isArray(arr)) {
+      if (!modify) return arr.sort(func);
+      return this[rejct ? "setRejct" : "set"](key, arr.sort(func));
+    }
+    if (modify) {
+      const res = { success: false, err: new TypeError("Non-array value.") };
+      if (rejct) throw res;
+      return res;
+    }
+  }
+
+  /**
+   * Find an item in an array
+   * @param {string} key Key
+   * @param {Function} func Function to use to find
+   * @param {*} [thisArg] Argument for "this"
+   * @returns {*} Item found if any
+   */
+  async findArr(key, func, thisArg) {
+    const arr = (await this.get(key)) || [];
+    if (Array.isArray(arr)) return arr.find(func, thisArg);
+  }
+
+  /**
+   * Find an item in an array, returning its index
+   * @param {string} key Key
+   * @param {Function} func Function to use to find
+   * @param {*} [thisArg] Argument for "this"
+   * @returns {number} Index of the found item, if any
+   */
+  async findIndexArr(key, func, thisArg) {
+    const arr = (await this.get(key)) || [];
+    if (Array.isArray(arr)) return arr.findIndex(func, thisArg);
+  }
+
+  /**
+   * Filter items in an array
+   * @param {string} key Key
+   * @param {Function} func Function to use to filter
+   * @param {*} [thisArg] Argument for "this"
+   * @returns {Array<*>} Filtered items
+   */
+  async filterArr(key, func, thisArg) {
+    const arr = (await this.get(key)) || [];
+    if (Array.isArray(arr)) return arr.filter(func, thisArg);
+  }
+
   /**
    * Splice an array.
    * @param {string} key The key
@@ -215,7 +265,7 @@ class Table extends Storage {
    * @returns {Promise<{ success: boolean; err: any; }>}
    */
   async spliceArr(key, ind, amount, reject = false) {
-    const arr = await this.get(key) || [];
+    const arr = (await this.get(key)) || [];
     if (Array.isArray(arr)) {
       const modify = arr.slice();
       modify.splice(ind, amount);
@@ -371,11 +421,11 @@ class Table extends Storage {
   }
 
   toString() {
-    return "[object Table]";
+    return `[table ${this.name}]`;
   }
 
   [util.inspect.custom]() {
-    return this.toString();
+    return `[Table ${this.name}]`;
   }
 }
 

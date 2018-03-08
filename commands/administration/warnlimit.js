@@ -33,10 +33,7 @@ ${timeStr}.\n`;
     return reply(`Uh-oh, it seems that you don't have permissions to get warn punishments, so I'm not listing them. \
 Try an action (like setting)! (Use the \`help\` command for help.)`);
   }
-  const action = arrArgs[0];
-  const subArg = arrArgs[1];
-  const subSubArg = arrArgs[2];
-  const subSubSubArg = arrArgs[3];
+  const [action, subArg, subSubArg, ...subSubSubArg] = arrArgs;
   if (!isNaN(Number(action)) || /^get$/i.test(action)) {
     if (!perms["warnlimit.get"]) {
       return reply(`Uh-oh, it seems that you don't have permissions to get warn punishments. \
@@ -106,13 +103,26 @@ do! (See their individual help commands for permissions)`);
         return reply(`The punishment must be one of those that both you and the bot have permission to! Those include: \
 ${availablePunish.join(", ")}.`);
       }
-      let time;
-      let timeDefault = false;
-      if (isNaN(subSubSubArg)) {
-        timeDefault = true;
-        time = d.Interval.minutes(10);
-      } else {
-        time = d.Interval.minutes(Number(subSubSubArg));
+      let time = d.Interval.minutes(10);
+      let timeDefault = true;
+      const timeArg = (subSubSubArg || []).join(" ");
+      if (timeArg) {
+        timeDefault = false;
+        if (!isNaN(timeArg)) {
+          time = d.Interval.minutes(Number(timeArg));
+        } else {
+          const parsedTime = d.parseTimeStr(timeArg.replace(/,|and/ig, ""));
+          if (parsedTime[d.parseTimeStr.invalid]) {
+            timeDefault = true;
+            time = d.Interval.minutes(10);
+          } else {
+            time = new d.Interval(Object.entries(parsedTime));
+          }
+        }
+        if (!time.time) {
+          timeDefault = true;
+          time = d.Interval.minutes(10);
+        }
       }
       const punish = subSubArg.toLowerCase();
       const objToUse = {

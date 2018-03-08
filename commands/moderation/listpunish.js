@@ -54,7 +54,7 @@ function main({ user, isAuthor, punishments, p, reply, send, maxCases }) {
     .setFooter(`${isAuthor ?
       "You have" :
       "That user"} been punished ${filtered.all.length} times. To see all of ${isAuthor ? "your" : "their"} punishments, \
-  type ${p}listpunish ${isAuthor ? "" : "<user> "}all.`);
+type ${p}listpunish ${isAuthor ? "" : "<user> "}all.`);
   if (isAuthor) {
     reply("Here's your punishment list:", { embed, deletable: true });
   } else {
@@ -119,12 +119,12 @@ async function specific(msg, {
   } else {
     head = /^all/.test(type) ? "punishments" : type;
   }
-  const parseCase = async (_e, page) => {
+  const parseCase = async page => {
     const emb = new d.Embed()
       .setTitle(`List of ${head} for ${user.tag}${isWarn ? "" : ` (last ${maxCases} cases)`} - \
-  Page ${page + 1}/${pages.length}`)
+Page ${page}/${pages.length}`)
       .setColor(color);
-    if (pages.length > 1) embed.setFooter(`To go to a certain page, type ${p}list${isWarn ? "warns" : "punish"} \
+    if (pages.length > 1) emb.setFooter(`To go to a certain page, type ${p}list${isWarn ? "warns" : "punish"} \
 ${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
     for (const pagee of pages[page - 1].split(" ")) {
       if (isNaN(pagee) || !d._.trim(pagee)) continue;
@@ -153,7 +153,7 @@ ${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
     }
     return emb;
   };
-  const embed = await parseCase(null, page + 1);
+  const embed = await parseCase(page + 1);
   const args = arguments;
   const content = isAuthor ? `Here is a list of your ${head}:` : "";
   const paginate = {
