@@ -442,7 +442,7 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
     const gen = page => {
       page = d._.clamp(isNaN(page) ? 1 : page, 1, pages.length);
       const emb = new d.Embed()
-        .setAuthor(title);
+        .setAuthor(title + ` - Page ${page}/${pages.length}`);
       if (pages.length > 1) emb.setFooter(`To go to a specific page, write ${p}info roles \
 ${argu ? argu + "<page>" : "<page>"}.`);
       let desc = "";
