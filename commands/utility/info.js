@@ -17,8 +17,8 @@ const func = async function (msg, {
   const arg = arrArgs.slice(dummy && dummy.action ? 0 : 1).join(" ");
   const noGActions = [
     "user", "member", "id", "userid",
-    "channel", "textchannel", "text", "channels", "textchannels", "channelid", "textid", "textchannelid",
-    "voicechannel", "voice", "voicechannels", "voiceid", "voicechannelid", 
+    "channel", "textchannel", "text", "channels", "textchannels", "texts", "channelid", "textid", "textchannelid",
+    "voicechannel", "voice", "voices", "voicechannels", "voiceid", "voicechannelid", 
     "category", "categories", "categoryid", "ctg", "ctgs", "ctgid",
     "stats", "bot"];
   const gActions = noGActions.concat([
@@ -401,10 +401,19 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
       .addField("Text Channels", totalText, true)
       .addField("Voice Channels", totalVoice, true);
     return sendIt(emb);
-  } else if (is("roles")) {
+  } else if (is(
+    "roles",
+    "channels", "textchannels", "texts",
+    "voices", "voicechannels",
+    "categories", "ctgs",
+    "members"
+  )) {
     if (!perms["info.roles"]) return reply("Missing permission `info roles`! :frowning:");
     channel.startTyping();
-    let content, invalid, title, roles, page, argu;
+    let content, invalid, title, subjects, page, argu;
+    // specific to types
+    let noArgCont, argCont, noArgInvalid, argInvalid, noArgTitle, argTitle, type, guildWide, subjectProp, channelType, sort,
+    textWorker, filterer;
     const sepArg = trArg.split(" ");
     if (/^\d+$/.test(sepArg[sepArg.length - 1])) {
       page = sepArg.pop();
@@ -412,28 +421,90 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
       page = "1";
     }
     argu = sepArg.join(" ");
+    let channelPlurals, channelPlural;
+    switch (action) {
+      case "roles":
+        noArgCont = "Here are the server's roles:";
+        noArgInvalid = "This server has no roles (other than the default)!";
+        noArgTitle = "All Roles";
+        
+        argCont = `Here are {user.tag}'s roles:`;
+        argInvalid = "That member has no roles (other than the default)!";
+        argTitle = `{user.tag}'s Roles`;
+
+        type = "user";
+        guildWide = guild.roles;
+        sort = (a, b) => b.position - a.position;
+        textWorker = (role, arr, isGRoles) => {
+          const rolePos = arr.indexOf(role);
+          const position = rolePos < 1 ?
+          (isGRoles ? "Top" : "Highest") :
+          (
+            rolePos === arr.length - 1 ?
+              (isGRoles ? "Bottom" : "Lowest") :
+              arr.length - 1 - rolePos // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
+          );
+          return `**${isNaN(position) ? `${position}:` : `${position}.`}** <@&${role.id}>`;
+        };
+        filterer = r => r.id !== guild.id;
+        subjectProp = "roles";
+        break;
+      case "channels":
+      case "texts":
+      case "textchannels":
+      case "voices":
+      case "voicechannels":
+      case "categories":
+      case "ctgs":
+        channelPlurals = {
+          channels: "channels",
+          texts: "text channels",
+          textchannels: "text channels",
+          voices: "voice channels",
+          voicechannels: "voice channels",
+          categories: "categories",
+          ctgs: "categories"
+        };
+        channelPlural = channelPlurals[action];
+
+        noArgCont = "Here are the server's text channels:";
+        noArgInvalid = "This server has no channels!";
+        noArgTitle = "All Channels";
+        
+        argCont = "Here are the channels for the category `{name}`:";
+        argInvalid = "That category has no channels!";
+        argTitle = `{name}'s Inner Channels`;
+
+        type = "channel";
+        channelType = "";
+        guildWide = guild.channels.filter(c => ["text", "voice"].includes(c.type));
+        sort = (a, b) => ((d.globalPosition(b.guild).get(b.id) - d.globalPosition(a.guild).get(a.id)) || b.id - a.id);
+        subjectProp = "channels";
+        break;
+      
+    }
     if (!trArg || /^\d{1,5}$/.test(trArg)) {
-      roles = guild.roles;
-      content = "Here are the server's roles:";
-      invalid = "This server has no roles (other than the default)!";
-      title = "All Roles";
+      subjects = guildWide;
+      content = noArgCont;
+      invalid = noArgInvalid;
+      title = noArgTitle;
     } else {
-      let member;
-      const searched = await (d.search(trArg, "user", self, { allowForeign: false }));
+      let subject;
+      const searched = await (d.search(argu, type, self, { channelType, allowForeign: false }));
       if (searched.subject) {
-        member = guild.member(searched.subject);
+        subject = type === "user" ? guild.member(searched.subject) : searched.subject;
       } else {
         return;
       }
-      roles = member.roles;
-      content = `Here are ${member.user.tag}'s roles:`;
-      invalid = "That member has no roles (other than the default)!";
-      title = `${member.user.tag}'s Roles`;
+      subjects = d.followPath(subject, subjectProp);
+      content = argCont.replace(/\{[\w\.]+\}/g, str => d.followPath(subject, str.match(/\{([\w\.]+)\}/g)[1]));
+      invalid = argInvalid.replace(/\{[\w\.]+\}/g, str => d.followPath(subject, str.match(/\{([\w\.]+)\}/g)[1]));
+      title = argTitle.replace(/\{[\w\.]+\}/g, str => d.followPath(subject, str.match(/\{([\w\.]+)\}/g)[1]));
     }
-    const rolesArr = roles.array().sort((a, b) => b.position - a.position).filter(r => r.id !== guild.id);
-    if (rolesArr.length < 1) return reply(invalid);
-    const isGRoles = roles === guild.roles;
-    const pages = d.paginate(rolesArr);
+    const arr = subjects.array().sort(sort).filter(filterer || (() => true));
+    if (arr.length < 1) return reply(invalid);
+    const isG = subjects === guildWide;
+    const pages = d.paginate(arr);
     if (page.length > 5) {
       page = 1;
     } else {
@@ -442,21 +513,13 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
     const gen = page => {
       page = d._.clamp(isNaN(page) ? 1 : page, 1, pages.length);
       const emb = new d.Embed()
-        .setAuthor(title + ` - Page ${page}/${pages.length}`);
-      if (pages.length > 1) emb.setFooter(`To go to a specific page, write ${p}info roles \
+        .setAuthor(title + ` (${arr.length}) - Page ${page}/${pages.length}`);
+      if (pages.length > 1) emb.setFooter(`To go to a specific page, write ${p}info ${action} \
 ${argu ? argu + "<page>" : "<page>"}.`);
       let desc = "";
-      for (const role of pages[page - 1]) {
-        if (role.id === guild.id) continue;
-        const rolePos = rolesArr.indexOf(role);
-        const position = rolePos < 1 ?
-        (isGRoles ? "Top" : "Highest") :
-        (
-          rolePos === rolesArr.length - 1 ?
-            (isGRoles ? "Bottom" : "Lowest") :
-            rolesArr.length - 1 - rolePos // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
-        );
-        desc += `**${isNaN(position) ? `${position}:` : `${position}.`}** <@&${role.id}> \n`;
+      for (const subj of pages[page - 1]) {
+        if (subj.id === guild.id && type === "role") continue;
+        desc += textWorker(subj, arr, isG);
       }
       emb.setDescription(d._.trim(desc));
       return emb;
@@ -469,7 +532,7 @@ ${argu ? argu + "<page>" : "<page>"}.`);
       format: gen,
       content
     };
-    await d.sleep(100); // to maek typing count
+    await d.sleep(200); // to maek typing count
     return sendIt(gen(page), { content, paginate });
   }
   return;
@@ -479,8 +542,8 @@ module.exports = new Command({
   name: "info",
   perms: {
     "info.user": true, "info.role": true, "info.channel": true, "info.server": true,
-    "info.bot": true, "info.roles": true, "info.channels": true, "info.perms": true,
-    "info.saltperms": true
+    "info.bot": true, "info.roles": true, "info.channels": true, "info.members": true,
+    "info.perms": true, "info.saltperms": true
   },
   default: true,
   description: "Show information about commands/a command/a category of commands.",
