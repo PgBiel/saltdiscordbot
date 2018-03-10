@@ -5,6 +5,7 @@
  * @returns {string} The newly escaped string.
  */
 module.exports = function escMarkdown(str, escaper = false) {
+  if (typeof str !== "string") return str;
   const regex = new RegExp(`[\`*_~${escaper ? "\\\\" : ""}]`, "g");
   return str.replace(regex, piece => "\\" + piece);
 };

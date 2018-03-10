@@ -1,6 +1,7 @@
 const mkEmoji = require("../../funcs/parsers/mkEmoji");
+const mkEmjProto = isMention => (name, id) => mkEmoji(id, name, { isEmj: false, isMention });
 const retRjt = isMention => {
-  const mkEmj = (name, id) => mkEmoji(id, name, { isEmj: false, isMention });
+  const mkEmj = mkEmjProto(isMention);
   return {
     purple: {
       numbers: [
@@ -44,6 +45,14 @@ const retRjt = isMention => {
     DELETE: mkEmj("delete", "420030812269051915")
   };
 };
+const retChannels = isMention => {
+  const mkEmj = mkEmjProto(isMention);
+  return {
+    TEXT: mkEmj("text", "421487481264013337"),
+    VOICE: mkEmj("voice", "421487500704612353"),
+    CATEGORY: mkEmj("category", "421843866958823425")
+  };
+};
 module.exports = {
   WASTEBASKET: "🗑",
   numbers: [ "0⃣", "1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟" ],
@@ -60,7 +69,9 @@ module.exports = {
     }
   },
   resolved: {
-    rjt: retRjt(false)
+    rjt: retRjt(false),
+    channels: retChannels(false)
   },
-  rjt: retRjt(true)
+  rjt: retRjt(true),
+  channels: retChannels(true)
 };

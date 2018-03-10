@@ -160,7 +160,7 @@ module.exports = class Searcher {
   /**
    * Search for a channel.
    * @param {string} nameOrPattern The channel name to search for or pattern to test for
-   * @param {string} [type="text"] The channel type to look for. One of "text", "voice", "category", and "all"
+   * @param {string[]|string} [type="text"] The channel type to look for. One of "text", "voice", "category", and "all"
    * @returns {Array<TextChannel|VoiceChannel|CategoryChannel>} The result(s)
    */
   /* public searchChannel(nameOrPattern: string | RegExp, type: "text"): TextChannel[];

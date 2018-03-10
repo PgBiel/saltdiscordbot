@@ -13,7 +13,12 @@ const func = async function (msg, {
         void(d.rejct(err, "[SEND-IT-INFO]"))
       );
   };
-  const action = (dummy && dummy.action ? dummy.action : String(arrArgs[0] || "")).toLowerCase();
+  let action = (dummy && dummy.action ? dummy.action : String(arrArgs[0] || "")).toLowerCase();
+  let isAndroid = false;
+  if (/^a(?:ndroid)/i.test(action)) {
+    action = action.replace(/^a(?:ndroid)/i, "");
+    isAndroid = true;
+  }
   const arg = arrArgs.slice(dummy && dummy.action ? 0 : 1).join(" ");
   const noGActions = [
     "user", "member", "id", "userid",
@@ -408,7 +413,14 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
     "categories", "ctgs",
     "members"
   )) {
-    if (!perms["info.roles"]) return reply("Missing permission `info roles`! :frowning:");
+    const perm = is("roles") ?
+      "roles" :
+      (
+        is("members") ?
+          "members" :
+          "channels"
+      );
+    if (!perms["info." + perm]) return reply(`Missing permission \`info ${perm}\`! :frowning:`);
     channel.startTyping();
     let content, invalid, title, subjects, page, argu;
     // specific to types
@@ -421,7 +433,18 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
       page = "1";
     }
     argu = sepArg.join(" ");
-    let channelPlurals, channelPlural;
+    const channelData = {
+      channels: { plural: "channels", types: ["text", "voice"] },
+      texts: { plural: "text channels", types: ["text"] },
+      textchannels: { plural: "text channels", types: ["text"] },
+      voices: { plural: "voice channels", types: ["voice"] },
+      voicechannels: { plural: "voice channels", types: ["voice"] },
+      categories: { plural: "categories", types: ["category"] },
+      ctgs: { plural: "categories", types: ["category"] }
+    };
+    const globalPos = d.globalPosition(guild);
+    const usedGuildWide = !trArg || /^\d{1,5}$/.test(trArg);
+    let cPlural, ccPlural; // cc = capitalized channel
     switch (action) {
       case "roles":
         noArgCont = "Here are the server's roles:";
@@ -444,11 +467,15 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
               (isGRoles ? "Bottom" : "Lowest") :
               arr.length - 1 - rolePos // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
           );
-          return `**${isNaN(position) ? `${position}:` : `${position}.`}** <@&${role.id}>`;
+          const roleText = isAndroid ?
+            role.name :
+            `<@&${role.id}>`;
+          return `**${isNaN(position) ? `${position}:` : `${position}.`}** ${roleText}`;
         };
         filterer = r => r.id !== guild.id;
         subjectProp = "roles";
         break;
+
       case "channels":
       case "texts":
       case "textchannels":
@@ -456,32 +483,58 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
       case "voicechannels":
       case "categories":
       case "ctgs":
-        channelPlurals = {
-          channels: "channels",
-          texts: "text channels",
-          textchannels: "text channels",
-          voices: "voice channels",
-          voicechannels: "voice channels",
-          categories: "categories",
-          ctgs: "categories"
-        };
-        channelPlural = channelPlurals[action];
+        cPlural = channelData[action].plural;
+        ccPlural = d.capitalize(cPlural, { all: true, lowerCase: true });
 
-        noArgCont = "Here are the server's text channels:";
-        noArgInvalid = "This server has no channels!";
-        noArgTitle = "All Channels";
+        noArgCont = `Here are the server's ${cPlural}:`;
+        noArgInvalid = `This server has no ${cPlural}!`;
+        noArgTitle = `All ${ccPlural}`;
         
-        argCont = "Here are the channels for the category `{name}`:";
-        argInvalid = "That category has no channels!";
-        argTitle = `{name}'s Inner Channels`;
+        argCont = `Here are the ${cPlural} for the category \`{name}\`:`;
+        argInvalid = `That category has no ${cPlural}!`;
+        argTitle = `{name}'s Inner ${ccPlural}`;
 
         type = "channel";
-        channelType = "";
-        guildWide = guild.channels.filter(c => ["text", "voice"].includes(c.type));
-        sort = (a, b) => ((d.globalPosition(b.guild).get(b.id) - d.globalPosition(a.guild).get(a.id)) || b.id - a.id);
-        subjectProp = "channels";
+        channelType = channelData[action].types;
+        guildWide = guild.channels;
+        sort = (a, b) => (usedGuildWide ? globalPos.get(b.id) - globalPos.get(a.id) : b.position - a.position) || b.id - a.id;
+        filterer = c => d._.castArray(channelType).includes(c.type);
+        textWorker = (chan, arr, isG) => {
+          const chanPos = arr.indexOf(chan);
+          const position = chanPos < 1 ?
+          (isG ? "Top" : "Highest") :
+          (
+            chanPos === arr.length - 1 ?
+              (isG ? "Bottom" : "Lowest") :
+              arr.length - 1 - chanPos // Arr length - chanPos to reverse the sorting; - 1 to keep zero-indexed
+          );
+          const emj = d.Constants.emoji.channels[String(chan.type).toUpperCase()] || "";
+          return `**${isNaN(position) ? `${position}:` : `${position}.`}** ${emj}${chan.name}`;
+        };
+        subjectProp = "children";
         break;
       
+      case "members":
+        noArgCont = "Here are the server's members:";
+        noArgInvalid = "This server has no members that I know of! (Huh?)";
+        noArgTitle = "All Members";
+        
+        argCont = `Here are {name}'s members:`;
+        argInvalid = "That role has no members!";
+        argTitle = `{name}'s Members`;
+
+        type = "role";
+        guildWide = guild.members; // all members in the server if no member is specified
+        sort = (a, b) => (b.roles.highest.position - a.roles.highest.position) || (b.id - a.id); // highest pos; if not, oldest member
+        textWorker = (member, arr) => {
+          const membPos = arr.indexOf(member);const position = arr.length - 1 - membPos; // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
+          const memberText = isAndroid ?
+            member.user.tag :
+            `<@!${member.id}>`;
+          return `• ${memberText}${member.id === guild.ownerID ? " **(Server Owner)**" : ""}`;
+        };
+        subjectProp = "members";
+        break;
     }
     if (!trArg || /^\d{1,5}$/.test(trArg)) {
       subjects = guildWide;
@@ -490,16 +543,18 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
       title = noArgTitle;
     } else {
       let subject;
-      const searched = await (d.search(argu, type, self, { channelType, allowForeign: false }));
-      if (searched.subject) {
-        subject = type === "user" ? guild.member(searched.subject) : searched.subject;
+      const { subjectRes } = await (d.search(argu, type, self, { channelType, allowForeign: false }));
+      if (subjectRes) {
+        if (type === "channel" && subjectRes.type !== "category") return reply("Category not found!");
+        subject = type === "user" ? guild.member(subjectRes) : subjectRes;
       } else {
         return;
       }
-      subjects = d.followPath(subject, subjectProp);
-      content = argCont.replace(/\{[\w\.]+\}/g, str => d.followPath(subject, str.match(/\{([\w\.]+)\}/g)[1]));
-      invalid = argInvalid.replace(/\{[\w\.]+\}/g, str => d.followPath(subject, str.match(/\{([\w\.]+)\}/g)[1]));
-      title = argTitle.replace(/\{[\w\.]+\}/g, str => d.followPath(subject, str.match(/\{([\w\.]+)\}/g)[1]));
+      subjects = d._.at(subject, subjectProp)[0];
+      const escReplace = str =>  d.escMarkdown(String(d._.at(subject, str.match(/\{([\w\.]+)\}/)[1])[0]));
+      content = argCont.replace(/\{[\w\.]+\}/g, escReplace);
+      invalid = argInvalid.replace(/\{[\w\.]+\}/g, escReplace);
+      title = argTitle.replace(/\{[\w\.]+\}/g, escReplace);
     }
     const arr = subjects.array().sort(sort).filter(filterer || (() => true));
     if (arr.length < 1) return reply(invalid);
@@ -519,7 +574,7 @@ ${argu ? argu + "<page>" : "<page>"}.`);
       let desc = "";
       for (const subj of pages[page - 1]) {
         if (subj.id === guild.id && type === "role") continue;
-        desc += textWorker(subj, arr, isG);
+        desc += textWorker(subj, arr, isG) + "\n";
       }
       emb.setDescription(d._.trim(desc));
       return emb;
@@ -815,6 +870,28 @@ info",
 {p}roles
 {p}roles 2
 {p}roles Guy#0000 3`,
+      default: true
+    },
+    channels: {
+      description: "Alias to info channels. View all channels or a category's inner channels.",
+      action: "channels",
+      perms: "info.channels",
+      args: { "category or page": true, "page (if category is specified)": true },
+      example: `
+{p}channels
+{p}channels 2
+{p}channels Cool Stuff 3`,
+      default: true
+    },
+    members: {
+      description: "Alias to info members. View all or a role's members.",
+      action: "members",
+      perms: "info.members",
+      args: { "role or page": true, "page (if role is specified)": true },
+      example: `
+{p}members
+{p}members 2
+{p}members Cool People 3`,
       default: true
     }
   },
