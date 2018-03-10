@@ -42,15 +42,16 @@ const retRjt = isMention => {
     FLAG: mkEmj("flag", "420013148565798913"),
     WHAT: mkEmj("what", "420013148976840714"),
     CANCEL: mkEmj("cancel", "420030761928753153"),
-    DELETE: mkEmj("delete", "420030812269051915")
+    DELETE: mkEmj("delete", "420030812269051915"),
+    OWNER: mkEmj("owner", "421875630544781318")
   };
 };
 const retChannels = isMention => {
   const mkEmj = mkEmjProto(isMention);
   return {
-    TEXT: mkEmj("text", "421487481264013337"),
-    VOICE: mkEmj("voice", "421487500704612353"),
-    CATEGORY: mkEmj("category", "421843866958823425")
+    TEXT: mkEmj("text", "421869420470599680"),
+    VOICE: mkEmj("voice", "421869420672057344"),
+    CATEGORY: mkEmj("category", "421869420198232075")
   };
 };
 module.exports = {

@@ -19,5 +19,22 @@
       "$1: mkEmj(\"$2\", \"$3\"),"
     ],
     "description": "Make emoji const"
+  },
+  "Make info group alias": {
+    "prefix": "mkin",
+    "body": [
+      "$1s: {",
+      "  description: \"Alias to info $1s. View all or a $2's $1s.\",",
+      "  action: \"$1s\",",
+      "  perms: \"info.$3\",",
+      "  args: { \"$2 or page\": true, \"page (if $2 is specified)\": true },",
+      "  example: `",
+      "{p}$1s",
+      "{p}$1s 2",
+      "{p}$1s $4 3`,",
+      "  default: true",
+      "},"
+    ],
+    "description": "Make info group alias"
   }
 }

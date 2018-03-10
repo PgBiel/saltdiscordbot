@@ -137,7 +137,10 @@ search. Please be more specific.`);
       subject = subjectToUse.user || subjectToUse;
     }
   }
-  if (!subject) return finish(reasons.NOT_FOUND, `${capitalize(term)} not found!`);
+  if (!subject) return finish(
+    reasons.NOT_FOUND,
+    `${channelType === "category" && type === "channel" ? "Category" : capitalize(term)} not found!`
+  );
   result.subject = subject;
   return finish(reasons.OK);
 };
