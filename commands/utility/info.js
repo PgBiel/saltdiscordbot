@@ -15,6 +15,7 @@ const func = async function (msg, {
   };
   let action = (dummy && dummy.action ? dummy.action : String(arrArgs[0] || "")).toLowerCase();
   let isAndroid = false;
+  let isDM = false;
   if (/^a(?:ndroid)?/i.test(action)) {
     action = action.replace(/^a(?:ndroid)?/i, "");
     isAndroid = true;
@@ -22,17 +23,17 @@ const func = async function (msg, {
   const arg = arrArgs.slice(dummy && dummy.action ? 0 : 1).join(" ");
   const noGActions = [
     "user", "member", "id", "userid",
-    "channel", "textchannel", "text", "channels", "textchannels", "texts", "channelid", "textid", "textchannelid",
-    "voicechannel", "voice", "voices", "voicechannels", "voiceid", "voicechannelid", 
-    "category", "categories", "categoryid", "ctg", "ctgs", "ctgid",
+    "channel", "textchannel", "text", "channelid", "textid", "textchannelid",
+    "voicechannel", "voice", "voiceid", "voicechannelid", 
+    "category", "categoryid", "ctg", "ctgid",
     "stats", "bot"];
   const gActions = noGActions.concat([
     "server", "guild", "serverid", "guildid",
-    "members",
+    "members", "channels", "voices", "voicechannels", "textchannels", "texts", "categories", "ctgs",
     "emoji", "emojiid",
     "role", "roleid", "roles",
     "perms", "dperms", "discordperms",
-    "saltperms", "listperms" // I was going to alias it with "sperm" but then I realized...
+    "saltperms", "stperms", "listperms" // I was going to alias it with "sperms" but then I realized...
   ]);
   const is = (...list) => list.includes(action);
   const usableActions = guild ? gActions : noGActions;
@@ -495,8 +496,9 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
         sort = (a, b) => (usedGuildWide ? globalPos.get(b.id) - globalPos.get(a.id) : b.position - a.position) || b.id - a.id;
         filterer = c => d._.castArray(channelData[action].types).includes(c.type);
         textWorker = (chan, arr, isG) => {
-          const chanPos = arr.indexOf(chan);
-          const position = arr.length - chanPos; // Arr length - chanPos to reverse the sorting
+          const fArr = arr.filter(c => c.type === chan.type);
+          const chanPos = fArr.indexOf(chan);
+          const position = fArr.length - chanPos; // Arr length - chanPos to reverse the sorting
           const emj = d.Constants.emoji.channels[String(chan.type).toUpperCase()] || "";
           return `**${isNaN(position) ? `${position}:` : `\`${position}.\``}** ${emj}${dankEscape(chan.name)}`;
         };
@@ -541,7 +543,7 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
         return;
       }
       subjects = d._.at(subject, subjectProp)[0];
-      const escReplace = str =>  String(d._.at(subject, str.match(/\{([\w\.]+)\}/)[1])[0]).replace(/`/g, "`");
+      const escReplace = str =>  String(d._.at(subject, str.match(/\{([\w\.]+)\}/)[1])[0]).replace(/`/g, "'");
       content = argCont.replace(/\{[\w\.]+\}/g, escReplace);
       invalid = argInvalid.replace(/\{[\w\.]+\}/g, escReplace);
       title = argTitle.replace(/\{[\w\.]+\}/g, escReplace);
@@ -559,12 +561,28 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
       page = d._.clamp(isNaN(page) ? 1 : page, 1, pages.length);
       const emb = new d.Embed()
         .setTitle(title + ` (${arr.length}) - Page ${page}/${pages.length}`)
-        .setFooter(`Sorting: Top → Bottom${pages.length > 1 ? ` | To go to a specific page, write ${p}info ${action} \
-${argu ? argu + "<page>" : "<page>"}.` : ""}`);
+        .setFooter(`Sorting: Highest → Lowest${pages.length > 1 && !isDM ? ` | To go to a specific page, write ${p}info \
+${action} ${argu ? argu + "<page>" : "<page>"}.` : ""}`);
       let desc = "";
-      for (const subj of pages[page - 1]) {
-        if (subj.id === guild.id && type === "role") continue;
-        desc += textWorker(subj, arr, isG) + "\n";
+      if (type === "channel") {
+        let descs = { "text": [], "voice": [], "category": [] };
+        for (const chan of pages[page - 1]) {
+          descs[chan.type].push(textWorker(chan, arr, isG));
+        }
+        const entrs = Object.entries(descs);
+        const hasMoreThanOneFilledArray = Object.values(descs).reduce((acc, curr) => curr && curr.length > 0 ? acc + 1 : acc, 0) >= 2;
+        for (const [cType, results] of entrs) {
+          if (results.length < 1) continue;
+          if (hasMoreThanOneFilledArray) {
+            desc += `**__${d.capitalize(channelData[cType === "category" ? "categories" : cType + "s"].plural, { all: true })}__**\n`;
+          }
+          for (const res of results) desc += res + "\n";
+        }
+      } else {
+        for (const subj of pages[page - 1]) {
+          if (subj.id === guild.id && type === "role") continue;
+          desc += textWorker(subj, arr, isG) + "\n";
+        }
       }
       emb.setDescription(d._.trim(desc));
       return emb;
@@ -579,6 +597,8 @@ ${argu ? argu + "<page>" : "<page>"}.` : ""}`);
     };
     await d.sleep(200); // to maek typing count
     return sendIt(gen(page), { content, paginate });
+  } else if (is("perms", "dperms", "discordperms")) {
+    // soon™
   }
   return;
 };
@@ -893,6 +913,17 @@ info",
 {p}textchannels
 {p}textchannels 2
 {p}textchannels #general 3`,
+      default: true
+    },
+    texts: {
+      description: "Alias to info textchannels. View all or a category's text channels.",
+      action: "texts",
+      perms: "info.channels",
+      args: { "category or page": true, "page (if category is specified)": true },
+      example: `
+{p}texts
+{p}texts 2
+{p}texts #general 3`,
       default: true
     },
     voices: {
