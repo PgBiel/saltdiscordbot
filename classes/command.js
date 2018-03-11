@@ -6,7 +6,6 @@
 
 const { Message, MessageEmbed } = require("discord.js");
 const { applyDeps, logger } = require("../util/deps");
-const { applyFuncs } = require("../funcs/funcs");
 const Constants = require("../constants/constants");
 
 const assert = require("assert");
@@ -340,17 +339,14 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
           true :
           (perm.show == null || perm.show)
         );
-        onlyFalse = filtered.filter(perm => !(typeof perm === "boolean" ? perm : perm.default));
+        onlyFalse = filtered.filter(([perm, on]) => typeof on === "boolean" ? !on : !(on || {}).default);
         for (const [key, val] of filtered) {
           string += `\`${key.replace(/\./g, " ")}\``;
           if (
             (
-              (
-                typeof val === "boolean" && val
-              ) ||
-              (
-                val && val.default
-              )
+              typeof val === "boolean" ?
+                val :
+                (val != null && val.default)
             ) &&
             onlyFalse.length
           ) {
@@ -363,6 +359,9 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
         `Permissions${onlyFalse && onlyFalse.length ? "" : " (All available by default)"}`,
         string.replace(/,\s+$/, "")
       );
+    }
+    if (this.aliases) {
+      embed.addField("Aliases", textAbstract(Object.keys(this.aliases).join(", "), Constants.numbers.max.chars.FIELD));
     }
     if (this.example) {
       embed.addField("Example", _.trim(this.example).replace(/{p}/g, p), true);
