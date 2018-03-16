@@ -321,9 +321,13 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
     if (this.description) {
       embed.setDescription(
         textAbstract(
-          this.description.replace(
-            /{maxcases}/ig, Constants.numbers.max.CASES((guild || { members: { size: 0 } }).members.size)
-          ),
+          this.description
+            .replace(
+              /{maxcases}/ig, Constants.numbers.max.CASES((guild || { members: { size: 0 } }).members.size)
+            )
+            .replace(
+              /{name}/ig, this.name
+            ),
           Constants.numbers.max.chars.DESC
         )
       );
@@ -364,7 +368,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
       embed.addField("Aliases", textAbstract(Object.keys(this.aliases).join(", "), Constants.numbers.max.chars.FIELD));
     }
     if (this.example) {
-      embed.addField("Example", _.trim(this.example).replace(/{p}/g, p), true);
+      embed.addField("Example", _.trim(this.example).replace(/{p}/g, p).replace(/{name}/g, this.name), true);
     }
     return embed;
   }

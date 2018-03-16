@@ -11,8 +11,12 @@ const func = async function (msg, { args, arrArgs, send, reply, prefix, botmembe
         send("Please make sure I can send embeds in this channel.") :
         void(d.rejct(err)));
   };
+  const filtered = d._.fromPairs(
+    Object.entries(d.bot.commands)
+      .filter(([n, c]) => c && c.category !== "Private" && (c.show || c.show == null))
+  );
   const categories = {};
-  Object.entries(d.bot.commands).forEach(([k, v]) => {
+  Object.entries(filtered).forEach(([k, v]) => {
     if (v.category !== "Private" && (v.show || v.show == null)) {
       let category = "Uncategorized";
       if (v.category) {
@@ -30,7 +34,7 @@ const func = async function (msg, { args, arrArgs, send, reply, prefix, botmembe
     embed
       .setColor("RANDOM")
       .setTitle("List of categories")
-      .setFooter(`To view all ${Object.values(d.bot.commands).filter(c => c.category !== "Private").length} commands, \
+      .setFooter(`To view all ${filtered.length} commands, \
 type ${prefix}help all.`);
     /* Object.entries(categories).forEach(([k, v]) => {
       let str = "";
@@ -62,9 +66,7 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
     Object.values(categories[category in map ? map[category] : category])
       .filter(c => c.show == null || c.show)
       .sort(({ name: a }, { name: b }) => a > b ? 1 : (a < b ? -1 : 0))
-      .forEach(cmd => {
-        str += `${cmd.name}\n`;
-      });
+      .forEach(cmd => str += `${cmd.name}\n`);
     str = d._.trim(str);
     const pages = d.paginate(str);
     if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
@@ -86,12 +88,9 @@ ${prefix}help ${category in map ? map[category] : category} <page>.`);
     if (isNaN(page) || page < 1 || /\./.test(page.toString())) return reply(`Please provide a valid page (the second parameter)! \
 It must be a number that is higher than or equal to 1, and not have decimals.`);
     let str = "";
-    Object.values(d.bot.commands)
-      .filter(c => c.show == null || c.show)
+    Object.values(filtered)
       .sort(({ name: a }, { name: b }) => a > b ? 1 : (a < b ? -1 : 0))
-      .forEach(cmd => {
-      if (cmd.category !== "Private") str += `${cmd.name}\n`;
-    });
+      .forEach(cmd => str += `${cmd.name}\n`);
     str = d._.trim(str);
     const pages = d.paginate(str);
     if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);

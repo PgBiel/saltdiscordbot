@@ -14,17 +14,19 @@ const func = async function (msg, {
       );
   };
   let action = (dummy && dummy.action ? dummy.action : String(arrArgs[0] || "")).toLowerCase();
-  let isAndroid = false;
+  let isAndroid = dummy && dummy.android !== null ? dummy.android : false;
   let isDM = false;
   if (/^a(?:ndroid)?/i.test(action)) {
     action = action.replace(/^a(?:ndroid)?/i, "");
     isAndroid = true;
   }
-  const arg = arrArgs.slice(dummy && dummy.action ? 0 : 1).join(" ");
+  const arrArg = arrArgs.slice(dummy && dummy.action ? 0 : 1);
+  const arg = arrArg.join(" ");
   const noGActions = [
     "user", "member", "id", "userid",
     "channel", "textchannel", "text", "channelid", "textid", "textchannelid",
-    "voicechannel", "voice", "voiceid", "voicechannelid", 
+    "voicechannel", "voice", "voiceid", "voicechannelid",
+    "perms", "dperms", "discordperms", // when out of a guild, you can only specify a number 
     "category", "categoryid", "ctg", "ctgid",
     "stats", "bot"];
   const gActions = noGActions.concat([
@@ -32,7 +34,7 @@ const func = async function (msg, {
     "members", "channels", "voices", "voicechannels", "textchannels", "texts", "categories", "ctgs",
     "emoji", "emojiid",
     "role", "roleid", "roles",
-    "perms", "dperms", "discordperms",
+    "cperms", "channelperms",
     "saltperms", "stperms", "listperms" // I was going to alias it with "sperms" but then I realized...
   ]);
   const is = (...list) => list.includes(action);
@@ -115,7 +117,9 @@ const func = async function (msg, {
             .array()
             .filter(r => r.id !== guild.id)
             .sort((a, b) => b.position - a.position);
-          const rolesJoined = rolesArr.length === guild.roles.size ? "All roles" : rolesArr.join(", ");
+          const rolesJoined = rolesArr.length === guild.roles.size ?
+            "All roles" : 
+            rolesArr.map(r => isAndroid ? (r || {}).name : String(r)).join(", ");
           const color = (member.displayHexColor ||
             d.Constants.strings.DEFAULT_ROLE_COLOR) === d.Constants.strings.DEFAULT_ROLE_COLOR ?
               d.Constants.strings.DISPLAY_DEFAULT_ROLE_COLOR :
@@ -159,7 +163,9 @@ const func = async function (msg, {
     const membersArr = role.members
       .array()
       .sort((a, b) => a.displayName > b.displayName);
-    const membersJoined = membersArr.length === guild.members.size ? "All members" : membersArr.join(", ");
+    const membersJoined = membersArr.length === guild.members.size ?
+      "All members" :
+      membersArr.map(m => isAndroid ? ((m || {}).user || {}).tag : String(m)).join(", ");
     const color = (role.hexColor ||
       d.Constants.strings.DEFAULT_ROLE_COLOR) === d.Constants.strings.DEFAULT_ROLE_COLOR ?
         d.Constants.strings.DISPLAY_DEFAULT_ROLE_COLOR :
@@ -194,7 +200,7 @@ const func = async function (msg, {
       .addField(
         `Members${membersArr.length ? ` (${membersArr.length})` : ""}`,
         membersJoined.length > d.Constants.numbers.max.chars.FIELD ?
-          `Use \`\`${p}info members ${d.escMarkdown(role.name)}\`\` to see (too long)` :
+          `Use \`\`${p}info members ${d.noDoubleTick(role.name)}\`\` to see (too long)` :
           (
             membersJoined ||
             "No members"
@@ -278,7 +284,9 @@ ${guild ? (guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another 
       const membersArr = chnl.members
         .array()
         .sort((a, b) => a.displayName > b.displayName);
-      const membersJoined = membersArr.length === guild.members.size ? "All members" : membersArr.join(", ");
+      const membersJoined = membersArr.length === guild.members.size ?
+        "All members" :
+        membersArr.map(m => isAndroid ? ((m || {}).user || {}).tag : String(m)).join(", ");
       if (typeUsed === "text") {
         let whs;
         try {
@@ -291,7 +299,7 @@ ${guild ? (guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another 
           .addField(
             `Members who can read this channel${membersArr.length < 1 ? "" : ` (${membersArr.length})`}`,
             membersJoined.length > d.Constants.numbers.max.chars.FIELD ?
-              `Use \`\`${p}info channelmembers ${d.escMarkdown(chnl.name)}\`\` to see (too long)` :
+              `Use \`\`${p}info viewers #${d.no2Tick(chnl.name)}\`\` to see (too long)` :
               (
                 membersJoined ||
                 "No members"
@@ -307,7 +315,7 @@ ${guild ? (guild.channels.has(chnl.id) ? "" : "\n\nThis channel is from another 
             `Members Connected\
 ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${chnl.userLimit}` : "")})`}`,
             membersJoined.length > d.Constants.numbers.max.chars.FIELD ?
-              `Use \`\`${p}info voicemembers ${d.escMarkdown(chnl.name)}\`\` to see (too long)` :
+              `Use \`\`${p}info viewers ${d.no2Tick(chnl.name)}\`\` to see (too long)` :
               (
                 membersJoined ||
                 "No members"
@@ -326,7 +334,7 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
         .addField(
           `Channels Within${chArr.length < 1 ? "" : ` (${chArr.length})`}`,
           chJoined.length > d.Constants.numbers.max.chars.FIELD ?
-            `Use \`\`${p}info categorychildren ${d.escMarkdown(chnl.name)}\`\` to see (too long)` :
+            `Use \`\`${p}info channels ${d.no2Tick(chnl.name)}\`\` to see (too long)` :
             (
               chJoined ||
               "No sub-channels"
@@ -335,7 +343,7 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
     }
     return sendIt(embed);
   } else if (is("server", "guild", "guildid", "serverid")) {
-    if (is("serverid", "guildid")) return reply(`The ID of the current server is ${guildId}.`);
+    if (is("serverid", "guildid")) return reply(`The ID of the current server is \`${guildId}\`.`);
     channel.startTyping();
     const icon = guild.iconURL();
     const emb = new d.Embed()
@@ -395,8 +403,8 @@ ${membersArr.length < 1 ? "" : ` (${membersArr.length + (chnl.userLimit ? `/${ch
       .setThumbnail(av)
       .setFooter(`Click the title for avatar URL | My ID: ${d.bot.user.id} | Happy to be alive! ^-^`)
       .setDescription(`Was created ${d.ago(created, Date.now(), true) || "some time"} ago (${d.momentUTC(created)})`)
-      .addField("Developers", `🔥PgSuper🔥#3693 (<@${pgHere ? "!" : ""}${d.Constants.identifiers.OWNER}>) and \
-Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, false)
+      .addField("Developers", `🔥PgSuper🔥#3693 ${!isAndroid ? `(<@${pgHere ? "!" : ""}${d.Constants.identifiers.OWNER}>) ` : ""} \
+and Aplet123#9551${!isAndroid ? `(<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)` : ""}`, false)
       .addField("Uptime", new d.Interval(d.bot.uptime).toString(true), true)
       .addField("Programming Language", "JavaScript", true)
       .addField("Library", "discord.js", true)
@@ -557,12 +565,18 @@ Aplet123#9551 (<@${apletHere ? "!" : ""}${d.Constants.identifiers.APLET}>)`, fal
     } else {
       page = Number(page);
     }
+    let footer = "";
+    if (type !== "channel" && !isAndroid) {
+      footer += `If broken, try ${p}ainfo | `;
+    }
+    footer += "Sorting: Highest → Lowest";
+    if (pages.length > 1 && !isDM) {
+      footer += ` | To go to a specific page, write ${p}info ${action} ${argu ? argu + "<page>" : "<page>"}.`;
+    }
     const gen = page => {
       page = d._.clamp(isNaN(page) ? 1 : page, 1, pages.length);
       const emb = new d.Embed()
-        .setTitle(title + ` (${arr.length}) - Page ${page}/${pages.length}`)
-        .setFooter(`Sorting: Highest → Lowest${pages.length > 1 && !isDM ? ` | To go to a specific page, write ${p}info \
-${action} ${argu ? argu + "<page>" : "<page>"}.` : ""}`);
+        .setTitle(title + ` (${arr.length}) - Page ${page}/${pages.length}`);
       let desc = "";
       if (type === "channel") {
         let descs = { "text": [], "voice": [], "category": [] };
@@ -597,8 +611,114 @@ ${action} ${argu ? argu + "<page>" : "<page>"}.` : ""}`);
     };
     await d.sleep(200); // to maek typing count
     return sendIt(gen(page), { content, paginate });
-  } else if (is("perms", "dperms", "discordperms")) {
-    // soon™
+  } else if (is("perms", "dperms", "discordperms", "cperms", "channelperms")) {
+    if (!perms["perms"]) return reply("Missing permission `info perms`! :frowning:");
+    const special = {
+      "MANAGE_GUILD": "Manage Server",
+      "USE_VAD": "Use Voice Activity",
+      "VIEW_CHANNEL": "View Channel (Read Messages/Connect to Voice)"
+    };
+    const { Permissions, User, GuildMember } = d.Discord;
+    let use;
+    let type = "role";
+    let chan;
+    let specified;
+    if (is("cperms")) {
+      // wip
+    } else {
+      if (!guild && !/^\d+$/.test(trArg)) {
+        return reply("When outside a guild, you may only specify a permissions number!");
+      }
+      if (!trArg) {
+        type = "user";
+        specified = author.tag;
+        use = member.permissions;
+      } else if (/^\d+$/.test(trArg) && trArg.length < 16) {
+        type = "number";
+        specified = trArg;
+        use = new Permissions(Number(trArg));
+      } else if (d.Constants.regex.MENTION.test(trArg) || d.Constants.regex.NAME_AND_DISCRIM.test(trArg)) {
+        type = "user";
+        const { subject } = await (d.search(trArg, "user", self, { allowForeign: false }));
+        if (subject) {
+          specified = (subject.user || subject).tag;
+          use = subject.permissions;
+        } else {
+          return;
+        }
+      } else if (/^(?:user|member|role|number)(?:$|\s)/.test(trArg)) {
+        const [preType, ...preName] = trArg.split(/\s+/);
+        type = preType === "member" ? "user" : preType;
+        const name = preName.join(" ");
+        if (!name) {
+          if (type === "user") {
+            specified = author.tag;
+            use = member.permissions;
+          } else if (type === "role") {
+            const rol = member.roles.highest;
+            specified = rol.name;
+            use = rol.permissions;
+          } else if (type === "number") {
+            return reply("Please specify a permissions number!");
+          }
+        } else {
+          if (type === "user" || type === "role") {
+            const { subject } = await (d.search(name, type, self, { allowForeign: false }));
+            if (subject) {
+              specified = subject instanceof User || subject instanceof GuildMember ?
+                (subject.user || subject).tag :
+                subject.name;
+              use = (subject instanceof User ? guild.member(subject) : subject).permissions;
+            } else {
+              return;
+            }
+          } else if (type === "number") {
+            if (name.length > 15) return reply("Please specify a valid permissions number!");
+            specified - name;
+            use = new Permissions(Number(name));
+          }
+        }
+      } else {
+        const { subject } = await (d.search(trArg, "role", self, { allowForeign: false }));
+        if (subject) {
+          specified = subject.name;
+          use = subject.permissions;
+        } else {
+          return;
+        }
+      }
+    }
+    if (!(use instanceof Permissions)) return;
+    let chanText = "";
+    if (chan) {
+      switch (chan.type) {
+        case "text":
+        case "voice":
+          chanText = ` in the ${chan.type} channel **${chan.type === "text" ? String(chan) : chan.name}**`;
+          break;
+
+        case "category":
+          chanText = ` in the category **${chan.name}**`;
+          break;
+      }
+    }
+    let str = `Permissions \
+${type === "number" ? `stored in the number` : `for ${type === "user" ? "member" : "role"}`} **${specified}**${chanText}:
+\`\`\`diff\n`;
+    if (use.has("ADMINISTRATOR")) {
+      str += `+ All (Includes Administrator)`;
+    } else if (use.bitfield === (Permissions.ALL | Permissions.FLAGS.ADMINISTRATOR)) { // all except admin
+      str += `+ All (Doesn't Include Administrator)`;
+    } else if (use.bitfield < 1) {
+      str += `- None`;
+    } else {
+      for (const flag of Object.keys(Permissions.FLAGS)) {
+        str += `${use.has(flag) ? "+" : "-"} ${special[flag] || d.adaptSnake(flag)}\n`;
+      }
+    }
+    return send(str + "```", { deletable: true });
+  } else if (is("saltperms", "listperms", "stperms")) {
+    
   }
   return;
 };
@@ -616,6 +736,10 @@ module.exports = new Command({
   category: "Utility",
   args: {"command or category": true, "page (Default: 1)": true},
   aliases: {
+    ainfo: {
+      description: "Alias to info, replaces all mentions with user tags/names. Made for compatibility with Android.",
+      android: true
+    },
     userinfo: {
       description: "Alias to info user. Specify an user to view its info",
       action: "user",
@@ -968,6 +1092,21 @@ info",
 {p}ctgs
 {p}ctgs 2
 {p}ctgs Cool Channels 3`,
+      default: true
+    },
+    perms: {
+      description: "Alias to info perms. View an user's, a role's or a number's perms.",
+      action: "perms",
+      perms: "info.perms",
+      args: {
+        "a number (to check a number) or an action (user/role/number)": true,
+        "user or role to check (if using action)": true
+      },
+      example: `
+{p}perms
+{p}perms user Guy#0000
+{p}perms role Cool Role
+{p}perms number 8`,
       default: true
     }
   },
