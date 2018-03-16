@@ -32,7 +32,7 @@ const func = async function (
   const maxCases = d.Constants.numbers.max.CASES(guild.members.size);
   const sendIt = (content, emb, options = {}) => {
     const { type } = options;
-    const obj = Object.assign({ embed: emb, autoCatch: false, deletable: true }, options);
+    const obj = Object.assign({ embed: emb, autoCatch: false, deletable: true, content }, options);
     return (type === "reply" ? reply : send)(obj).catch(err => [403, 50013].includes(err.code) ?
       send("Please make sure I can send embeds in this channel.") :
       void(d.rejct(err, "[SEND-IT-CASE]")));
@@ -51,10 +51,29 @@ There ${latest === 1 ? "is only 1 case" : `are ${latest} cases`}.`);
     if (number > latest) return reply(`Invalid case number! There ${latest === 1 ?
       "is only 1 case" :
       `are ${latest} cases`}.`);
-    const { case: punish, embed } = await actionLog.fetchCase(number, guild);
-    if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest ${maxCases} cases are kept stored.)`);
-    if (punish.deleted) return reply(`The case with that number was deleted! :(`);
-    return sendIt(`Here's Case #${punish.case}:`, embed);
+    const gen = async num => {
+      let { case: punish, embed } = await actionLog.fetchCase(num, guild);
+      if (!punish) return `Unknown case number! :( (Tip: Only the latest ${maxCases} cases are kept stored.)`;
+      if (punish.deleted) embed = {
+        title: `Action Log #${punish.case}`,
+        description: `The case with this number was deleted! :(`
+      };
+      return {
+        isDank: true,
+        embed,
+        content: `Here's Case #${punish.case}:`
+      };
+    };
+    const generated = await gen(number);
+    const isStr = typeof generated === "string";
+    const paginate = {
+      page: number,
+      maxPage: d._.compact(punishments).reduce((a, p) => p.case > a ? p.case : a, 0),
+      usePages: true,
+      format: gen,
+      content: isStr ? generated : `Here's Case #${number}:`
+    };
+    return sendIt(`Here's Case #${number}:`, (generated || {}).embed, { type: isStr ? "reply" : "send", paginate });
   } else if (["edit", "delete", "togglethumb"].includes(action)) {
     const permSecondPart = action === "delete" ? "delete" : "edit";
     if (!perms[`case.${permSecondPart}`]) return reply(`Missing permission \`case ${permSecondPart}\`! :(`);

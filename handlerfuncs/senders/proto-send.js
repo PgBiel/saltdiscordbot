@@ -83,17 +83,30 @@ module.exports = (msg, data) => {
                     { pages: paginate.pages, data: paginate.data, ret, coll, msg: mssg }
                   ); 
                 } else if (paginate.usePages) {
-                  const { content = paginate.content, struct = paginate.struct } = (paginate.pages || [])[(newPage || page) - 1];
+                  const { content = paginate.content, struct = paginate.struct } = ((paginate.pages || [])[(newPage || page) - 1] || {});
                   let structToUse = struct;
                   if (typeof paginate.format === "function") {
                     structToUse = await paginate.format(newPage, struct, paginate.pages);
-                  }
+                  } 
+                  let coolCont = typeof structToUse === "string" ?
+                    structToUse :
+                    (typeof structToUse === "object" && structToUse.isDank && structToUse.content ? structToUse.content : null);
+                  const embedT = typeof structToUse === "object" ?
+                    (
+                      structToUse.isDank ?
+                        structToUse.embed :
+                        structToUse
+                    ) :
+                    undefined;
                   const edit = require("../../funcs/bot/edit"); // lazy require to not mess things up
                   await edit(
                      mssg, 
                     { author: (data || msg).author },
-                    content || undefined,
-                    { embed: structToUse, deletable, paginate: Object.assign({}, paginate, { page: newPage }) }
+                    (coolCont || content || undefined),
+                    {
+                      embed: embedT, deletable,
+                      paginate: Object.assign({}, paginate, { page: newPage })
+                    }
                   );
                 }
               };
