@@ -129,7 +129,7 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
   /**
    * List of roles/subjects to use
    */
-  let subjects: Collection<string, PossibleListing>;
+  let roles: Collection<string, Role>;
   /**
    * Page to use
    */
@@ -150,19 +150,19 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
   }
   argu = sepArg.join(" ");
   if (!arg || /^\d{1,5}$/.test(arg)) { // all from guild
-    subjects = guild[guildProp];
+    roles = guild.roles;
     content = noArgCont;
     invalid = noArgInvalid;
     title = noArgTitle;
   } else { // all from a sub-subject (member for roles, role for members)
-    let subSubject: PossibleListing;
+    let subSubject: GuildMember;
     const searched = await (search(arg, "user", self, { allowForeign: false }));
     if (searched.subject) {
       subSubject = guild.member(searched.subject);
     } else {
       return;
     }
-    subjects = _.at(subSubject, [subjectProp as any])[0] as any;
+    roles = subSubject.roles
     content = `Here are ${member.user.tag}'s roles:`;
     invalid = "That member has no roles (other than the default)!";
     title = `${member.user.tag}'s Roles`;
@@ -193,7 +193,7 @@ ${argu ? argu + "<page>" : "<page>"}.`);
           (isGRoles ? "Bottom" : "Lowest") :
           rolesArr.length - 1 - rolePos // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
       );
-      desc += `**${isNaN(position) ? `${position}:` : `${position}.`}** <@&${role.id}> \n`;
+      desc += `**${isNaN(Number(position)) ? `${position}:` : `${position}.`}** <@&${role.id}> \n`;
     }
     emb.setDescription(_.trim(desc));
     return emb;

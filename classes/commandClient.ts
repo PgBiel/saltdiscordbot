@@ -1,5 +1,5 @@
-import * as Discord from "discord.js"
-import Command from "./command"
+import * as Discord from "discord.js";
+import Command from "./command";
 import funcs = require("../funcs/funcs");
 
 class CommandClient extends Discord.Client {
