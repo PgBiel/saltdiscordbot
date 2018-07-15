@@ -1,34 +1,9 @@
 import { TcmdFunc } from "../../misc/contextType";
-import { AInfoDummy } from "../info/info";
+import { AInfoDummy } from "./info";
 import { _, Role, bot, search, Embed, Constants, Command, sleep, paginate, GuildMember } from "../../misc/d";
-import { Collection, Guild, GuildEmoji, GuildChannel } from "discord.js";
+import { Collection, Guild, GuildEmoji, GuildChannel, GuildMemberRoleStore, RoleStore } from "discord.js";
 import { SearchType } from "../../funcs/parsers/search";
 
-/* const units = [
-  ["thousand", "k"], ["million", "M"], ["billion", "b"], ["trillion", "t"], ["quadrillion", "qd"],
-  ["quintillion", "qn"], ["sextillion", "sx"], ["septillion", "sp"], ["octillion", "o"], ["nonillion", "n"],
-  ["decillion", "de"], ["undecillion", "ud"], ["duodecillion", "dd"], ["tredecillion", "tdd"],
-  ["quattuordecillion", "qdd"], ["quindecillion", "qnd"]
-]
-
-function stringifyNum(num) {
-  const str = String(num);
-  if (!/\d/.test(str)) return str;
-  if (str.length < 4) return str;
-  const groups = str.replace(/[^\d]+/g, "").match(/(\d{3}|\d{2}|\d)/g);
-  const firstn = groups.pop();
-  let stra = /^0+$/.test(String(firstn)) ? "" : `${firstn}`;
-  let index = 0;
-  for (const num of groups.reverse()) {
-    if (/^0+$/.test(String(num))) {
-      index++;
-      continue; 
-    } 
-    stra = `${String(num).replace(/^0+/, "") || "NoNe"} ${(units[index++]||["mahajapit"])[0]}, ` + stra;
-  }
-  return stra.replace(/[\s,]+$/, "");
-}
-*/
 /**
  * Only get props of that type
  * @template T The type to get props of
@@ -70,9 +45,7 @@ type MultiInfoDummy = AInfoDummy & {
      */
     type: SearchType;
     sort: (a: PossibleListing, b: PossibleListing) => number;
-    textWorker: (
-      val: PossibleListing, arr: PossibleListing[], isGuild: boolean, isAndroid: boolean, guild: Guild
-    ) => string;
+    textWorker: (val: PossibleListing, arr: PossibleListing[], isGuild: boolean, isAndroid: boolean) => string;
     filterer?: (val: PossibleListing, guild: Guild) => boolean;
 
     /**
@@ -106,35 +79,10 @@ const datas: { [prop: string]: MultiInfoDummy["data"] } = {
         `<@&${role.id}>`;
       return `**${isNaN(position) ? `${position}:` : `\`${position}.\``}** ${roleText}`;
     },
-    filterer: (v: PossibleListing, g: Guild) => v instanceof Role && v.id !== g.id,
+    filterer: (v: Role, g: Guild) => v.id !== g.id,
 
-    subjectProp: "roles",
+    subjectProp: "members",
     guildProp: "roles"
-  },
-  members: {
-    noArgCont: "Here are the server's members:",
-    noArgInvalid: "This server has no members that I know of! (Huh?)",
-    noArgTitle: "All Members",
-
-    argCont: `Here are the members of the role \`{name}\`:`,
-    argInvalid: "That role has no members!",
-    argTitle: `Members of the Role \`{name}\``,
-
-    type: "role",
-    guildProp: "members", // all members in the server if no member is specified
-    sort: (
-      a: GuildMember, b: GuildMember
-    ) => (b.roles.highest.position - a.roles.highest.position), // highest pos; if not, oldest member
-    textWorker: (member: GuildMember, arr: GuildMember[], _isG: boolean, isAndroid: boolean, guild: Guild) => {
-      const membPos = arr.indexOf(member);
-      const position = arr.length - membPos; // Arr length - membPos to reverse the sorting;
-      const memberText = isAndroid ?
-        member.user.tag.replace(/<([@#])/, "<\\$1") :
-        `<@!${member.id}>`;
-      return `• ${memberText}${member.id === guild.ownerID ? Constants.emoji.rjt.OWNER : ""}`;
-    },
-    filterer: (m: PossibleListing) => m instanceof GuildMember,
-    subjectProp: "members"
   }
 };
 
@@ -145,24 +93,7 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
   if (!perms["info.roles"]) return reply("Missing permission `info roles`! :frowning:");
   channel.startTyping();
   const {
-    android, action, arg: _arg, trArg,
-    data: {
-      noArgCont,
-      noArgInvalid,
-      noArgTitle,
-
-      argCont,
-      argInvalid,
-      argTitle,
-
-      type,
-      sort,
-      textWorker,
-      filterer = () => true,
-
-      subjectProp,
-      guildProp
-    } = datas.roles
+    android, action, arg: _arg, trArg
   } = dummy || {} as never;
   const arg = trArg || _arg || args;
   /**
@@ -181,7 +112,7 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
   /**
    * List of roles/subjects to use
    */
-  let subjects: Collection<string, PossibleListing>;
+  let roles: Collection<string, Role> | RoleStore | GuildMemberRoleStore;
   /**
    * Page to use
    */
@@ -201,54 +132,52 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
     strPage = "1";
   }
   argu = sepArg.join(" ");
+  let isGRoles = false;
   if (!arg || /^\d{1,5}$/.test(arg)) { // all from guild
-    subjects = guild[guildProp];
-    content = noArgCont;
-    invalid = noArgInvalid;
-    title = noArgTitle;
+    roles = guild.roles;
+    isGRoles = true;
+    content = "Here are the server's roles:";
+    invalid = "This server has no roles (other than the default)!";
+    title = "All Roles";
   } else { // all from a sub-subject (member for roles, role for members)
-    let subSubject: PossibleListing;
+    let subSubject: GuildMember;
     const searched = await (search(arg, "user", self, { allowForeign: false }));
     if (searched.subject) {
       subSubject = guild.member(searched.subject);
     } else {
       return;
     }
-    subjects = _.at(subSubject, [subjectProp as any])[0] as any; // get the subjects we want from the sub subject
-
-    const escReplace = (str: string) => String( // replace placeholders of paths like {name} to their value using _.at
-      _.at(
-        subSubject,
-        [str.match(/\{([\w\.]+)\}/)[1] as any]
-      )[0]
-    ).replace(/`/g, "'");
+    roles = subSubject.roles;
     content = `Here are ${member.user.tag}'s roles:`;
     invalid = "That member has no roles (other than the default)!";
     title = `${member.user.tag}'s Roles`;
   }
-  const arr = subjects.array().sort(sort).filter(v => filterer(v, guild));
-  if (arr.length < 1) return reply(invalid);
-  const isG = subjects === guild[guildProp];
-  const pages = paginate(arr);
+  const rolesArr = roles.array().sort((a, b) => b.position - a.position).filter(r => r.id !== guild.id);
+  if (rolesArr.length < 1) return reply(invalid);
+  const pages = paginate(rolesArr);
   if (strPage.length > 5) {
     page = 1;
   } else {
     page = Number(strPage);
   }
-  /**
-   * Generate a page embed
-   * @param page Page number
-   * @returns Generated embed
-   */
   const gen = (page: number) => {
     page = _.clamp(isNaN(page) ? 1 : page, 1, pages.length);
     const emb = new Embed()
       .setAuthor(title);
-    if (pages.length > 1) emb.setFooter(`To go to a specific page, write ${p}info ${action || "roles"} \
+    if (pages.length > 1) emb.setFooter(`To go to a specific page, write ${p}info roles \
 ${argu ? argu + "<page>" : "<page>"}.`);
     let desc = "";
     for (const role of pages[page - 1]) {
-      desc += `${textWorker(role, arr, isG, android, guild)}\n`;
+      if (role.id === guild.id) continue;
+      const rolePos = rolesArr.indexOf(role);
+      const position = rolePos < 1 ?
+      (isGRoles ? "Top" : "Highest") :
+      (
+        rolePos === rolesArr.length - 1 ?
+          (isGRoles ? "Bottom" : "Lowest") :
+          rolesArr.length - 1 - rolePos // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
+      );
+      desc += `**${isNaN(Number(position)) ? `${position}:` : `${position}.`}** <@&${role.id}> \n`;
     }
     emb.setDescription(_.trim(desc));
     return emb;
@@ -266,28 +195,15 @@ ${argu ? argu + "<page>" : "<page>"}.`);
 };
 
 export const roles = new Command({
-  description: "Alias to info roles. View all or a member's roles.",
+  description: "View the list of roles in the server or of a member",
   func,
-  name: "serverinfo",
-  perms: "info.server",
+  name: "roles",
+  perms: "info.roles",
   args: {},
   guildOnly: true,
   category: "Info",
   example: `
-{p}{name}`,
-  default: true,
-  aliases: {
-    guildinfo: {
-      description: "View info of current server",
-      action: "serverinfo"
-    },
-    serverid: {
-      description: "View ID of current server",
-      action: "serverid"
-    },
-    guildid: {
-      description: "View ID of current server",
-      action: "serverid"
-    }
-  }
+{p}{name}
+{p}{name} @Member#0001`,
+  default: true
 });

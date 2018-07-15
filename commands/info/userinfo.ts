@@ -1,5 +1,5 @@
 import { cmdFunc } from "../../misc/contextType";
-import { AInfoDummy } from "../info/info";
+import { AInfoDummy } from "./info";
 import {
   User, GuildMember, bot, search, cross, rejct, Embed, ago, momentUTC, formatStatus,
   formatActivity, Constants, Command

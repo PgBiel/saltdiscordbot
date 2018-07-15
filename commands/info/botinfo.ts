@@ -1,5 +1,5 @@
 import { cmdFunc } from "../../misc/contextType";
-import { AInfoDummy } from "../info/info";
+import { AInfoDummy } from "./info";
 import { bot, cross, Embed, ago, momentUTC, Constants, Command, rejct, Guild, User, Interval } from "../../misc/d";
 import { NonFunctionProps } from "../../classes/database";
 import { CrossItem } from "../../classes/cross";

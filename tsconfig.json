@@ -6,6 +6,7 @@
   },
   "exclude": [
     "./oldfiles",
+    "./moreoldstuff",
     "./node_modules"
   ]
 }

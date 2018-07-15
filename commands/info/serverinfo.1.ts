@@ -1,5 +1,5 @@
 import { TcmdFunc } from "../../misc/contextType";
-import { AInfoDummy } from "../info/info";
+import { AInfoDummy } from "./info";
 import { Role, GuildMember, bot, search, Embed, ago, momentUTC, Constants, adaptSnake, Command } from "../../misc/d";
 
 const func: TcmdFunc<AInfoDummy> = async function(msg, {

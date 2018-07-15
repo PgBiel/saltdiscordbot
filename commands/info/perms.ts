@@ -1,7 +1,7 @@
 // tslint:disable:no-bitwise
 
 import { cmdFunc } from "../../misc/contextType";
-import { AInfoDummy } from "../info/info";
+import { AInfoDummy } from "./info";
 import {
   search, Embed, Constants, Command, GuildChannel, escMarkdown, GuildMember, Role, adaptSnake
 } from "../../misc/d";

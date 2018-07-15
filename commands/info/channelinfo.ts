@@ -1,5 +1,5 @@
 import { TcmdFunc } from "../../misc/contextType";
-import { AInfoDummy } from "../info/info";
+import { AInfoDummy } from "./info";
 import {
   search, Embed, ago, momentUTC, Constants, Command, GuildChannel, TextChannel, no2Tick, globalPositions, escMarkdown
 } from "../../misc/d";
