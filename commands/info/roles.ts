@@ -160,6 +160,12 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
   } else {
     page = Number(strPage);
   }
+
+  /**
+   * Generate a page embed
+   * @param page Page number
+   * @returns Generated embed
+   */
   const gen = (page: number) => {
     page = _.clamp(isNaN(page) ? 1 : page, 1, pages.length);
     const emb = new Embed()

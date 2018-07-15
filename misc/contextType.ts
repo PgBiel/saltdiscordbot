@@ -1,7 +1,7 @@
 import {
   DMChannel, GroupDMChannel, Guild, GuildMember, Message, PermissionResolvable, TextChannel, User,
 } from "discord.js";
-import Searcher from "../classes/Searcher";
+import Searcher from "../classes/searcher";
 import { HandlerFuncs } from "../handlerfuncs/commandHandlerFuncs";
 
 export type DjsChannel = DMChannel | GroupDMChannel | TextChannel;
