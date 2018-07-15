@@ -22,8 +22,8 @@ function stringifyNum(num) {
   for (const num of groups.reverse()) {
     if (/^0+$/.test(String(num))) {
       index++;
-      continue; 
-    } 
+      continue;
+    }
     stra = `${String(num).replace(/^0+/, "") || "NoNe"} ${(units[index++]||["mahajapit"])[0]}, ` + stra;
   }
   return stra.replace(/[\s,]+$/, "");
@@ -265,7 +265,7 @@ ${argu ? argu + "<page>" : "<page>"}.`);
   return sendIt(gen(page), { content, paginate: paginateObj });
 };
 
-export const roles = new Command({
+/* export const roles = new Command({
   description: "Alias to info roles. View all or a member's roles.",
   func,
   name: "serverinfo",
@@ -290,4 +290,4 @@ export const roles = new Command({
       action: "serverid"
     }
   }
-});
+}); */
