@@ -1,7 +1,38 @@
-const Command = require("../../classes/command");
-const d = require("../../misc/d");
+import Command from "../../classes/command";
+import { cmdFunc } from "../../misc/contextType";
 
-const func = async function (msg, { args, send, reply, channel, member, author, guild, perms, dummy = {} }) {
+export interface INumUpperDummy {
+  /**
+   * The command permission
+   */
+  perm?: string;
+
+  /**
+   * The message to send if nothing was provided
+   */
+  msgEmpty?: string;
+  /**
+   * The message to send if no numbers were provided
+   */
+  msgNoNumbers?: string;
+  /**
+   * The message to send when it was successful
+   */
+  sentMsg?: string;
+
+  /**
+   * The title of the embed
+   */
+  embTitle?: string;
+  /**
+   * The function that transforms numbers into whatever
+   */
+  replace?: (args: string, arrup: string[]) => string;
+}
+
+const func: cmdFunc<INumUpperDummy> = async function(
+  msg, { args, send, reply, channel, member, author, guild, perms, dummy = {} }
+) {
   if (guild && !perms[dummy.perm || "numupper"]) return reply("Missing permission `numupper`! :frowning:");
   const arrup = Object.assign({ "-": "⁻", "+" : "⁺" }, ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"]);
   if (!args) return reply(dummy.msgEmpty || "Please specify numbers to convert!");
@@ -11,7 +42,8 @@ const func = async function (msg, { args, send, reply, channel, member, author, 
     .setDescription(typeof dummy.replace === "function" ? dummy.replace(args, arrup) : args.replace(/[-+\d]/g, n => arrup[n]));
   return reply(dummy.sentMsg || `Here is your message with all numbers set to superscript:`, { embed, deletable: true });
 };
-module.exports = new Command({
+
+export const numupper = new Command({
   func,
   name: "numupper",
   perms: "numupper",

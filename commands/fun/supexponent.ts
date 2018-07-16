@@ -1,8 +1,8 @@
-const numupper = require("./numupper");
+import { numupper } from "./numupper";
 
-const Command = require("../../classes/command");
+import Command from "../../classes/command";
 
-module.exports = Command.aliasFrom(numupper, "supexponent", {
+export const supexponent = Command.aliasFrom(numupper, "supexponent", {
   perms: "numupper",
   default: true,
   description: "Replaces all exponents (`m^n` or `m**n`) in a math expression with their superscript equivalent. Similar \

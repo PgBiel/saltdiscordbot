@@ -361,7 +361,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
     return embed;
   }
 
-  public static aliasFrom<Dd, Cc extends Context>(cmd: Command<Dd, Cc>, name: string, data?: AliasData<Dd, Cc>) {
+  public static aliasFrom<Dd, Cc extends Context>(cmd: Command<Dd, Cc>, name: string, data?: AliasData<Dd, Cc> & Dd) {
     const newData = cloneObject(data);
     Object.defineProperty(newData, "__aliasOf", {
       value: cmd,

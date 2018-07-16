@@ -1,7 +1,7 @@
-const Command = require("../../classes/command");
-const d = require("../../misc/d");
+import Command from "../../classes/command";
+import { cmdFunc } from "../../misc/contextType";
 
-const func = async function (msg, { arrArgs, reply, guild, perms }) {
+const func: cmdFunc<{}> = async function(msg, { arrArgs, reply, guild, perms }) {
   if (guild && !perms.random) return reply("Missing permission `random`! :frowning:");
   if (arrArgs.length < 2) {
     reply("Please specify two numbers.");
@@ -15,7 +15,8 @@ const func = async function (msg, { arrArgs, reply, guild, perms }) {
   }
   reply(result);
 };
-module.exports = new Command({
+
+export const random = new Command({
   func,
   name: "random",
   perms: "random",

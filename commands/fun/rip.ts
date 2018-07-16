@@ -1,7 +1,7 @@
-const Command = require("../../classes/command");
-const d = require("../../misc/d");
+import Command from "../../classes/command";
+import { cmdFunc } from "../../misc/contextType";
 
-const func = async function (msg, { args, send, reply, channel, member, author, guild, perms }) {
+const func: cmdFunc<{}> = async function(msg, { args, send, reply, channel, member, author, guild, perms }) {
   if (guild && !perms.rip) return reply("Missing permission `rip`! :frowning:");
   let ripContent = "";
   if (!args) {
@@ -22,7 +22,8 @@ const func = async function (msg, { args, send, reply, channel, member, author, 
   }
   return send(`http://ripme.xyz/#${encodeURIComponent(ripContent)}`);
 };
-module.exports = new Command({
+
+export const rip = new Command({
   func,
   name: "rip",
   perms: "rip",
