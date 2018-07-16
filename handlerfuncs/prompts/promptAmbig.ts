@@ -49,7 +49,7 @@ export default (msg: Message) => {
     subjectArr: C[], pluralName: string, opts: IPromptAmbigOpts & { type: "role" }
   ): Promise<IPromptAmbigResult<C>>;
   async function promptAmbig<C extends GuildMember>( // ovl 2
-    subjectArr: C[], pluralName: string, opts: IPromptAmbigOpts & { type: "member" }
+    subjectArr: C[], pluralName?: string, opts?: IPromptAmbigOpts & { type: "member" }
   ): Promise<IPromptAmbigResult<C>>;
   async function promptAmbig<C extends GuildEmoji>( // ovl 3
     subjectArr: C[], pluralName: string, opts: IPromptAmbigOpts & { type: "emoji" }
@@ -59,8 +59,8 @@ export default (msg: Message) => {
   ): Promise<IPromptAmbigResult<C>>;
   async function promptAmbig<C extends PromptAmbigSubject = PromptAmbigSubject>( // main as ovl
     subjectArr: C[], pluralName: string, opts: IPromptAmbigOpts
-  ): Promise<IPromptAmbigResult<C>>
-  async function promptAmbig<C extends PromptAmbigSubject>( // main
+  ): Promise<IPromptAmbigResult<C>>;
+  async function promptAmbig<C extends PromptAmbigSubject = GuildMember>( // main
     subjectArr: PromptAmbigSubject[], pluralName: string = "members", opts: IPromptAmbigOpts = { type: "member" }
   ): Promise<IPromptAmbigResult<PromptAmbigSubject>> {
     let mode = "r";

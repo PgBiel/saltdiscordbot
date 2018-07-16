@@ -19,7 +19,6 @@ class Ban extends Punishment {
    * @param {string} [options.auctPrefix] A prefix to be included on the audit logs.
    * @param {string[]} [options.actions] The terminology for the ban actions.
    * @param {boolean} [options.usePrompt] If prompt should be used.
-   * @param {string} [options.color] The color of the Embed's sidebar.
    * @param {number} [options.days] The amount of days to ban for.
    * @param {boolean} [options.isSoft] If it is a soft ban or not.
    * @returns {Promise<void>}

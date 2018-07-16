@@ -1,15 +1,21 @@
-const Command = require("../../classes/command");
-const actionLog = require("../../classes/actionlogger");
-const d = require("../../misc/d");
+import Command from "../../classes/command";
+import actionLog from "../../classes/actionlogger";
+import { db, Constants, rejct, Time, _, uncompress, logger, Embed } from "../../misc/d";
+import { TcmdFunc } from "../../misc/contextType";
+import { ExtendedMsgOptions, PageGenerator, IProtoSendPaginator, PaginateStructure } from "../../handlerfuncs/senders/proto-send";
 
-const func = async function (
-  msg, { prompt, guildId, guild, reply, checkRole, author, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms }
+const func: TcmdFunc<{}> = async function (
+  msg, { prompt, guildId, guild, reply, checkRole, author, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms }
 ) {
   if (!args) return reply(`Please specify an action (or a case number to get)! (See the help command for details.)`);
-  const punishments = await (d.db.table("punishments").get(guildId));
+  const punishments = await (db.table("punishments").get(guildId));
   if (!punishments || punishments.length < 1) return reply(`There are no actions logged on this guild!`);
-  const match = args.match(d.Constants.regex.CASE_MATCH);
-  let part1, part2, part3;
+  const nonDelPunishments = punishments.filter(p => !p.deleted);
+  if (!nonDelPunishments || nonDelPunishments.length < 1) return reply(`There are no non-deleted actions logged on this guild!`);
+  const match = args.match(Constants.regex.CASE_MATCH);
+  let part1: string;
+  let part2: string;
+  let part3: string;
   if (arrArgs.length === 1) {
     part1 = match[6];
   } else if (arrArgs.length === 2) {
@@ -20,79 +26,80 @@ const func = async function (
     part2 = match[2];
     part3 = match[3];
   }
-  const action = part1.toLowerCase();
-  let arg;
-  if ((part2 === "???" && action === "get") || (part2 && part2.length > 11)) {
+  const action: string = part1.toLowerCase();
+  const arg: string = part2;
+  /* if ((part2 === "???" && action === "get") || (part2 && part2.length > 11)) {
     arg = part2;
   } else {
     arg = Number(part2);
-  }
-  const arg2 = part3;
-  const latest = (punishments[punishments.length - 1] || { case: 0 }).case;
-  const maxCases = d.Constants.numbers.max.CASES(guild.members.size);
-  const sendIt = (content, emb, options = {}) => {
+  } */
+  const arg2: string = part3;
+  const latest: number = (nonDelPunishments[nonDelPunishments.length - 1] || { case: 0 }).case;
+  const maxCases: number = Constants.numbers.max.CASES(guild.members.size);
+  const sendIt = (content: string, emb: Embed, options: ExtendedMsgOptions & { type?: "reply" | "send" } = {}) => {
     const { type } = options;
     const obj = Object.assign({ embed: emb, autoCatch: false, deletable: true, content }, options);
     return (type === "reply" ? reply : send)(obj).catch(err => [403, 50013].includes(err.code) ?
       send("Please make sure I can send embeds in this channel.") :
-      void(d.rejct(err, "[SEND-IT-CASE]")));
+      void(rejct(err, "[SEND-IT-CASE]")));
   };
   msg.channel.startTyping();
-  if (action === "get" || !isNaN(action) || action === "???") {
+  if (action === "get" || !isNaN(Number(action)) || action === "???") { // If instead of action a number is specified, or get
     if (!perms["case.get"]) return reply(`Missing permission \`case get\`! :(`);
     if (action === "???" || arg === "???") {
-      const spook = await actionLog.embedAction({});
+      const spook = await actionLog.embedAction(); // An action embed without anything
       return sendIt(`Spooky! :ghost:`, spook);
     }
-    if (isNaN(arg) && isNaN(action)) return reply(`Please specify a case number to get!`);
+    if (isNaN(Number(arg)) && isNaN(Number(action))) return reply(`Please specify a case number to get!`);
     if ((arg.length && arg.length > 11) || (action.length && action.length > 11)) return reply(`Invalid case number! \
-There ${latest === 1 ? "is only 1 case" : `are ${latest} cases`}.`);
-    const number = Number(isNaN(action) ? arg : action);
-    if (number > latest) return reply(`Invalid case number! There ${latest === 1 ?
-      "is only 1 case" :
-      `are ${latest} cases`}.`);
-    const gen = async num => {
-      let { case: punish, embed } = await actionLog.fetchCase(num, guild);
-      if (!punish) return `Unknown case number! :( (Tip: Only the latest ${maxCases} cases are kept stored.)`;
-      if (punish.deleted) embed = {
+The highest non-deleted case number so far is ${latest}.`);
+    const number = Number(isNaN(Number(action)) ? arg : action);
+    if (number > latest) return reply(`Invalid case number! The highest non-deleted case number so far is ${latest}.`);
+    const gen: PageGenerator = async num => {
+      let { case: punish, embed } = await actionLog.fetchCase(num, guild); // tslint:disable-line:prefer-const
+      if (!punish) return `Unknown case number! :( (Note: On this guild, only the latest ${maxCases} cases are kept stored.)`;
+      if (punish.deleted) embed = new Embed({
         title: `Action Log #${punish.case}`,
         description: `The case with this number was deleted! :(`
-      };
+      });
       return {
         isDank: true,
         embed,
         content: `Here's Case #${punish.case}:`
       };
     };
-    const generated = await gen(number);
-    const isStr = typeof generated === "string";
-    const paginate = {
+    const generated: string | PaginateStructure = await gen(number);
+    const paginate: IProtoSendPaginator = {
       page: number,
-      maxPage: d._.compact(punishments).reduce((a, p) => p.case > a ? p.case : a, 0),
+      maxPage: _.compact(punishments).reduce((a, p) => p.case > a ? p.case : a, 0),
       usePages: true,
       format: gen,
-      content: isStr ? generated : `Here's Case #${number}:`
+      content: typeof generated === "string" ? generated : `Here's Case #${number}:`
     };
-    return sendIt(`Here's Case #${number}:`, (generated || {}).embed, { type: isStr ? "reply" : "send", paginate });
+    return sendIt(
+      `Here's Case #${number}:`, (generated || {}).embed,
+      { type: typeof generated === "string" ? "reply" : "send", paginate }
+    );
   } else if (["edit", "delete", "togglethumb"].includes(action)) {
     const permSecondPart = action === "delete" ? "delete" : "edit";
     if (!perms[`case.${permSecondPart}`]) return reply(`Missing permission \`case ${permSecondPart}\`! :(`);
-    if (isNaN(arg)) return reply(`Please specify a case number to modify it!`);
+    const argnum: number = Number(arg);
+    if (isNaN(argnum)) return reply(`Please specify a case number to modify it!`);
     if (arg.length && arg.length > 11) return reply(`Invalid case number! There ${latest === 1 ?
       "is only 1 case" :
       `are ${latest} cases`}.`);
-    if (arg > latest) return reply(`Invalid case number! There ${latest === 1 ?
+    if (argnum > latest) return reply(`Invalid case number! There ${latest === 1 ?
       "is only 1 case" :
       `are ${latest} cases`}.`);
     const { case: punish } = await actionLog.fetchCase(arg, guild);
     if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest ${maxCases} cases are kept stored.)`);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
-    const isYours = d.uncompress(punish.moderator) === author.id;
+    const isYours = uncompress(punish.moderator) === author.id;
     if (
       !isYours
       && (setPerms["case.others"] ?
         !perms["case.others"] :
-        !(await checkRole("administrator")))
+        !(await checkRole("administrator", member)))
       ) return reply(`That case is not yours. You need the permission
 \`case others\` or the Administrator saltrole to edit others' cases!`);
     if (action === "delete") {
@@ -103,7 +110,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         filter: msg2 => {
           return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
         },
-        timeout: d.Time.seconds(15)
+        timeout: Time.seconds(15)
       });
       if (!result) {
         return;
@@ -118,7 +125,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         if (!mResult) return reply(`The case #${arg} was deleted successfully, however its message at Action Logs wasn't. \
 If Action Logs are disabled for this guild, you can ignore d.`);
       } catch (err) {
-        d.rejct(err);
+        rejct(err);
         return reply("Uh oh! There was an error deleting the case. Sorry!");
       }
       return reply(`Case #${arg} was deleted successfully!`);
@@ -133,7 +140,7 @@ you will become the author of the case.** This will expire in 15 seconds. Type _
             filter: msg2 => {
               return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
             },
-            timeout: d.Time.seconds(15)
+            timeout: Time.seconds(15)
           });
           if (!result) {
             return;
@@ -154,9 +161,9 @@ you will become the author of the case.** This will expire in 15 seconds. Type _
         } else {
           options.toggleThumbnail = true;
         }
-        d.logger.debug("a", arg2);
+        logger.debug("a", arg2);
         const { case: cResult, message: mResult } = await actionLog.editCase(arg, options, guild);
-        const { thumbOn } = (await (d.db.table("punishments").get(guildId))).find(c => c.case === arg);
+        const { thumbOn } = (await (db.table("punishments").get(guildId))).find(c => c.case === arg);
         if (!cResult) return reply("Uh oh! There was an error modifying the case. Sorry!");
         if (!mResult) return reply(`Case #${arg} ${action === "edit" ?
           "was modified" :
@@ -166,7 +173,7 @@ you will become the author of the case.** This will expire in 15 seconds. Type _
           "was modified successfully" :
           ("successfully had its thumbnail toggled " + (thumbOn ? "on" : "off"))}!`);
       } catch (err) {
-        d.rejct(err);
+        rejct(err);
         return reply("Uh oh! There was an error modifying the case. Sorry!");
       }
     }

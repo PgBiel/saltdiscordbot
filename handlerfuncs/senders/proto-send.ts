@@ -16,10 +16,12 @@ export type ExtendedSendArr<O extends object = ExtendedMsgOptions> = { // tslint
   (options: O): Promise<Message[]> };
 
 export type ExtendedSend<O extends object = ExtendedMsgOptions> = ExtendedSendUnit<O> & ExtendedSendArr<O>;
+// tslint:disable-next-line:interface-over-type-literal
+export type DankPagStructure = { isDank: true, content?: string, embed?: Embed };
+// tslint:disable-next-line:interface-over-type-literal
+export type PaginateStructure = { isDank?: boolean, content?: string, embed?: Embed, [prop: string]: any };
 
-type DankStructure = { isDank: true, content?: string, embed?: Embed };
-
-type Structure = { isDank?: boolean, content?: string, embed?: Embed, [prop: string]: any };
+export type PageGenerator = (newPage: number, struct?: PaginateStructure, pages?: any[]) => PaginateStructure;
 
 export interface IProtoSendPaginator {
   page?: number;
@@ -30,12 +32,12 @@ export interface IProtoSendPaginator {
   /**
    * A structure to be omnipresent (optional)
    */
-  struct?: Structure;
+  struct?: PaginateStructure;
   /**
    * What to send on each msg
    */
   content: string;
-  format?: (newPage: number, struct: Structure, pages: any[]) => Structure;
+  format?: PageGenerator;
   // func
   data?: object;
   func?: (

@@ -314,7 +314,7 @@ class ActionLog {
    * @returns {MessageEmbed}
    */
   public async embedAction(
-    action: Pick<
+    action?: Pick<
       Case,
       "case"|"target"|"time"|"moderator"|"reason"|"thumbnail"|"thumbOn"|"type"|"duration"
     >
