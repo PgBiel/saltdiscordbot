@@ -1,8 +1,9 @@
-const Command = require("../../classes/command");
-const d = require("../../misc/d");
-const kickP = require("../../punishments/kick");
+import Command from "../../classes/command";
+import { _, Constants, GuildMember } from "../../misc/d";
+import kickP from "../../punishments/kick";
+import { TcmdFunc } from "../../misc/contextType";
 
-const func = async function (msg, {
+const func: TcmdFunc<{}> = async function(msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   searcher, promptAmbig, author, botmember, member, actionLog, dummy, self,
   seePerm, setPerms
@@ -16,16 +17,16 @@ Discord permission.");
   if (!args) {
     return reply("Please tell me who to kick!");
   }
-  const [user, reason] = d._.tail((args.match(d.Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason]: string[] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
-  let memberToUse;
-  let membersMatched;
+  let memberToUse: GuildMember;
+  let membersMatched: GuildMember[];
   if (/[^]#\d{4}$/.test(user)) {
-    const split = user.split("#");
-    const discrim = split.pop();
-    const username = split.join("#");
+    const split: string[] = user.split("#");
+    const discrim: string = split.pop();
+    const username: string = split.join("#");
     memberToUse = guild.members.find(m => m.user.username === username && m.user.discriminator === discrim);
   } else if (/^<@!?\d+>$/.test(user)) {
     memberToUse = guild.members.get(user.match(/^<@!?(\d+)>$/)[1]);
@@ -56,7 +57,8 @@ Discord permission.");
     memberToUse, { author: member, reason, auctPrefix: `[Kick command executed by ${author.tag}]`, context: self },
   );
 };
-module.exports = new Command({
+
+export const kick = new Command({
   func,
   name: "kick",
   perms: "kick",
