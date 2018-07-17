@@ -1,11 +1,15 @@
 import Command from "../../classes/command";
-import actionLog from "../../classes/actionlogger";
+import actionLog, { ICaseEditOptions } from "../../classes/actionlogger";
 import { db, Constants, rejct, Time, _, uncompress, logger, Embed } from "../../misc/d";
 import { TcmdFunc } from "../../misc/contextType";
 import { ExtendedMsgOptions, PageGenerator, IProtoSendPaginator, PaginateStructure } from "../../handlerfuncs/senders/proto-send";
 
-const func: TcmdFunc<{}> = async function (
-  msg, { prompt, guildId, guild, reply, checkRole, author, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms }
+const func: TcmdFunc<{}> = async function(
+  msg,
+  {
+    prompt, guildId, guild, reply, checkRole, author, member, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms,
+    seePerm
+  }
 ) {
   if (!args) return reply(`Please specify an action (or a case number to get)! (See the help command for details.)`);
   const punishments = await (db.table("punishments").get(guildId));
@@ -28,6 +32,7 @@ const func: TcmdFunc<{}> = async function (
   }
   const action: string = part1.toLowerCase();
   const arg: string = part2;
+  const argnum: number = Number(arg);
   /* if ((part2 === "???" && action === "get") || (part2 && part2.length > 11)) {
     arg = part2;
   } else {
@@ -50,10 +55,10 @@ const func: TcmdFunc<{}> = async function (
       const spook = await actionLog.embedAction(); // An action embed without anything
       return sendIt(`Spooky! :ghost:`, spook);
     }
-    if (isNaN(Number(arg)) && isNaN(Number(action))) return reply(`Please specify a case number to get!`);
+    if (isNaN(argnum) && isNaN(Number(action))) return reply(`Please specify a case number to get!`);
     if ((arg.length && arg.length > 11) || (action.length && action.length > 11)) return reply(`Invalid case number! \
 The highest non-deleted case number so far is ${latest}.`);
-    const number = Number(isNaN(Number(action)) ? arg : action);
+    const number: number = Number(isNaN(Number(action)) ? arg : action);
     if (number > latest) return reply(`Invalid case number! The highest non-deleted case number so far is ${latest}.`);
     const gen: PageGenerator = async num => {
       let { case: punish, embed } = await actionLog.fetchCase(num, guild); // tslint:disable-line:prefer-const
@@ -83,24 +88,19 @@ The highest non-deleted case number so far is ${latest}.`);
   } else if (["edit", "delete", "togglethumb"].includes(action)) {
     const permSecondPart = action === "delete" ? "delete" : "edit";
     if (!perms[`case.${permSecondPart}`]) return reply(`Missing permission \`case ${permSecondPart}\`! :(`);
-    const argnum: number = Number(arg);
     if (isNaN(argnum)) return reply(`Please specify a case number to modify it!`);
-    if (arg.length && arg.length > 11) return reply(`Invalid case number! There ${latest === 1 ?
-      "is only 1 case" :
-      `are ${latest} cases`}.`);
-    if (argnum > latest) return reply(`Invalid case number! There ${latest === 1 ?
-      "is only 1 case" :
-      `are ${latest} cases`}.`);
-    const { case: punish } = await actionLog.fetchCase(arg, guild);
-    if (!punish) return reply(`Unknown case number! :( (Tip: Only the latest ${maxCases} cases are kept stored.)`);
+    if (arg.length && arg.length > 11) return reply(`Invalid case number! \
+The highest non-deleted case number so far is ${latest}.`);
+    if (argnum > latest) return reply(`Invalid case number! The highest non-deleted case number so far is ${latest}.`);
+    const { case: punish } = await actionLog.fetchCase(argnum, guild);
+    if (!punish) return reply(
+      `Unknown case number! :frowning: (Note: On this guild, only the latest ${maxCases} cases are kept stored.)`
+    );
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
-    const isYours = uncompress(punish.moderator) === author.id;
+    const isYours: boolean = uncompress(punish.moderator) === author.id;
     if (
-      !isYours
-      && (setPerms["case.others"] ?
-        !perms["case.others"] :
-        !(await checkRole("administrator", member)))
-      ) return reply(`That case is not yours. You need the permission
+      !isYours && !seePerm("case.others", perms, setPerms, { srole: "admin" })
+    ) return reply(`That case is not yours. You need the permission \
 \`case others\` or the Administrator saltrole to edit others' cases!`);
     if (action === "delete") {
       const { res: result } = await prompt({
@@ -120,12 +120,12 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         return;
       }
       try {
-        const { case: cResult, message: mResult } = await actionLog.delCase(arg, guild);
-        if (!cResult) return reply("Uh oh! Therewas an error deleting the case. Sorry!");
+        const { case: cResult, message: mResult } = await actionLog.delCase(argnum, guild);
+        if (!cResult) return reply("Uh oh! There was an error deleting the case. Sorry!");
         if (!mResult) return reply(`The case #${arg} was deleted successfully, however its message at Action Logs wasn't. \
-If Action Logs are disabled for this guild, you can ignore d.`);
+If Action Logs are disabled for this guild, you can ignore this.`);
       } catch (err) {
-        rejct(err);
+        rejct(err, "[CASE-DELETE] ");
         return reply("Uh oh! There was an error deleting the case. Sorry!");
       }
       return reply(`Case #${arg} was deleted successfully!`);
@@ -134,8 +134,8 @@ If Action Logs are disabled for this guild, you can ignore d.`);
         if (!arg2) return reply(`Please specify a reason to change the case's to!`);
         if (!isYours) {
           const { res: result } = await prompt({
-            question: `Are you sure you want to edit the reason of the case numbered ${arg}? **It isn't yours, and if you do this, \
-you will become the author of the case.** This will expire in 15 seconds. Type __y__es or __n__o.`,
+            question: `Are you sure you want to edit the reason of the case numbered ${arg}? **It isn't yours, and if you do \
+this, you will become the author of the case.** This will expire in 15 seconds. Type __y__es or __n__o.`,
             invalidMsg: "__Y__es or __n__o?",
             filter: msg2 => {
               return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
@@ -152,7 +152,7 @@ you will become the author of the case.** This will expire in 15 seconds. Type _
         }
       }
       try {
-        const options = {};
+        const options: ICaseEditOptions = {};
         if (action === "edit") {
           options.reason = arg2;
           if (!isYours) {
@@ -162,13 +162,13 @@ you will become the author of the case.** This will expire in 15 seconds. Type _
           options.toggleThumbnail = true;
         }
         logger.debug("a", arg2);
-        const { case: cResult, message: mResult } = await actionLog.editCase(arg, options, guild);
-        const { thumbOn } = (await (db.table("punishments").get(guildId))).find(c => c.case === arg);
+        const { case: cResult, message: mResult } = await actionLog.editCase(argnum, options, guild);
+        const { thumbOn } = (await (db.table("punishments").get(guildId))).find(c => c.case === argnum);
         if (!cResult) return reply("Uh oh! There was an error modifying the case. Sorry!");
         if (!mResult) return reply(`Case #${arg} ${action === "edit" ?
           "was modified" :
-          ("had its thumbnail toggled " + (thumbOn ? "on" : "off"))} successfully, however its message at Action Logs wasn't able to \
-          be modified. If Action Logs are disabled for this guild, you can ignore d.`);
+          ("had its thumbnail toggled " + (thumbOn ? "on" : "off"))} successfully, however its message at Action Logs wasn't \
+          able to be modified. If Action Logs are disabled for this guild, you can ignore this.`);
         return reply(`Case #${arg} ${action === "edit" ?
           "was modified successfully" :
           ("successfully had its thumbnail toggled " + (thumbOn ? "on" : "off"))}!`);
@@ -178,11 +178,11 @@ you will become the author of the case.** This will expire in 15 seconds. Type _
       }
     }
   } else {
-    return reply(`Action must be either \`get\`, \`edit\` or \`delete\`.`);
+    return reply(`Action must be either \`get\`, \`edit\`, \`togglethumb\` or \`delete\`.`);
   }
 };
 
-module.exports = new Command({
+export const casecmd = new Command({
   func,
   name: "case",
   perms: {"case.get": true, "case.edit": true, "case.delete": true, "case.others": false},
@@ -190,17 +190,20 @@ module.exports = new Command({
 action. The actions are listed below. After it, specify a number which will be the case to interact with.
 
 The \`get\` action works pretty much as if you just specified a number: It retrieves a case by the number specified.
-The rest of the actions can be only applied to your own cases by default and require a special permission to apply to others. For \
-\`edit\` and only it, if you attempt to apply it to someone else's case, you will be prompted for confirmation because you will \
-become the punisher.
+The rest of the actions can be only applied to your own cases by default and require a special permission to apply to others.
 
-The \`edit\` action lets you change a case's reason. You must specify the new reason after the case number.
+For the following actions (\`edit\`, \`togglethumb\` and \`delete\`), the permission \`case others\` or the Administrator \
+SaltRole will be required to interact with someone else's case.
 
-The \`togglethumb\` action lets you toggle if a thumbnail will be displayed on the case's embed or not.
+The \`edit\` action lets you change a case's reason. You must specify the new reason after the case number. Note that, for this \
+action, if you change the reason of someone else's case, you will become its punisher, so you are asked for confirmation.
+
+The \`togglethumb\` action lets you toggle if a thumbnail will be displayed on the case's embed or not. Useful for NSFW avatars.
 
 And finally, the \`delete\` action lets you delete a case. You will always be asked for confirmation.
 
-Permissions: \`case \` and the action name. For interacting with others' cases, use \`case others\`.`,
+Permissions: \`case get\` for using get; \`case edit\` for using edit and togglethumb; \`case delete\` for deleting. \
+For interacting with others' cases, \`case others\`.`,
   example: `{p}case 5
 {p}case get 5
 {p}case edit 10 New reason
