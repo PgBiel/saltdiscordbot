@@ -1,12 +1,29 @@
-const Command = require("../../classes/command");
-const actionLog = require("../../classes/actionlogger");
-const d = require("../../misc/d");
-function cloneObject (objec) {
+import Command from "../../classes/command";
+import actionLog from "../../classes/actionlogger";
+import {
+  uncompress, User, Embed, _, db, endChar, paginate as dpaginate, durationdecompress, Interval, bot,
+  Constants, Message, GuildMember, xreg
+} from "../../misc/d";
+import { HelperVals } from "../../misc/tableValues";
+import { ExtendedSendUnit, PageGenerator } from "../../handlerfuncs/senders/proto-send";
+import { ColorResolvable } from "discord.js";
+import { TcmdFunc } from "../../misc/contextType";
+
+function cloneObject(objec) {
   return Object.assign(Object.create(objec), objec);
 }
 
-function filterPunishes(punishments, id) {
-  const punishes = punishments.filter(c => d.uncompress(c.target) === id && !c.deleted).reverse();
+type CaseObj = HelperVals["punishments"];
+type WarnObj = HelperVals["warns"];
+
+/**
+ * Get a filter of all kinds of punishments
+ * @param {CaseObj[]} punishments List of punishments
+ * @param {string} id ID to find of user
+ * @returns {object} List of punishments
+ */
+function filterPunishes(punishments: CaseObj[], id: string) {
+  const punishes = punishments.filter(c => uncompress(c.target) === id && !c.deleted).reverse();
   return {
     all: punishes,
     alls: punishes,
@@ -19,7 +36,14 @@ function filterPunishes(punishments, id) {
     unmutes: punishes.filter(c => c.type === "u")
   };
 }
-function exampleCases(punishes, init = " ") {
+
+/**
+ * Returns a list of example cases
+ * @param {CaseObj[]} punishes List of punishments
+ * @param {string} [init=" "] Text explaining the examples
+ * @returns {string}
+ */
+function exampleCases(punishes: CaseObj[], init: string = " ") {
   if (punishes.length < 1) {
     return "";
   } else if (punishes.length === 1) {
@@ -34,22 +58,27 @@ function exampleCases(punishes, init = " ") {
   }
 }
 
-function main({ user, isAuthor, punishments, p, reply, send, maxCases }) {
-  const filtered = filterPunishes(punishments, user.id, d.uncompress);
+function main(
+  { user, isAuthor, punishments, p, reply, send, maxCases }: {
+    user: User, isAuthor: boolean, punishments: CaseObj[], p: string, reply: ExtendedSendUnit, send: ExtendedSendUnit,
+    maxCases: number
+  }
+) {
+  const filtered = filterPunishes(punishments, user.id);
   if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
     "You haven't" :
     "That user hasn't"} ever been punished! :smiley:`);
-  let text = `Punishments available (Type \`${p}listpunish ${isAuthor ? "" : "<user> "}<punishment>\` to a view a list):
+  let text: string = `Punishments available (Type \`${p}listpunish ${isAuthor ? "" : "<user> "}<punishment>\` to a view a list):
 
 `;
   for (const [type, filt] of Object.entries(filtered).sort(([, a], [, b]) => b.length - a.length)) {
     if (/^all/i.test(type)) continue;
-    text += `• **${d._.capitalize(type)}**: **${filt.length}**${exampleCases(filt)}\n`;
+    text += `• **${_.capitalize(type)}**: **${filt.length}**${exampleCases(filt)}\n`;
   }
-  const embed = new d.Embed();
+  const embed: Embed = new Embed();
   embed
     .setTitle(`List of punishments (last ${maxCases} cases)`)
-    .setDescription(d._.trim(text))
+    .setDescription(_.trim(text))
     .setColor("RANDOM")
     .setFooter(`${isAuthor ?
       "You have" :
@@ -62,22 +91,43 @@ type ${p}listpunish ${isAuthor ? "" : "<user> "}all.`);
   }
 }
 
-async function specific(msg, {
-  user, isAuthor, punishments, p, type: aType, reply, send, page: ogPage, maxCases, isWarn, guildId,
-  presetPages, presetFiltered, presetTyped, isEdit, sentContent
-}) {
-  let filtered, typed;
+async function specific(msg: Message, { // OVL 1 - +listpunish
+  user, isAuthor, punishments, p, type: aType, reply, send, page: ogPage, maxCases, isWarn, guildId
+}: {
+  user: User, isAuthor: boolean, punishments: CaseObj[], p: string, type: keyof ReturnType<typeof filterPunishes>,
+  reply: ExtendedSendUnit, send: ExtendedSendUnit, page: number, maxCases: number, isWarn: false, guildId: string
+});
+async function specific(msg: Message, { // tslint:disable-line:unified-signatures | OVL 2 - +listwarns
+  user, isAuthor, p, reply, send, page: ogPage, maxCases, isWarn, guildId
+}: {
+  user: User, isAuthor: boolean, p: string,
+  reply: ExtendedSendUnit, send: ExtendedSendUnit, page: number, maxCases: number, isWarn: true, guildId: string
+});
+async function specific(msg: Message, {
+  user, isAuthor, punishments, p, type: aType, reply, send, page: ogPage, maxCases, isWarn, guildId
+}: {
+  user: User, isAuthor: boolean, punishments?: CaseObj[], p: string, type?: keyof ReturnType<typeof filterPunishes>,
+  reply: ExtendedSendUnit, send: ExtendedSendUnit, page: number, maxCases: number, isWarn: boolean, guildId: string
+}): void {
+  /**
+   * All punishments for +listpunish, All warns for +listwarns
+   */
+  let filtered: ReturnType<typeof filterPunishes> | WarnObj[];
+  /**
+   * The specific punishments to see
+   */
+  let typed: Array<CaseObj | WarnObj>;
   if (isWarn) { // if this is +listwarns
-    filtered = typed = await (d.db.table("warns").get(guildId, []));
+    filtered = typed = await (db.table("warns").get(guildId, []));
     if (!filtered || filtered.length < 1) return reply(`There are no active warns on this guild!`);
-    typed = typed.filter(w => d.uncompress(w.userid) === user.id).reverse();
+    typed = (typed as WarnObj[]).filter(w => uncompress(w.userid) === user.id).reverse();
     if (typed.length < 1) return reply(`${isAuthor ? "You have" : "That user has"} no active warns on this guild!`);
   } else { // if this is +listpunish
-    filtered = filterPunishes(punishments, user.id, d.uncompress);
-    if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
+    filtered = filterPunishes(punishments, user.id);
+    if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ?
       "You haven't" :
       "That user hasn't"} ever been punished! :smiley:`);
-    typed = filtered[d.endChar((aType || "").toLowerCase(), "s")];
+    typed = filtered[endChar((aType || "").toLowerCase(), "s")];
     if (!typed) return reply(`Unknown punishment.`);
   }
   if (typed.length < 1) {
@@ -88,9 +138,10 @@ async function specific(msg, {
     (
       /^all/i.test(aType) ?
       "all" :
-      d.endChar((aType || "").toLowerCase(), "s")
+      endChar((aType || "").toLowerCase(), "s")
     );
-  let cprop, mprop;
+  let cprop: "case" | "casenumber";
+  let mprop: "moderatorid" | "moderator";
   if (isWarn) {
     cprop = "casenumber";
     mprop = "moderatorid";
@@ -100,61 +151,65 @@ async function specific(msg, {
   }
   const pages = typed.length === 1 ?
     [typed[0][cprop].toString()] :
-    d.paginate(typed.map(c => c[cprop].toString()).join(" "), 4);
+    dpaginate(typed.map(c => c[cprop].toString()).join(" "), 4);
   if (isNaN(ogPage)) return reply(`That page doesn't exist!`);
   const page = ogPage - 1;
   if (page < 0) return reply(`That page doesn't exist!`);
   if (page > pages.length - 1) return reply(`Invalid page! The max page is **${pages.length}**.`);
-  let color;
+  let color: ColorResolvable;
   if (/^all/i.test(type)) {
     color = "RANDOM";
   } else if (/^unban/i.test(type)) {
-    color = d.Constants.maps.PUNISHMENTS.U[2];
+    color = Constants.maps.PUNISHMENTS.U[2];
   } else {
-    color = (d.Constants.maps.PUNISHMENTS[type[0].toLowerCase()] || [0, 0, "RANDOM"])[2];
+    color = (Constants.maps.PUNISHMENTS[type[0].toLowerCase()] || [0, 0, "RANDOM"])[2];
   }
-  let head;
+  let head: string;
   if (isWarn) {
     head = "currently active warns";
   } else {
     head = /^all/.test(type) ? "punishments" : type;
   }
-  const parseCase = async page => {
-    const emb = new d.Embed()
+  const parseCase = async (page: number): Promise<Embed> => {
+    const emb = new Embed()
       .setTitle(`List of ${head} for ${user.tag}${isWarn ? "" : ` (last ${maxCases} cases)`} - \
 Page ${page}/${pages.length}`)
       .setColor(color);
     if (pages.length > 1) emb.setFooter(`To go to a certain page, type ${p}list${isWarn ? "warns" : "punish"} \
 ${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
     for (const pagee of pages[page - 1].split(" ")) {
-      if (isNaN(pagee) || !d._.trim(pagee)) continue;
-      const num = Number(d._.trim(pagee));
-      const punish = isWarn ? filtered.find(w => w.casenumber === num) : filtered.all.find(c => c.case === num);
-      const [name, _desc, _color, extraFields] = d.Constants.maps.PUNISHMENTS[isWarn ? "w" : punish.type];
-      let extra;
+      if (isNaN(pagee) || !_.trim(pagee)) continue;
+      const num = Number(_.trim(pagee));
+      const punish = isWarn ?
+        (filtered as WarnObj[]).find(w => w.casenumber === num) :
+        (filtered as ReturnType<typeof filterPunishes>).all.find(c => c.case === num);
+      const typeToUse = isWarn ? "w" : (punish as CaseObj).type;
+      const [
+        name, _desc, _color, extraFields
+      ] = Constants.maps.PUNISHMENTS[typeToUse] as [string, string, string, [[string, string]]];
+      let extra: string;
       if (extraFields) {
-        const extraPart = punish.type === "p" ?
+        const extraPart = typeToUse === "p" ?
         [
           "Permanently muted"
         ] :
         [
           extraFields[0][0].replace(/^Muted For$/, "Muted for"),
-          extraFields[0][1].replace("<d>", new d.Interval(d.durationdecompress(punish.duration)))
+          extraFields[0][1].replace("<d>", new Interval(durationdecompress((punish as CaseObj).duration)).toString())
         ];
         extra = ` - ${extraPart.join(" ")}`;
       } else {
-        extra = !["p", "m"].includes(punish.type) && /^all/i.test(type) ? ` - ${d._.capitalize(name)}` : "";
+        extra = !["p", "m"].includes(typeToUse) && /^all/i.test(type) ? ` - ${_.capitalize(name)}` : "";
       }
-      const field = [
-        `Case ${punish[cprop]} by ${((await d.bot.users.fetch(d.uncompress(punish[mprop]))) || { tag: "Unknown" }).tag}${extra}`,
+      const field: [string, string] = [
+        `Case ${punish[cprop]} by ${((await bot.users.fetch(uncompress(punish[mprop]))) || { tag: "Unknown" }).tag}${extra}`,
         `${punish.reason === "None" ? "No reason" : (punish.reason || "No reason")}`
       ];
       emb.addField(field[0], field[1]);
     }
     return emb;
   };
-  const embed = await parseCase(page + 1);
-  const args = arguments;
+  const embed: Embed = await parseCase(page + 1);
   const content = isAuthor ? `Here is a list of your ${head}:` : "";
   const paginate = {
     page: ogPage,
@@ -171,43 +226,51 @@ ${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
   }
 }
 
-const func = async function (
+export interface IListPunishDummy {
+  warns?: boolean;
+}
+
+const func: TcmdFunc<IListPunishDummy> = async function(
   msg, {
     prompt, guildId, guild, reply, checkRole, author, send, args, arrArgs, prefix: p, hasPermission, perms, setPerms,
     searcher, promptAmbig, dummy, member
   },
 ) {
-  const punishments = await (d.db.table("punishments").get(guildId));
-  const maxCases = d.Constants.numbers.max.CASES(guild.members.size);
+  const punishments = await (db.table("punishments").get(guildId));
+  const maxCases = Constants.numbers.max.CASES(guild.members.size);
   if (dummy.warns) { // +listwarns
     if (!punishments || punishments.length < 1) return reply(`Nobody has been warned in this guild!`);
-    if (!perms["listwarns"]) return reply(`Missing permission \`listwarns\`! :(`);
+    if (!perms.listwarns) return reply(`Missing permission \`listwarns\`! :(`);
     if (!args) {
       return await specific(msg, {
-        user: author, isAuthor: true, punishments, p, isWarn: true, reply, send, page: 1, maxCases
+        user: author, isAuthor: true, p, isWarn: true, reply, send, page: 1, maxCases, guildId
       });
     } else {
-      const match = args.match(d.Constants.regex.LIST_WARNS_MATCH);
-      let user, page;
+      const match = args.match(Constants.regex.LIST_WARNS_MATCH);
+      let user: string;
+      let pageStr: string;
+      let onlyPageSpecified: boolean = false;
       if (match[1]) {
         user = match[1];
-        page = match[2];
+        pageStr = match[2];
       } else {
         user = match[3];
         if (/^\d+$/.test(user)) {
-          page = user;
-          user = true;
+          pageStr = user;
+          user = "";
+          onlyPageSpecified = true;
         }
       }
-      page = page && page.length < d.Constants.numbers.max.length.PAGE && !isNaN(d._.trim(page)) ? (Number(page) || 1) : 1;
-      let memberToUse;
-      let membersMatched;
-      if (user === true) {
+      const page: number = pageStr &&
+        pageStr.length < Constants.numbers.max.length.PAGE && !isNaN(Number(_.trim(pageStr))) ? (Number(pageStr) || 1) : 1;
+      let memberToUse: GuildMember;
+      let membersMatched: GuildMember[];
+      if (onlyPageSpecified) {
         memberToUse = member;
       } else if (/[^]#\d{4}$/.test(user)) {
-        const split = user.split("#");
-        const discrim = split.pop();
-        const username = split.join("#");
+        const split: string[] = user.split("#");
+        const discrim: string = split.pop();
+        const username: string = split.join("#");
         memberToUse = guild.members.find(m => m.user.username === username && m.user.discriminator === discrim);
       } else if (/^<@!?\d+>$/.test(user)) {
         memberToUse = guild.members.get(user.match(/^<@!?(\d+)>$/)[1]);
@@ -232,38 +295,40 @@ const func = async function (
         return;
       }
       return await specific(msg, {
-        user: memberToUse.user, isAuthor: false, punishments, p, isWarn: true, reply, send, page, maxCases
+        user: memberToUse.user, isAuthor: false, guildId, p, isWarn: true, reply, send, page, maxCases
       });
     }
   } else { // +listpunish
     if (!punishments || punishments.length < 1) return reply(`Nobody has been punished in this guild!`);
-    if (!perms["listpunish"]) return reply(`Missing permission \`listpunish\`! :(`);
+    if (!perms.listpunish) return reply(`Missing permission \`listpunish\`! :(`);
     if (!args) {
       main({
         user: author, isAuthor: true, punishments, p, reply, send, maxCases });
     } else {
-      const matchObj = args.match(d.xreg(d.Constants.regex.LIST_PUNISH_MATCH, "xi"));
-      let user, name, page;
+      const matchObj = args.match(xreg(Constants.regex.LIST_PUNISH_MATCH, "xi"));
+      let user: string;
+      let name: string;
+      let pageStr: string;
       if (matchObj[1]) {
         name = matchObj[1];
-        page = matchObj[2];
+        pageStr = matchObj[2];
       } else if (matchObj[3]) {
         user = matchObj[3];
         name = matchObj[4];
-        page = matchObj[5];
+        pageStr = matchObj[5];
       } else {
         user = matchObj[6];
       }
       if (!user && !name) return reply(`Please specify a valid user to check their punishments!`);
-      page = page && page.length < 5 && /^\d+$/.test(d._.trim(page)) ? (Number(page) || 1) : 1;
-      name = name ? d._.trim(name) : name;
+      const page: number = pageStr && pageStr.length < 5 && /^\d+$/.test(_.trim(pageStr)) ? (Number(pageStr) || 1) : 1;
+      name = name ? _.trim(name) : name;
       if (user) {
-        let memberToUse;
-        let membersMatched;
+        let memberToUse: GuildMember;
+        let membersMatched: GuildMember[];
         if (/[^]#\d{4}$/.test(user)) {
-          const split = user.split("#");
-          const discrim = split.pop();
-          const username = split.join("#");
+          const split: string[] = user.split("#");
+          const discrim: string = split.pop();
+          const username: string = split.join("#");
           memberToUse = guild.members.find(m => m.user.username === username && m.user.discriminator === discrim);
         } else if (/^<@!?\d+>$/.test(user)) {
           memberToUse = guild.members.get(user.match(/^<@!?(\d+)>$/)[1]);
@@ -289,7 +354,7 @@ const func = async function (
         }
         if (name) {
           return await specific(msg, {
-            user: memberToUse.user, isAuthor: false, punishments, p, type: name, reply, send, page, maxCases
+            user: memberToUse.user, isAuthor: false, punishments, p, type: name, reply, send, page, maxCases, isWarn: false
           });
         } else {
           main({

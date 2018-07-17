@@ -19,9 +19,11 @@ export type ExtendedSend<O extends object = ExtendedMsgOptions> = ExtendedSendUn
 // tslint:disable-next-line:interface-over-type-literal
 export type DankPagStructure = { isDank: true, content?: string, embed?: Embed };
 // tslint:disable-next-line:interface-over-type-literal
-export type PaginateStructure = { isDank?: boolean, content?: string, embed?: Embed, [prop: string]: any };
+export type PaginateStructure = DankPagStructure | Embed;
 
-export type PageGenerator = (newPage: number, struct?: PaginateStructure, pages?: any[]) => PaginateStructure;
+export type PageGenerator = (
+  newPage: number, struct?: PaginateStructure, pages?: any[]
+) => PaginateStructure | Promise<PaginateStructure>;
 
 export interface IProtoSendPaginator {
   page?: number;

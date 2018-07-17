@@ -103,16 +103,16 @@ export interface HelperVals {
   // non array ones - end
   punishments: {
     type: keyof typeof Constants.maps.PUNISHMENTS;
-    target: string;
-    moderator: string;
-    time?: string;
+    target: string; // COMPRESSED
+    moderator: string; // COMPRESSED
+    time?: string; // COMPRESSED DATE
     reason?: string;
-    duration?: string;
-    messageid?: string;
+    duration?: string; // COMPRESSED DURATION
+    messageid?: string; // COMPRESSED
     case: number;
     deleted?: boolean;
     thumbOn: boolean;
-    thumbnail?: string;
+    thumbnail?: string; // COMPRESSED AV
   };
   autoroles: string; // role id
   perms: {
