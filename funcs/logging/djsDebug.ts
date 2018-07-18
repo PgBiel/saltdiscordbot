@@ -5,5 +5,4 @@ export default function djsDebug(info) {
       prefix: `[${/heartbeat/i.test(info) ? "HEARTBEAT" : "DJS DEBUG"}]`,
       color: "magenta"
   });
-};
-
+}

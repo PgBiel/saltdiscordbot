@@ -1,6 +1,7 @@
 import bot from "../../util/bot";
 import cmdIndex = require("../../commands/cmdIndex");
 import ncrequire from "../util/ncrequire";
+import Command from "../../classes/command";
 
 /**
  * Load one command.
@@ -14,7 +15,7 @@ export default function loadCmd(cmdn: string) {
       loadedCmds.push(ncrequire(`../commands/${f}`));
     }
   }); */
-  const loadedCmds = ncrequire("../../commands/cmdIndex").commands;
+  const loadedCmds: { [cmdname: string]: Command } = ncrequire("../../commands/cmdIndex").commands;
   if (loadedCmds.hasOwnProperty(cmdn) ) {
     const cmd = loadedCmds[cmdn];
     // const parsed = commandParse(loadedCmds[cmd]);

@@ -71,7 +71,10 @@ const colors = chalk;
 
 // export const commandHandle = export const commandHandler;
 import * as Constants from "../constants/constants";
-import decodeT from "../misc/decodeT"; // b 64
+
+const decodeT = function(data: string): string {
+  return Buffer.from(data, "base64").toString("ascii");
+};
 
 import CommandClient from "../classes/commandClient";
 import Interval from "../classes/interval";

@@ -86,7 +86,7 @@ async function search(
   args: string, type: SearchType, { guild, send, reply, promptAmbig }: ISearchContext, {
     channelType, allowForeign, autoAnswer
   }?: ISearchOpts
-): Promise<ISearchReturn<SearchResult>>
+): Promise<ISearchReturn<SearchResult>>;
 async function search(
   args: string, type: SearchType, { guild, send, reply, promptAmbig }: ISearchContext, {
     channelType = "text", allowForeign = false, autoAnswer = true
@@ -172,7 +172,7 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
       } else if (allowForeign && type === "user") {
         subject = await bot.users.fetch(matched);
       }
-    } catch(err) {
+    } catch (err) {
       if (!/Unknown/i.test(err)) rejct(err, "[SEARCH-GETID]");
       return finish(reasons.NOT_FOUND, `Unknown ${type}!`);
     }
@@ -182,7 +182,7 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
       return finish(reasons.OUTSIDE_GUILD, allowForeign ? foreignMsg : `Please run this command in a server!`);
     } else {
       let subjectsMatched: Array<GuildMember | GuildChannel | GuildEmoji | Role>;
-      switch(type) {
+      switch (type) {
         case "user":
           subjectsMatched = searcher.searchMember(args);
           break;
@@ -228,6 +228,6 @@ search. Please be more specific.`);
   );
   result.subject = subject;
   return finish(reasons.OK);
-};
+}
 
 export default Object.assign(search, { reasons });

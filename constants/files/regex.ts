@@ -129,7 +129,7 @@ export default {
     $ # End of string.`,
     IS_JUST_NUMBER: /^(?:"|'|'')?(\d+)(?:"|'|'')?$/,
     IS_NOTHING: /^(?:|\s+|(?:"|'|'')\s*(?:"|'|''))$/,
-    TIME_MATCH:
+    TIME_MATCH: // tslint:disable-next-line:max-line-length
     /\d+\s*(?:(?:mo|(?:months?))|(?:s|(?:sec|second)s?)|(?:m|(?:min|minute?s?))|(?:h|(?:hours?))|(?:d|(?:days?))|(?:w|(?:weeks?))|(?:y|(?:years?)))/g,
     SINGLE_TIME_MATCH: (isNumber: boolean) => {
       return isNumber ? /^(\d+)\s*\w+$/ : /^\d+\s*(\w+)$/;
