@@ -60,14 +60,14 @@ export default async function wordFilterer(msg: Message, context: TContext, act 
           if (punishment && typeof punishment === "string" && punishment[0] in Constants.maps.PUNISHMENTS && context) {
             msg.reply(`For saying a filtered word, you will receive the punishment of a \
 **${Constants.maps.PUNISHMENTS[punishment[0]][0].replace("pmute", "permanent mute")}** (defined by this server's \
-settings.`);
+settings).`);
             const name = punishment[0];
             const { guild, member } = msg;
             const { me } = guild;
             if (/p|m/.test(name)) {
               muteP.punish(member, {
                 author: me,
-                reason: "<Auto punishment by Word Filter>",
+                reason: "Saying a filtered word (Auto-punishment)",
                 auctPrefix: "[Auto-mute issued by Word Filter] ",
                 time: mods.filterPunishmentMute ?
                   new Interval(durationdecompress(mods.filterPunishmentMute)) :
@@ -78,7 +78,7 @@ settings.`);
             } else if (/b|s/.test(name)) {
               banP.punish(member, guild, context, {
                 author: me,
-                reason: "<Auto punishment by Word Filter>",
+                reason: "Saying a filtered word (Auto-punishment)",
                 auctPrefix: "[Auto-ban issued by Word Filter] ",
                 usePrompt: false,
                 days: 1,
@@ -87,14 +87,14 @@ settings.`);
             } else if (/k/.test(name)) {
               kickP.punish(member, {
                 author: me,
-                reason: "<Auto punishment by Word Filter>",
+                reason: "Saying a filtered word (Auto-punishment)",
                 auctPrefix: "[Auto-kick issued by Word Filter] ",
                 context
               });
             } else if (/w/.test(name)) {
               warnP.punish(member, {
                 author: me,
-                reason: "<Auto punishment by Word Filter>",
+                reason: "Saying a filtered word (Auto-punishment)",
                 auctPrefix: "[Auto-warn issued by Word Filter] ",
                 context,
                 automatic: true

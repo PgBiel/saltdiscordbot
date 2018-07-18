@@ -160,10 +160,9 @@ async function specific(msg: Message, {
   }
   const parseCase = async (page: number): Promise<Embed> => {
     const emb = new Embed()
-      .setTitle(`List of ${head} for ${user.tag}${isWarn ? "" : ` (last ${maxCases} cases)`} - \
-Page ${page}/${pages.length}`)
+      .setTitle(`List of ${head} for ${user.tag}${isWarn ? "" : ` (last ${maxCases} cases)`}`)
       .setColor(color);
-    if (pages.length > 1) emb.setFooter(`To go to a certain page, type ${p}list${isWarn ? "warns" : "punish"} \
+    if (pages.length > 1) emb.setFooter(`Page ${page}/${pages.length} – To change, type ${p}list${isWarn ? "warns" : "punish"} \
 ${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
     for (const pagee of pages[page - 1].split(" ")) {
       if (isNaN(pagee) || !_.trim(pagee)) continue;

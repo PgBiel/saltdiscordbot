@@ -106,9 +106,9 @@ const func: TcmdFunc<{}> = async function(
     if (page < 1) return reply(`Invalid page! Page must be at least 1.`);
     const gen = (page: number) => {
       const embed: Embed = new Embed()
-        .setTitle(`List of filtered words - Page ${page}/${pages.length}`)
+        .setTitle(`List of filtered words`)
         .setColor("RED");
-      if (pages.length > 1) embed.setFooter(`To go to a certain page, type ${p}wordfilter list <page>.`);
+      if (pages.length > 1) embed.setFooter(`Page ${page}/${pages.length} – To change, type ${p}wordfilter list <page>.`);
       let str = "";
       for (const pagee of pages[page - 1].split(" ")) {
         if (!_.trim(pagee)) continue;
