@@ -118,8 +118,11 @@ export default (msg: IPSPartialMessage, data?: { author?: User }) => {
               const onSuccess: ICollectReactFunc = async (ret, coll, mssg) => {
                 const emjzero = coll[0].emoji; // emoji reacted
                 const re = emjzero.id ? mkEmj(emjzero.id, emjzero.name) : emjzero.name;
-                console.log("RE", re, coll);
-                if (re === Constants.emoji.rjt.DELETE) return collectReact.funcs.DELETE_MSG(ret, coll, mssg);
+                console.log("RE", re, coll, "RE2", typeof re, typeof Constants.emoji.rjt.DELETE);
+                if (
+                  re === Constants.emoji.rjt.DELETE ||
+                  re === Constants.emoji.resolved.rjt.DELETE
+                ) return collectReact.funcs.DELETE_MSG(ret, coll, mssg);
                 await collectReact.funcs.REMOVE_ALL(ret, coll, mssg);
                 let newPage;
                 const { SKIP: supSkip, SPECIALS: specialSup, DIVIDE_BY: divideBy } = Constants.numbers.pagination.super;
@@ -197,7 +200,7 @@ export default (msg: IPSPartialMessage, data?: { author?: User }) => {
             }
           }
           if (deletable && !procceeded) { // react with a deleting emoji
-            collectReact(messg, Constants.emoji.WASTEBASKET, dankAuthor.id)
+            collectReact(messg, Constants.emoji.REDX, dankAuthor.id)
               .catch(rejctF("[TRASH-REACT-1]"));
           }
         }

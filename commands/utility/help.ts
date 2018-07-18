@@ -80,10 +80,10 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
       const emb = new Embed();
       emb
         .setColor("RANDOM")
-        .setTitle(`List of commands in category "${category in map ? map[category] : category}" - Page ${page}/${pages.length}`)
+        .setTitle(`List of commands in category "${category in map ? map[category] : category}"`)
         .setDescription(`All commands available in that category. Type \`${prefix}help <command>\` to view info of a command.`)
         .addField("Commands", pages[page - 1].split("\n").sort().map(l => "• " + l).join("\n"));
-      if (pages.length > 1) emb.setFooter(`To go to a certain page, use \
+      if (pages.length > 1) emb.setFooter(`Page ${page}/${pages.length} – To change, use \
 ${prefix}help ${category in map ? map[category] : category} <page>.`);
       return emb;
     };
@@ -104,10 +104,10 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
       const emb: Embed = new Embed();
       emb
         .setColor("RANDOM")
-        .setTitle(`List of all commands - Page ${page}/${pages.length}`)
+        .setTitle(`List of all commands`)
         .setDescription(`All commands available. Type \`${prefix}help <command>\` to view info of a command.`)
         .addField("Commands", pages[page - 1].split(/\s+/).sort().map(l => "• " + l).join("\n"));
-      if (pages.length > 1) emb.setFooter(`To go to a certain page, use ${prefix}help all <page>.`);
+      if (pages.length > 1) emb.setFooter(`Page ${page}/${pages.length} — To change, use ${prefix}help all <page>.`);
       return emb;
     };
     sendIt(gen(page), { paginate: { page, pages, maxPage: pages.length, usePages: true, format: gen, content: "" } });
