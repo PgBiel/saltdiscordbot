@@ -96,7 +96,7 @@ const func: TcmdFunc<IBanDummy> = async function(msg, {
   }
   if (!memberToUse) {
     const outside: boolean = dummy.outside == null || Boolean(dummy.outside);
-    if (!/^\d{17,21}$/.test(user) || !outside) {
+    if (!/^\d{16,21}$/.test(user) || !outside) {
       return reply("Member not found!");
     }
     if (guild.members.has(user)) {

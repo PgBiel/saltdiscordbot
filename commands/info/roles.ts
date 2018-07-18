@@ -125,7 +125,7 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
    * Search term-
    */
   let argu: string;
-  const sepArg = arg.split(" ");
+  const sepArg = (arg || "").split(" ");
   if (/^\d+$/.test(sepArg[sepArg.length - 1])) {
     strPage = sepArg.pop();
   } else {
@@ -170,20 +170,20 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
     page = _.clamp(isNaN(page) ? 1 : page, 1, pages.length);
     const emb = new Embed()
       .setAuthor(title);
-    if (pages.length > 1) emb.setFooter(`To go to a specific page, write ${p}info roles \
+    if (pages.length > 1) emb.setFooter(`Page ${page}/${pages.length} – To change, write ${p}info roles \
 ${argu ? argu + "<page>" : "<page>"}.`);
     let desc = "";
     for (const role of pages[page - 1]) {
       if (role.id === guild.id) continue;
       const rolePos = rolesArr.indexOf(role);
       const position = rolePos < 1 ?
-      (isGRoles ? "Top" : "Highest") :
+      "Highest" :
       (
         rolePos === rolesArr.length - 1 ?
-          (isGRoles ? "Bottom" : "Lowest") :
+          "Lowest" :
           rolesArr.length - 1 - rolePos // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
       );
-      desc += `**${isNaN(Number(position)) ? `${position}:` : `${position}.`}** <@&${role.id}> \n`;
+      desc += `**${isNaN(Number(position)) ? `${position}:` : `${position}.`}** ${android ? role.name : `<@&${role.id}>`} \n`;
     }
     emb.setDescription(_.trim(desc));
     return emb;
@@ -205,11 +205,19 @@ export const roles = new Command({
   func,
   name: "roles",
   perms: "info.roles",
-  args: {},
+  args: { member: true },
   guildOnly: true,
   category: "Info",
   example: `
 {p}{name}
 {p}{name} @Member#0001`,
-  default: true
+  default: true,
+  aliases: {
+    aroles: {
+      description: "Android Roles – View the list of roles in the server or of a member, but without mentions.",
+      perms: "info.roles",
+      args: { member: true },
+      androd: true
+    }
+  }
 });

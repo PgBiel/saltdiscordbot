@@ -93,10 +93,10 @@ const noGCmds = {
   stats: botinfo, bot: botinfo
 };
 
-const gCmds = {
+const gCmds = Object.assign({
   server: serverinfo, guild: serverinfo, serverid: serverinfo, guildid: serverinfo,
   role: roleinfo, roleid: roleinfo, roles
-};
+}, noGCmds);
 
 const func: cmdFunc<InfoDummy> = async function(msg, {
   args, author, arrArgs, send, reply, prefix: p, botmember, dummy, guild, guildId, perms, searcher, promptAmbig,
@@ -135,7 +135,7 @@ const func: cmdFunc<InfoDummy> = async function(msg, {
   const newDummy: AInfoDummy = {
     arg, trArg, action, android: isAndroid
   };
-  newContext.dummy = newDummy;
+  Object.assign(newContext, { dummy: newDummy, arrArgs: arrArg, args: arg });
   const objToUse = guild ? gCmds : noGCmds;
   const theCmd: Command<AInfoDummy, BaseContext<DjsChannel>> = objToUse[action as keyof typeof objToUse];
   if (!theCmd) return reply("This info isn't available yet on Salt :)");

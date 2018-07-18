@@ -66,7 +66,8 @@ export const evalcmd = new Command({
   devonly: true,
   aliases: {
     sandEval: {
-      sandboxed: true
+      sandboxed: true,
+      show: true
     }
   }
 });

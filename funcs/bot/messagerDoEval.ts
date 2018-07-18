@@ -13,6 +13,10 @@ export interface IMessagerEvalResult {
   result: any;
 }
 
+let sandContext: vm.Context;
+
+export function resetSandContext() { sandContext = undefined; }
+
 /**
  * Do eval
  */
@@ -38,7 +42,7 @@ export default async function messagerDoEval(data: IMessagerEvalData) {
   }
   const cont: string = data.content;
   try {
-    const contextified = isSand ? vm.createContext(extraData) : {};
+    const contextified = isSand ? sandContext || (sandContext = vm.createContext(extraData)) : {};
     const result = isSand ? vm.runInContext(cont, contextified) : eval(cont); // tslint:disable-line:no-eval
     messager.emit(`${data.id}eval`, {
       success: true,
