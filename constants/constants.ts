@@ -4,6 +4,7 @@ const basePath = "../../constants/files/";
 const names = ["emoji", "images", "identifiers", "maps", "numbers", "strings", "times", "regex", "unused/sql"];
 names.forEach(n => ncrequire(basePath + n, false));
 
+export { default as colors } from "./files/colors";
 export { default as emoji } from "./files/emoji";
 export { default as images } from "./files/images";
 export { default as identifiers } from "./files/identifiers";

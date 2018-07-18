@@ -1,5 +1,5 @@
 import Command from "../../classes/command";
-import { _, bot, rejct, Message, Embed, paginate as dpaginate } from "../../misc/d";
+import { _, bot, rejct, Message, Embed, paginate as dpaginate, Constants } from "../../misc/d";
 import { cmdFunc } from "../../misc/contextType";
 import { ExtendedMsgOptions } from "../../handlerfuncs/senders/proto-send";
 
@@ -34,9 +34,9 @@ const func: cmdFunc = async function(msg: Message, { args, arrArgs, send, reply,
   if (!args /* || _.trim(args.toLowerCase()) === "all" */) { // List categories
     const embed: Embed = new Embed();
     embed
-      .setColor("RANDOM")
+      .setColor(Constants.colors.RANDOM_COLOR())
       .setTitle("List of categories")
-      .setFooter(`To view all ${filtered.length} commands, \
+      .setFooter(`To view all ${Object.keys(filtered).length} commands, \
 type ${prefix}help all.`);
     /* Object.entries(categories).forEach(([k, v]) => {
       let str = "";
@@ -79,7 +79,7 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
     const gen = (page: number): Embed => {
       const emb = new Embed();
       emb
-        .setColor("RANDOM")
+        .setColor(Constants.colors.RANDOM_COLOR())
         .setTitle(`List of commands in category "${category in map ? map[category] : category}"`)
         .setDescription(`All commands available in that category. Type \`${prefix}help <command>\` to view info of a command.`)
         .addField("Commands", pages[page - 1].split("\n").sort().map(l => "• " + l).join("\n"));
@@ -103,7 +103,7 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
     const gen = (page: number): Embed => {
       const emb: Embed = new Embed();
       emb
-        .setColor("RANDOM")
+        .setColor(Constants.colors.RANDOM_COLOR())
         .setTitle(`List of all commands`)
         .setDescription(`All commands available. Type \`${prefix}help <command>\` to view info of a command.`)
         .addField("Commands", pages[page - 1].split(/\s+/).sort().map(l => "• " + l).join("\n"));

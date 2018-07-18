@@ -15,7 +15,7 @@ export interface IMessagerEvalResult {
 
 let sandContext: vm.Context;
 
-export function resetSandContext() { sandContext = undefined; }
+export const resetSandContext = function resetSandContext() { sandContext = undefined; };
 
 /**
  * Do eval
