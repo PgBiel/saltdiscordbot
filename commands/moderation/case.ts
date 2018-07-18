@@ -33,7 +33,7 @@ const func: TcmdFunc<{}> = async function(
     part3 = match[3];
   }
   const action: string = part1.toLowerCase();
-  const arg: string = part2;
+  const arg: string = part2 || "";
   const argnum: number = Number(arg);
   /* if ((part2 === "???" && action === "get") || (part2 && part2.length > 11)) {
     arg = part2;

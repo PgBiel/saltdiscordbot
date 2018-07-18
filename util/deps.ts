@@ -60,7 +60,7 @@ const TextChannel = Discord.TextChannel;
 type TextChannel = Discord.TextChannel;
 // ---
 import * as xreg from "xregexp";
-const data = toml.parse(fs.readFileSync("./data.toml", "utf8"));
+const data = toml.parse(fs.readFileSync("../data.toml", "utf8"));
 const a = 1;
 
 const ownerID = "180813971853410305";

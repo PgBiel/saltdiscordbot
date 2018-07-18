@@ -8,20 +8,18 @@ import colors from "chalk";
 export default function editConsole(isMng: boolean, shardIDObj?: { id: number }) {
   if (!(console.log as any).__wasChanged) {
     (console as any).oldLog = console.log;
-    console.log = () => {
-      const args = Array.from(arguments);
+    console.log = (...args) => {
       args.unshift(colors.bgYellow.bold(isMng ? `[MNG]` : `[S${shardIDObj.id == null ? "?" : shardIDObj.id}]`) + " ");
-      return (console as any).oldLog.apply({}, args);
+      return (console as any).oldLog(...args);
     };
     Object.defineProperty(console.log, "__wasChanged", { value: true });
   }
   if (!(console.error as any).__wasChanged) {
     (console as any).oldError = console.error;
-    console.error = () => {
-      const args = Array.from(arguments);
+    console.error = (...args) => {
       args.unshift(colors.bgYellow.bold(isMng ? `[MNG]` : `[S${shardIDObj.id == null ? "?" : shardIDObj.id}]`) + " ");
-      return (console as any).oldError.apply({}, args);
+      return (console as any).oldError(...args);
     };
     Object.defineProperty(console.error, "__wasChanged", { value: true });
   }
-};
+}
