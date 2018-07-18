@@ -14,7 +14,7 @@ const https = burlp.https;
 const http = burlp.http;
 
 import * as moment from "moment";
-import transliteration from "transliteration";
+import * as transliteration from "transliteration";
 import logger from "../classes/logger";
 const tr = transliteration.transliterate;
 const slugify = transliteration.slugify;

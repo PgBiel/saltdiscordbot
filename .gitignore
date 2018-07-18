@@ -59,9 +59,12 @@ typings/
 # dotenv environment variables file
 .env
 
+# Compiling results
+build/
+
 # Misc
 decodeT.*
-data.toml
+
 secrets/
 *.secret.*
 *.secret
