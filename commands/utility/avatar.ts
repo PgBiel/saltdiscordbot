@@ -1,12 +1,18 @@
-const Command = require("../../classes/command");
-const d = require("../../misc/d");
+import Command from "../../classes/command";
+import { TextChannel, Embed, logger, bot, User, GuildMember } from "../../misc/d";
+import { cmdFunc } from "../../misc/contextType";
 
-function getAvatarEmb(author) {
-  const avatarRegex = /^((?:https?:\/\/)?cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpe?g|png|gif|webp))\?size=\d+$/;
-  const embed = new d.Embed();
-  const tag = `${author.username}#${author.discriminator}`;
-  const urlz = author.displayAvatarURL();
-  const avatarUrl = avatarRegex.test(urlz) ?
+/**
+ * Get the embed of an avatar of an user
+ * @param {User} author The user to get avatar from
+ * @returns {Embed}
+ */
+function getAvatarEmb(author: User): Embed {
+  const avatarRegex: RegExp = /^((?:https?:\/\/)?cdn\.discordapp\.com\/avatars\/\d+\/\w+\.(?:jpe?g|png|gif|webp))\?size=\d+$/;
+  const embed: Embed = new Embed();
+  const tag: string = `${author.username}#${author.discriminator}`;
+  const urlz: string = author.displayAvatarURL();
+  const avatarUrl: string = avatarRegex.test(urlz) ?
   urlz.match(avatarRegex)[1]
   : urlz;
 
@@ -17,29 +23,29 @@ function getAvatarEmb(author) {
   return embed;
 }
 
-const func = async function (msg, {
+const func: cmdFunc = async function(msg, {
   channel, guildId, author, args, arrArgs, send, reply, searcher, promptAmbig, perms, guild
 }) {
   if (guild && !perms.avatar) return reply("Missing permission `avatar`! :frowning:");
   channel.startTyping();
   if (!args) {
     send({ embed: getAvatarEmb(author), deletable: true });
-  } else if (!(channel instanceof d.TextChannel)) {
+  } else if (!(channel instanceof TextChannel)) {
     send(
       "This is a DM and there is nobody here other than me and you, so here's my avatar.",
-      { embed: getAvatarEmb(d.bot.user), deletable: true }
+      { embed: getAvatarEmb(bot.user), deletable: true }
     );
   } else {
     if (/^<@\d+>$/.test(args)) {
-      const user = d.bot.users.get(args.match(/^<@(\d+)>$/)[1]);
+      const user: User = bot.users.get(args.match(/^<@(\d+)>$/)[1]);
       if (!user) {
         return reply("Invalid member given!");
       }
-      const embed = getAvatarEmb(user);
+      const embed: Embed = getAvatarEmb(user);
       return send({ embed, deletable: true });
     }
-    const members = searcher.searchMember(args);
-    d.logger.debug(args);
+    const members: GuildMember[] = searcher.searchMember(args);
+    logger.debug(args);
     if (members.length < 1) {
       return reply("Member not found!");
     }
@@ -49,21 +55,22 @@ const func = async function (msg, {
         return;
       }
       if (ambResult.subject) {
-        const member = ambResult.subject;
-        const embed = getAvatarEmb(member.user);
+        const member: GuildMember = ambResult.subject;
+        const embed: Embed = getAvatarEmb(member.user);
         send({ embed, deletable: true });
         return;
       }
     }
     if (members.length === 1) {
-      const embed = getAvatarEmb(members[0].user);
+      const embed: Embed = getAvatarEmb(members[0].user);
       send({ embed, deletable: true });
       return;
     }
     return reply("Multiple members were found in your search. Please be more specific.");
   }
 };
-module.exports = new Command({
+
+export const avatar = new Command({
   func,
   name: "avatar",
   perms: "avatar",

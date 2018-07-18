@@ -1,8 +1,13 @@
-const Command = require("../../classes/command");
-const d = require("../../misc/d");
+import Command from "../../classes/command";
+import { mathjs, textAbstract, _, bot } from "../../misc/d";
+import { cmdFunc } from "../../misc/contextType";
 
-function changeOutput(obj) {
-  const output = obj.result;
+/**
+ * Remove invalid numbers & modify strings
+ * @param {*} output The output generated
+ * @returns {*|Array<*>} The filtered output
+ */
+function changeOutput(output): any {
   if (output instanceof Error) return output;
   const isArr = Array.isArray(output);
   let workWith = [];
@@ -13,7 +18,7 @@ function changeOutput(obj) {
   };
   function loop(val) {
     if (val == null) return [undefined, returnCodes.INVALID];
-    if (val instanceof d.mathjs.type.ResultSet) {
+    if (val instanceof (mathjs as any).type.ResultSet) {
       let arrToAdd = [];
       for (const val2 of val.entries) {
         const res = loop(val2);
@@ -46,7 +51,7 @@ function changeOutput(obj) {
     }
     return [val, returnCodes.OK];
   }
-  for (const val of d._.castArray(output)) {
+  for (const val of _.castArray(output)) {
     const res = loop(val);
     if (res[1] === returnCodes.CONCAT) {
       workWith = workWith.concat(res[0]);
@@ -54,41 +59,48 @@ function changeOutput(obj) {
       continue;
     } else {
       workWith = workWith.concat([res[0]]);
-    } 
+    }
   }
   return workWith.length < 2 && !isArr ? workWith[0] : workWith;
 }
 
-function resultText(input, output, error = false, resolved = false) {
-  const result = d.textAbstract(
+/**
+ * Stylize the output text
+ * @param {string} input The input
+ * @param {*} output The output generated
+ * @param {boolean} [error=false] If an error occurred
+ * @param {boolean} [resolved=false] If a promise was returned
+ */
+function resultText(input: string, output: any, error = false, resolved = false) {
+  const result: string = textAbstract(
     String(changeOutput(output) || "")
-      .replace(new RegExp(d._.escapeRegExp(d.bot.token), "ig"), "{shaker}")
+      .replace(new RegExp(_.escapeRegExp(bot.token), "ig"), "{shaker}")
       .replace(/^\w*Error:\s/, ""),
     1900
   );
   return `\`\`\`js
 Expression
 ${input}
-  
+
 ${error ? "Error" : "Result"}
 ${result}
 \`\`\``;
 }
 
-const func = async function (msg, { args, doEval, send, reply, perms, guild, self }) {
+const func: cmdFunc<{}> = async function(msg, { args, doEval, send, reply, perms, guild, self }) {
   if (guild && !perms.calc) {
     return reply("Missing permission `calc`! :frowning:");
   }
   if (!args) return reply("Please specify a math expression!");
-  const input = args.replace(/\*\*/g, "^").replace(/(?=\b)Math\./, "");
-  const results = { success: false };
+  const input: string = args.replace(/\*\*/g, "^").replace(/(?=\b)Math\./, "");
+  const results = { success: false, result: undefined };
   try {
-    results.result = d.mathjs.eval(input);
+    results.result = mathjs.eval(input);
     results.success = true;
-  } catch(err) {
+  } catch (err) {
     results.result = err;
   }
-  const result = results;
+  const { result } = results;
   if (results.success) {
     if (result instanceof Promise) {
       const sent = await send(resultText(args, "[Waiting...]", false), { deletable: true });
@@ -104,7 +116,8 @@ const func = async function (msg, { args, doEval, send, reply, perms, guild, sel
     send(resultText(args, result, true), { deletable: true });
   }
 };
-module.exports = new Command({
+
+export const calc = new Command({
   func,
   name: "calc",
   perms: "calc",
@@ -120,7 +133,7 @@ module.exports = new Command({
   aliases: {
     math: {
       description: "Alias to calc",
-      example:`{p}math 1 + 1
+      example: `{p}math 1 + 1
 {p}math pi * 2
 {p}math 6.66 * 10^50
 {p}math i ^ 2

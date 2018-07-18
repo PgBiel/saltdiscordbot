@@ -6,6 +6,11 @@ export interface IMessagerEvalData {
   id: number;
 }
 
+export interface IMessagerEvalResult {
+  success: boolean;
+  result: any;
+}
+
 /**
  * Do eval
  */

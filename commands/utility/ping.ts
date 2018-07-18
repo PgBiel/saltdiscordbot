@@ -1,7 +1,7 @@
-const Command = require("../../classes/command");
-const d = require("../../misc/d");
+import Command from "../../classes/command";
+import { cmdFunc } from "../../misc/contextType";
 
-const func = async function (msg, { guild, send, reply, perms }) {
+const func: cmdFunc = async function(msg, { guild, send, reply, perms }) {
   if (guild && !perms.ping) return reply("Missing permission `ping`! (Try using this command by messaging me.)");
   const now = Date.now();
   const sentmsg = await send("Calculating ping...");
@@ -31,7 +31,8 @@ const func = async function (msg, { guild, send, reply, perms }) {
   sentmsg.edit(`Pong! The ping is ${Date.now() - now}ms.
 I'd rate the speed as${pingRate}.`);
 };
-module.exports = new Command({
+
+export const ping = new Command({
   func,
   name: "ping",
   perms: "ping",

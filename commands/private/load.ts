@@ -1,14 +1,16 @@
-const Command = require("../../classes/command");
-const d = require("../../misc/d");
+import Command from "../../classes/command";
+import { loadCmd, util, Constants, ownerID, Message } from "../../misc/d";
+import { cmdFunc } from "../../misc/contextType";
 
-const func = async function (msg, { args, doEval, send, reply, self }) {
-  if ((msg.author.id !== d.Constants.identifiers.APLET && msg.author.id !== d.ownerID) || !args) {
+const func: cmdFunc<{}> = async function(msg: Message, { args, doEval, send, reply, self }) {
+  if ((msg.author.id !== Constants.identifiers.APLET && msg.author.id !== ownerID) || !args) {
     return;
   }
-  const cmd = d.loadCmd(args);
-  reply(`\`\`\`js\n${d.util.inspect(cmd)}\n\`\`\``, { deletable: true });
+  const cmd = loadCmd(args);
+  reply(`\`\`\`js\n${util.inspect(cmd)}\n\`\`\``, { deletable: true });
 };
-module.exports = new Command({
+
+export const load = new Command({
   func,
   name: "load",
   description: "Reload a command.",

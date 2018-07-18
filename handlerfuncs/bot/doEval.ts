@@ -2,6 +2,7 @@ import * as deps from "../../util/deps";
 import * as funcs from "../../funcs/funcs";
 import hndlerfunc = require("../commandHandlerFuncs");
 import { Message } from "discord.js";
+import { IMessagerEvalResult } from "../../funcs/bot/messagerDoEval";
 
 const { bot, db, messager } = deps;
 
@@ -10,7 +11,7 @@ export default (msg: Message) => {
   const guildId = guild ? guild.id : null;
   const { default: handlerFuncsReq }: typeof hndlerfunc = require("../commandHandlerFuncs");
   const handlerFuncs = handlerFuncsReq(msg, true); // lazy require for no mess up
-  return (content: string, subC: object = {}) => {
+  return (content: string, subC: object = {}): Promise<IMessagerEvalResult> => {
     const objectToUse = Object.assign({}, handlerFuncs, {
       bot, msg, message: msg,
       channel, guildId, deps,

@@ -1,5 +1,6 @@
 import Command from "../../classes/command";
 import { cmdFunc } from "../../misc/contextType";
+import { TextChannel } from "../../misc/d";
 
 const func: cmdFunc<{}> = async function(msg, { args, send, reply, channel, member, author, guild, perms }) {
   if (guild && !perms.rip) return reply("Missing permission `rip`! :frowning:");
@@ -8,7 +9,7 @@ const func: cmdFunc<{}> = async function(msg, { args, send, reply, channel, memb
     ripContent = member ?
     member.displayName :
     author.username;
-  } else if (channel instanceof d.TextChannel) {
+  } else if (channel instanceof TextChannel) {
     ripContent = args.replace(/<@!?\d+>/g, mention => {
       const id = mention.match(/^<@!?(\d+)>$/)[1];
       const memberToUse = guild.members.get(id);

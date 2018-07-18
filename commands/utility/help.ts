@@ -1,21 +1,23 @@
-const Command = require("../../classes/command");
-const d = require("../../misc/d");
+import Command from "../../classes/command";
+import { _, bot, rejct, Message, Embed, paginate as dpaginate } from "../../misc/d";
+import { cmdFunc } from "../../misc/contextType";
+import { ExtendedMsgOptions } from "../../handlerfuncs/senders/proto-send";
 
 const map = { Mod: "Moderation", Admin: "Administration", Util: "Utility" };
 
-const func = async function (msg, { args, arrArgs, send, reply, prefix, botmember, dummy, guild, perms }) {
+const func: cmdFunc = async function(msg: Message, { args, arrArgs, send, reply, prefix, botmember, dummy, guild, perms }) {
   if (guild && !perms.help) return reply("Missing permission `help`! (Try using this command by messaging me instead.)");
-  const sendIt = (emb, opts) => {
+  const sendIt = (emb: Embed, opts?: ExtendedMsgOptions) => {
     return send(Object.assign({ embed: emb, autoCatch: false, deletable: true }, opts))
       .catch(err => [403, 50013].includes(err.code) ?
         send("Please make sure I can send embeds in this channel.") :
-        void(d.rejct(err)));
+        void(rejct(err)));
   };
-  const filtered = d._.fromPairs(
-    Object.entries(d.bot.commands)
+  const filtered = _.fromPairs(
+    Object.entries(bot.commands)
       .filter(([n, c]) => c && c.category !== "Private" && (c.show || c.show == null))
   );
-  const categories = {};
+  const categories: { [category: string]: { [cmdname: string]: Command } } = {};
   Object.entries(filtered).forEach(([k, v]) => {
     if (v.category !== "Private" && (v.show || v.show == null)) {
       let category = "Uncategorized";
@@ -28,9 +30,9 @@ const func = async function (msg, { args, arrArgs, send, reply, prefix, botmembe
       categories[category][v.name] = v;
     }
   });
-  const extraCategories = Object.assign({}, categories, { Mod: null, Admin: null, Util: null });
-  if (!args /* || d._.trim(args.toLowerCase()) === "all" */) {
-    const embed = new d.Embed();
+  const extraCategories = Object.assign({}, categories, { Mod: null, Admin: null, Util: null }); // categories + ALIASES
+  if (!args /* || _.trim(args.toLowerCase()) === "all" */) { // List categories
+    const embed: Embed = new Embed();
     embed
       .setColor("RANDOM")
       .setTitle("List of categories")
@@ -41,37 +43,41 @@ type ${prefix}help all.`);
       Object.keys(v).forEach(k2 => {
         str += k2 + "\n";
       });
-      embed.addField(k, d._.trim(str), true);
+      embed.addField(k, _.trim(str), true);
     }); */
-    let arr = [];
+    /**
+     * Array with the categories and their sizes
+     */
+    const arr: Array<[string, number]> = [];
     Object.entries(categories).forEach(([cat, cmds]) => {
       const size = Object.getOwnPropertyNames(cmds).length;
       arr.push([cat, size]);
     });
-    let table = "";
+
+    let table: string = "";
     for (const obj of arr.sort((a, b) => b[1] - a[1])) {
       table += `• **${obj[0]}**: **${obj[1]}** commands\n`;
     }
-    table = d._.trim(table);
+    table = _.trim(table);
     embed.setDescription(`Categories of commands available (Type \`${prefix}help <category>\` to view its commands):
 
 ${table}`);
     sendIt(embed);
-  } else if (arrArgs[0].toLowerCase().replace(/^\w/, m => m.toUpperCase()) in extraCategories) {
-    const category = arrArgs[0].toLowerCase().replace(/^\w/, m => m.toUpperCase());
-    const page = Number(arrArgs[1] || 1);
+  } else if (arrArgs[0].toLowerCase().replace(/^\w/, m => m.toUpperCase()) in extraCategories) { // List of commands in category
+    const category: string = arrArgs[0].toLowerCase().replace(/^\w/, m => m.toUpperCase());
+    const page: number = Number(arrArgs[1] || 1);
     if (isNaN(page) || page < 1 || /\./.test(page.toString())) return reply(`Please provide a valid page (the second parameter)! \
 It must be a number that is higher than or equal to 1, and not have decimals.`);
-    let str = "";
+    let str: string = "";
     Object.values(categories[category in map ? map[category] : category])
       .filter(c => c.show == null || c.show)
       .sort(({ name: a }, { name: b }) => a > b ? 1 : (a < b ? -1 : 0))
       .forEach(cmd => str += `${cmd.name}\n`);
-    str = d._.trim(str);
-    const pages = d.paginate(str);
+    str = _.trim(str);
+    const pages = dpaginate(str);
     if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
-    const gen = page => {
-      const emb = new d.Embed();
+    const gen = (page: number): Embed => {
+      const emb = new Embed();
       emb
         .setColor("RANDOM")
         .setTitle(`List of commands in category "${category in map ? map[category] : category}" - Page ${page}/${pages.length}`)
@@ -81,21 +87,21 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
 ${prefix}help ${category in map ? map[category] : category} <page>.`);
       return emb;
     };
-      
-    sendIt(gen(page), { paginate: { page, pages, maxPage: pages.length, usePages: true, format: gen } });
-  } else if (arrArgs[0].toLowerCase() === "all") {
-    const page = Number(arrArgs[1] || 1);
+
+    sendIt(gen(page), { paginate: { page, pages, maxPage: pages.length, usePages: true, format: gen, content: "" } });
+  } else if (arrArgs[0].toLowerCase() === "all") { // List of all commands
+    const page: number = Number(arrArgs[1] || 1);
     if (isNaN(page) || page < 1 || /\./.test(page.toString())) return reply(`Please provide a valid page (the second parameter)! \
 It must be a number that is higher than or equal to 1, and not have decimals.`);
-    let str = "";
+    let str: string = "";
     Object.values(filtered)
       .sort(({ name: a }, { name: b }) => a > b ? 1 : (a < b ? -1 : 0))
       .forEach(cmd => str += `${cmd.name}\n`);
-    str = d._.trim(str);
-    const pages = d.paginate(str);
+    str = _.trim(str);
+    const pages = dpaginate(str);
     if (pages.length < page) return reply(`Invalid page! The max page is **${pages.length}**.`);
-    const gen = page => {
-      const emb = new d.Embed();
+    const gen = (page: number): Embed => {
+      const emb: Embed = new Embed();
       emb
         .setColor("RANDOM")
         .setTitle(`List of all commands - Page ${page}/${pages.length}`)
@@ -104,15 +110,15 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
       if (pages.length > 1) emb.setFooter(`To go to a certain page, use ${prefix}help all <page>.`);
       return emb;
     };
-    sendIt(gen(page), { paginate: { page, pages, maxPage: pages.length, usePages: true, format: gen } });
-  } else if (d._.trim(args.toLowerCase()) in d.bot.commands) {
-    const cmdn = d._.trim(args.toLowerCase());
-    const embed = d.bot.commands[cmdn].help(prefix, true, guild);
+    sendIt(gen(page), { paginate: { page, pages, maxPage: pages.length, usePages: true, format: gen, content: "" } });
+  } else if (_.trim(args.toLowerCase()) in bot.commands) { // Help of a command
+    const cmdn: string = _.trim(args.toLowerCase());
+    const embed: Embed = bot.commands[cmdn].help(prefix, { useEmbed: true, guild });
     sendIt(embed);
-  } else {
+  } else { // no idea
     return reply("Unknown command/category!");
     /* let cmdToUse = null;
-    Object.values(d.bot.commands).forEach((cmd: Command) => {
+    Object.values(bot.commands).forEach((cmd: Command) => {
       if (cmdToUse) {
         return;
       }
@@ -121,7 +127,7 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
           if (cmdToUse) {
             return;
           }
-          if (alias.name.toLowerCase() === d._.trim(args).toLowerCase()) {
+          if (alias.name.toLowerCase() === _.trim(args).toLowerCase()) {
             cmdToUse = alias;
           }
         });
@@ -132,7 +138,8 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
     sendIt(cmdToUse.help(prefix, true)); */
   }
 };
-module.exports = new Command({
+
+export const help = new Command({
   func,
   name: "help",
   perms: "help",

@@ -1,4 +1,5 @@
 import Command from "../../classes/command";
+import { random as randomF } from "../../misc/d";
 import { cmdFunc } from "../../misc/contextType";
 
 const func: cmdFunc<{}> = async function(msg, { arrArgs, reply, guild, perms }) {
@@ -7,7 +8,7 @@ const func: cmdFunc<{}> = async function(msg, { arrArgs, reply, guild, perms }) 
     reply("Please specify two numbers.");
     return;
   }
-  const result = d.random(
+  const result = randomF(
     Number(arrArgs[0]), Number(arrArgs[1]));
   if (result == null) {
     reply("Please specify two **numbers**.");

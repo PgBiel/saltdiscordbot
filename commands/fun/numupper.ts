@@ -1,5 +1,6 @@
 import Command from "../../classes/command";
 import { cmdFunc } from "../../misc/contextType";
+import { Embed } from "../../misc/d";
 
 export interface INumUpperDummy {
   /**
@@ -37,7 +38,7 @@ const func: cmdFunc<INumUpperDummy> = async function(
   const arrup = Object.assign({ "-": "⁻", "+" : "⁺" }, ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"]);
   if (!args) return reply(dummy.msgEmpty || "Please specify numbers to convert!");
   if (!/\d/.test(msg.content)) return reply(dummy.msgNoNumbers || "Please include at least one number on your text to convert!");
-  const embed = new d.Embed()
+  const embed = new Embed()
     .setTitle(dummy.embTitle || "Sent text with all numbers converted")
     .setDescription(typeof dummy.replace === "function" ? dummy.replace(args, arrup) : args.replace(/[-+\d]/g, n => arrup[n]));
   return reply(dummy.sentMsg || `Here is your message with all numbers set to superscript:`, { embed, deletable: true });

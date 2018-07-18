@@ -2,7 +2,7 @@ export function applyDeps() {
   Object.entries(module.exports).forEach(([k, v]) => this[k] = v);
 }
 // dependencies
-import mathjs from "mathjs";
+import * as mathjs from "mathjs";
 import * as _Storage from "saltjs";
 import cross from "../classes/cross";
 import db from "../classes/database";
