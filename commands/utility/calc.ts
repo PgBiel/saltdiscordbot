@@ -2,6 +2,12 @@ import Command from "../../classes/command";
 import { mathjs, textAbstract, _, bot } from "../../misc/d";
 import { cmdFunc } from "../../misc/contextType";
 
+mathjs.config({
+  number: "BigNumber", // Default type of number:
+                       // 'number' (default), 'BigNumber', or 'Fraction'
+  precision: 16        // Number of significant digits for BigNumbers
+});
+
 /**
  * Remove invalid numbers & modify strings
  * @param {*} output The output generated

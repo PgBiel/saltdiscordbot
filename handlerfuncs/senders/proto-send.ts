@@ -1,4 +1,4 @@
-import { _, Constants, Message, User, TextChannel, Embed } from "../../util/deps";
+import { _, Constants, Message, User, TextChannel, Embed, logger } from "../../util/deps";
 import collectReact, { ICollectReactFunc } from "../../funcs/bot/collectReact";
 import paginateReactions from "../../funcs/util/paginateReactions";
 import mkEmj from "../../funcs/parsers/mkEmoji";
@@ -82,7 +82,10 @@ export default (msg: IPSPartialMessage, data?: { author?: User }) => {
       } else if (!options) {
         options = {};
         content = ogContent as string;
+      } else {
+        content = ogContent as string;
       }
+      logger.debug("[PROTO-SEND-TEST]", content, String(options));
       const result = func(content, options);
       if (options.autoCatch == null || options.autoCatch) {
         result.catch(rejctF("[PROTOSEND-AUTOCATCH]"));

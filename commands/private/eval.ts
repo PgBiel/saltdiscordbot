@@ -32,11 +32,11 @@ ${result}
 \`\`\``;
 }
 
-const func: cmdFunc<{}> = async function(msg: Message, { args, doEval, send, self }) {
+const func: cmdFunc<{ sandboxed?: boolean }> = async function(msg: Message, { args, doEval, send, self, dummy }) {
   if ((msg.author.id !== Constants.identifiers.APLET && msg.author.id !== ownerID) || !args) {
     return;
   }
-  const results = await doEval(args, self);
+  const results = await doEval(args, self, Boolean(dummy.sandboxed));
   const result = results.result;
   if (results.success) {
     if (result instanceof Promise) {
@@ -63,5 +63,10 @@ export const evalcmd = new Command({
   guildOnly: false,
   customPrefix: "+",
   args: {code: false},
-  devonly: true
+  devonly: true,
+  aliases: {
+    sandEval: {
+      sandboxed: true
+    }
+  }
 });
