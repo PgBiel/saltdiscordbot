@@ -64,7 +64,7 @@ build/
 
 # Misc
 decodeT.*
-
+data.toml
 secrets/
 *.secret.*
 *.secret
