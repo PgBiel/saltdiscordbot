@@ -65,7 +65,7 @@ function main(
   }
 ) {
   const filtered = filterPunishes(punishments, user.id);
-  if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ? 
+  if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ?
     "You haven't" :
     "That user hasn't"} ever been punished! :smiley:`);
   let text: string = `Punishments available (Type \`${p}listpunish ${isAuthor ? "" : "<user> "}<punishment>\` to a view a list):
@@ -91,24 +91,12 @@ type ${p}listpunish ${isAuthor ? "" : "<user> "}all.`);
   }
 }
 
-async function specific(msg: Message, { // OVL 1 - +listpunish
-  user, isAuthor, punishments, p, type: aType, reply, send, page: ogPage, maxCases, isWarn, guildId
-}: {
-  user: User, isAuthor: boolean, punishments: CaseObj[], p: string, type: keyof ReturnType<typeof filterPunishes>,
-  reply: ExtendedSendUnit, send: ExtendedSendUnit, page: number, maxCases: number, isWarn: false, guildId: string
-});
-async function specific(msg: Message, { // tslint:disable-line:unified-signatures | OVL 2 - +listwarns
-  user, isAuthor, p, reply, send, page: ogPage, maxCases, isWarn, guildId
-}: {
-  user: User, isAuthor: boolean, p: string,
-  reply: ExtendedSendUnit, send: ExtendedSendUnit, page: number, maxCases: number, isWarn: true, guildId: string
-});
 async function specific(msg: Message, {
   user, isAuthor, punishments, p, type: aType, reply, send, page: ogPage, maxCases, isWarn, guildId
 }: {
   user: User, isAuthor: boolean, punishments?: CaseObj[], p: string, type?: keyof ReturnType<typeof filterPunishes>,
   reply: ExtendedSendUnit, send: ExtendedSendUnit, page: number, maxCases: number, isWarn: boolean, guildId: string
-}): void {
+}): Promise<Message> {
   /**
    * All punishments for +listpunish, All warns for +listwarns
    */
@@ -354,7 +342,8 @@ const func: TcmdFunc<IListPunishDummy> = async function(
         }
         if (name) {
           return await specific(msg, {
-            user: memberToUse.user, isAuthor: false, punishments, p, type: name, reply, send, page, maxCases, isWarn: false
+            user: memberToUse.user, isAuthor: false, punishments, p, type: name as keyof ReturnType<typeof filterPunishes>, reply,
+            send, page, maxCases, isWarn: false, guildId
           });
         } else {
           main({
@@ -363,14 +352,15 @@ const func: TcmdFunc<IListPunishDummy> = async function(
         }
       } else {
         return await specific(msg, {
-          user: author, isAuthor: true, punishments, p, type: name, reply, send, page, maxCases
+          user: author, isAuthor: true, punishments, p, type: name as keyof ReturnType<typeof filterPunishes>, reply, send,
+          page, maxCases, isWarn: false, guildId
         });
       }
     }
   }
 };
 
-module.exports = new Command({
+export const listpunish = new Command({
   func,
   name: "listpunish",
   perms: "listpunish",
@@ -394,5 +384,19 @@ that list for someone else instead. To switch pages, just specify a number (the 
     "page (if an user is specified)": true
   },
   guildOnly: true,
-  default: true
+  default: true,
+  aliases: {
+    listwarns: {
+      perms: "listwarns",
+      warns: true,
+      default: true,
+      description: "List active warns.",
+      args: { "user or page": true, "page (when user is specified)": true },
+      example: `{p}listwarns
+{p}listwarns 2
+{p}listwarns @Guy#0000
+{p}listwarns @Guy#0000 3`,
+      show: true
+    }
+  }
 });

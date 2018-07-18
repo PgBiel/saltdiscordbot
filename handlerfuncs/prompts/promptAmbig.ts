@@ -30,7 +30,7 @@ export interface IPromptAmbigOpts {
 
 type InGuildChannel = TextChannel | VoiceChannel | CategoryChannel | GuildChannel;
 
-export type PromptAmbigSubject = Role | GuildMember | GuildEmoji | InGuildChannel;
+export type PromptAmbigSubject = Role | GuildMember|User | GuildEmoji | InGuildChannel;
 
 export default (msg: Message) => {
   const { channel } = msg;
@@ -48,7 +48,7 @@ export default (msg: Message) => {
   async function promptAmbig<C extends Role>( // overload 1
     subjectArr: C[], pluralName: string, opts: IPromptAmbigOpts & { type: "role" }
   ): Promise<IPromptAmbigResult<C>>;
-  async function promptAmbig<C extends GuildMember>( // ovl 2
+  async function promptAmbig<C extends GuildMember | User>( // ovl 2
     subjectArr: C[], pluralName?: string, opts?: IPromptAmbigOpts & { type: "member" }
   ): Promise<IPromptAmbigResult<C>>;
   async function promptAmbig<C extends GuildEmoji>( // ovl 3
@@ -60,7 +60,7 @@ export default (msg: Message) => {
   async function promptAmbig<C extends PromptAmbigSubject = PromptAmbigSubject>( // main as ovl
     subjectArr: C[], pluralName: string, opts: IPromptAmbigOpts
   ): Promise<IPromptAmbigResult<C>>;
-  async function promptAmbig<C extends PromptAmbigSubject = GuildMember>( // main
+  async function promptAmbig<C extends PromptAmbigSubject = GuildMember | User>( // main
     subjectArr: PromptAmbigSubject[], pluralName: string = "members", opts: IPromptAmbigOpts = { type: "member" }
   ): Promise<IPromptAmbigResult<PromptAmbigSubject>> {
     let mode = "r";

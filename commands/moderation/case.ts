@@ -2,7 +2,9 @@ import Command from "../../classes/command";
 import actionLog, { ICaseEditOptions } from "../../classes/actionlogger";
 import { db, Constants, rejct, Time, _, uncompress, logger, Embed } from "../../misc/d";
 import { TcmdFunc } from "../../misc/contextType";
-import { ExtendedMsgOptions, PageGenerator, IProtoSendPaginator, PaginateStructure } from "../../handlerfuncs/senders/proto-send";
+import {
+  ExtendedMsgOptions, PageGenerator, IProtoSendPaginator, PaginateStructure, DankPagStructure
+} from "../../handlerfuncs/senders/proto-send";
 
 const func: TcmdFunc<{}> = async function(
   msg,
@@ -60,9 +62,12 @@ const func: TcmdFunc<{}> = async function(
 The highest non-deleted case number so far is ${latest}.`);
     const number: number = Number(isNaN(Number(action)) ? arg : action);
     if (number > latest) return reply(`Invalid case number! The highest non-deleted case number so far is ${latest}.`);
-    const gen: PageGenerator = async num => {
+    const gen = async (num: number) => {
       let { case: punish, embed } = await actionLog.fetchCase(num, guild); // tslint:disable-line:prefer-const
-      if (!punish) return `Unknown case number! :( (Note: On this guild, only the latest ${maxCases} cases are kept stored.)`;
+      if (!punish) return {
+        isDank: false,
+        content: `Unknown case number! :( (Note: On this guild, only the latest ${maxCases} cases are kept stored.)`
+      };
       if (punish.deleted) embed = new Embed({
         title: `Action Log #${punish.case}`,
         description: `The case with this number was deleted! :(`
@@ -82,7 +87,7 @@ The highest non-deleted case number so far is ${latest}.`);
       content: typeof generated === "string" ? generated : `Here's Case #${number}:`
     };
     return sendIt(
-      `Here's Case #${number}:`, (generated || {}).embed,
+      `Here's Case #${number}:`, ((generated || {}) as DankPagStructure).embed,
       { type: typeof generated === "string" ? "reply" : "send", paginate }
     );
   } else if (["edit", "delete", "togglethumb"].includes(action)) {

@@ -17,7 +17,7 @@ export type ExtendedSendArr<O extends object = ExtendedMsgOptions> = { // tslint
 
 export type ExtendedSend<O extends object = ExtendedMsgOptions> = ExtendedSendUnit<O> & ExtendedSendArr<O>;
 // tslint:disable-next-line:interface-over-type-literal
-export type DankPagStructure = { isDank: true, content?: string, embed?: Embed };
+export type DankPagStructure = { isDank: boolean, content?: string, embed?: Embed };
 // tslint:disable-next-line:interface-over-type-literal
 export type PaginateStructure = DankPagStructure | Embed;
 
@@ -158,17 +158,20 @@ export default (msg: IPSPartialMessage, data?: { author?: User }) => {
                   }
                   const coolCont: string = typeof structToUse === "string" ?
                     structToUse :
-                    (typeof structToUse === "object" && structToUse.isDank && structToUse.content ?
-                      structToUse.content :
-                      null
+                    (
+                      typeof structToUse === "object" &&
+                      (structToUse as DankPagStructure).isDank &&
+                      (structToUse as DankPagStructure).content ?
+                        (structToUse as DankPagStructure).content :
+                        null
                     );
                   const embedT = typeof structToUse === "object" ?
                     (
-                      structToUse.isDank ?
-                        structToUse.embed :
+                      structToUse instanceof Embed ?
+                        structToUse :
                         (
-                          structToUse instanceof Embed ?
-                            structToUse :
+                          structToUse.isDank ?
+                            structToUse.embed :
                             undefined
                         )
                     ) :

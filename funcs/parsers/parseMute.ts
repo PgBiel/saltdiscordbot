@@ -1,11 +1,34 @@
 import { Constants, Interval, xreg } from "../../util/deps";
 import parseTimeStr from "./parseTimeStr";
+
+export interface IParsedMute {
+  /**
+   * If the parse was successful
+   */
+  ok: boolean;
+
+  /**
+   * User string to parse
+   */
+  user: string;
+
+  /**
+   * Time to mute for
+   */
+  time?: Interval;
+
+  /**
+   * Reason to mute for
+   */
+  reason: string;
+}
+
 /**
  * Parse arguments for the mute command.
  * @param {string} str The arguments.
  * @returns {Object} The result.
  */
-export default function parseMute(str: string) {
+export default function parseMute(str: string): IParsedMute {
   const obj = {
     ok: true,
     user: "",

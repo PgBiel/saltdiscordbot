@@ -1,13 +1,14 @@
-const Command = require("../../classes/command");
-const d = require("../../misc/d");
-const warnP = require("../../punishments/warn");
+import Command from "../../classes/command";
+import { _, Constants, GuildMember } from "../../misc/d";
+import warnP from "../../punishments/warn";
+import { TcmdFunc } from "../../misc/contextType";
 
-const func = async function (msg, {
+const func: TcmdFunc<{}> = async function(msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   searcher, promptAmbig, author, botmember, member, actionLog, dummy, checkRole,
   setPerms, self, seePerm
 }) {
-  const hasPerm = await seePerm("warn", perms, setPerms, { srole: "moderator", hperms: "MANAGE_ROLES" });
+  const hasPerm: boolean = await seePerm("warn", perms, setPerms, { srole: "moderator", hperms: "MANAGE_ROLES" });
   if (!hasPerm) {
     return reply(`Missing permission \`warn\`! Could also use this command with the \`Moderator\` SaltRole or \
 the \`Manage Roles\` Discord Permission.`);
@@ -15,16 +16,16 @@ the \`Manage Roles\` Discord Permission.`);
   if (!args) {
     return reply("Please tell me who to warn!");
   }
-  const [user, reason] = d._.tail((args.match(d.Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason]: string[] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
-  let memberToUse;
-  let membersMatched;
+  let memberToUse: GuildMember;
+  let membersMatched: GuildMember[];
   if (/[^]#\d{4}$/.test(user)) {
-    const split = user.split("#");
-    const discrim = split.pop();
-    const username = split.join("#");
+    const split: string[] = user.split("#");
+    const discrim: string = split.pop();
+    const username: string = split.join("#");
     memberToUse = guild.members.find(m => m.user.username === username && m.user.discriminator === discrim);
   } else if (/^<@!?\d+>$/.test(user)) {
     memberToUse = guild.members.get(user.match(/^<@!?(\d+)>$/)[1]);
@@ -53,7 +54,8 @@ the \`Manage Roles\` Discord Permission.`);
     author: member, reason, auctPrefix: `[Warn command executed by ${author.tag}] `, context: self, automatic: false
   });
 };
-module.exports = new Command({
+
+export const warn = new Command({
   func,
   name: "warn",
   perms: "warn",

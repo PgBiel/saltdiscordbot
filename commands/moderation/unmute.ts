@@ -1,12 +1,15 @@
-const Command = require("../../classes/command");
-const d = require("../../misc/d");
+import Command from "../../classes/command";
+import {
+  _, Constants, Embed, Time, rejct, rejctF, textAbstract, escMarkdown, uncompress, db, GuildMember
+} from "../../misc/d";
+import { TcmdFunc } from "../../misc/contextType";
 
-const func = async function (msg, {
+const func: TcmdFunc<{}> = async function(msg, {
   guildId, guild, reply, send, args, prompt, prefix, hasPermission, perms,
   setPerms, searcher, promptAmbig, author, botmember, member, actionLog, dummy,
   checkRole, seePerm
 }) {
-  if (!seePerm("unmute", perms, setPerms, { srole: "moderator", hperm: "MANAGE_ROLES" })) {
+  if (!seePerm("unmute", perms, setPerms, { srole: "moderator", hperms: "MANAGE_ROLES" })) {
     return reply("Missing permission `unmute`! Could also use this command with the `Moderator` saltrole or the `Manage \
 Roles` Discord permission.");
   } else if (!botmember.hasPermission(["MANAGE_ROLES"])) {
@@ -15,16 +18,16 @@ Roles` Discord permission.");
   if (!args) {
     return reply("Please tell me who to unmute!");
   }
-  const [user, reason] = d._.tail((args.match(d.Constants.regex.BAN_MATCH) || Array(3)));
+  const [user, reason]: string[] = _.tail((args.match(Constants.regex.BAN_MATCH) || Array(3)));
   if (!user && !reason) {
     return;
   }
-  let memberToUse;
-  let membersMatched;
+  let memberToUse: GuildMember;
+  let membersMatched: GuildMember[];
   if (/[^]#\d{4}$/.test(user)) {
-    const split = user.split("#");
-    const discrim = split.pop();
-    const username = split.join("#");
+    const split: string[] = user.split("#");
+    const discrim: string = split.pop();
+    const username: string = split.join("#");
     memberToUse = guild.members.find(m => m.user.username === username && m.user.discriminator === discrim);
   } else if (/^<@!?\d+>$/.test(user)) {
     memberToUse = guild.members.get(user.match(/^<@!?(\d+)>$/)[1]);
@@ -48,15 +51,15 @@ Roles` Discord permission.");
   if (!memberToUse) {
     return;
   }
-  const muteInfo = await (d.db.table("mutes").get(guild.id));
+  const muteInfo = await (db.table("mutes").get(guild.id));
   let muteRole;
   if (muteInfo) {
-    muteRole = guild.roles.get(d.uncompress(muteInfo.muteRoleID));
+    muteRole = guild.roles.get(uncompress(muteInfo.muteRoleID));
   }
   if (!muteRole) {
     return reply("That member is not muted!");
   }
-  const activeMute = (await (d.db.table("activemutes").get(guild.id, []))).find(item => d.uncompress(item.userid) === memberToUse.id);
+  const activeMute = (await (db.table("activemutes").get(guild.id, []))).find(item => uncompress(item.userid) === memberToUse.id);
 
   if (!activeMute) {
     return reply("That member is not muted!");
@@ -67,49 +70,52 @@ Roles` Discord permission.");
     return reply("The role used for muting is my highest role!");
   }
   const sentMuteMsg = await send(`Unmuting ${memberToUse.user.tag}... (Sending DM...)`, { autoCatch: false });
-  const reasonEmbed = new d.Embed();
+  const reasonEmbed = new Embed();
   reasonEmbed
     .setColor("GREEN")
     .setDescription(reason || "None")
     .setTimestamp(new Date());
   const finish = () => {
-    sentMuteMsg.edit(`Unmuted ${memberToUse.user.tag} successfully.`).catch(d.rejctF("[UNMUTE-SUCCESS-MSG-EDIT]"));
+    sentMuteMsg.edit(`Unmuted ${memberToUse.user.tag} successfully.`).catch(rejctF("[UNMUTE-SUCCESS-MSG-EDIT]"));
     actionLog({
       target: memberToUse,
       type: "u",
       author: member,
-      reason: reason || "None"
-    }).catch(d.rejctF("[UNMUTE-ACTIONLOG]"));
+      reason: reason || "None",
+      guild
+    }).catch(rejctF("[UNMUTE-ACTIONLOG]"));
   };
   const fail = err => {
-    d.rejct(err);
-    sentMuteMsg.edit(`The unmute failed! :frowning:`).catch(d.rejctF("[UNMUTE-FAIL-EDIT-MSG]"));
+    rejct(err);
+    sentMuteMsg.edit(`The unmute failed! :frowning:`).catch(rejctF("[UNMUTE-FAIL-EDIT-MSG]"));
   };
   const executeUnmute = () => {
-    d.db.table("activemutes").remArr(guild.id, activeMute).then(() => {
-      const compressedText = d.textAbstract(`[Unmute command executed by ${author.tag}] ${reason || "No reason given"}`, 512);
+    db.table("activemutes").remArr(guild.id, activeMute).then(() => {
+      const compressedText = textAbstract(`[Unmute command executed by ${author.tag}] ${reason || "No reason given"}`, 512);
       memberToUse.roles.remove(muteRole, compressedText).then(finish).catch(fail);
     }).catch(fail);
   };
   let sent = false;
   let timeoutRan = false;
   memberToUse.send(
-    `Your mute at the server **${d.escMarkdown(guild.name)}** was lifted for the reason of:`,
+    `Your mute at the server **${escMarkdown(guild.name)}** was lifted for the reason of:`,
     { embed: reasonEmbed },
   ).then(() => {
     if (timeoutRan) {
       return;
     }
     sent = true;
-    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Sent. Removing muting role...)`).catch(d.rejctF("[UNMUTE-DM-SENT-EDIT-MSG]"));
+    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Sent. Removing muting role...)`)
+      .catch(rejctF("[UNMUTE-DM-SENT-EDIT-MSG]"));
     executeUnmute();
   }).catch(err => {
-    d.rejct(err);
+    rejct(err);
     if (timeoutRan) {
       return;
     }
     sent = true;
-    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Failed. Removing muting role anyway...)`).catch(d.rejctF("[UNMUTE-DM-FAIL-EDIT-MSG]"));
+    sentMuteMsg.edit(`Unmuting ${memberToUse.user.tag}... (DM Failed. Removing muting role anyway...)`)
+      .catch(rejctF("[UNMUTE-DM-FAIL-EDIT-MSG]"));
     executeUnmute();
   });
   setTimeout(() => {
@@ -117,10 +123,10 @@ Roles` Discord permission.");
       timeoutRan = true;
       executeUnmute();
     }
-  }, d.Time.seconds(2.8));
+  }, Time.seconds(2.8));
 };
 
-module.exports = new Command({
+export const unmute = new Command({
   func,
   name: "unmute",
   perms: "unmute",
