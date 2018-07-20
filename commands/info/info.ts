@@ -15,6 +15,7 @@ import { botinfo } from "./botinfo";
 import { serverinfo } from "./serverinfo";
 import { roleinfo } from "./roleinfo";
 import { roles } from "./roles";
+import { members } from "./members";
 
 export type AInfoDummy = InfoDummy & { arg?: string, trArg?: string };
 
@@ -95,7 +96,8 @@ const noGCmds = {
 
 const gCmds = Object.assign({
   server: serverinfo, guild: serverinfo, serverid: serverinfo, guildid: serverinfo,
-  role: roleinfo, roleid: roleinfo, roles
+  role: roleinfo, roleid: roleinfo, roles,
+  members
 }, noGCmds);
 
 const func: cmdFunc<InfoDummy> = async function(msg, {

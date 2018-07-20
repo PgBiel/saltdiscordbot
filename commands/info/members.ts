@@ -1,7 +1,7 @@
 import { TcmdFunc } from "../../misc/contextType";
 import { AInfoDummy } from "./info";
-import { _, Role, bot, search, Embed, Constants, Command, sleep, paginate, GuildMember } from "../../misc/d";
-import { Collection, Guild, GuildEmoji, GuildChannel, GuildMemberRoleStore, RoleStore } from "discord.js";
+import { _, Role, bot, search, Embed, Constants, Command, sleep, paginate, GuildMember, escMarkdown } from "../../misc/d";
+import { Collection, Guild, GuildEmoji, GuildChannel, GuildMemberStore } from "discord.js";
 import { SearchType } from "../../funcs/parsers/search";
 
 /**
@@ -59,38 +59,39 @@ type MultiInfoDummy = AInfoDummy & {
   }
 };
 
-const datas: { [prop: string]: MultiInfoDummy["data"] } = {
-  roles: {
-    noArgCont: "Here are the server's roles:",
-    noArgInvalid: "This server has no roles (other than the default)!",
-    noArgTitle: "All Roles",
+/* const datas: { [prop: string]: MultiInfoDummy["data"] } = {
+  members: {
+    noArgCont: "Here are the server's members:",
+    noArgInvalid: "This server has no members that I know of! (Huh?)",
+    noArgTitle: "All Members",
 
-    argCont: "Here are {user.tag}'s roles:",
-    argInvalid: "That member has no roles (other than the default)!",
-    argTitle: "{user.tag}'s Roles",
+    argCont: `Here are the members of the role \`{name}\`:`,
+    argInvalid: "That role has no members!",
+    argTitle: `Members of the Role \`{name}\``,
 
-    type: "user",
-    sort: (a: Role, b: Role) => b.position - a.position,
-    textWorker: (role: Role, arr: Role[], isGuild: boolean, isAndroid: boolean) => {
-      const rolePos = arr.indexOf(role);
-      const position = arr.length - rolePos; // rolesArr length - rolePos to reverse the sorting
-      const roleText = isAndroid ?
-        role.name.replace(/<([@#])/, "<\\$1") :
-        `<@&${role.id}>`;
-      return `**${isNaN(position) ? `${position}:` : `\`${position}.\``}** ${roleText}`;
+    type: "role",
+    guildProp: "members", // all members in the server if no member is specified
+    sort: (
+      a: GuildMember, b: GuildMember
+    ) => (b.roles.highest.position - a.roles.highest.position), // highest pos; if not, oldest member
+    textWorker: (member: GuildMember, arr: GuildMember[], _isG: boolean, isAndroid: boolean, guild: Guild) => {
+      const membPos = arr.indexOf(member);
+      const position = arr.length - membPos; // Arr length - membPos to reverse the sorting;
+      const memberText = isAndroid ?
+        member.user.tag.replace(/<([@#])/, "<\\$1") :
+        `<@!${member.id}>`;
+      return `• ${memberText}${member.id === guild.ownerID ? Constants.emoji.rjt.OWNER : ""}`;
     },
-    filterer: (v: Role, g: Guild) => v.id !== g.id,
-
-    subjectProp: "members",
-    guildProp: "roles"
+    filterer: (m: PossibleListing) => m instanceof GuildMember,
+    subjectProp: "members"
   }
-};
+}; */
 
 const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
   args, author, arrArgs, send, reply, prefix: p, botmember, dummy, guild, guildId, perms, searcher, promptAmbig,
   channel, self, member, sendIt
 }) {
-  if (!perms["info.roles"]) return reply("Missing permission `info roles`! :frowning:");
+  if (!perms["info.members"]) return reply("Missing permission `info members`! :frowning:");
   channel.startTyping();
   const {
     android, action, arg: _arg, trArg
@@ -112,7 +113,7 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
   /**
    * List of roles/subjects to use
    */
-  let roles: Collection<string, Role> | RoleStore | GuildMemberRoleStore;
+  let members: Collection<string, GuildMember> | GuildMemberStore;
   /**
    * Page to use
    */
@@ -134,27 +135,29 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
   argu = sepArg.join(" ");
   let isGRoles = false;
   if (!arg || /^\d{1,5}$/.test(arg)) { // all from guild
-    roles = guild.roles;
+    members = guild.members;
     isGRoles = true;
-    content = "Here are the server's roles:";
-    invalid = "This server has no roles (other than the default)!";
-    title = "All Roles";
+    content = "Here are the server's members:";
+    invalid = "This server has no members that I know of! (Huh?)";
+    title = "All Members";
   } else { // all from a sub-subject (member for roles, role for members)
-    let subSubject: GuildMember;
-    const searched = await (search(arg, "user", self, { allowForeign: false }));
+    let subSubject: Role;
+    const searched = await (search(arg, "role", self, { allowForeign: false }));
     if (searched.subject) {
-      subSubject = guild.member(searched.subject);
+      subSubject = searched.subject;
     } else {
       return;
     }
-    roles = subSubject.roles;
-    content = `Here are ${member.user.tag}'s roles:`;
-    invalid = "That member has no roles (other than the default)!";
-    title = `${member.user.tag}'s Roles`;
+    members = subSubject.members;
+    content = `Here are the members of the role ${subSubject.name}`;
+    invalid = "That role has no members!";
+    title = `Members of the Role ${subSubject.name}`;
   }
-  const rolesArr = roles.array().sort((a, b) => b.position - a.position).filter(r => r.id !== guild.id);
-  if (rolesArr.length < 1) return reply(invalid);
-  const pages = paginate(rolesArr);
+  const membersArr = members.array()
+    .sort((a, b) => b.roles.highest.position - a.roles.highest.position)
+    .filter(m => m instanceof GuildMember);
+  if (membersArr.length < 1) return reply(invalid);
+  const pages = paginate(membersArr);
   if (strPage.length > 5) {
     page = 1;
   } else {
@@ -173,17 +176,14 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
     if (pages.length > 1) emb.setFooter(`Page ${page}/${pages.length} – To change, write ${p}info roles \
 ${argu ? argu + "<page>" : "<page>"}.`);
     let desc = "";
-    for (const role of pages[page - 1]) {
-      if (role.id === guild.id) continue;
-      const rolePos = rolesArr.indexOf(role);
-      const position = rolePos < 1 ?
-      "Highest" :
-      (
-        rolePos === rolesArr.length - 1 ?
-          "Lowest" :
-          rolesArr.length - 1 - rolePos // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
-      );
-      desc += `**${isNaN(Number(position)) ? `${position}:` : `${position}.`}** ${android ? role.name : `<@&${role.id}>`} \n`;
+    for (const member of pages[page - 1]) {
+      const membPos = membersArr.indexOf(member);
+      const position = membersArr.length - membPos; // Arr length - membPos to reverse the sorting;
+      const memberText = android ?
+         escMarkdown(member.user.tag.replace(/<([@#])/, "<\\$1")) :
+        `<@!${member.id}>`;
+      desc += `• ${memberText}${member.id === guild.ownerID ? Constants.emoji.rjt.OWNER : ""}\
+${member.user.bot ? " **[BOT]**" : ""}\n`;
     }
     emb.setDescription(_.trim(desc));
     return emb;
@@ -200,23 +200,23 @@ ${argu ? argu + "<page>" : "<page>"}.`);
   return sendIt(gen(page), { content, paginate: paginateObj });
 };
 
-export const roles = new Command({
-  description: "View the list of roles in the server or of a member",
+export const members = new Command({
+  description: "View the list of members in the server or of a role",
   func,
-  name: "roles",
-  perms: "info.roles",
-  args: { member: true },
+  name: "members",
+  perms: "info.members",
+  args: { role: true },
   guildOnly: true,
   category: "Info",
   example: `
 {p}{name}
-{p}{name} @Member#0001`,
+{p}{name} A Fancy Role`,
   default: true,
   aliases: {
-    aroles: {
-      description: "Android Roles – View the list of roles in the server or of a member, but without mentions.",
-      perms: "info.roles",
-      args: { member: true },
+    amembers: {
+      description: "Android Members – View the list of members in the server or of a role, but without mentions.",
+      perms: "info.members",
+      args: { role: true },
       android: true
     }
   }
