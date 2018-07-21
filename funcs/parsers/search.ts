@@ -1,7 +1,7 @@
 import { bot, cross, Constants, Searcher } from "../../util/deps";
 import capitalize from "../strings/capitalize";
 import rejct from "../util/rejct";
-import { Guild, Role, User, GuildEmoji, TextChannel, GuildMember, Collection, GuildChannel } from "discord.js";
+import { Guild, Role, User, GuildEmoji, TextChannel, GuildMember, Collection, GuildChannel, VoiceChannel, CategoryChannel } from "discord.js";
 import { ExtendedSendUnit } from "../../handlerfuncs/senders/proto-send";
 import { HandlerFuncs } from "../../handlerfuncs/commandHandlerFuncs";
 import { CrossItem } from "../../classes/cross";
@@ -30,6 +30,8 @@ export type SearchReason = 0 | 1 | 2 | 3 | 4 | 5;
 
 export type SearchType = "user" | "channel" | "role" | "emoji";
 
+type ChannelType = "text" | "voice" | "category" | "all";
+
 type SearchResult = Role | User | GuildEmoji | AnyChannel;
 
 type SearchField<T = SearchResult> = CrossItem<T> | Collection<string, T>;
@@ -46,8 +48,8 @@ interface ISearchReturn<S = SearchResult> {
   subject?: S;
 }
 
-interface ISearchOpts {
-  channelType?: "text" | "voice" | "category" | "all";
+interface ISearchOpts<Ct extends ChannelType = ChannelType> {
+  channelType?: Ct;
   allowForeign?: boolean;
   autoAnswer?: boolean;
 }
@@ -63,27 +65,42 @@ interface ISearchOpts {
  * @param {boolean} [options.autoAnswer=true] If should automatically answer
  */
 async function search(
-  args: string, type: "role", { guild, send, reply, promptAmbig }: ISearchContext, {
+  args: string, type: "role", { guild, send, reply, promptAmbig }: ISearchContext, { // ovl 1 - roles
     channelType, allowForeign, autoAnswer
   }?: ISearchOpts
 ): Promise<ISearchReturn<Role>>;
 async function search(
-  args: string, type: "user", { guild, send, reply, promptAmbig }: ISearchContext, {
+  args: string, type: "user", { guild, send, reply, promptAmbig }: ISearchContext, { // ovl 2 - members
     channelType, allowForeign, autoAnswer
   }?: ISearchOpts
 ): Promise<ISearchReturn<User>>;
 async function search(
-  args: string, type: "emoji", { guild, send, reply, promptAmbig }: ISearchContext, {
+  args: string, type: "emoji", { guild, send, reply, promptAmbig }: ISearchContext, { // ovl 3 - emoji
     channelType, allowForeign, autoAnswer
   }?: ISearchOpts
 ): Promise<ISearchReturn<GuildEmoji>>;
 async function search(
-  args: string, type: "channel", { guild, send, reply, promptAmbig }: ISearchContext, {
+  args: string, type: "channel", { guild, send, reply, promptAmbig }: ISearchContext, { // ovl 4.1 - text channels
+    channelType, allowForeign, autoAnswer
+  }?: ISearchOpts<"text">
+): Promise<ISearchReturn<TextChannel>>;
+async function search(
+  args: string, type: "channel", { guild, send, reply, promptAmbig }: ISearchContext, { // ovl 4.2 - voice channels
+    channelType, allowForeign, autoAnswer
+  }?: ISearchOpts<"voice">
+): Promise<ISearchReturn<VoiceChannel>>;
+async function search(
+  args: string, type: "channel", { guild, send, reply, promptAmbig }: ISearchContext, { // ovl 4.3 - category channels
+    channelType, allowForeign, autoAnswer
+  }?: ISearchOpts<"category">
+): Promise<ISearchReturn<CategoryChannel>>;
+async function search(
+  args: string, type: "channel", { guild, send, reply, promptAmbig }: ISearchContext, { // ovl 4 - channels
     channelType, allowForeign, autoAnswer
   }?: ISearchOpts
 ): Promise<ISearchReturn<AnyChannel>>;
 async function search(
-  args: string, type: SearchType, { guild, send, reply, promptAmbig }: ISearchContext, {
+  args: string, type: SearchType, { guild, send, reply, promptAmbig }: ISearchContext, { // ovl main
     channelType, allowForeign, autoAnswer
   }?: ISearchOpts
 ): Promise<ISearchReturn<SearchResult>>;

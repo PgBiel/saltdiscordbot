@@ -4,33 +4,9 @@ import { _, Role, bot, search, Embed, Constants, Command, sleep, paginate, Guild
 import { Collection, Guild, GuildEmoji, GuildChannel, GuildMemberStore } from "discord.js";
 import { SearchType } from "../../funcs/parsers/search";
 
-/**
- * Only get props of that type
- * @template T The type to get props of
- * @template C The type that props should be
- */
-export type OnlyPropsOf<T, C> = {
-  [P in keyof T]: T[P] extends C ? P : never;
-}[keyof T];
-
-/**
- * Used to get all keys of an Union Type
- * @template T The type to get props of
- */
-export type PossibleProps<T> = T extends any ? keyof T : never;
-
-/**
- * Only get props that aren't of that type
- * @template T The type to get props of
- * @template C The type that props shouldn't be
- */
-export type NoPropsOf<T, C> = {
-  [P in keyof T]: T[P] extends C ? never : P;
-}[keyof T];
-
 type PossibleListing = GuildMember | GuildEmoji | Role | GuildChannel;
 
-type MultiInfoDummy = AInfoDummy & {
+/* type MultiInfoDummy = AInfoDummy & {
   data?: {
     noArgCont: string;
     noArgInvalid: string;
@@ -42,7 +18,7 @@ type MultiInfoDummy = AInfoDummy & {
 
     /**
      * Type to search when using subject wide collection
-     */
+     * /
     type: SearchType;
     sort: (a: PossibleListing, b: PossibleListing) => number;
     textWorker: (val: PossibleListing, arr: PossibleListing[], isGuild: boolean, isAndroid: boolean) => string;
@@ -50,14 +26,14 @@ type MultiInfoDummy = AInfoDummy & {
 
     /**
      * for subjectWide collection
-     */
+     * /
     subjectProp?: PossibleProps<PossibleListing>;
     /**
      * for guildWide collection
-     */
+     * /
     guildProp: OnlyPropsOf<Guild, Collection<string, PossibleListing>>;
   }
-};
+}; */
 
 /* const datas: { [prop: string]: MultiInfoDummy["data"] } = {
   members: {
@@ -87,7 +63,7 @@ type MultiInfoDummy = AInfoDummy & {
   }
 }; */
 
-const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
+const func: TcmdFunc<AInfoDummy> = async function(msg, {
   args, author, arrArgs, send, reply, prefix: p, botmember, dummy, guild, guildId, perms, searcher, promptAmbig,
   channel, self, member, sendIt
 }) {
@@ -173,7 +149,7 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
     page = _.clamp(isNaN(page) ? 1 : page, 1, pages.length);
     const emb = new Embed()
       .setAuthor(title);
-    if (pages.length > 1) emb.setFooter(`Page ${page}/${pages.length} – To change, write ${p}info roles \
+    if (pages.length > 1) emb.setFooter(`Top→Bottom | Page ${page}/${pages.length} – To change, write ${p}info roles \
 ${argu ? argu + "<page>" : "<page>"}.`);
     let desc = "";
     for (const member of pages[page - 1]) {

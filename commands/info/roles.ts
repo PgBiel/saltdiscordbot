@@ -170,7 +170,7 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
     page = _.clamp(isNaN(page) ? 1 : page, 1, pages.length);
     const emb = new Embed()
       .setAuthor(title);
-    if (pages.length > 1) emb.setFooter(`Page ${page}/${pages.length} – To change, write ${p}info roles \
+    if (pages.length > 1) emb.setFooter(`Top→Bottom | Page ${page}/${pages.length} – To change, write ${p}info roles \
 ${argu ? argu + "<page>" : "<page>"}.`);
     let desc = "";
     for (const role of pages[page - 1]) {

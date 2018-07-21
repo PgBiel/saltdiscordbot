@@ -2,6 +2,7 @@ import {
   Collection, Guild, GuildChannel, GuildMember, GuildMemberRoleStore, Role, User, VoiceChannel, CategoryChannel
 } from "discord.js";
 import { _, bot, Constants, logger, TextChannel } from "../util/deps";
+import { oneOrMany } from "../misc/tableValues";
 
 // TypeScript Remainder
 
@@ -176,9 +177,9 @@ export class Searcher<MemberColl = GuildMember> {
   public searchChannel(nameOrPattern: string | RegExp, type: "text"): TextChannel[];
   public searchChannel(nameOrPattern: string | RegExp, type: "voice"): VoiceChannel[];
   public searchChannel(nameOrPattern: string | RegExp, type: "category"): CategoryChannel[];
-  public searchChannel(nameOrPattern: string | RegExp, type: SearchChannelType): SearchChannelResult[];
+  public searchChannel(nameOrPattern: string | RegExp, type: oneOrMany<SearchChannelType>): SearchChannelResult[];
   public searchChannel(
-    nameOrPattern: string | RegExp, type: SearchChannelType
+    nameOrPattern: string | RegExp, type: oneOrMany<SearchChannelType>
   ): SearchChannelResult[] {
     const pattern: RegExp = nameOrPattern instanceof RegExp ?
       nameOrPattern :

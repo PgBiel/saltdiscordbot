@@ -16,6 +16,7 @@ import { serverinfo } from "./serverinfo";
 import { roleinfo } from "./roleinfo";
 import { roles } from "./roles";
 import { members } from "./members";
+import { channels } from "./channels";
 
 export type AInfoDummy = InfoDummy & { arg?: string, trArg?: string };
 
@@ -97,7 +98,10 @@ const noGCmds = {
 const gCmds = Object.assign({
   server: serverinfo, guild: serverinfo, serverid: serverinfo, guildid: serverinfo,
   role: roleinfo, roleid: roleinfo, roles,
-  members
+  members,
+
+  channels, voices: channels, voicechannels: channels, textchannels: channels, texts: channels, categories: channels,
+  ctgs: channels
 }, noGCmds);
 
 const func: cmdFunc<InfoDummy> = async function(msg, {
