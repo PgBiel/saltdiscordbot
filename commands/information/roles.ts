@@ -177,14 +177,16 @@ ${argu ? argu + "<page>" : "<page>"}.`);
     for (const role of pages[page - 1]) {
       if (role.id === guild.id) continue;
       const rolePos = rolesArr.indexOf(role);
-      const position = rolePos < 1 ?
+      const suffix = rolePos < 1 ?
       "Highest" :
       (
         rolePos === rolesArr.length - 1 ?
           "Lowest" :
-          rolesArr.length - 1 - rolePos // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
+          ""
       );
-      desc += `**${isNaN(Number(position)) ? `${position}:` : `${position}.`}** ${android ? role.name : `<@&${role.id}>`} \n`;
+      const position = rolesArr.length - 1 - rolePos;
+      // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
+      desc += `**\`${position}.\`${suffix ? ` ${suffix}:` : ""}** ${android ? role.name : `<@&${role.id}>`} \n`;
     }
     emb.setDescription(_.trim(desc));
     return emb;

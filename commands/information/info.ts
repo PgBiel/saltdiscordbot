@@ -115,7 +115,9 @@ const func: cmdFunc<InfoDummy> = async function(msg, {
         void(rejct(err, "[SEND-IT-INFO]"))
       );
   };
-  let action: string = String(dummy && dummy.action ? dummy.action : String(arrArgs[0] || "")).toLowerCase();
+  let action: string = String(dummy && dummy.action ? dummy.action : String(arrArgs[0] || ""))
+    .toLowerCase()
+    .replace(/info$/i, "");
   let isAndroid: boolean = Boolean(dummy && dummy.android !== null ? dummy.android : false);
   const isInG = (chan): chan is TextChannel => channel instanceof TextChannel;
   const isDM: boolean = !isInG(channel);
@@ -157,8 +159,15 @@ export const info = new Command({
     "info.perms": true, "info.saltperms": true
   },
   default: true,
-  description: "Show information about commands/a command/a category of commands.",
-  example: "{p}help\n{p}help 8ball\n{p}help Fun\n{p}help All",
+  description: `Show information about something. To use, specify an action. For a list of actions, \
+view {p}help Information (without any 'info' at the end).
+
+Note: If you add the letter \`a\` in front of any action, it shows it without mentions.`,
+  example: `{p}{name} user
+{p}{name} bot
+{p}{name} server
+{p}{name} role My Cool Role
+{p}{name} channels 1`,
   category: "Utility",
-  args: {"command or category": true, "page (Default: 1)": true}
+  args: { action: false, "...parameters": true }
 });

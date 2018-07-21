@@ -8,6 +8,8 @@ mathjs.config({
   precision: 16        // Number of significant digits for BigNumbers
 });
 
+(mathjs as any).import({ln: mathjs.log});
+
 /**
  * Remove invalid numbers & modify strings
  * @param {*} output The output generated

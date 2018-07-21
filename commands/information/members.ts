@@ -130,7 +130,20 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
     title = `Members of the Role ${subSubject.name}`;
   }
   const membersArr = members.array()
-    .sort((a, b) => b.roles.highest.position - a.roles.highest.position)
+    .sort((a, b) => {
+      const isHigher = a.displayName > b.displayName; // secondary
+      const hoisted = { // primary
+        a: a.roles.filter(r => r.hoist).sort((c, d) => d.position - c.position).array(),
+        b: b.roles.filter(r => r.hoist).sort((c, d) => d.position - c.position).array()
+      };
+      if (hoisted.a.length === hoisted.b.length && hoisted.b.length === 0) return Number(isHigher) || -1; // no hoisted
+      if (hoisted.a.length < 1) return 1;
+      if (hoisted.b.length < 1) return -1;
+      const res = hoisted.b[0].position - hoisted.a[0].position;
+      if (res) return res;
+      if (isHigher) return 1;
+      return -1;
+    })
     .filter(m => m instanceof GuildMember);
   if (membersArr.length < 1) return reply(invalid);
   const pages = paginate(membersArr);

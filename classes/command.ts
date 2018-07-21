@@ -306,6 +306,9 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
             )
             .replace(
               /{name}/ig, this.name
+            )
+            .replace(
+              /{p}/ig, p
             ),
           Constants.numbers.max.chars.DESC
         )
