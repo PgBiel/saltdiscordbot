@@ -3,7 +3,10 @@ import { AInfoDummy } from "./info";
 import {
   _, Role, bot, search, Embed, Constants, Command, sleep, paginate, GuildMember, capitalize,
   globalPositions,
-  TextChannel
+  TextChannel,
+  escMarkdown,
+  no2Tick,
+  noEscape
 } from "../../misc/d";
 import {
   Collection, Guild, GuildEmoji, GuildChannel, GuildChannelStore, CategoryChannel, ChannelData, VoiceChannel
@@ -177,15 +180,16 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
       return;
     }
     channels = subSubject.children;
-    content = `Here are the ${cPlural} for the category \`${subSubject.name}\`:`;
+    content = `Here are the ${cPlural} for the category \
+\`\`${noEscape(no2Tick(subSubject.name, { mode: "sub" }), { mode: "sub" })}\`\`:`;
     invalid = `That category has no ${cPlural}!`;
-    title = `Inner ${ccPlural} of the category \`{name}\``;
+    title = `Inner ${ccPlural} of the category \`${subSubject.name}\``;
   }
   const channelsArr: GuildChannel[] = channels.array()
     .sort((a: GuildChannel, b: GuildChannel) => (
         isGChannels ?
-          globalPos.get(b.id).position - globalPos.get(a.id).position : // position disconsidering categories
-          b.position - a.position
+          globalPos.get(a.id).position - globalPos.get(b.id).position : // position disconsidering categories
+          a.position - b.position
     ))
     .filter(c => _.castArray(channelData[usedChan as keyof typeof channelData].types).includes(c.type as GuildChannelType));
   if (channelsArr.length < 1) return reply(invalid);
@@ -197,7 +201,7 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
    */
   let newPages: GuildChannel[][] = [];
   if (channelData[usedChan as keyof typeof channelData].types.length > 1) {
-    newPages = (paginate(textChannelsArr) as typeof newPages).concat(paginate(voiceChannelsArr));
+    newPages = (paginate((textChannelsArr as GuildChannel[]).concat(voiceChannelsArr as GuildChannel[])));
     /* newPages = [];
     /**
      * The current type we are grouping
@@ -234,16 +238,17 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
 
   const textWorker = (chan: GuildChannel) => {
     const fArr = channelsArr.filter(c => c.type === chan.type);
-    const chanPos = fArr.indexOf(chan);
-    const position = chanPos < 1 ?
+    const chanPos: number = fArr.indexOf(chan);
+    const suffix: string = chanPos < 1 ?
     "Highest" :
     (
       chanPos === fArr.length - 1 ?
         "Lowest" :
-        fArr.length - 1 - chanPos // rolesArr length - rolePos to reverse the sorting; - 1 to keep zero-indexed
-    ); // Arr length - chanPos to reverse the sorting
+        ""
+    );
+    const position: number = chanPos;
     const emj = Constants.emoji.channels[String(chan.type).toUpperCase()] || "";
-    return `**${isNaN(Number(position)) ? `${position}:` : `\`${position}.\``}** ${emj}${dankEscape(chan.name)}`;
+    return `**${`\`${position}.\``}${suffix ? ` ${suffix}:` : ""}** ${emj}${escMarkdown(dankEscape(chan.name))}`;
   };
   /**
    * Generate a page embed
@@ -253,8 +258,9 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
   const gen = (page: number) => {
     page = _.clamp(isNaN(page) ? 1 : page, 1, pages.length);
     const emb = new Embed()
-      .setAuthor(title);
-    if (pages.length > 1) emb.setFooter(`Top→Bottom | Page ${page}/${pages.length} – To change, write ${p}info roles \
+      .setAuthor(title)
+      .setFooter("Top→Bottom");
+    if (pages.length > 1) emb.setFooter(emb.footer.text + ` | Page ${page}/${pages.length} – To change, write ${p}info roles \
 ${argu && !["categories", "ctgs"].includes(usedChan) ? argu + "<page>" : "<page>"}.`);
     let desc = "";
     let wasVoiced: boolean = false;

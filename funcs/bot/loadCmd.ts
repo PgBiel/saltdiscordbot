@@ -25,6 +25,12 @@ export default function loadCmd(cmdn: string) {
       for (const cmd2 of Object.values(cmd.aliases)) {
         if (!cmd2.name) continue;
         bot.commands[cmd2.name] = cmd2;
+        if (cmd2.aliases) {
+          for (const cmd3 of Object.values(cmd2.aliases as { [name: string]: Command })) {
+            if (!cmd3.name) continue;
+            bot.commands[cmd3.name] = cmd3;
+          }
+        }
       }
     }
     return cmd;

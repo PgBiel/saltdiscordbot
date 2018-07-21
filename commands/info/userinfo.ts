@@ -2,7 +2,7 @@ import { cmdFunc } from "../../misc/contextType";
 import { AInfoDummy } from "./info";
 import {
   User, GuildMember, bot, search, cross, rejct, Embed, ago, momentUTC, formatStatus,
-  formatActivity, Constants, Command
+  formatActivity, Constants, Command, escMarkdown
 } from "../../misc/d";
 
 const func: cmdFunc<AInfoDummy> = async function(msg, {
@@ -77,7 +77,7 @@ const func: cmdFunc<AInfoDummy> = async function(msg, {
             member.displayHexColor;
         const isDefault = color === Constants.strings.DISPLAY_DEFAULT_ROLE_COLOR;
         embed
-          .addField("Nickname", member.displayName, true)
+          .addField("Nickname", escMarkdown(member.displayName), true)
           .addField("Display Color (See sidebar)", color + (isDefault ? " (Default)" : ""), true)
           .addField(`Permissions (use ${p}perms)`, member.permissions.bitfield, true)
           .addField("Joined Server (UTC)", momentUTC(member.joinedAt, { addUTC: false }), true)

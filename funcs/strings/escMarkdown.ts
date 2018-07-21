@@ -7,5 +7,6 @@
 export default function escMarkdown(str: string, escaper = false): string {
   if (typeof str !== "string") return str;
   const regex = new RegExp(`[\`*_~${escaper ? "\\\\" : ""}]`, "g");
-  return str.replace(regex, piece => "\\" + piece);
+  return str.replace(regex, piece => "\\" + piece)
+    .replace(/(\[.+?\])(\(.+?\))/g, "$1\\$2"); // urls
 }

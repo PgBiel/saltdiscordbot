@@ -371,7 +371,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
     });
     const newCmd = new Command<Dd, Cc>({
       name,
-      func: null,
+      func: cmd.func,
       aliasData: newData,
       category: cmd.category,
       customPrefix: cmd.customPrefix,

@@ -10,6 +10,7 @@ export { default as formatActivity } from "./formatActivity";
 export { default as formatStatus } from "./formatStatus";
 
 export { default as no2Tick } from "./no2Tick";
+export { default as noEscape } from "./noEscape";
 
 export { default as pluralize } from "./pluralize";
 export { default as textAbstract } from "./textAbstract";
