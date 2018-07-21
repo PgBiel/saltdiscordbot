@@ -81,7 +81,7 @@ export const roleinfo = new Command({
   name: "roleinfo",
   perms: "info.role",
   args: { role: true },
-  category: "Info",
+  category: "Information",
   guildOnly: true,
   example: `
 {p}{name}

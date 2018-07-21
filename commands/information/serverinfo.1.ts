@@ -42,14 +42,14 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
   return sendIt(emb);
 };
 
-export const serverinfo = new Command({
+/* export const serverinfo = new Command({
   description: "View info of current server",
   func,
   name: "serverinfo",
   perms: "info.server",
   args: {},
   guildOnly: true,
-  category: "Info",
+  category: "Information",
   example: `
 {p}{name}`,
   default: true,
@@ -67,4 +67,4 @@ export const serverinfo = new Command({
       action: "serverid"
     }
   }
-});
+}); */

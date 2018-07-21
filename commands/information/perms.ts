@@ -143,7 +143,7 @@ export const perms = new Command({
     "user, number or role to check (if using action)": true
   },
   guildOnly: false, // outside of guilds, only number is permitted
-  category: "Info",
+  category: "Information",
   example: `
 {p}{name}
 {p}{name} 16

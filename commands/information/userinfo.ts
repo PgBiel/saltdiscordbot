@@ -101,7 +101,7 @@ export const userinfo = new Command({
   description: "Alias to info user. Specify an user to view its info",
   func,
   name: "userinfo",
-  category: "Info",
+  category: "Information",
   guildOnly: false,
   perms: "info.user",
   args: { user: true },

@@ -272,7 +272,7 @@ ${argu ? argu + "<page>" : "<page>"}.`);
   perms: "info.server",
   args: {},
   guildOnly: true,
-  category: "Info",
+  category: "Information",
   example: `
 {p}{name}`,
   default: true,

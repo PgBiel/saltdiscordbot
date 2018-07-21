@@ -181,7 +181,7 @@ export const channelinfo = new Command({
   name: "channelinfo",
   perms: "info.channel",
   args: { channel: true },
-  category: "Info",
+  category: "Information",
   guildOnly: true,
   example: `
 {p}{name}

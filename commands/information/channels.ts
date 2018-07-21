@@ -300,7 +300,7 @@ export const channels = new Command({
   perms: "info.channels",
   args: { category: true },
   guildOnly: true,
-  category: "Info",
+  category: "Information",
   example: `
 {p}{name}
 {p}{name} A Cool Category`,

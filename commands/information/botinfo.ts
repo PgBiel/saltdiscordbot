@@ -90,7 +90,7 @@ export const botinfo = new Command({
   name: "botinfo",
   perms: "info.bot",
   args: {},
-  category: "Info",
+  category: "Information",
   guildOnly: true,
   example: `
 {p}{name}`,

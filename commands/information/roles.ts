@@ -208,7 +208,7 @@ export const roles = new Command({
   perms: "info.roles",
   args: { member: true },
   guildOnly: true,
-  category: "Info",
+  category: "Information",
   example: `
 {p}{name}
 {p}{name} @Member#0001`,
