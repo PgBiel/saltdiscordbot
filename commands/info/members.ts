@@ -150,7 +150,7 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
     const emb = new Embed()
       .setAuthor(title)
       .setFooter("Top→Bottom");
-    if (pages.length > 1) emb.setFooter(emb.footer.text + ` | Page ${page}/${pages.length} – To change, write ${p}info roles \
+    if (pages.length > 1) emb.setFooter(emb.footer.text + ` | Page ${page}/${pages.length} – To change, write ${p}info members \
 ${argu ? argu + "<page>" : "<page>"}.`);
     let desc = "";
     for (const member of pages[page - 1]) {

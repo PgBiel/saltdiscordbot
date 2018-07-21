@@ -260,8 +260,8 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
     const emb = new Embed()
       .setAuthor(title)
       .setFooter("Top→Bottom");
-    if (pages.length > 1) emb.setFooter(emb.footer.text + ` | Page ${page}/${pages.length} – To change, write ${p}info roles \
-${argu && !["categories", "ctgs"].includes(usedChan) ? argu + "<page>" : "<page>"}.`);
+    if (pages.length > 1) emb.setFooter(emb.footer.text + ` | Page ${page}/${pages.length} – To change, \
+write ${p}info ${usedChan} ${argu && !["categories", "ctgs"].includes(usedChan) ? argu + "<page>" : "<page>"}.`);
     let desc = "";
     let wasVoiced: boolean = false;
     let wasTexted: boolean = false;
