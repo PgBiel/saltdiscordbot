@@ -153,6 +153,28 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
     page = Number(strPage);
   }
 
+  const hoistedRoles = new Collection<string, Collection<string, GuildMember>>();
+  const hoistedArr = guild.roles.array().reverse().filter(r => r.id === guild.id ? false : r.hoist);
+
+  const allHoistedMembers: GuildMember[] = [];
+
+  for (const role of hoistedArr) {
+    if (role.id === guild.id) {
+
+      hoistedRoles.set("online", online).set("offline", offline);
+    } else {
+      role.members.forEach(m => allHoistedMembers.push(m));
+      hoistedRoles.set(role.id, role.members);
+    }
+  }
+
+  const everyoneMembers = guild.roles.get(guild.id).members // default role
+    .filter(m => m.roles.filter(r => r.id === guild.id ? false : !r.hoist).size === 0);
+  const online = everyoneMembers.filter(m => m.user.presence.status !== "offline");
+  online.forEach(m => allHoistedMembers.push(m));
+  const offline = everyoneMembers.filter(m => m.user.presence.status === "offline");
+  offline.forEach(m => allHoistedMembers.push(m));
+  const pagedHoisted = paginate(allHoistedMembers);
   /**
    * Generate a page embed
    * @param page Page number
@@ -166,7 +188,18 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
     if (pages.length > 1) emb.setFooter(emb.footer.text + ` | Page ${page}/${pages.length} – To change, write ${p}info members \
 ${argu ? argu + "<page>" : "<page>"}.`);
     let desc = "";
-    for (const member of pages[page - 1]) {
+    let currentRole: string;
+    for (const member of pagedHoisted[page - 1]) {
+      const hoistedR = member.roles.filter(r => r.hoist);
+      const highestHoisted = hoistedR.last().id;
+      if (highestHoisted === guild.id) {
+        if (currentRole === "online") {
+          if (member.user.presence.status === "offline") {
+            currentRole = "offline";
+            desc += `**__`
+          }
+        }
+      }
       const membPos = membersArr.indexOf(member);
       const position = membersArr.length - membPos; // Arr length - membPos to reverse the sorting;
       const memberText = android ?
