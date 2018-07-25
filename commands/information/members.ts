@@ -130,41 +130,24 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
     title = `Members of the Role ${subSubject.name}`;
   }
   const membersArr = members.array()
-    .sort((a, b) => {
-      const isHigher = a.displayName > b.displayName; // secondary
-      const hoisted = { // primary
-        a: a.roles.filter(r => r.hoist).sort((c, d) => d.position - c.position).array(),
-        b: b.roles.filter(r => r.hoist).sort((c, d) => d.position - c.position).array()
-      };
-      if (hoisted.a.length === hoisted.b.length && hoisted.b.length === 0) return Number(isHigher) || -1; // no hoisted
-      if (hoisted.a.length < 1) return 1;
-      if (hoisted.b.length < 1) return -1;
-      const res = hoisted.b[0].position - hoisted.a[0].position;
-      if (res) return res;
-      if (isHigher) return 1;
-      return -1;
-    })
+    .sort((a, b) => b.roles.highest.position - a.roles.highest.position)
     .filter(m => m instanceof GuildMember);
   if (membersArr.length < 1) return reply(invalid);
-  const pages = paginate(membersArr);
   if (strPage.length > 5) {
     page = 1;
   } else {
     page = Number(strPage);
   }
-
-  const hoistedRoles = new Collection<string, Collection<string, GuildMember>>();
-  const hoistedArr = guild.roles.array().reverse().filter(r => r.id === guild.id ? false : r.hoist);
+  const hoistedArr = guild.roles
+    .array()
+    .filter(r => r.id === guild.id ? false : r.hoist)
+    .sort((a, b) => b.position - a.position);
 
   const allHoistedMembers: GuildMember[] = [];
 
   for (const role of hoistedArr) {
-    if (role.id === guild.id) {
-
-      hoistedRoles.set("online", online).set("offline", offline);
-    } else {
+    if (role.id !== guild.id) {
       role.members.forEach(m => allHoistedMembers.push(m));
-      hoistedRoles.set(role.id, role.members);
     }
   }
 
@@ -174,7 +157,8 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
   online.forEach(m => allHoistedMembers.push(m));
   const offline = everyoneMembers.filter(m => m.user.presence.status === "offline");
   offline.forEach(m => allHoistedMembers.push(m));
-  const pagedHoisted = paginate(allHoistedMembers);
+
+  const pages = paginate(allHoistedMembers);
   /**
    * Generate a page embed
    * @param page Page number
@@ -189,16 +173,20 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
 ${argu ? argu + "<page>" : "<page>"}.`);
     let desc = "";
     let currentRole: string;
-    for (const member of pagedHoisted[page - 1]) {
+    for (const member of pages[page - 1]) {
       const hoistedR = member.roles.filter(r => r.hoist);
-      const highestHoisted = hoistedR.last().id;
-      if (highestHoisted === guild.id) {
-        if (currentRole === "online") {
-          if (member.user.presence.status === "offline") {
-            currentRole = "offline";
-            desc += `**__`
-          }
+      const highestHoisted = hoistedR.last();
+      if (highestHoisted.id === guild.id) {
+        if (member.user.presence.status === "offline") {
+          currentRole = "offline";
+          desc += `**__Offline__ - ${offline.size}**\n`;
+        } else if (currentRole !== "online") {
+          currentRole = "offline";
+          desc += `**__Online__ - ${online.size}**\n`;
         }
+      } else if (currentRole !== highestHoisted.id) {
+        currentRole = highestHoisted.id;
+        desc += `**__${highestHoisted.name}__ - ${highestHoisted.members.size}**\n`;
       }
       const membPos = membersArr.indexOf(member);
       const position = membersArr.length - membPos; // Arr length - membPos to reverse the sorting;
