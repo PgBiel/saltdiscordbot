@@ -1,6 +1,6 @@
 import { TcmdFunc } from "../../misc/contextType";
 import { AInfoDummy } from "./info";
-import { _, Role, bot, search, Embed, Constants, Command, sleep, paginate, GuildMember, escMarkdown } from "../../misc/d";
+import { _, Role, bot, search, Embed, Constants, Command, sleep, paginate, GuildMember, escMarkdown, logger } from "../../misc/d";
 import { Collection, Guild, GuildEmoji, GuildChannel, GuildMemberStore } from "discord.js";
 import { SearchType } from "../../funcs/parsers/search";
 
@@ -129,8 +129,33 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
     invalid = "That role has no members!";
     title = `Members of the Role ${subSubject.name}`;
   }
+  const highPosSorter = (a: Role, b: Role) => b.position - a.position;
   const membersArr = members.array()
-    .sort((a, b) => b.roles.highest.position - a.roles.highest.position)
+    .sort((a, b) => {
+      const heFilterer = (m: GuildMember) => m.roles.filter(r => r.hoist || r.id === guild.id);
+      const hoistAndEv = {
+        a: heFilterer(a),
+        b: heFilterer(b)
+      };
+      const highestH = {
+        a: hoistAndEv.a.sort(highPosSorter).first(),
+        b: hoistAndEv.b.sort(highPosSorter).first()
+      };
+      const alphabetic = a.displayName > b.displayName ? 1 : -1;
+
+      if (highestH.a === highestH.b) {
+        if (highestH.a.id === guild.id) {
+          const onOff = (m: GuildMember) => m.user.presence.status === "offline" ? "offline" : "online";
+          if (onOff(a) === onOff(b)) return alphabetic; // same status
+          if (onOff(a) === "offline") return 1; // ofline comes after
+          return -1; // b is offline
+        } else {
+          return alphabetic;
+        }
+      }
+
+      return highestH.b.position - highestH.a.position;
+    })
     .filter(m => m instanceof GuildMember);
   if (membersArr.length < 1) return reply(invalid);
   if (strPage.length > 5) {
@@ -138,27 +163,13 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
   } else {
     page = Number(strPage);
   }
-  const hoistedArr = guild.roles
-    .array()
-    .filter(r => r.id === guild.id ? false : r.hoist)
-    .sort((a, b) => b.position - a.position);
-
-  const allHoistedMembers: GuildMember[] = [];
-
-  for (const role of hoistedArr) {
-    if (role.id !== guild.id) {
-      role.members.forEach(m => allHoistedMembers.push(m));
-    }
-  }
 
   const everyoneMembers = guild.roles.get(guild.id).members // default role
-    .filter(m => m.roles.filter(r => r.id === guild.id ? false : !r.hoist).size === 0);
+    .filter(m => m.roles.filter(r => r.id === guild.id ? false : r.hoist).size < 1);
   const online = everyoneMembers.filter(m => m.user.presence.status !== "offline");
-  online.forEach(m => allHoistedMembers.push(m));
   const offline = everyoneMembers.filter(m => m.user.presence.status === "offline");
-  offline.forEach(m => allHoistedMembers.push(m));
 
-  const pages = paginate(allHoistedMembers);
+  const pages = paginate(membersArr);
   /**
    * Generate a page embed
    * @param page Page number
@@ -174,19 +185,22 @@ ${argu ? argu + "<page>" : "<page>"}.`);
     let desc = "";
     let currentRole: string;
     for (const member of pages[page - 1]) {
-      const hoistedR = member.roles.filter(r => r.hoist);
-      const highestHoisted = hoistedR.last();
+      const hoistedR = member.roles.filter(r => r.hoist || r.id === guild.id).sort(highPosSorter);
+      const highestHoisted = hoistedR.first();
       if (highestHoisted.id === guild.id) {
-        if (member.user.presence.status === "offline") {
+        if (currentRole !== "offline" && member.user.presence.status === "offline") {
           currentRole = "offline";
           desc += `**__Offline__ - ${offline.size}**\n`;
-        } else if (currentRole !== "online") {
-          currentRole = "offline";
+        } else if (member.user.presence.status !== "offline" && currentRole !== "online") {
+          currentRole = "online";
           desc += `**__Online__ - ${online.size}**\n`;
         }
       } else if (currentRole !== highestHoisted.id) {
         currentRole = highestHoisted.id;
-        desc += `**__${highestHoisted.name}__ - ${highestHoisted.members.size}**\n`;
+        const highMembersInIt = highestHoisted.members
+          .filter(m => m.roles.filter(r => r.hoist || r.id === guild.id).sort(highPosSorter).first().id === highestHoisted.id)
+          .size;
+        desc += `**__${highestHoisted.name}__ - ${highMembersInIt}**\n`;
       }
       const membPos = membersArr.indexOf(member);
       const position = membersArr.length - membPos; // Arr length - membPos to reverse the sorting;
