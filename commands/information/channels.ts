@@ -193,6 +193,9 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
     ))
     .filter(c => _.castArray(channelData[usedChan as keyof typeof channelData].types).includes(c.type as GuildChannelType));
   if (channelsArr.length < 1) return reply(invalid);
+
+  title += ` (${channelsArr.length})`;
+
   const textChannelsArr: TextChannel[] = channelsArr.filter(c => c.type === "text") as TextChannel[];
   const voiceChannelsArr: VoiceChannel[] = channelsArr.filter(c => c.type === "voice") as VoiceChannel[];
   const pages = paginate(channelsArr);

@@ -154,6 +154,9 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
   }
   const rolesArr = roles.array().sort((a, b) => b.position - a.position).filter(r => r.id !== guild.id);
   if (rolesArr.length < 1) return reply(invalid);
+
+  title += ` (${rolesArr.length})`;
+
   const pages = paginate(rolesArr);
   if (strPage.length > 5) {
     page = 1;
