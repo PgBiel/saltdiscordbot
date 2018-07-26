@@ -1,5 +1,5 @@
 import Command from "../../classes/command";
-import { _, Constants, GuildMember, bot, User } from "../../misc/d";
+import { _, Constants, GuildMember, bot, User, logger } from "../../misc/d";
 import banP from "../../punishments/ban";
 import { TcmdFunc } from "../../misc/contextType";
 import { ColorResolvable } from "discord.js";
@@ -82,7 +82,7 @@ const func: TcmdFunc<IBanDummy> = async function(msg, {
     membersMatched = searcher.searchMember(user);
   }
   if (membersMatched && membersMatched.length < 1) {
-    return reply("Member not found!");
+    // return reply("Member not found!");
   } else if (membersMatched && membersMatched.length === 1) {
     memberToUse = membersMatched[0];
   } else if (membersMatched && membersMatched.length > 1 && membersMatched.length < 10) {
@@ -139,6 +139,7 @@ export const ban = new Command({
       perms: "ban",
       banType: "idban",
       default: false,
+      outside: true,
       description: "Ban someone, but using an ID. This allows you to ban people outside the server. \
 (Note: Ban has this feature by default.)",
       example: "{p}idban 80351110224678912 Being b1nzy",
@@ -155,6 +156,7 @@ export const ban = new Command({
       description: "Ban someone, but without deleting any of their messages with it.",
       example: "{p}nodelban @EvilGuy#0100 Being evil but not as much",
       days: 0,
+      outside: false,
       show: true
     },
     weekdelban: {
@@ -163,6 +165,7 @@ export const ban = new Command({
       description: "Ban a member, while deleting all of their messages sent up to 1 week ago.",
       example: "{p}weekdelban @HeavySpammer#0142 Spamming a lot",
       days: 7,
+      outside: false,
       show: true
     },
     softban: {
