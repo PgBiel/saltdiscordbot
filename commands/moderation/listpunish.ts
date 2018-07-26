@@ -22,8 +22,8 @@ type WarnObj = HelperVals["warns"];
  * @param {string} id ID to find of user
  * @returns {object} List of punishments
  */
-function filterPunishes(punishments: CaseObj[], id: string) {
-  const punishes = punishments.filter(c => uncompress(c.target) === id && !c.deleted).reverse();
+function filterPunishes(punishments: CaseObj[], id: string, isMod: boolean = false) {
+  const punishes = punishments.filter(c => uncompress(isMod ? c.moderator : c.target) === id && !c.deleted).reverse();
   return {
     all: punishes,
     alls: punishes,
@@ -59,16 +59,17 @@ function exampleCases(punishes: CaseObj[], init: string = " ") {
 }
 
 function main(
-  { user, isAuthor, punishments, p, reply, send, maxCases }: {
+  { user, isAuthor, punishments, p, reply, send, maxCases, isMod }: {
     user: User, isAuthor: boolean, punishments: CaseObj[], p: string, reply: ExtendedSendUnit, send: ExtendedSendUnit,
-    maxCases: number
+    maxCases: number, isMod: boolean // isMod for +listmod - listing punishments done from themselves
   }
 ) {
-  const filtered = filterPunishes(punishments, user.id);
+  const filtered = filterPunishes(punishments, user.id, isMod);
   if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ?
     "You haven't" :
-    "That user hasn't"} ever been punished! :smiley:`);
-  let text: string = `Punishments available (Type \`${p}listpunish ${isAuthor ? "" : "<user> "}<punishment>\` to a view a list):
+    "That user hasn't"} ever ${isMod ? "punished someone" : "been punished"}! :smiley:`);
+  let text: string = `Punishments available (Type \`${p}\
+list${isMod ? "mod" : "punish"} ${isAuthor ? "" : "<user> "}<punishment>\` to a view a list):
 
 `;
   for (const [type, filt] of Object.entries(filtered).sort(([, a], [, b]) => b.length - a.length)) {
@@ -76,26 +77,36 @@ function main(
     text += `• **${_.capitalize(type)}**: **${filt.length}**${exampleCases(filt)}\n`;
   }
   const embed: Embed = new Embed();
+  const footer = (isAuthor ? "You have " : "That user has ") + (
+    isMod ?
+      `executed ${filtered.all.length} punishments. To see all punishments that ${isAuthor ? "you" : "they"} have authored, \
+type ${p}listmod ${isAuthor ? "" : "<user> "}all.` :
+      `been punished ${filtered.all.length} times. To see all of ${isAuthor ? "your" : "their"} punishments, \
+type ${p}listpunish ${isAuthor ? "" : "<user> "}all.`
+  );
   embed
     .setTitle(`List of punishments (last ${maxCases} cases)`)
     .setDescription(_.trim(text))
     .setColor("RANDOM")
-    .setFooter(`${isAuthor ?
-      "You have" :
-      "That user"} been punished ${filtered.all.length} times. To see all of ${isAuthor ? "your" : "their"} punishments, \
-type ${p}listpunish ${isAuthor ? "" : "<user> "}all.`);
+    .setFooter(footer);
   if (isAuthor) {
-    reply("Here's your punishment list:", { embed, deletable: true });
+    reply(
+      isMod ? "Here's the list of punishments that you authored:" : "Here's your punishment list:",
+      { embed, deletable: true }
+    );
   } else {
-    send(`Here's the punishment list for ${user.tag}:`, { embed, deletable: true });
+    send(
+      isMod ? `Here's the list of punishments authored by ${user.tag}:` : `Here's the punishment list for ${user.tag}:`,
+      { embed, deletable: true }
+    );
   }
 }
 
 async function specific(msg: Message, {
-  user, isAuthor, punishments, p, type: aType, reply, send, page: ogPage, maxCases, isWarn, guildId
+  user, isAuthor, punishments, p, type: aType, reply, send, page: ogPage, maxCases, mode, guildId
 }: {
   user: User, isAuthor: boolean, punishments?: CaseObj[], p: string, type?: keyof ReturnType<typeof filterPunishes>,
-  reply: ExtendedSendUnit, send: ExtendedSendUnit, page: number, maxCases: number, isWarn: boolean, guildId: string
+  reply: ExtendedSendUnit, send: ExtendedSendUnit, page: number, maxCases: number, mode: "warns" | "mod", guildId: string
 }): Promise<Message> {
   /**
    * All punishments for +listpunish, All warns for +listwarns
@@ -105,21 +116,24 @@ async function specific(msg: Message, {
    * The specific punishments to see
    */
   let typed: Array<CaseObj | WarnObj>;
+  const isWarn = mode === "warns";
+  const isMod = mode === "mod";
   if (isWarn) { // if this is +listwarns
     filtered = typed = await (db.table("warns").get(guildId, []));
     if (!filtered || filtered.length < 1) return reply(`There are no active warns on this guild!`);
     typed = (typed as WarnObj[]).filter(w => uncompress(w.userid) === user.id).reverse();
     if (typed.length < 1) return reply(`${isAuthor ? "You have" : "That user has"} no active warns on this guild!`);
-  } else { // if this is +listpunish
-    filtered = filterPunishes(punishments, user.id);
+  } else { // if this is +listpunish or +listmod
+    filtered = filterPunishes(punishments, user.id, isMod);
     if (!filtered.all || filtered.all.length < 1) return reply(`${isAuthor ?
       "You haven't" :
-      "That user hasn't"} ever been punished! :smiley:`);
+      "That user hasn't"} ever ${isMod ? "punished someone" : "been punished"}! :smiley:`);
     typed = filtered[endChar((aType || "").toLowerCase(), "s")];
-    if (!typed) return reply(`Unknown punishment.`);
+    if (!typed) return reply(`Unknown punishment type.`);
   }
   if (typed.length < 1) {
-    return reply(`${isAuthor ? "You haven't" : "That user hasn't"} ever received that punishment! :smiley:`);
+    return reply(`${isAuthor ? "You haven't" : "That user hasn't"} ever ${isMod ? "issued" : "received"} that punishment! \
+:smiley:`);
   }
   const type = isWarn ?
     "warns" :
@@ -128,11 +142,20 @@ async function specific(msg: Message, {
       "all" :
       endChar((aType || "").toLowerCase(), "s")
     );
+  /**
+   * Property for obtaining case number
+   */
   let cprop: "case" | "casenumber";
-  let mprop: "moderatorid" | "moderator";
+  /**
+   * Property for obtaining ID of moderator (or victim, for +listmod)
+   */
+  let mprop: "moderatorid" | "moderator" | "target";
   if (isWarn) {
     cprop = "casenumber";
     mprop = "moderatorid";
+  } else if (isMod) {
+    cprop = "case";
+    mprop = "target";
   } else {
     cprop = "case";
     mprop = "moderator";
@@ -160,9 +183,9 @@ async function specific(msg: Message, {
   }
   const parseCase = async (page: number): Promise<Embed> => {
     const emb = new Embed()
-      .setTitle(`List of ${head} for ${user.tag}${isWarn ? "" : ` (last ${maxCases} cases)`}`)
+      .setTitle(`List of ${head} ${isMod ? "issued by" : "for"} ${user.tag}${isWarn ? "" : ` (last ${maxCases} cases)`}`)
       .setColor(color);
-    if (pages.length > 1) emb.setFooter(`Page ${page}/${pages.length} – To change, type ${p}list${isWarn ? "warns" : "punish"} \
+    if (pages.length > 1) emb.setFooter(`Page ${page}/${pages.length} – To change, type ${p}list${mode || "punish"} \
 ${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
     for (const pagee of pages[page - 1].split(" ")) {
       if (isNaN(pagee) || !_.trim(pagee)) continue;
@@ -188,8 +211,10 @@ ${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
       } else {
         extra = !["p", "m"].includes(typeToUse) && /^all/i.test(type) ? ` - ${_.capitalize(name)}` : "";
       }
+      const fieldKey: string = `Case ${punish[cprop]} ${isMod ? "against" : "by"} \
+${((await bot.users.fetch(uncompress(punish[mprop]))) || { tag: "Unknown" }).tag}${extra}`;
       const field: [string, string] = [
-        `Case ${punish[cprop]} by ${((await bot.users.fetch(uncompress(punish[mprop]))) || { tag: "Unknown" }).tag}${extra}`,
+        fieldKey,
         `${punish.reason === "None" ? "No reason" : (punish.reason || "No reason")}`
       ];
       emb.addField(field[0], field[1]);
@@ -214,7 +239,7 @@ ${isAuthor ? "" : "<user> "}${isWarn ? "" : (type + " ")}<page>.`);
 }
 
 export interface IListPunishDummy {
-  warns?: boolean;
+  mode?: "warns" | "mod";
 }
 
 const func: TcmdFunc<IListPunishDummy> = async function(
@@ -225,12 +250,12 @@ const func: TcmdFunc<IListPunishDummy> = async function(
 ) {
   const punishments = await (db.table("punishments").get(guildId));
   const maxCases = Constants.numbers.max.CASES(guild.members.size);
-  if (dummy.warns) { // +listwarns
+  if (dummy.mode === "warns") { // +listwarns
     if (!punishments || punishments.length < 1) return reply(`Nobody has been warned in this guild!`);
     if (!perms.listwarns) return reply(`Missing permission \`listwarns\`! :(`);
     if (!args) {
       return await specific(msg, {
-        user: author, isAuthor: true, p, isWarn: true, reply, send, page: 1, maxCases, guildId
+        user: author, isAuthor: true, p, mode: "warns", reply, send, page: 1, maxCases, guildId
       });
     } else {
       const match = args.match(Constants.regex.LIST_WARNS_MATCH);
@@ -282,15 +307,18 @@ const func: TcmdFunc<IListPunishDummy> = async function(
         return;
       }
       return await specific(msg, {
-        user: memberToUse.user, isAuthor: false, guildId, p, isWarn: true, reply, send, page, maxCases
+        user: memberToUse.user, isAuthor: false, guildId, p, mode: "warns", reply, send, page, maxCases
       });
     }
   } else { // +listpunish
     if (!punishments || punishments.length < 1) return reply(`Nobody has been punished in this guild!`);
-    if (!perms.listpunish) return reply(`Missing permission \`listpunish\`! :(`);
+    const isMod = dummy.mode === "mod";
+    const permToUse = "list" + (isMod ? "mod" : "punish");
+    if (!perms[permToUse]) return reply(`Missing permission \`${permToUse}\`! :(`);
     if (!args) {
       main({
-        user: author, isAuthor: true, punishments, p, reply, send, maxCases });
+        user: author, isAuthor: true, punishments, p, reply, send, maxCases, isMod
+      });
     } else {
       const matchObj = args.match(xreg(Constants.regex.LIST_PUNISH_MATCH, "xi"));
       let user: string;
@@ -306,7 +334,8 @@ const func: TcmdFunc<IListPunishDummy> = async function(
       } else {
         user = matchObj[6];
       }
-      if (!user && !name) return reply(`Please specify a valid user to check their punishments!`);
+      if (!user && !name) return reply(`Please specify a valid user to check \
+${isMod ? "who they have punished" : "their punishments"}!`);
       const page: number = pageStr && pageStr.length < 5 && /^\d+$/.test(_.trim(pageStr)) ? (Number(pageStr) || 1) : 1;
       name = name ? _.trim(name) : name;
       if (user) {
@@ -342,17 +371,18 @@ const func: TcmdFunc<IListPunishDummy> = async function(
         if (name) {
           return await specific(msg, {
             user: memberToUse.user, isAuthor: false, punishments, p, type: name as keyof ReturnType<typeof filterPunishes>, reply,
-            send, page, maxCases, isWarn: false, guildId
+            send, page, maxCases, mode: dummy.mode, guildId
           });
         } else {
           main({
-            user: memberToUse.user, isAuthor: memberToUse.user.id === author.id, punishments, p, reply, send, maxCases
+            user: memberToUse.user, isAuthor: memberToUse.user.id === author.id, punishments, p, reply, send, maxCases,
+            isMod
           });
         }
       } else {
         return await specific(msg, {
           user: author, isAuthor: true, punishments, p, type: name as keyof ReturnType<typeof filterPunishes>, reply, send,
-          page, maxCases, isWarn: false, guildId
+          page, maxCases, mode: dummy.mode, guildId
         });
       }
     }
@@ -370,12 +400,12 @@ someone else's instead.
 
 Specify a punishment (i.e. ban) or "all" to display its respective list. Specify a name (or mention) before that to see \
 that list for someone else instead. To switch pages, just specify a number (the page number) after the punishment name.`,
-  example: `{p}listpunish
-{p}listpunish bans
-{p}listpunish all 2
-{p}listpunish @GuyGuy#0000
-{p}listpunish @GuyGuy#0000 kicks
-{p}listpunish @GuyGuy#000 softbans 3`,
+  example: `{p}{name}
+{p}{name} bans
+{p}{name} all 2
+{p}{name} @GuyGuy#0000
+{p}{name} @GuyGuy#0000 kicks
+{p}{name} @GuyGuy#000 softbans 3`,
   category: "Moderation",
   args: {
     "punishment name (if no user is specified) or user": true,
@@ -385,9 +415,23 @@ that list for someone else instead. To switch pages, just specify a number (the 
   guildOnly: true,
   default: true,
   aliases: {
+    listmod: {
+      perms: "listmod",
+      mode: "mod",
+      default: true,
+      description: `List punishments done by you or someone else, **from the last {maxcases} punishments**.
+This command is the exact opposite of {p}listpunish: Instead of viewing punishments *suffered* by someone, you view \
+the punishments *authored* by someone.
+
+Run the command without specifying anything to display punishments you authored. Specify a name (or mention) to see \
+punishments someone else did nstead.
+
+Specify a punishment (i.e. ban) or "all" to display its respective list. Specify a name (or mention) before that to see \
+that list for someone else instead. To switch pages, just specify a number (the page number) after the punishment name.`
+    },
     listwarns: {
       perms: "listwarns",
-      warns: true,
+      mode: "warns",
       default: true,
       description: "List active warns.",
       args: { "user or page": true, "page (when user is specified)": true },
