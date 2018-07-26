@@ -168,6 +168,6 @@ Note: If you add the letter \`a\` in front of any action, it shows it without me
 {p}{name} server
 {p}{name} role My Cool Role
 {p}{name} channels 1`,
-  category: "Utility",
+  category: "Information",
   args: { action: false, "...parameters": true }
 });

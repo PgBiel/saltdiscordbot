@@ -2,7 +2,7 @@ export default {
   max: {
     PROMPT: 5,
     CASES: (members: number = 0) => {
-      if (members >= 5000) {
+      if (members >= 3000) {
         return 2000;
       } else if (members >= 700) {
         return 1000;
