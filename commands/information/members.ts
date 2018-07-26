@@ -1,9 +1,10 @@
 import { TcmdFunc } from "../../misc/contextType";
 import { AInfoDummy } from "./info";
 import {
-  _, Role, bot, search, Embed, Constants, Command, sleep, paginate, GuildMember, escMarkdown, logger, no2Tick, noEscape
+  _, Role, bot, search, Embed, Constants, Command, sleep, paginate, GuildMember, escMarkdown, logger, no2Tick,
+  noEscape, capitalize
 } from "../../misc/d";
-import { Collection, Guild, GuildEmoji, GuildChannel, GuildMemberStore } from "discord.js";
+import { Collection, Guild, GuildEmoji, GuildChannel, GuildMemberStore, TextChannel, VoiceChannel } from "discord.js";
 import { SearchType } from "../../funcs/parsers/search";
 
 type PossibleListing = GuildMember | GuildEmoji | Role | GuildChannel;
@@ -69,11 +70,12 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
   args, author, arrArgs, send, reply, prefix: p, botmember, dummy, guild, guildId, perms, searcher, promptAmbig,
   channel, self, member, sendIt
 }) {
-  if (!perms["info.members"]) return reply("Missing permission `info members`! :frowning:");
-  channel.startTyping();
   const {
-    android, action, arg: _arg, trArg
+    android, action, arg: _arg, trArg,
   } = dummy || {} as never;
+  if (!perms["info." + (action || "members")]) return reply("Missing permission `info members`! :frowning:");
+  channel.startTyping();
+  const isDiff: boolean = Boolean(action);
   const arg = trArg || _arg || args;
   /**
    * Content to send with msg
@@ -112,30 +114,55 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
   }
   argu = sepArg.join(" ");
   let isGMembers = false;
-  if (!arg || /^\d{1,5}$/.test(arg)) { // all from guild
+  const typeText = isDiff ? (action === "readers" ? "text channel" : "voice channel") : "role";
+  if (action === "readers" ? false : (!arg || /^\d{1,5}$/.test(arg))) { // all from guild - reader has a default search
+    if (isDiff) {
+      return reply(
+        "Please specify a voice channel to view the list of members who can connect to it!"
+      );
+    }
     members = guild.members;
     isGMembers = true;
     content = "Here are the server's members:";
     invalid = "This server has no members that I know of! (Huh?)";
     title = `All Members`;
   } else { // all from a sub-subject (member for roles, role for members)
-    let subSubject: Role;
-    const searched = await (search(arg, "role", self, { allowForeign: false }));
-    if (searched.subject) {
-      subSubject = searched.subject;
+    let subSubject: Role | TextChannel | VoiceChannel;
+    if (arg) {
+      const searched = await (
+        search(
+          arg,
+          isDiff ? "channel" : "role", self, { allowForeign: false, channelType: action === "readers" ? "text" : "voice" }
+        )
+      );
+      if (searched.subject) {
+        subSubject = searched.subject as typeof subSubject;
+      } else {
+        return;
+      }
+    } else if (action === "readers") {
+      subSubject = channel;
+    } else { return; }
+    if (subSubject instanceof VoiceChannel) {
+      members = new Collection<string, GuildMember>();
+      for (const [id, member] of guild.members) {
+        if (subSubject.permissionsFor(member).has("CONNECT")) members.set(id, member);
+      }
     } else {
-      return;
+      members = subSubject.members;
     }
-    members = subSubject.members;
-    content = `Here are the members of the role \`\`${noEscape(no2Tick(subSubject.name))}\`\`:`;
-    invalid = "That role has no members!";
-    title = `Members of the Role \`${subSubject.name}\``;
+    content = `Here are the ${action || "member"}s of the ${typeText} \
+${action === "readers" ? subSubject.toString() : `\`\`${noEscape(no2Tick(subSubject.name))}\`\``}:`; // text channels as mentions
+    invalid = isDiff ?
+      `No members can ${action === "readers" ? "access" : "connect to"} that ${typeText}!` :
+      "That role has no members!";
+    title = `${capitalize(action || "members")} of the ${capitalize(typeText, { all: true })} \`${subSubject.name}\``;
   }
   const highPosSorter = (a: Role, b: Role) => b.position - a.position;
   const membersArr = members.array()
     .sort((a, b) => {
       const alphabetic = a.displayName > b.displayName ? 1 : -1;
-      if (!isGMembers) return alphabetic;
+      if (!isGMembers && (!isDiff ? true : action === "listeners")) return alphabetic;
       const heFilterer = (m: GuildMember) => m.roles.filter(r => r.hoist || r.id === guild.id);
       const hoistAndEv = {
         a: heFilterer(a),
@@ -184,12 +211,12 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
     const emb = new Embed()
       .setAuthor(title)
       .setFooter("Alphabetic Sort");
-    if (pages.length > 1) emb.setFooter(emb.footer.text + ` | Page ${page}/${pages.length} – To change, write ${p}info members \
-${argu ? argu + " <page>" : "<page>"}.`);
+    if (pages.length > 1) emb.setFooter(emb.footer.text + ` | Page ${page}/${pages.length} – To change, write ${p}info \
+${action || "members"} ${argu ? argu + " <page>" : "<page>"}.`);
     let desc = "";
     let currentRole: string;
     for (const member of pages[page - 1]) {
-      if (isGMembers) {
+      if (isGMembers || action === "readers") {
         const hoistedR = member.roles.filter(r => r.hoist || r.id === guild.id).sort(highPosSorter);
         const highestHoisted = hoistedR.first();
         if (highestHoisted.id === guild.id) {
@@ -247,6 +274,32 @@ export const members = new Command({
       perms: "info.members",
       args: { role: true },
       android: true
+    },
+    readers: {
+      description: "View the list of members that can read a text channel.",
+      perms: "info.readers",
+      action: "readers",
+      args: { "text channel": true },
+      show: true,
+      aliases: {
+        areaders: {
+          description: "Android Readers - View the list of members that can read a text channel, but without mentions.",
+          android: true
+        }
+      }
+    },
+    listeners: {
+      description: "View the list of members that can connect to a voice channel.",
+      perms: "info.listeners",
+      action: "listeners",
+      args: { "voice channel": false },
+      show: true,
+      aliases: {
+        areaders: {
+          description: "Android Listeners - View the list of members that can connect to a voice channel, but without mentions.",
+          android: true
+        }
+      }
     }
   }
 });

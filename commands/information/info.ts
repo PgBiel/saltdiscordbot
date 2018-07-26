@@ -40,12 +40,14 @@ export type NoGInfoAction = "user"   | "member"       | "id"             | "user
 /**
  * Info actions that can be used inside guilds (excluding those that also can be used outside)
  */
-export type GInfoAction = "server"   | "guild"  | "serverid"      | "guildid"      |
-"members"   | "channels"             | "voices" | "voicechannels" | "textchannels" | "texts" | "categories" | "ctgs" |
-"emoji"     | "emojiid"              |
-"role"      | "roleid"               | "roles"  |
-"cperms"    | "channelperms"         |
-"saltperms" | "stperms"              | "listperms";
+export type GInfoAction = "server"     | "guild"     | "serverid"      | "guildid"      |
+"members"     | "channels"             | "voices"    | "voicechannels" | "textchannels" | "texts" | "categories" | "ctgs" |
+"emoji"       | "emojiid"              |
+"role"        | "roleid"               | "roles"     |
+"cperms"      | "channelperms"         |
+"saltperms"   | "stperms"              | "listperms" |
+"membercount" | "count"                |
+"readers"     | "listeners";
 
 /**
  * All actions
@@ -66,22 +68,23 @@ export type CollKey<T extends (Collection<any, any> | Storage<any, any>), R = an
       SK :
       R;
 
-const noGActions = [
+const noGActions: NoGInfoAction[] = [
   "user", "member", "id", "userid",
   "channel", "textchannel", "text", "channelid", "textid", "textchannelid",
   "voicechannel", "voice", "voiceid", "voicechannelid",
   "perms", "dperms", "discordperms", // when out of a guild, you can only specify a number
   "category", "categoryid", "ctg", "ctgid",
   "stats", "bot"];
-const gActions = noGActions.concat([
+const gActions: InfoAction[] = (noGActions as InfoAction[]).concat([
   "server", "guild", "serverid", "guildid",
   "members", "channels", "voices", "voicechannels", "textchannels", "texts", "categories", "ctgs",
   "emoji", "emojiid",
   "role", "roleid", "roles",
   "cperms", "channelperms",
   "saltperms", "stperms", "listperms", // I was going to alias it with "sperms" but then I realized...
-  "membercount", "count"
-]);
+  "membercount", "count",
+  "readers", "listeners"
+] as GInfoAction[]);
 
 const noGCmds = {
   user: userinfo, member: userinfo, id: userinfo, userid: userinfo,
@@ -106,7 +109,9 @@ const gCmds = Object.assign({
   channels, voices: channels, voicechannels: channels, textchannels: channels, texts: channels, categories: channels,
   ctgs: channels,
 
-  membercount, count: membercount
+  membercount, count: membercount,
+
+  readers: members, listeners: members,
 }, noGCmds);
 
 const func: cmdFunc<InfoDummy> = async function(msg, {
@@ -139,7 +144,7 @@ const func: cmdFunc<InfoDummy> = async function(msg, {
     return reply("Please specify something to view information for! (See the help command if you need help.)");
   }
   if (!usableActions.includes(action)) {
-    if (gActions.includes(action)) {
+    if (gActions.includes(action as InfoAction)) {
       return reply("You can only view that info when on a server!");
     }
     return reply("Unknown action (info to view)! (See the help command if you need help.)");
@@ -161,6 +166,7 @@ export const info = new Command({
   perms: {
     "info.user": true, "info.role": true, "info.channel": true, "info.server": true,
     "info.bot": true, "info.roles": true, "info.channels": true, "info.members": true,
+    "info.readers": true, "info.listeners": true,
     "info.perms": true, "info.saltperms": true
   },
   default: true,
