@@ -16,11 +16,15 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
 
   const { ONLINE } = Constants.emoji.rjt;
   members.forEach(m => (m.user.bot ? bots : humans).set(m.id, m));
-  return send(
-    `In this server, there is a total of **${members.size}** members (${onlyOnline(members).size}${ONLINE}), with:
-- **${humans.size}** humans (${onlyOnline(humans).size}${ONLINE});
-- **${bots.size}** bots (${onlyOnline(bots).size}${ONLINE}).`
-);
+  const embed: Embed = new Embed();
+
+  embed
+    .setTitle(`Member Count`)
+    .setColor(Constants.colors.RANDOM_COLOR())
+    .setDescription(`In this server, there is a total of **${members.size}** members (${onlyOnline(members).size}${ONLINE})`)
+    .addField("Humans", `Total of **${humans.size}** (${onlyOnline(humans).size}${ONLINE})`, true)
+    .addField("Bots", `Total of **${bots.size}** (${onlyOnline(bots).size}${ONLINE})`, true);
+  return send({ embed, deletable: true });
 };
 
 export const membercount = new Command({
