@@ -44,7 +44,8 @@ const retRjt = (isMention: boolean) => {
     WHAT: mkEmj("what", "420013148976840714"),
     CANCEL: mkEmj("cancel", "420030761928753153"),
     DELETE: mkEmj("delete", "420030812269051915"),
-    OWNER: mkEmj("owner", "421875630544781318")
+    OWNER: mkEmj("owner", "421875630544781318"),
+    ONLINE: mkEmj("online", "471892230039273483")
   };
 };
 const retChannels = (isMention: boolean) => {

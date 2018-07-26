@@ -8,6 +8,7 @@ import { Guild, GuildEmoji, Collection } from "discord.js";
 import { ExtendedMsgOptions } from "../../handlerfuncs/senders/proto-send";
 import { SearchType } from "../../funcs/parsers/search";
 import { Storage } from "saltjs";
+
 import { userinfo } from "./userinfo";
 import { channelinfo } from "./channelinfo";
 import { perms } from "./perms";
@@ -17,6 +18,7 @@ import { roleinfo } from "./roleinfo";
 import { roles } from "./roles";
 import { members } from "./members";
 import { channels } from "./channels";
+import { membercount } from "./membercount";
 
 export type AInfoDummy = InfoDummy & { arg?: string, trArg?: string };
 
@@ -77,7 +79,8 @@ const gActions = noGActions.concat([
   "emoji", "emojiid",
   "role", "roleid", "roles",
   "cperms", "channelperms",
-  "saltperms", "stperms", "listperms" // I was going to alias it with "sperms" but then I realized...
+  "saltperms", "stperms", "listperms", // I was going to alias it with "sperms" but then I realized...
+  "membercount", "count"
 ]);
 
 const noGCmds = {
@@ -101,7 +104,9 @@ const gCmds = Object.assign({
   members,
 
   channels, voices: channels, voicechannels: channels, textchannels: channels, texts: channels, categories: channels,
-  ctgs: channels
+  ctgs: channels,
+
+  membercount, count: membercount
 }, noGCmds);
 
 const func: cmdFunc<InfoDummy> = async function(msg, {
