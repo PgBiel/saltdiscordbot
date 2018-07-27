@@ -1,7 +1,9 @@
 import { bot, cross, Constants, Searcher } from "../../util/deps";
 import capitalize from "../strings/capitalize";
 import rejct from "../util/rejct";
-import { Guild, Role, User, GuildEmoji, TextChannel, GuildMember, Collection, GuildChannel, VoiceChannel, CategoryChannel } from "discord.js";
+import {
+  Guild, Role, User, GuildEmoji, TextChannel, GuildMember, Collection, GuildChannel, VoiceChannel, CategoryChannel
+} from "discord.js";
 import { ExtendedSendUnit } from "../../handlerfuncs/senders/proto-send";
 import { HandlerFuncs } from "../../handlerfuncs/commandHandlerFuncs";
 import { CrossItem } from "../../classes/cross";
@@ -99,6 +101,11 @@ async function search(
     channelType, allowForeign, autoAnswer
   }?: ISearchOpts
 ): Promise<ISearchReturn<AnyChannel>>;
+async function search(
+  args: string, type: "user" | "role", { guild, send, reply, promptAmbig }: ISearchContext, { // ovl 5 - user or role
+    channelType, allowForeign, autoAnswer
+  }?: ISearchOpts
+): Promise<ISearchReturn<User | Role>>;
 async function search(
   args: string, type: SearchType, { guild, send, reply, promptAmbig }: ISearchContext, { // ovl main
     channelType, allowForeign, autoAnswer

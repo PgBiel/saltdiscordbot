@@ -19,6 +19,7 @@ import { roles } from "./roles";
 import { members } from "./members";
 import { channels } from "./channels";
 import { membercount } from "./membercount";
+import { saltperms } from "./saltperms";
 
 export type AInfoDummy = InfoDummy & { arg?: string, trArg?: string };
 
@@ -108,6 +109,8 @@ const gCmds = Object.assign({
 
   channels, voices: channels, voicechannels: channels, textchannels: channels, texts: channels, categories: channels,
   ctgs: channels,
+
+  saltperms, stperms: saltperms, listperms: saltperms,
 
   membercount, count: membercount,
 

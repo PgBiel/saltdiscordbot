@@ -5,7 +5,6 @@ import {
   noEscape, capitalize
 } from "../../misc/d";
 import { Collection, Guild, GuildEmoji, GuildChannel, GuildMemberStore, TextChannel, VoiceChannel } from "discord.js";
-import { SearchType } from "../../funcs/parsers/search";
 
 type PossibleListing = GuildMember | GuildEmoji | Role | GuildChannel;
 
@@ -295,7 +294,7 @@ export const members = new Command({
       args: { "voice channel": false },
       show: true,
       aliases: {
-        areaders: {
+        alisteners: {
           description: "Android Listeners - View the list of members that can connect to a voice channel, but without mentions.",
           android: true
         }

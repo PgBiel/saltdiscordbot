@@ -117,10 +117,11 @@ export interface HelperVals {
   autoroles: string; // role id
   perms: {
     id: string;
-    type: "member" | "channel" | "role" | "guild";
+    type: "m" | "r" | "c" | "g";
     command: string;
     is_custom?: boolean;
     extra?: string;
+    extrax?: string;
     negated?: boolean;
   };
   customcommands: {

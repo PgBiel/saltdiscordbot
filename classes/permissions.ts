@@ -6,6 +6,7 @@ import { bot } from "../util/bot";
 import * as Constants from "../constants/constants";
 import { db } from "../util/deps";
 import { CommandPerms } from "./command";
+import { HelperVals } from "../misc/tableValues";
 
 function uncompress(str) {
     return Buffer.from(str + "=".repeat(str.length % 4), "base64").toString("hex");
@@ -62,7 +63,7 @@ class Permz {
    * @example perms.checkPerm(myMember, "12345", "command.subcommand", false);
    */
   public async checkPerm(member: GuildMember, guildId: string, perm: string, isDefault = false): Promise<IPermsResult> {
-    const [cmdname, extra] = _.toPath(perm);
+    const [cmdname, extra, extrax] = _.toPath(perm);
     console.log(member.id, guildId, perm, isDefault);
     // if (extra1) whereobj.extra1 = extra1;
     // if (extra2) whereobj.extra2 = extra2;
@@ -93,9 +94,14 @@ class Permz {
           } else if (item.extra == null) {
             hasPerm = !item.negated;
             setPerm = true;
-          } else if (extra && item.extra === extra) {
-            hasPerm = !item.negated;
-            setPerm = true;
+          } else if (extra && [extra, "any"].includes(item.extra)) {
+            if (extrax && [extrax, "any"].includes(item.extrax)) {
+                hasPerm = !item.negated;
+                setPerm = true;
+            } else if (!item.extrax) {
+              hasPerm = !item.negated;
+              setPerm = true;
+            }
           }
         }
       }
@@ -129,13 +135,13 @@ class Permz {
     const disabled = (await (db.table("perms").get(guildId, [])))
       .find(
         item => (item.command === "any" || item.command === name)
-        && (item.type === "channel" || item.type === "guild")
+        && (item.type.startsWith("c") || item.type.startsWith("g"))
         && item.negated,
         );
     if (!disabled) {
       return "";
     }
-    if (disabled.type === "guild" || (disabled.type === "channel" && disabled.id === channelid)) {
+    if (disabled.type.startsWith("g") || (disabled.type.startsWith("c") && disabled.id === channelid)) {
       return disabled.type;
     }
     return "";
@@ -153,6 +159,16 @@ class Permz {
    */
   public hasPerm(member: GuildMember, guildId: string, perm: string, isDefault = false): Promise<IPermsResult> {
     return this.checkPerm(member, guildId, perm, isDefault);
+  }
+
+  public buildStr(perm: HelperVals["perms"], isDot: boolean = false) {
+    let text = "";
+    if (perm.negated) text += "- ";
+    if (perm.is_custom) text += "custom ";
+    text += perm.command;
+    if (perm.extra) text += perm.extra + "";
+    if (perm.extrax) text += perm.extrax;
+    return _.trim(text);
   }
 }
 
