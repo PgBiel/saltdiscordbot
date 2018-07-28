@@ -32,6 +32,27 @@ export default {
     "(╯°□°）╯︵ ┻━┻",
     "┻━┻ ﾐヽ(ಠ益ಠ)ノ彡┻━┻"
   ],
+  modsettings: {
+    VERIF: [
+      { name: "None", desc: "Unrestricted" },
+      { name: "Low", desc: "Must have a verified email on their Discord account." },
+      { name: "Medium", desc: "Must also be registered on Discord for longer than 5 minutes." },
+      { name: "(╯°□°）╯︵ ┻━┻", desc: "Must also be a member of this server for longer than 10 minutes." },
+      { name: "┻━┻ ﾐヽ(ಠ益ಠ)ノ彡┻━┻", desc: "Must have a verified phone on their Discord account." }
+    ],
+    EXPLICIT: [
+      { name: "Don't scan any messages.", desc: "Ain't no party like my grandma's tea party." },
+      {
+        name: "Scan messages from members without a role.",
+        desc: "Recommended option for servers that use roles for trusted membership."
+      },
+      { name: "Scan messages sent by all members.", desc: "Recommended option for when you want that squeaky clean shine." }
+    ]
+  },
+  DEFNOTIF: {
+    ALL: "All Messages",
+    MENTIONS: "Only Mentions"
+  },
   PUNISHMENTS,
   FILTER: {
     replace: {

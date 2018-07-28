@@ -86,7 +86,24 @@ export default (msg: IPSPartialMessage, data?: { author?: User }) => {
         content = ogContent as string;
       }
       logger.debug("[PROTO-SEND-TEST]", content, String(options));
-      const result = func(content, options);
+      let result: Promise<Message>;
+      let embedProblem: boolean = false;
+      if (
+        channel instanceof TextChannel && // we're in a guild
+        options.embed && // an embed was provided
+        Object.getOwnPropertyNames(options.embed).length > 0 && // the embed is at least semi-valid
+        !channel.permissionsFor(channel.guild.me).has("EMBED_LINKS") // no permission to send embeds
+      ) {
+        embedProblem = true;
+        result = func(
+          `I cannot send embeds on this channel, and normally I'd send one! :frowning:
+**Original Message Content:**
+${content || "<None>"}`,
+          Object.assign({ embed: null}, options)
+        );
+      } else {
+        result = func(content, options);
+      }
       if (options.autoCatch == null || options.autoCatch) {
         result.catch(rejctF("[PROTOSEND-AUTOCATCH]"));
       }
@@ -104,7 +121,7 @@ export default (msg: IPSPartialMessage, data?: { author?: User }) => {
           let procceeded = false; // if pagination was done
           const { deletable, paginate } = options;
           console.log("ISPAG", paginate);
-          if (paginate) { // paginate
+          if (paginate && !embedProblem) { // paginate
             const { page: sPage = 1, maxPage } = paginate;
             const { left, right } = Constants.emoji.arrows;
             const page = _.clamp(sPage, 1, maxPage);

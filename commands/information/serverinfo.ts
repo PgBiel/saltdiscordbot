@@ -2,12 +2,13 @@ import { TcmdFunc } from "../../misc/contextType";
 import { AInfoDummy } from "./info";
 import { Role, GuildMember, bot, search, Embed, ago, momentUTC, Constants, adaptSnake, Command } from "../../misc/d";
 
-const func: TcmdFunc<AInfoDummy> = async function(msg, {
+export type ServerInfoDummy = AInfoDummy & { content?: string };
+const func: TcmdFunc<ServerInfoDummy> = async function(msg, {
   args, author, arrArgs, send, reply, prefix: p, botmember, dummy, guild, guildId, perms, searcher, promptAmbig,
   channel, self, member, sendIt
 }) {
   if (!perms["info.server"]) return reply("Missing permission `info server`! :frowning:");
-  const { android, action, arg: _arg, trArg } = dummy || {} as never;
+  const { android, action, arg: _arg, trArg, content } = dummy || {} as never;
   if (["serverid", "guildid"].includes(action)) return reply(`The ID of the current server is \`${guildId}\`.`);
   channel.startTyping();
   const icon = guild.iconURL();
@@ -39,7 +40,7 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
     .addField("Region", adaptSnake(guild.region), true)
     .addField("Verification Level", Constants.maps.VERIF[guild.verificationLevel], true);
   if (guild.features.length) emb.addField("Features", adaptSnake(guild.features) || "None");
-  return sendIt(emb);
+  return content ? send(content, { embed: emb }) : sendIt(emb);
 };
 
 export const serverinfo = new Command({

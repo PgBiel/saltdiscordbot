@@ -148,9 +148,9 @@ const func: TcmdFunc<MultiInfoDummy> = async function(msg, {
       return;
     }
     roles = subSubject.roles;
-    content = `Here are ${member.user.tag}'s roles:`;
+    content = `Here are ${subSubject.user.tag}'s roles:`;
     invalid = "That member has no roles (other than the default)!";
-    title = `${member.user.tag}'s Roles`;
+    title = `${subSubject.user.tag}'s Roles`;
   }
   const rolesArr = roles.array().sort((a, b) => b.position - a.position).filter(r => r.id !== guild.id);
   if (rolesArr.length < 1) return reply(invalid);

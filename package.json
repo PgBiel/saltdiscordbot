@@ -39,7 +39,7 @@
     "erlpack": "github:discordapp/erlpack",
     "klaw-sync": "^2.1.0",
     "libsodium-wrappers": "^0.5.2",
-    "lodash": "^4.17.4",
+    "lodash": "^4.17.10",
     "mathjs": "^3.20.2",
     "moment": "^2.20.1",
     "node-opus": "^0.2.6",

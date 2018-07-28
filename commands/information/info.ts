@@ -170,7 +170,7 @@ export const info = new Command({
     "info.user": true, "info.role": true, "info.channel": true, "info.server": true,
     "info.bot": true, "info.roles": true, "info.channels": true, "info.members": true,
     "info.readers": true, "info.listeners": true,
-    "info.perms": true, "info.saltperms": true
+    "info.perms": true, "info.saltperms": true, "info.membercount": true
   },
   default: true,
   description: `Show information about something. To use, specify an action. For a list of actions, \

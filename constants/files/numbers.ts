@@ -1,3 +1,10 @@
+const afkTimeoutSeconds = [60, 300, 900, 1800, 3600];
+
+const afkTimeoutVals = {
+  SECONDS: afkTimeoutSeconds,
+  MILLISECONDS: afkTimeoutSeconds.map(n => n * 1000)
+};
+
 export default {
   max: {
     PROMPT: 5,
@@ -25,5 +32,6 @@ export default {
       DIVIDE_BY: 4,
       SPECIALS: [null, null, 1, 2, 2, 3, 4]
     }
-  }
+  },
+  afkTimeoutVals
 };

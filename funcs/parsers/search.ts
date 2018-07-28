@@ -187,7 +187,7 @@ user ID (e.g. \`80351110224678912\`) or a mention (e.g. @Sir#0001).`;
     return finish(reasons.NONE_AVAILABLE, `No ${type}s available for search! :frowning:`);
   }
   if (type === "user" && Constants.regex.NAME_AND_DISCRIM.test(args)) {
-    subject = await ((valid as SearchField<User>).find("tag", args));
+    subject = await ((valid as SearchField<User>).find(o => o && o.tag === args));
   } else if (Constants.regex.ID.test(args) || mentionRegex.test(args)) {
     try {
       const matched: string = args.match(Constants.regex.ID.test(args) ? Constants.regex.ID : mentionRegex)[1];

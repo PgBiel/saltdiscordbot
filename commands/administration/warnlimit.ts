@@ -158,7 +158,7 @@ ${availablePunish.join(", ")}.`);
       return send(`Successfully set the punishment for reaching **${num}** total warns to **${punishment}**!`);
     }
   } else {
-    return reply(`Unknown action! See the help command for tails.`);
+    return reply(`Unknown action! See the help command for details.`);
   }
 };
 
