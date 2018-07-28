@@ -524,6 +524,23 @@ About permissions: The \`wordfilter modify\` permission lets you use \`add\`/\`s
 toggle\` permission lets you use \`enable\`/\`disable\`/\`toggle\`, the \`wordfilter immune\` permission makes you immune \
 to the word filter and the rest are for their resspective actions.
 `,
+  subHelps: {
+    test: { // TODO: FIX THIS MESS
+      description: "This is a test",
+      args: { test: true, teste: false },
+      example: `{p}{up} {name} BOP-IT`,
+      aliases: ["bopit"],
+      perms: { "perm.perm": true }
+    },
+    testad: {
+      description: "This is a cool test",
+      args: { test: true, teste: false },
+      example: `{p}{up} {name} BOP-IT`,
+      aliases: ["bopit"],
+      perms: { "perm.perm": true },
+      useSubTitle: true
+    }
+  },
   example: `{p}wordfilter list\n\
 {p}wordfilter setup\n\
 {p}wordfilter set apple, banana, orange\n\

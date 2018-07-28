@@ -111,9 +111,14 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
       return emb;
     };
     sendIt(gen(page), { paginate: { page, pages, maxPage: pages.length, usePages: true, format: gen, content: "" } });
-  } else if (_.trim(args.toLowerCase()) in bot.commands) { // Help of a command
-    const cmdn: string = _.trim(args.toLowerCase());
-    const embed: Embed = bot.commands[cmdn].help(prefix, { useEmbed: true, guild });
+  } else if (_.trim(arrArgs[0].toLowerCase()) in bot.commands) { // Help of a command
+    const [_cmdn, _sub] = arrArgs;
+    const cmdn = _.trim(_cmdn.toLowerCase());
+    const sub = _sub ? _sub.toLowerCase() : null;
+
+    const embed: Embed = sub ?
+      bot.commands[cmdn].subHelp(sub, prefix, guild) :
+      bot.commands[cmdn].help(prefix, { useEmbed: true, guild });
     sendIt(embed);
   } else { // no idea
     return reply("Unknown command/category!");

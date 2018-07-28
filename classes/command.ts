@@ -9,6 +9,7 @@ import { Constants, _, logger, Guild } from "../util/deps";
 
 import cloneObject from "../funcs/util/cloneObject";
 import textAbstract from "../funcs/strings/textAbstract";
+import escMarkdown from "../funcs/strings/escMarkdown";
 
 import * as assert from "assert";
 import { Context, TContext, BaseContext, DjsChannel } from "../misc/contextType";
@@ -36,6 +37,23 @@ export type CommandPerms = string | {
   [perm: string]: CommandSetPerm
 };
 
+interface ICommandSubHelp {
+  description?: string;
+  perms?: CommandPerms; // actually have no effect here, just to show help
+  default?: boolean; // if perm is default
+  /** Whether or not should show on Subpages */
+  subShow?: boolean;
+  args?: ICommandArgs;
+  /** Alias subcommands */
+  aliases?: string[];
+  /** Place after command name for subcommand material */
+  preArgs?: string; // +[cmdname] [preArgs] [args, args, args, args]
+  example?: string;
+  
+  /** If title should be +cmd sub instead of +cmd -> Subpage "sub" */
+  useSubTitle?: boolean;
+}
+
 interface ICommandOptionsProto<D = object, C extends Context = Context> {
   aliases?: {[name: string]: Command | D} | string[];
   aliasData?: IAliasData;
@@ -45,6 +63,9 @@ interface ICommandOptionsProto<D = object, C extends Context = Context> {
   aliasShow?: boolean;
   pattern?: RegExp | string;
   description?: string;
+  subHelps?: {
+    [name: string]: ICommandSubHelp;
+  };
   example?: string;
   args?: ICommandArgs;
   category?: string;
@@ -120,6 +141,12 @@ export class Command<D = object, C extends Context = Context> {
    * @type {?RegExp}
    */
   public pattern?: RegExp;
+
+  /**
+   * List of subcommands to show on help
+   * @type {object}
+   */
+  public subHelps?: { [name: string]: ICommandSubHelp };
   /**
    * The description of the command.
    * @type {?string}
@@ -216,6 +243,8 @@ export class Command<D = object, C extends Context = Context> {
       )) :
       null;
 
+    this.subHelps = typeof options.subHelps === "object" ? options.subHelps :
+      null;
     return this;
   }
 
@@ -257,7 +286,9 @@ export class Command<D = object, C extends Context = Context> {
    */
   public help(p: string, { useEmbed, guild }: { useEmbed?: true, guild?: Guild }): MessageEmbed;
   public help(p: string, { useEmbed, guild }: { useEmbed?: false, guild?: Guild }): string;
-  public help(p: string, { useEmbed = true, guild }: { useEmbed?: boolean, guild?: Guild } = {}): MessageEmbed | string {
+  public help(
+    p: string, { useEmbed = true, guild }: { useEmbed?: boolean, guild?: Guild } = {}
+  ): MessageEmbed | string {
     if (!p) {
       throw new TypeError("No prefix given.");
     }
@@ -314,6 +345,12 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
         )
       );
     }
+    if (typeof this.subHelps === "object" && this.subHelps) {
+      const showTime = Object.keys(this.subHelps).filter(k => this.subHelps[k].subShow == null || this.subHelps[k].subShow);
+      if (showTime.length > 0) {
+        embed.addField("Subpages (Specify after command name!)", showTime.join(", "));
+      }
+    }
     if (this.perms) {
       let string = "";
       let filtered: Array<[string, CommandSetPerm]>;
@@ -364,6 +401,104 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
     return embed;
   }
 
+  public subHelp(sub: string, p: string, guild?: Guild): MessageEmbed {
+    const { subHelps } = this;
+    if (!sub || !subHelps || !Object.keys(subHelps).length || !(sub in subHelps)) return null;
+    if (!p) {
+      throw new TypeError("No prefix given.");
+    }
+    const obj = subHelps[sub];
+    let usedargs = "";
+    if (obj.args) {
+      Object.entries([obj.args, usedargs += " "][0]).map(([a, v]) => {
+        if (typeof v === "boolean" ? v : v.optional) {
+          usedargs += (usedargs.endsWith(" ") ? `[${a}]` : ` [${a}]`);
+        } else {
+          usedargs += (usedargs.endsWith(" ") ? `{${a}}` : ` {${a}}`);
+        }
+      });
+    }
+    const isSubInTitle: boolean = obj.useSubTitle;
+    const embed = new MessageEmbed();
+    embed
+      .setColor("RANDOM")
+      .setTitle(`\`${this.customPrefix || p}${this.name}${isSubInTitle ? ` ${obj.preArgs || sub}` : ""} \` ${this.private ?
+        " (Dev-only)" :
+        ""}${obj.default ?
+          " (Usable by default)" :
+          ""}${this.guildOnly ?
+            " (Not usable in DMs)" :
+            ""}${isSubInTitle ? "" : `
+**Subpage «${escMarkdown(sub)}»**`}`)
+      .addField("Usage", `${this.customPrefix || p}${this.name} ${obj.preArgs || sub} ${usedargs}`);
+    if (obj.description) {
+      embed.setDescription(
+        textAbstract(
+          obj.description
+            .replace(
+              /{maxcases}/ig, String(Constants.numbers.max.CASES((guild || { members: { size: 0 } }).members.size))
+            )
+            .replace(
+              /{name}/ig, sub
+            )
+            .replace(
+              /{up}/g, this.name
+            )
+            .replace(
+              /{p}/ig, p
+            ),
+          Constants.numbers.max.chars.DESC
+        )
+      );
+    }
+    if (obj.perms) {
+      let string = "";
+      let filtered: Array<[string, CommandSetPerm]>;
+      let onlyFalse: typeof filtered;
+      if (typeof obj.perms === "string") {
+        string = `\`${obj.perms.replace(/\./g, " ")}\``;
+        if (obj.default) string += " (available by default)";
+      } else {
+        filtered = Object.entries(obj.perms).filter(([_n, perm]) => typeof perm === "boolean" ?
+          true :
+          (perm.show == null || perm.show)
+        );
+        onlyFalse = filtered.filter(([perm, on]) => typeof on === "boolean" ? !on : !(on || {}).default);
+        for (const [key, val] of filtered) {
+          string += `\`${key.replace(/\./g, " ")}\``;
+          if (
+            (
+              typeof val === "boolean" ?
+                val :
+                (val != null && val.default)
+            ) &&
+            onlyFalse.length
+          ) {
+            string += " (available by default)";
+          }
+          string += ", ";
+        }
+      }
+      embed.addField(
+        `Permissions${onlyFalse && onlyFalse.length ? "" : " (All available by default)"}`,
+        string.replace(/,\s+$/, "")
+      );
+    }
+    if (obj.aliases) {
+      embed.addField(
+        "Aliases (of Subcommand)",
+        textAbstract(
+          obj.aliases.join(", "),
+          Constants.numbers.max.chars.FIELD
+        )
+      );
+    }
+    if (obj.example) {
+      embed.addField("Example", _.trim(obj.example).replace(/{p}/g, p).replace(/{name}/g, sub).replace(/{up}/g, this.name), true);
+    }
+    return embed;
+  }
+
   public static aliasFrom<Dd, Cc extends Context>(cmd: Command<Dd, Cc>, name: string, data?: AliasData<Dd, Cc> & Dd) {
     const newData = cloneObject(data);
     Object.defineProperty(newData, "__aliasOf", {
@@ -380,6 +515,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
       customPrefix: cmd.customPrefix,
       devonly: cmd.private,
       aliases: data.aliases,
+      subHelps: data.subHelps || cmd.subHelps,
       perms: data.perms || cmd.perms,
       default: data.default == null ? cmd.default : data.default,
       pattern: data.pattern || cmd.pattern,
