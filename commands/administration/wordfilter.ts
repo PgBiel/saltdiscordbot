@@ -505,50 +505,132 @@ export const wordfilter = new Command({
     mute: { default: false, show: false }
   },
   description: `See the filtered words or modify the word filter. Specify an action after the command to \
-show what is being done.
-\nFor listing all words filtered, specify \`list\` as the action. You can include a page after it to go to specific pages.
-**For setting up the word filter** (You cannot use other actions without setting up first), specify \`setup\` or \`register\`\
- as action.
-For modifying the word filter list, you can specify \`add\`, \`remove\` and \`set\` to add, remove and set words \
-(respectively), separated by comma. Specify \`clear\` as an action to remove all words.
-For setting or viewing the word filter strictness, specify \`strictness\` as the action. If setting, it must be between \
-1 and 5.
-For setting or viewing the filtering message, specify \`message\` as the action, plus the message if setting.
-For setting or viewing the filtering punishment, specify \`punishment\` (or \`punish\`) as the action. If setting, \
-also specify a punishment. If you specify mute, specify the time muted as well after it. (Note that both you and the bot \
-need to be able to execute said punishment to be able to choose it.)
-For toggling the word filtering, specify \`enable\`, \`disable\` or \`toggle\` to enable it, disable it or toggle it, \
-respectively.
+show what is being done. **For setting up the word filter** (You cannot use other actions without setting up first), \
+specify \`setup\` or \`register\` as action.
 
-About permissions: The \`wordfilter modify\` permission lets you use \`add\`/\`set\`/\`remove\`/\`setup\`, the \`wordfilter \
-toggle\` permission lets you use \`enable\`/\`disable\`/\`toggle\`, the \`wordfilter immune\` permission makes you immune \
-to the word filter and the rest are for their resspective actions.
+The list of actions is on the "Subpages" section below. Use {p}help wordfilter <action>  to view its info and permissions.
+
+**Note:** Having the Administrator SaltRole or \`Manage Messages\` lets you use the actions as well as permissions.
 `,
   subHelps: {
-    test: { // TODO: FIX THIS MESS
-      description: "This is a test",
-      args: { test: true, teste: false },
-      example: `{p}{up} {name} BOP-IT`,
-      aliases: ["bopit"],
-      perms: { "perm.perm": true }
-    },
-    testad: {
-      description: "This is a cool test",
-      args: { test: true, teste: false },
-      example: `{p}{up} {name} BOP-IT`,
-      aliases: ["bopit"],
-      perms: { "perm.perm": true },
+    list: {
+      description: "See the filtered words of the word filter, by specify \`list\` as the action for {p}wordfilter. \
+You can include a page after it to go to specific pages.",
+      args: { page: true },
+      example: `{p}{up} {name}
+{p}{up} {name} 5`,
+      perms: { "wordfilter.list": true },
       useSubTitle: true
-    }
+    },
+    setup: {
+      description: `Set up the word filter. For each individual action, its permission will be required, i.e. you cannot \
+set the words on setup if you don't have \`wordfilter modify\`.
+
+**Note:** Administrator SaltRole or \`Manage Messages\` also work to use this command.`,
+      args: {},
+      example: `{p}{up} {name}`,
+      aliases: ["register"],
+      perms: {
+        "wordfilter.modify": false, "wordfilter.strictness": false, "wordfilter.message": false,
+        "wordfilter.punishment": false
+      },
+      useSubTitle: true
+    },
+    add: {
+      description: `Add a word to the filter.
+
+**Note:** Administrator SaltRole or \`Manage Messages\` also work to use this subcommand.`,
+      args: { "...words": false },
+      example: `{p}{up} {name} banana, apple, juice`,
+      perms: { "wordfilter.modify": false }
+    },
+    remove: {
+      description: `Remove a word from the filter.
+
+**Note:** Administrator SaltRole or \`Manage Messages\` also work to use this subcommand.`,
+      args: { "...words": false },
+      example: `{p}{up} {name} banana, juice`,
+      perms: { "wordfilter.modify": false }
+    },
+    set: {
+      description: `Set the words of the filter as a whole.
+
+**Note:** Administrator SaltRole or \`Manage Messages\` also work to use this subcommand.`,
+      args: { "...words": false },
+      example: `{p}{up} {name} grape, strawberry`,
+      perms: { "wordfilter.modify": false }
+    },
+    clear: {
+      description: `Remove all words from the filter.
+
+**Note:** Administrator SaltRole or \`Manage Messages\` also work to use this subcommand.`,
+      args: {},
+      example: `{p}{up} {name} grape, strawberry`,
+      perms: { "wordfilter.modify": false }
+    },
+    strictness: {
+      description: `Modify (or view) the strictness of the filter, based on which the filter attempts to detect bypasses.
+**Levels:**
+- Level 1: No bypass detecting.
+- Level 2: Ignore spaces. _I.e._ orange filters o r an ge
+- Level 3: Ignore duplicate characters (+ Previous) _I.e._ orange filters ooorangee
+- Level 4: Use a big replacement list **(RECOMMENDED)** (+ Previous) _I.e._  orange filters ør4nge
+- Level 5: Ignore order of letters **(NOT RECOMMENDED, many false positives)** (+ Previous) _I.e._ orange filters oragne
+
+
+**Note:** Administrator SaltRole or \`Manage Messages\` also work to use this subcommand.`,
+      args: { "new level": true },
+      example: `{p}{up} {name}
+{p}{up} {name} 4`,
+      perms: { "wordfilter.strictness": false }
+    },
+    message: {
+      description: `Modify (or view) the message sent by the bot when a word is filtered.
+
+      **Note:** Administrator SaltRole or \`Manage Messages\` also work to use this subcommand.`,
+      args: { "new message": true },
+      example: `{p}{up} {name}
+{p}{up} {name} lol you got filtered`,
+      perms: { "wordfilter.message": false }
+    },
+    punishment: {
+      description: `Modify (or view) the punishment for saying a filtered word.
+**Valid Punishments**:
+- Kick (Requires \`kick\` or Discord perm \`Kick Members\`)
+- Ban (Requires \`ban\` or Discord perm \`Ban Members\`)
+- Softban (Requires \`softban\` or Discord perm \`Ban Members\`)
+- Warn (Requires \`warn\` or Moderator saltrole or Discord perm \`Manage Roles\`)
+- Mute (Requires \`mute\` or Moderator saltrole or Discord perm \`Manage Roles\`)
+
+**Note:** Administrator SaltRole or \`Manage Server\` also work to use this subcommand (but not for the individual punishments).`,
+      args: { punishment: true, "mute time [if specifying mute]": true },
+      aliases: ["punish"],
+      example: `{p}{up} {name}
+{p}{up} {name} kick
+{p}{up} {name} mute 15 minutes`,
+      perms: { "wordfilter.punishment": false, kick: false, ban: false, mute: false, warn: false }
+    },
+    enable: {
+      description: "Enable the word filter if it is disabled.",
+      args: {},
+      example: "{p}{up} {name}",
+      perms: { "wordfilter.toggle": false }
+    },
+    disable: {
+      description: "Disable the word filter if it is enabled, without deleting any words.",
+      args: {},
+      example: "{p}{up} {name}",
+      perms: { "wordfilter.toggle": false }
+    },
+    toggle: {
+      description: "Toggle filter between enabled and disabled.",
+      args: {},
+      example: "{p}{up} {name}",
+      perms: { "wordfilter.toggle": false }
+    },
   },
-  example: `{p}wordfilter list\n\
-{p}wordfilter setup\n\
-{p}wordfilter set apple, banana, orange\n\
-{p}wordfilter remove orange, banana
-{p}wordfilter message You have been caught!
-{p}wordfilter punish mute 2 minutes
-{p}wordfilter strictness 4
-{p}wordfilter toggle`,
+  example: `{p}wordfilter setup
+[See the subcommands' help page for more examples]`,
   category: "Administration",
   args: { action: false, "parameter (or page, if using list)": true, "mute time (if using punish with mute)": true },
   guildOnly: true

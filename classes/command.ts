@@ -49,8 +49,8 @@ interface ICommandSubHelp {
   /** Place after command name for subcommand material */
   preArgs?: string; // +[cmdname] [preArgs] [args, args, args, args]
   example?: string;
-  
-  /** If title should be +cmd sub instead of +cmd -> Subpage "sub" */
+
+  /** If title should be +cmd sub instead of +cmd -> Subpage "sub" | Default: true */
   useSubTitle?: boolean;
 }
 
@@ -348,7 +348,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
     if (typeof this.subHelps === "object" && this.subHelps) {
       const showTime = Object.keys(this.subHelps).filter(k => this.subHelps[k].subShow == null || this.subHelps[k].subShow);
       if (showTime.length > 0) {
-        embed.addField("Subpages (Specify after command name!)", showTime.join(", "));
+        embed.addField(`Subpages (Specify after \`${this.customPrefix || p}help ${this.name}\`)`, showTime.join(", "));
       }
     }
     if (this.perms) {
@@ -403,11 +403,19 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
 
   public subHelp(sub: string, p: string, guild?: Guild): MessageEmbed {
     const { subHelps } = this;
-    if (!sub || !subHelps || !Object.keys(subHelps).length || !(sub in subHelps)) return null;
+    if (!sub || !subHelps || !Object.keys(subHelps).length) return null;
+    let obj: ICommandSubHelp;
+    let parent: string;
+    if (sub in subHelps) {
+      obj = subHelps[sub];
+    } else {
+      parent = Object.getOwnPropertyNames(subHelps).find(s => subHelps[s].aliases && subHelps[s].aliases.includes(sub));
+      if (!parent) return null;
+      obj = subHelps[parent];
+    }
     if (!p) {
       throw new TypeError("No prefix given.");
     }
-    const obj = subHelps[sub];
     let usedargs = "";
     if (obj.args) {
       Object.entries([obj.args, usedargs += " "][0]).map(([a, v]) => {
@@ -418,7 +426,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
         }
       });
     }
-    const isSubInTitle: boolean = obj.useSubTitle;
+    const isSubInTitle: boolean = obj.useSubTitle == null || obj.useSubTitle;
     const embed = new MessageEmbed();
     embed
       .setColor("RANDOM")
@@ -488,7 +496,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
       embed.addField(
         "Aliases (of Subcommand)",
         textAbstract(
-          obj.aliases.join(", "),
+          obj.aliases.map(t => t === sub ? parent || "" : t).join(", "),
           Constants.numbers.max.chars.FIELD
         )
       );

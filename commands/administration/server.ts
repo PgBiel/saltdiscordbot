@@ -408,6 +408,7 @@ ${Constants.numbers.afkTimeoutVals.MILLISECONDS.map(n => new Interval(n)).join("
   }
 };
 
+const mappedAFKtimeout = Constants.numbers.afkTimeoutVals.MILLISECONDS.map(n => new Interval(n));
 export const servercmd = new Command({
   func,
   name: "server",
@@ -418,48 +419,11 @@ export const servercmd = new Command({
     "server.explifilter": false, "server.afkchannel": false, "server.afktimeout": false
   },
   default: true,
-  description: `Manage the server (or view its info, if nothing is specified).
+  description: `Manage the server (or view its info, if nothing is specified). Specify an action.
 
-There are 10 different actions: **name**, **icon**, **region**, **splash**, **newcome**, **dnotif**, **veriflevel**,
-**explifilter**, **afkchannel** and **afktimeout**.
+The list of actions is specified in the Subpages section. Use \`{p}help server <action>\` for info and permissions.
 
-__**• Normal settings**__
-
-**name**: Change the server's name by specifying the new name. If nothing is specified, you are informed of the current name.
-
-**icon**: Change the server icon by attaching an image. Specify "none"/"disable"/"remove" to remove. \
-If nothing is specified, view current icon.
-
-**region**: Change the server's region (used by voice channels) by specifying it. (To view a list of valid regions, just \
-type an invalid region, or even "list".) If nothing is specified, view current region.
-
-**splash**: Change the Invite Splash (background displayed when the invite link is followed – feature only available for \
-Discord partners and Verified servers) for the server, by attaching an image. Specify "none"/"disable"/"remove" to remove. \
-If nothing is specified, view current splash.
-
-**newcome**: Change the text channel used for New Member Messages by specifying one. If nothing is specified, view current \
-channel.
-
-**dnotif**: Change the default notification settings for a member (Either All Messages or Only Mentions), by specifying it. \
-If nothing specified, view it.
-
-__**• Moderation settings**__
-**veriflevel**: Change the verification level of the server by specifying it (number 0-4 or its name). If nothing specified, \
-view it.
-
-**explifilter**: Change the Explicit Content Filter level by specifying it (number 0-2 or its name). If nothing specified, \
-view it.
-
-__**• AFK Channel-related settings**__
-**afkchannel**: Change the AFK Voice channel by specifying the channel. Specify "none"/"disable"/"remove" to disable. \
-If nothing specified, view it.
-
-**afktimeout**: Change the AFK Timeout (time until person is considered AFK), by specifying one of the following timestamps: \
-${Constants.numbers.afkTimeoutVals.MILLISECONDS.map(n => new Interval(n)).join(", ")}.
-
-__                                           __
-**Permissions:** Use \`info server\` permission for being able to view info of specific actions; Use \`server <action>\` \
-permission to be able to use such action (e.g. \`server name\` to use the name action to modify the server's name).`,
+**Note:** Having \`Manage Server\` also lets you use all actions on this command.`,
   example: `{p}{name}
 {p}{name} name
 {p}{name} region US East
@@ -471,5 +435,130 @@ permission to be able to use such action (e.g. \`server name\` to use the name a
   aliases: {
     guild: {},
     srv: {}
+  },
+  subHelps: {
+    //#region Normal Settings
+    name: {
+      description: `Change the server's name by specifying the new name. If nothing is specified, \
+you are informed of the current name.
+
+For permissions, \`info server\` to view current name; \`server name\` to edit (or \`Manage Servers\`).`,
+      args: { name: true },
+      example: `{p}{up} {name}
+{p}{up} {name} New Cool Name`,
+      perms: { "server.name": false, "info.server": true }
+    },
+    icon: {
+      description: `Change the server icon by attaching an image. Specify "none"/"disable"/"remove" to remove. \
+If nothing is specified, view current icon.
+
+For permissions, \`info server\` to view current icon; \`server icon\` to change (or \`Manage Servers\`).`,
+      args: { "attach image to set; 'none'/'disable'/'remove' to remove icon": true },
+      example: `{p}{up} {name}
+{p}{up} {name} remove`,
+      perms: { "server.icon": false, "info.server": true }
+    },
+    region: {
+      description: `Change the server's region (used by voice channels) by specifying it. \
+(To view a list of valid regions, specify "list".) If nothing is specified, view current region.
+
+For permissions, \`info server\` to view current region; \`server region\` to change (or \`Manage Servers\`).`,
+      args: { "region name (or 'list' to view all)": true },
+      example: `{p}{up} {name}
+{p}{up} {name} list
+{p}{up} {name} US East
+{p}{up} {name} Brazil`,
+      perms: { "server.region": false, "info.server": true }
+    },
+    splash: {
+      description: `Change the Invite Splash (background displayed when the invite link is followed – feature only available for \
+Discord partners and Verified servers) for the server, by attaching an image. Specify "none"/"disable"/"remove" to remove. \
+If nothing is specified, view current splash.
+
+For permissions, \`info server\` to view current splash; \`server splash\` to change (or \`Manage Servers\`).`,
+      args: { "attach image to set; 'none'/'disable'/'remove' to remove splash": true },
+      example: `{p}{up} {name}
+{p}{up} {name} remove`,
+      perms: { "server.splash": false, "info.server": true }
+    },
+    newcome: {
+      description: `Change the text channel used for New Member Messages by specifying one. If nothing is specified, \
+view current channel.
+
+For permissions, \`info server\` to view current New Member Msgs channel; \`server newcome\` to edit (or \`Manage Servers\`).`,
+      args: { "new text channel": true },
+      example: `{p}{up} {name}
+{p}{up} {name} #welcome`,
+      perms: { "server.newcome": false, "info.server": true }
+    },
+    dnotif: {
+      description: `Change the default notification settings for a member (Either All Messages or Only Mentions), \
+by specifying it. If nothing specified, view it.
+
+For permissions, \`info server\` to view current default Notifications setting; \`server dnotif\` to change \
+(or \`Manage Servers\`).`,
+      args: { "new setting ('All Messages' or 'Only Mentions')": true },
+      example: `{p}{up} {name}
+{p}{up} {name} All Messages
+{p}{up} {name} Only Mentions`,
+      perms: { "server.dnotif": false, "info.server": true }
+    },
+    //#endregion
+    //#region verif levels
+    veriflevel: {
+      description: `Change the verification level of the server by specifying it (number 0-4 or its name). If nothing specified, \
+view it.
+
+**Levels:** ${Constants.maps.VERIF.map((s, i) => s + ` (${i})`).join(", ")}.
+
+For permissions, \`info server\` to view current Verification Level; \`server veriflevel\` to change \
+(or \`Manage Servers\`).`,
+      args: { "new verification level": true },
+      example: `{p}{up} {name}
+{p}{up} {name} 2
+{p}{up} {name} Low`,
+      perms: { "server.veriflevel": false, "info.server": true }
+    },
+    explifilter: {
+      description: `Change the Explicit Content Filter level by specifying it (number 0-2 or its name). \
+If nothing specified, view it.
+
+**Levels:** ${Constants.maps.modsettings.EXPLICIT.map(({ name }, i) => `"${name}" (${i})`).join(", ")}.
+
+For permissions, \`info server\` to view current default Notifications setting; \`server dnotif\` to change \
+(or \`Manage Servers\`).`,
+      args: { "new Explicit Content Filter level": true },
+      example: `{p}{up} {name}
+{p}{up} {name} 1
+{p}{up} {name} Don't scan any messages.`,
+      perms: { "server.explifilter": false, "info.server": true }
+    },
+    //#endregion
+    //#region AFK stuff
+    afkchannel: {
+      description: `Change the AFK Voice channel by specifying the channel. Specify "none"/"disable"/"remove" to disable. \
+If nothing specified, view it.
+
+For permissions, \`info server\` to view current AFK voice channel; \`server afkchannel\` to change \
+(or \`Manage Servers\`).`,
+      args: { "new voice channel (or 'none'/'disable'/'remove' to remove)": true },
+      example: `{p}{up} {name}
+{p}{up} {name} AFK
+{p}{up} {name} remove`,
+      perms: { "server.afkchannel": false, "info.server": true }
+    },
+    afktimeout: {
+      description: `Change the AFK Timeout (time until person is considered AFK), by specifying one of the following timestamps: \
+${mappedAFKtimeout.join(", ")}.
+
+For permissions, \`info server\` to view current AFK timeout; \`server afktimeout\` to change \
+(or \`Manage Servers\`).`,
+      args: { "new AFK timeout": true },
+      example: `{p}{up} {name}
+{p}{up} {name} ${mappedAFKtimeout[0]}
+{p}{up} {name} ${mappedAFKtimeout[2]}`,
+      perms: { "server.afktimeout": false, "info.server": true }
+    },
+    //#endregion
   }
 });

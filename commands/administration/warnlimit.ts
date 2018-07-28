@@ -149,7 +149,7 @@ ${availablePunish.join(", ")}.`);
       }
       let punishment: string;
       if (subSubArg.toLowerCase() === "mute") {
-        punishment = `mute for ${timeDefault ? "10 minutes (fault)" : time}`;
+        punishment = `mute for ${timeDefault ? "10 minutes (default)" : time}`;
       } else if (subSubArg.toLowerCase() === "pmute") {
         punishment = `permanent mute`;
       } else {
@@ -165,20 +165,13 @@ ${availablePunish.join(", ")}.`);
 export const warnlimit = new Command({
   func,
   name: "warnlimit",
-  perms: { "warnlimit.modify": false, "warnlimit.get": true, kick: { fault: false, show: false },
-  ban: { fault: false, show: false }, warn: { fault: false, show: false },
-  softban: { fault: false, show: false }, mute: { fault: false, show: false } },
+  perms: { "warnlimit.modify": false, "warnlimit.get": true, kick: { default: false, show: false },
+  ban: { default: false, show: false }, warn: { default: false, show: false },
+  softban: { default: false, show: false }, mute: { default: false, show: false } },
   description: `Set or view warn punishments for reaching a certain (or multiple) warn count(s). For a list of them, \
-don't specify an action. For the "get" action, you specify a number after it which is the warn count punishment you \
-want to view.
+don't specify an action.
 
-For the "set", "unset", "add" (same as "set") and "remove" (same as "unset") actions, specify a number after it which \
-is the warn count punishment to set/unset. That's all you need if unsetting. If setting, specify a punishment after it \
-(one of kick, ban, softban, pmute, mute). For mute, specify amount of minutes after it; if you don't specify an amount \
-of minutes it faults to 10. Otherwise, the punishment will set.\n\nMax warn count (for punishments) is 20.
-
-For permissions, use the \`warnlimit modify\` permission for setting/unsetting and the \`warnlimit get\` permission for \
-seeing/listing them. :wink:`,
+The list of actions is at the field Subpages below. Use \`{p}help warnlimit <action>\` to view info and permissions.`,
   example: `{p}warnlimit get 5 (see punishment on 5 warns)\n\
 {p}warnlimit set 13 kick (on 13 warns, kick)\n\
 {p}warnlimit set 10 mute 15 (on 10 warns, mute for 15 mins)\n\
@@ -187,5 +180,43 @@ seeing/listing them. :wink:`,
   args: {
     action: true, "warn count": true, "punishment (if setting)": true, "mute minutes (if setting temporary mute)": true
   },
-  guildOnly: true
+  guildOnly: true,
+  aliases: {
+    setwarns: {}
+  },
+  subHelps: {
+    get: {
+      description: "View info about a specific warn limit. Specify the number of the warn limit to view it.",
+      args: { number: false },
+      example: `{p}{up} {name} 5`,
+      perms: { "warnlimit.get": true }
+    },
+    set: {
+      description: `Set a warn limit. Just specify the number of warns required to reach it, and the punishment for reaching it.
+
+**Valid Punishments:**
+- Warn (Requires permission \`warn\`, Moderator saltrole or Discord perm \`Manage Roles\`);
+- Mute & Pmute (Requires permission \`mute\`, Moderator saltrole or Discord perm \`Manage Roles\`);
+   • **Note:** Specify amount of minutes if using \`mute\`.
+- Kick (Requires permission \`kick\` or Discord perm \`Kick Members\`);
+- Ban (Requires permission \`ban\` or Discord perm \`Ban Members\`);
+- Softban (Requires permission \`softban\` or Discord perm \`Ban Members\`).
+
+**Note:** You may also have the Administrator saltrole or \`Manage Server\` Discord perm to use this subcommand.`,
+      args: { limit: false, punishment: false, "minutes to mute for [if using mute]": true },
+      example: `{p}{up} {name} set 13 kick
+      {p}{up} {name} set 10 mute 15
+      {p}{up} {name} set 5 softban`,
+      perms: { "warnlimit.modify": false, ban: false, kick: false, softban: false, mute: false, warn: false },
+      aliases: ["add"]
+    },
+    unset: {
+      description: "Removes a warn limit.\n\n**Note:** You may also have the Administrator saltrole or \
+\`Manage Server\` Discord perm to use this subcommand.",
+      args: { number: false },
+      example: `{p}{up} {name} 10`,
+      perms: { "warnlimit.modify": false },
+      aliases: ["remove"]
+    }
+  }
 });

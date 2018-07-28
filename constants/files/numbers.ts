@@ -8,6 +8,7 @@ const afkTimeoutVals = {
 export default {
   max: {
     PROMPT: 5,
+    PREFIX_CHARS: 100,
     CASES: (members: number = 0) => {
       if (members >= 3000) {
         return 2000;

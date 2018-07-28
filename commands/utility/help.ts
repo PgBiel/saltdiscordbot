@@ -1,7 +1,7 @@
 import Command from "../../classes/command";
 import { _, bot, rejct, Message, Embed, paginate as dpaginate, Constants } from "../../misc/d";
 import { cmdFunc } from "../../misc/contextType";
-import { ExtendedMsgOptions } from "../../handlerfuncs/senders/proto-send";
+import { ExtendedMsgOptions, IProtoSendPaginator } from "../../handlerfuncs/senders/proto-send";
 
 const map = { Mod: "Moderation", Admin: "Administration", Util: "Utility" };
 
@@ -116,10 +116,36 @@ It must be a number that is higher than or equal to 1, and not have decimals.`);
     const cmdn = _.trim(_cmdn.toLowerCase());
     const sub = _sub ? _sub.toLowerCase() : null;
 
+    const cmdInUse = bot.commands[cmdn];
+    const normalHelp = cmdInUse.help(prefix, { useEmbed: true, guild });
     const embed: Embed = sub ?
-      bot.commands[cmdn].subHelp(sub, prefix, guild) :
-      bot.commands[cmdn].help(prefix, { useEmbed: true, guild });
-    sendIt(embed);
+      cmdInUse.subHelp(sub, prefix, guild) :
+      normalHelp;
+    if (!embed) return reply(`Unknown subcommand for \`${cmdn}\` (\`${sub}\`)!`);
+    if (cmdInUse.subHelps && Object.getOwnPropertyNames(cmdInUse.subHelps).length > 1) {
+      const { subHelps } = cmdInUse;
+      const keys = Object.getOwnPropertyNames(subHelps);
+      const page: number = sub ? (keys.indexOf(sub) || 0) + 2 : 1;
+      const cache = [normalHelp, ...keys];
+      const gen = (page: number) => {
+        let el = cache[page - 1];
+        if (typeof el === "string") {
+          el = cache[page - 1] = cmdInUse.subHelp(el, prefix, guild);
+        }
+        return el;
+      };
+      const paginate: IProtoSendPaginator = {
+        content: "",
+        format: gen,
+        maxPage: cache.length,
+        page,
+        usePages: true,
+        pages: cache
+      };
+      sendIt(embed, { paginate });
+    } else {
+      sendIt(embed);
+    }
   } else { // no idea
     return reply("Unknown command/category!");
     /* let cmdToUse = null;

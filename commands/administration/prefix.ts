@@ -1,5 +1,5 @@
 import Command from "../../classes/command";
-import { db, logger, rejct } from "../../misc/d";
+import { db, logger, rejct, Constants } from "../../misc/d";
 import { TcmdFunc } from "../../misc/contextType";
 
 const func: TcmdFunc<{}> = async function(
@@ -14,7 +14,8 @@ const func: TcmdFunc<{}> = async function(
     return reply("Missing permission `prefix`! Could also use this command with the `Administrator` saltrole or the `\
 Manage Server` Discord permission.");
   }
-  if (args.length > 200) return reply("The prefix must not exceed 200 characters!");
+  if (args.length > Constants.numbers.max.PREFIX_CHARS) return reply(`The prefix must not exceed \
+${Constants.numbers.max.PREFIX_CHARS} characters!`);
   try {
     await (db.table("prefixes").set(guildId, args, true));
     send(`Prefix set to \`${args}\`!`);
