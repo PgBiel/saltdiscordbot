@@ -24,7 +24,9 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
   if (["tuser", "tmember"].includes(type)) {
     total = true;
     type = "user";
-  }
+  } else if (type === "member") {
+   type = "user"
+}
   let page: number = 1;
   let rest: string = "";
   if (["user", "member"].includes(type) && restArr.length === 1 && /^\d+$/.test(restArr[0])) { // page specified
