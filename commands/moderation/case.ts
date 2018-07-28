@@ -104,7 +104,7 @@ The highest non-deleted case number so far is ${latest}.`);
     if (punish.deleted) return reply(`The case with that number was deleted! :(`);
     const isYours: boolean = uncompress(punish.moderator) === author.id;
     if (
-      !isYours && !seePerm("case.others", perms, setPerms, { srole: "admin" })
+      !isYours && !seePerm("case.others", perms, setPerms, { srole: "admin", hperms: "ADMINISTRATOR" })
     ) return reply(`That case is not yours. You need the permission \
 \`case others\` or the Administrator saltrole to edit others' cases!`);
     if (action === "delete") {
@@ -192,23 +192,9 @@ export const casecmd = new Command({
   name: "case",
   perms: {"case.get": true, "case.edit": true, "case.delete": true, "case.others": false},
   description: `Get or modify a case. Specify just a number to fetch that case and see its information. Otherwise, specify an \
-action. The actions are listed below. After it, specify a number which will be the case to interact with.
+action.
 
-The \`get\` action works pretty much as if you just specified a number: It retrieves a case by the number specified.
-The rest of the actions can be only applied to your own cases by default and require a special permission to apply to others.
-
-For the following actions (\`edit\`, \`togglethumb\` and \`delete\`), the permission \`case others\` or the Administrator \
-SaltRole will be required to interact with someone else's case.
-
-The \`edit\` action lets you change a case's reason. You must specify the new reason after the case number. Note that, for this \
-action, if you change the reason of someone else's case, you will become its punisher, so you are asked for confirmation.
-
-The \`togglethumb\` action lets you toggle if a thumbnail will be displayed on the case's embed or not. Useful for NSFW avatars.
-
-And finally, the \`delete\` action lets you delete a case. You will always be asked for confirmation.
-
-Permissions: \`case get\` for using get; \`case edit\` for using edit and togglethumb; \`case delete\` for deleting. \
-For interacting with others' cases, \`case others\`.`,
+The actions are listed in the "Subpages" section below. Use \`{p}help case <action>\` to view info and permissions.`,
   example: `{p}case 5
 {p}case get 5
 {p}case edit 10 New reason
@@ -217,9 +203,49 @@ For interacting with others' cases, \`case others\`.`,
   category: "Moderation",
   args: {
     "action or case number": false,
-    "case number (only when using an action)": true,
+    "case number (when using an action)": true,
     "new reason (only when using edit)": true
   },
   guildOnly: true,
-  default: false
+  default: false,
+  subHelps: {
+    get: {
+      description: `The \`get\` action works pretty much as if you just specified a number: It retrieves a case by the number \
+specified.`,
+      args: { "case number": false },
+      example: `{p}{up} {name} 5`,
+      default: true,
+      perms: "case.get"
+    },
+    edit: {
+      description: `The \`edit\` action lets you change a case's reason. You must specify the new reason after the case \
+number. Note that, for this action, if you change the reason of someone else's case, you will become its punisher, so you \
+are asked for confirmation.
+
+**Note: To edit others' cases, it is necessary either the \`case others\` permission, the Administrator saltrole or the \
+\`Administrator\` Discord permission.`,
+      args: { "case number (l or latest for latest case)": false, "new reason": false },
+      example: `{p}{up} {name} 13 Spammed my dms`,
+      perms: { "case.edit": true, "case.others": false }
+    },
+    togglethumbs: {
+      description: `The \`togglethumb\` action lets you toggle if a thumbnail will be displayed on the case's embed or \
+not. Useful for NSFW avatars.
+
+**Note: To edit others' cases, it is necessary either the \`case others\` permission, the Administrator saltrole or the \
+\`Administrator\` Discord permission.`,
+      args: { "case number (l or latest for latest case)": false },
+      example: `{p}{up} {name} 7`,
+      perms: { "case.edit": true, "case.others": false }
+    },
+    delete: {
+      description: `Rhe \`delete\` action lets you delete a case. You will always be asked for confirmation.
+
+**Note: To delete others' cases, it is necessary either the \`case others\` permission, the Administrator saltrole or the \
+\`Administrator\` Discord permission.`,
+      args: { "case number (l or latest for latest case)": false },
+      example: `{p}{up} {name} 18`,
+      perms: { "case.delete": true, "case.others": false }
+    },
+  }
 });
