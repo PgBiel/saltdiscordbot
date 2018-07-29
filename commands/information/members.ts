@@ -74,7 +74,7 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
   } = dummy || {} as never;
   if (!perms["info." + (action || "members")]) return reply("Missing permission `info members`! :frowning:");
   channel.startTyping();
-  const isDiff: boolean = Boolean(action);
+  const isDiff: boolean =  action == null ? false : action !== "members";
   const arg = trArg || _arg || args;
   /**
    * Content to send with msg

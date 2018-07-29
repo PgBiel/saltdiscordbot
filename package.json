@@ -29,7 +29,6 @@
     "@types/rethinkdbdash": "github:types/rethinkdbdash",
     "@types/transliteration": "^1.6.0",
     "@types/xregexp": "^3.0.29",
-    "bufferutil": "^3.0.2",
     "burlp": "^2.0.1",
     "chalk": "^2.3.2",
     "circular-json": "^0.5.1",
