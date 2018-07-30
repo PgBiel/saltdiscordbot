@@ -40,6 +40,13 @@ export type IPromptOptions = IBasePromptOptions & {
   question: string;
 };
 
+export interface IPromptReturn {
+  res: string;
+  satisf?: Message;
+  cancelled?: boolean;
+  skipped?: boolean;
+}
+
 export default (msg: Message) => {
   const { Collection } = Discord;
   const { author } = msg;
@@ -49,7 +56,7 @@ export default (msg: Message) => {
       timeout = Constants.times.AMBIGUITY_EXPIRE, cancel = true,
       skip = false, options = {}, author = msg.author
     }: IPromptOptions,
-  ) => {
+  ): Promise<IPromptReturn> => {
     const send = _send(msg);
     let skipped: boolean = false;
     let cancelled: boolean = false;
@@ -82,7 +89,7 @@ export default (msg: Message) => {
           continue;
         }
         if (satisfied) {
-          return { res: satisfied.content, cancelled, skipped };
+          return { res: satisfied.content, satisf: satisfied, cancelled, skipped };
         }
       } catch (err) {
         if (!(err instanceof Collection)) rejct(err, "{AT PROMPT}");
@@ -91,6 +98,6 @@ export default (msg: Message) => {
       }
     }
     if (!skipped) send("Command cancelled.");
-    return { res: "", cancelled, skipped };
+    return { res: "", satisf: satisfied, cancelled, skipped };
   };
 };

@@ -124,7 +124,23 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         );
       }
     } else if (msg.attachments.size < 1) {
-      return reply("Please attach the desired image to your message.");
+      const { satisf, cancelled } = await prompt({
+        question: `Attach an icon to set as the new server icon. \
+This will expire in 15 seconds. Type \`cancel\` to cancel.`,
+        invalidMsg: "__Y__es or __n__o?",
+        filter: msg2 => {
+          return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
+        },
+        timeout: Time.seconds(15),
+        cancel: true
+      }); // TODO
+      if (!result) {
+        return;
+      }
+      if (/^[nc]/i.test(result)) {
+        send("Command cancelled.");
+        return;
+      }
     } else if (msg.attachments.size > 0) {
       const img = msg.attachments.first();
       if (!/\.(png|jpe?g|gif|web[mp]|bmp)$/i.test(img.name)) return reply("That's not an image! :frowning:");
@@ -418,7 +434,6 @@ export const servercmd = new Command({
     "server.newcome": false, "server.dnotif": false, "server.veriflevel": false,
     "server.explifilter": false, "server.afkchannel": false, "server.afktimeout": false
   },
-  default: true,
   description: `Manage the server (or view its info, if nothing is specified). Specify an action.
 
 The list of actions is specified in the Subpages section. Use \`{p}help server <action>\` for info and permissions.

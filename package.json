@@ -24,7 +24,7 @@
   "homepage": "https://github.com/PgBiel/saltdiscordbot#readme",
   "dependencies": {
     "@types/klaw-sync": "^1.1.3",
-    "@types/lodash": "^4.14.105",
+    "@types/lodash": "^4.14.115",
     "@types/mathjs": "^4.4.0",
     "@types/rethinkdbdash": "github:types/rethinkdbdash",
     "@types/transliteration": "^1.6.0",

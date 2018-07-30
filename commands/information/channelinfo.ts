@@ -12,7 +12,7 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
 }) {
   if (!perms["info.channel"]) return reply("Missing permission `info channel`! :frowning:");
   const { android, action, arg: _arg, trArg } = dummy || {} as never;
-  const arg: string = trArg || _arg || args;
+  const arg: string = trArg || _arg || args || "";
 
   if (
     guild &&
@@ -53,7 +53,7 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
   /**
    * Search term for channel
    */
-  const lArg = arg.replace(/^[#&]/, "");
+  const lArg = (arg || "").replace(/^[#&]/, "");
   if (!lArg) {
     if (guild) {
       if (type === "text") {
