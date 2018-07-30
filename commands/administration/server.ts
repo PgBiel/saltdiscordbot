@@ -5,7 +5,7 @@ import {
   parseTimeStr,
   Command
 } from "../../misc/d";
-import { DiscordAPIError, VoiceRegion } from "discord.js";
+import { DiscordAPIError, VoiceRegion, MessageAttachment } from "discord.js";
 
 type ServerAction = "name"   | "icon" | "region" | "splash" | "newcome" | "dnotif" |
 "veriflevel" | "explifilter" |
@@ -123,28 +123,36 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
           `Failed to remove the server ${action}! :frowning: (Try again?)`, { embed, deletable: Boolean(embed) }
         );
       }
-    } else if (msg.attachments.size < 1) {
-      const { satisf, cancelled } = await prompt({
-        question: `Attach an icon to set as the new server icon. \
-This will expire in 15 seconds. Type \`cancel\` to cancel.`,
-        invalidMsg: "__Y__es or __n__o?",
-        filter: msg2 => {
-          return /^(?:y(?:es)?)|(?:no?)$/i.test(msg2.content);
-        },
-        timeout: Time.seconds(15),
-        cancel: true
-      }); // TODO
-      if (!result) {
-        return;
+    } else if (msg.attachments.size >= 0) {
+      let img: MessageAttachment;
+      if (msg.attachments.size === 0) {
+        const { satisf, cancelled } = await prompt({
+          question: `Attach an image to set as the new server ${action}. \
+  This will expire in 35 seconds. Type \`cancel\` to cancel.`,
+          invalidMsg: "Please attach a **valid** image, or write \`cancel\` to cancel.",
+          filter: msg2 => {
+            if (msg2.attachments.size < 1) return false;
+            const img = msg2.attachments.first();
+            if (!/\.(png|jpe?g|gif|web[mp]|bmp)$/i.test(img.name)) return false;
+            if (img.width < 1) return false;
+            return true;
+          },
+          timeout: Time.seconds(35),
+          cancel: true
+        });
+        if (!satisf) {
+          return;
+        }
+        if (cancelled) {
+          send("Command cancelled.");
+          return;
+        }
+        img = satisf.attachments.first();
+      } else {
+        img = msg.attachments.first();
+        if (!/\.(png|jpe?g|gif|web[mp]|bmp)$/i.test(img.name)) return reply("That's not an image! :frowning:");
+        if (img.width < 1) return reply("Hey, that image is way too small! :eyes:");
       }
-      if (/^[nc]/i.test(result)) {
-        send("Command cancelled.");
-        return;
-      }
-    } else if (msg.attachments.size > 0) {
-      const img = msg.attachments.first();
-      if (!/\.(png|jpe?g|gif|web[mp]|bmp)$/i.test(img.name)) return reply("That's not an image! :frowning:");
-      if (img.width < 1) return reply("Hey, that image is way too small! :eyes:");
       try {
         if (action === "icon") {
           await guild.setIcon(img.url, reason);
