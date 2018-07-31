@@ -25,8 +25,8 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
     total = true;
     type = "user";
   } else if (type === "member") {
-   type = "user"
-}
+    type = "user";
+  }
   let page: number = 1;
   let rest: string = "";
   if (["user", "member"].includes(type) && restArr.length === 1 && /^\d+$/.test(restArr[0])) { // page specified
@@ -66,7 +66,9 @@ const func: TcmdFunc<AInfoDummy> = async function(msg, {
   const theirPerms = allPerms.filter(p => total ?
     (p.type.startsWith("m") ? uncompress(p.id) === chosen.id : guild.member(chosen as User).roles.has(uncompress(p.id))) :
     p.type.startsWith(type === "role" ? "r" : "m") && uncompress(p.id) === chosen.id);
-  if (theirPerms.length < 1) return reply(`That ${type || "user"} has no permission overwrites!`);
+  if (theirPerms.length < 1) return reply(
+    `${chosen instanceof User && chosen.id === author.id ? "You have" : `That ${type || "user"} has`} no permission overwrites!`
+  );
   const pages = paginate(theirPerms);
   if (page > pages.length) return reply("There's no such page! (" + page + ")");
   const gen = (page: number) => {

@@ -1,4 +1,4 @@
-import Command from "../../classes/command";
+import Command, { ICommandSubHelp } from "../../classes/command";
 import {
   https, http, bot, rejct, User, Constants, formatStatus, formatActivity, Embed, ago, momentUTC, _, TextChannel,
   search, cross, no2Tick, escMarkdown, GuildMember, Role, GuildChannel, globalPositions, capitalize, paginate, sleep
@@ -102,7 +102,7 @@ const noGCmds = {
   stats: botinfo, bot: botinfo
 };
 
-const gCmds = Object.assign({
+const onlyGCmds = {
   server: serverinfo, guild: serverinfo, serverid: serverinfo, guildid: serverinfo,
   role: roleinfo, roleid: roleinfo, roles,
   members,
@@ -115,7 +115,143 @@ const gCmds = Object.assign({
   membercount, count: membercount,
 
   readers: members, listeners: members,
-}, noGCmds);
+};
+
+const gCmds = Object.assign(onlyGCmds, noGCmds);
+
+type SubHelper<K> = Command | {
+  cmd: Command,
+  aliases?: K[];
+  /** If should look for the command in aliases to get data, default false */
+  lookInAliases?: boolean;
+};
+type SubHelpsHelperObj<Sp> = {
+  [K in keyof Sp]?: SubHelper<keyof Sp>;
+};
+const subHelpsHelper: {
+  noG: SubHelpsHelperObj<typeof noGCmds>;
+  g: SubHelpsHelperObj<typeof onlyGCmds>;
+} = {
+  noG: {
+    //#region user
+    user: {
+      cmd: userinfo,
+      aliases: ["member"]
+    },
+    userid: {
+      cmd: userinfo,
+      aliases: ["id"],
+      lookInAliases: true
+    },
+    //#endregion
+    //#region channels
+    channel: {
+      cmd: channelinfo,
+      aliases: ["textchannel", "text"]
+    },
+    channelid: {
+      cmd: channelinfo,
+      aliases: ["textchannelid", "textid"],
+      lookInAliases: true
+    },
+    voicechannel: {
+      cmd: channelinfo,
+      aliases: ["voice"],
+      lookInAliases: true
+    },
+    voicechannelid: {
+      cmd: channelinfo,
+      aliases: ["voiceid"],
+      lookInAliases: true
+    },
+    category: {
+      cmd: channelinfo,
+      aliases: ["ctg"]
+    },
+    categoryid: {
+      cmd: channelinfo,
+      aliases: ["ctgid"]
+    },
+    //#endregion
+    perms: {
+      cmd: perms,
+      aliases: ["dperms", "discordperms"]
+    },
+    bot: {
+      cmd: botinfo,
+      aliases: ["stats"]
+    }
+  },
+  g: {
+    server: {
+      cmd: serverinfo,
+      aliases: ["guild"]
+    },
+    serverid: {
+      cmd: serverinfo,
+      aliases: ["guildid"],
+      lookInAliases: true
+    },
+    role: roleinfo,
+    roleid: {
+      cmd: roleinfo,
+      lookInAliases: true
+    },
+    roles,
+    members,
+    channels: {
+      cmd: channels,
+      aliases: ["voicechannels", "voices", "textchannels", "texts", "categories", "ctgs"]
+    },
+    saltperms: {
+      cmd: saltperms,
+      aliases: ["stperms", "listperms"]
+    },
+    membercount: {
+      cmd: membercount,
+      aliases: ["count"]
+    },
+    readers: {
+      cmd: members,
+      lookInAliases: true
+    },
+    listeners: {
+      cmd: members,
+      lookInAliases: true
+    }
+  }
+};
+
+const subHelps = {};
+
+for (const cat of Object.getOwnPropertyNames(subHelpsHelper) as Array<keyof typeof subHelpsHelper>) {
+  const obj: SubHelpsHelperObj<{ [prop: string]: any }> = subHelpsHelper[cat];
+  for (
+    const hname of Object.getOwnPropertyNames(obj) as Array<keyof typeof obj>
+  ) {
+    const helper = obj[hname];
+    let subHelpObj: ICommandSubHelp = {};
+    if (helper instanceof Command) {
+      subHelpObj = Object.assign({}, helper, { aliases: [] });
+    } else {
+      const { cmd, aliases, lookInAliases } = helper;
+      let cmdToUse: Command = cmd;
+      if (lookInAliases) {
+        if (!cmd.aliases) continue;
+        if (hname in cmd.aliases) {
+          cmdToUse = cmd.aliases[hname];
+        } else {
+          for (const alias of Object.values(cmd.aliases)) {
+            if (alias.aliases && hname in alias.aliases) cmdToUse = cmd.aliases[hname];
+          }
+        }
+      }
+      if (!cmdToUse) continue;
+      subHelpObj = Object.assign({}, cmd, { aliases } as { aliases: string[] });
+    }
+    subHelps[hname] = subHelpObj;
+  }
+}
 
 const func: cmdFunc<InfoDummy> = async function(msg, {
   args, author, arrArgs, send, reply, prefix: p, botmember, dummy, guild, guildId, perms, searcher, promptAmbig,
@@ -183,5 +319,6 @@ Note: If you add the letter \`a\` in front of any action, it shows it without me
 {p}{name} role My Cool Role
 {p}{name} channels 1`,
   category: "Information",
-  args: { action: false, "...parameters": true }
+  args: { action: false, "...parameters": true },
+  subHelps
 });

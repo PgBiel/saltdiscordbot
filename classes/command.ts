@@ -37,7 +37,7 @@ export type CommandPerms = string | {
   [perm: string]: CommandSetPerm
 };
 
-interface ICommandSubHelp {
+export interface ICommandSubHelp {
   description?: string;
   perms?: CommandPerms; // actually have no effect here, just to show help
   default?: boolean; // if perm is default
