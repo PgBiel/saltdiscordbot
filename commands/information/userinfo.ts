@@ -72,10 +72,10 @@ const func: cmdFunc<AInfoDummy> = async function(msg, {
           "All roles" :
           rolesArr.map(r => android ? (r || {} as never).name : String(r)).join(", ");
         const color = (member.displayHexColor ||
-          Constants.strings.DEFAULT_ROLE_COLOR) === Constants.strings.DEFAULT_ROLE_COLOR ?
-            Constants.strings.DISPLAY_DEFAULT_ROLE_COLOR :
+          Constants.colors.ROLE_DEFAULT) === Constants.colors.ROLE_DEFAULT ?
+            Constants.colors.ROLE_DISPLAY_DEFAULT :
             member.displayHexColor;
-        const isDefault = color === Constants.strings.DISPLAY_DEFAULT_ROLE_COLOR;
+        const isDefault = color === Constants.colors.ROLE_DISPLAY_DEFAULT;
         embed
           .addField("Nickname", escMarkdown(member.displayName), true)
           .addField("Display Color (See sidebar)", color + (isDefault ? " (Default)" : ""), true)

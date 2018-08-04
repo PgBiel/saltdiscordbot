@@ -1,3 +1,5 @@
+import { Time } from "../../classes/time";
+
 const afkTimeoutSeconds = [60, 300, 900, 1800, 3600];
 
 const afkTimeoutVals = {
@@ -9,6 +11,7 @@ export default {
   max: {
     PROMPT: 5,
     PREFIX_CHARS: 100,
+    ROLE_NAME_CHARS: 100,
     CASES: (members: number = 0) => {
       if (members >= 3000) {
         return 2000;
@@ -32,7 +35,8 @@ export default {
       SKIP: 5,
       DIVIDE_BY: 4,
       SPECIALS: [null, null, 1, 2, 2, 3, 4]
-    }
+    },
+    TIMEOUT: Time.minutes(2)
   },
   afkTimeoutVals
 };

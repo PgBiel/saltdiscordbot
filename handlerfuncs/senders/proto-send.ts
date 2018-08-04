@@ -1,4 +1,4 @@
-import { _, Constants, Message, User, TextChannel, Embed, logger } from "../../util/deps";
+import { _, Constants, Message, User, TextChannel, Embed, logger, Time } from "../../util/deps";
 import collectReact, { ICollectReactFunc } from "../../funcs/bot/collectReact";
 import paginateReactions from "../../funcs/util/paginateReactions";
 import mkEmj from "../../funcs/parsers/mkEmoji";
@@ -31,6 +31,10 @@ export interface IProtoSendPaginator {
   pages?: any[];
   // usePages
   usePages?: boolean;
+  /**
+   * Time until expiration of pagination (default 2 min)
+   */
+  timeout?: number;
   /**
    * A structure to be omnipresent (optional)
    */
@@ -212,7 +216,7 @@ ${content || "<None>"}`,
                 }
               };
               collectReact(messg, emojis, dankAuthor.id, {
-                rawReact: true, onSuccess
+                rawReact: true, onSuccess, timeout: paginate.timeout || Constants.numbers.pagination.TIMEOUT
               });
             }
           }

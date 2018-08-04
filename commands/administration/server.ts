@@ -48,8 +48,8 @@ const func: TcmdFunc<{}> = async function(
   }
   if (rest || (["icon", "splash"].includes(action) ? msg.attachments.size > 0 : false)) {
     if (!hasPerms[action]) {
-      return reply(`Missing permission \`${action}\`, required to use this action! (Note that it's also usable with the Discord \
-permission \`Manage Server\`.)`);
+      return reply(`Missing permission \`server ${action}\`, required to use this action! (Note that it's also usable with the \
+Discord permission \`Manage Server\`.)`);
     } else if (!guild.me.hasPermission("MANAGE_GUILD")) {
       return send("I do not have the permission `Manage Server`, required to edit the server! :frowning:");
     }

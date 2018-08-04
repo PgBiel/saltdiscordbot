@@ -228,24 +228,12 @@ export class Searcher<MemberColl = GuildMember> {
       new RegExp(_.escapeRegExp(nameOrPattern), "i");
     const match: Role[] = [];
     for (const [id, role] of this.roles) {
-      if (
-        (typeof nameOrPattern === "string" && role.name === nameOrPattern)
-        || (typeof nameOrPattern !== "string" && pattern.test(role.name))
-        ) {
+      if (pattern.test(role.name)) {
         match.push(role);
       }
     }
-    if (match.length < 1 && typeof nameOrPattern === "string") {
-      for (const [id, role] of this.roles) {
-        if (pattern.test(role.name)) {
-          match.push(role);
-        }
-      }
-      if (match.length < 1) {
-        if (this.roles.has(nameOrPattern)) {
-          match.push(this.roles.get(nameOrPattern));
-        }
-      }
+    if (match.length < 1 && typeof nameOrPattern === "string" && this.roles.has(nameOrPattern)) {
+      match.push(this.roles.get(nameOrPattern));
     }
     return match;
   }
