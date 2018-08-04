@@ -3,7 +3,8 @@ import { serverinfo } from "../information/serverinfo";
 import {
   Embed, capitalize, adaptSnake, search, Time, no2Tick, noEscape, Constants, Interval,
   parseTimeStr,
-  Command
+  Command,
+  friendlyError
 } from "../../misc/d";
 import { DiscordAPIError, VoiceRegion, MessageAttachment } from "discord.js";
 
@@ -59,18 +60,6 @@ permission \`info server\`.)`);
   }
 
   const reason: string = `["+server ${action}" command executed by ${author.tag}]`;
-  const friendlyError = (err: any) => {
-    if (err instanceof DiscordAPIError) {
-      const embed = new Embed();
-      embed
-        .setTitle("Discord Error!")
-        .setDescription(err.message)
-        .setFooter(`Error code: ${err.code}`);
-      return embed;
-    } else {
-      return null;
-    }
-  };
   channel.startTyping();
   if (action === "name") {
     if (rest) {

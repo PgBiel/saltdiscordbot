@@ -11,3 +11,5 @@ export { default as loadCmds } from "./loadCmds";
 
 export { default as messagerDoEval } from "./messagerDoEval";
 export { default as processMessage } from "./processMessage";
+
+export { default as friendlyError } from "./friendlyError";

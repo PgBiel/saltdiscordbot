@@ -8,7 +8,8 @@ import {
   colorNumToHex,
   resolveColor,
   http,
-  Discord
+  Discord,
+  friendlyError
 } from "../../misc/d";
 import { DiscordAPIError, Role, FileOptions, MessageAttachment } from "discord.js";
 
@@ -74,18 +75,6 @@ Discord permission \`Manage Roles\`.)` :
   }
 
   const reason: string = `["+role ${action}" command executed by ${author.tag}]`;
-  const friendlyError = (err: any) => {
-    if (err instanceof DiscordAPIError) {
-      const embed = new Embed();
-      embed
-        .setTitle("Discord Error!")
-        .setDescription(err.message)
-        .setFooter(`Error code: ${err.code}`);
-      return embed;
-    } else {
-      return null;
-    }
-  };
   const doIt = async <R>(
     doFunc: () => (ReturnType<typeof doFunc> extends Promise<R> ? Promise<R> : R),
     okMsgOrFunc: string | ((res?: R) => any),
