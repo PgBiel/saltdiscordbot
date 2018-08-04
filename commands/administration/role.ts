@@ -151,7 +151,7 @@ ${newName ? ` with name of **${escMarkdown(newName)}**` : ""}! (ID: ${role.id})`
     const { subject: role } = await search(rest, "role", self, { allowForeign: false });
     if (!role) return;
     if (rolePosComp(role, guild.me) < 1) return reply("That role is higher or equal to my highest role! :(");
-    if (rolePosComp(role, member)) return reply("That role is higher or equal to your highest role! :(");
+    if (rolePosComp(role, member) < 1) return reply("That role is higher or equal to your highest role! :(");
     const { name, color, position, permissions: rperms } = role;
     if (action === "delete") {
       const { res: result } = await prompt({
