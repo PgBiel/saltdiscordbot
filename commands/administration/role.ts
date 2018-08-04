@@ -9,7 +9,8 @@ import {
   resolveColor,
   http,
   Discord,
-  friendlyError
+  friendlyError,
+  rolePosComp
 } from "../../misc/d";
 import { DiscordAPIError, Role, FileOptions, MessageAttachment } from "discord.js";
 
@@ -35,7 +36,7 @@ const colors: { [clr: string]: number } = Object.assign(
 );
 
 const func: TcmdFunc<{}> = async function(
-  msg, { author, prefix: p, channel, args, arrArgs, self, perms, seePerm, send, reply, setPerms, guild, prompt }
+  msg, { member, author, prefix: p, channel, args, arrArgs, self, perms, seePerm, send, reply, setPerms, guild, prompt }
 ) {
   const hasInfoRoles = perms["info.role"];
   if (!args) {
@@ -149,6 +150,8 @@ ${newName ? ` with name of **${escMarkdown(newName)}**` : ""}! (ID: ${role.id})`
   } else {
     const { subject: role } = await search(rest, "role", self, { allowForeign: false });
     if (!role) return;
+    if (rolePosComp(role, guild.me) < 1) return reply("That role is higher or equal to my highest role! :(");
+    if (rolePosComp(role, member)) return reply("That role is higher or equal to your highest role! :(");
     const { name, color, position, permissions: rperms } = role;
     if (action === "delete") {
       const { res: result } = await prompt({

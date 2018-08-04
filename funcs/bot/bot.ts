@@ -13,3 +13,4 @@ export { default as messagerDoEval } from "./messagerDoEval";
 export { default as processMessage } from "./processMessage";
 
 export { default as friendlyError } from "./friendlyError";
+export { default as rolePosComp } from "./rolePosComp";
