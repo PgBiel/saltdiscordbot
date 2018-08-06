@@ -38,5 +38,8 @@ export default {
     },
     TIMEOUT: Time.minutes(2)
   },
+  rolePosition: {
+    TOP: +4
+  },
   afkTimeoutVals
 };

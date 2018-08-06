@@ -15,16 +15,18 @@ import {
 import { DiscordAPIError, Role, FileOptions, MessageAttachment } from "discord.js";
 
 type RoleAction =   "create"  | "delete" |
-"name"  | "color" | "hoist"   | "perms"  |
+"name"  | "color" | "hoist"   |
 "info"  ;
 
-type RoleAliases = "separate" | "permissions"      ;
+type RoleAliases = "separate" | "colour" ;
+
+type RoleAnyAction = RoleAction | RoleAliases;
 
 const noAliasActionArr: RoleAction[] = [
-  "create", "delete", "name", "color", "hoist", "perms", "info"
+  "create", "delete", "name", "color", "hoist", "info"
 ];
 const actionArr: Array<RoleAction | RoleAliases> = (noAliasActionArr as any[]).concat([
-  "permissions", "separate"
+  "separate", "colour"
 ] as RoleAliases[]);
 
 export type InferPromise<T> = T extends Promise<infer R> ? R : T;
@@ -42,18 +44,22 @@ const func: TcmdFunc<{}> = async function(
   if (!args) {
     return reply("View the help command to see how to use this command to edit a role!");
   }
-  const hasPerms: { [K in RoleAction]: boolean } = {
+  const hasPermsInit: { [K in RoleAction]: boolean } = {
     create: await seePerm("role.create", perms, setPerms, { hperms: "MANAGE_ROLES" }),
     delete: await seePerm("role.delete", perms, setPerms, { hperms: "MANAGE_ROLES" }),
     name: await seePerm("role.name", perms, setPerms, { hperms: "MANAGE_ROLES" }),
     color: await seePerm("role color", perms, setPerms, { hperms: "MANAGE_ROLES" }),
     hoist: await seePerm("role.hoist", perms, setPerms, { hperms: "MANAGE_ROLES" }),
-    perms: await seePerm("role.perms", perms, setPerms, { hperms: "MANAGE_ROLES" }),
     info: hasInfoRoles
   };
+  const hasPermsAliases: { [K in RoleAliases]: boolean } = {
+    separate: hasPermsInit.hoist,
+    colour: hasPermsInit.color
+  };
+  const hasPerms = Object.assign({}, hasPermsInit, hasPermsAliases);
 
   const [_action, ...restArr] = arrArgs;
-  const action: RoleAction = _action.toLowerCase() as RoleAction;
+  const action: RoleAnyAction = _action.toLowerCase() as RoleAnyAction;
   const rest: string = restArr.join(" ");
   if (!actionArr.includes(action)) {
     return reply(`Invalid action! Action must be one of ${actionArr.map(a => "`" + a + "`").join(", ")}. \
@@ -152,7 +158,8 @@ ${newName ? ` with name of **${escMarkdown(newName)}**` : ""}! (ID: ${role.id})`
     if (!role) return;
     if (rolePosComp(role, guild.me) < 1) return reply("That role is higher or equal to my highest role! :(");
     if (rolePosComp(role, member) < 1) return reply("That role is higher or equal to your highest role! :(");
-    const { name, color, position, permissions: rperms } = role;
+    if (role.id === guild.id) return reply("You cannot modify the server's default role (`@\u200Beveryone`)! :frowning:");
+    const { name, color, hoist, position } = role;
     if (action === "delete") {
       const { res: result } = await prompt({
         question: `Are you sure you want to delete the role named **${escMarkdown(name)}**? All members who have this role will \
@@ -179,24 +186,23 @@ lose it! This will expire in 25 seconds. Type __y__es or __n__o.`,
       const { ROLE_NAME_CHARS: max } = Constants.numbers.max;
       const { res: result, cancelled, skipped } = await prompt({
         question: `What will be the new name of the role? This will expire in 25 seconds. Type \`cancel\` to cancel.`,
-        invalidMsg: "The new name must have up to " + max + " characters!",
-        filter: ({ content }) => content.length <= max,
+        invalidMsg: "The new name must have up to " + max + " characters, **and** must be different than the current name!",
+        filter: ({ content }) => content.length <= max && content !== name,
         timeout: Time.seconds(25)
       });
       if (cancelled || !result) {
         return;
       }
-
       const embed = new Embed();
       embed
         .setTitle("Role Name Change")
         .setFooter(`Role ID: ${role.id}`)
-        .setColor(role.color || null)
+        .setColor(color || null)
         .addField("Old Name", escMarkdown(name))
         .addField("New Name", escMarkdown(result));
       const doFunc = () => role.setName(result, reason);
       await doIt(doFunc, "Successfully changed the role's name!", "Failed to change the role's name! (Try again?)", embed);
-    } else if (action === "color") {
+    } else if (action === "color" || action === "colour") {
       const hexGex = /^#[0-9a-f]{1,6}$/i;
       const rgbEx = /^[\[\(\{]*(\d{1,3})[,;:-|\s]+(\d{1,3})[,;:-|\s]+(\d{1,3})[,;:-|\s]*[\]\)\}]*$/i;
       const { res: result, cancelled, skipped } = await prompt({
@@ -252,6 +258,7 @@ value. (To view the list of Discord-defined color **names**, see \`${p}help role
       } else if (fixed in colors) {
         toUse = colors[fixed];
       } else { return; }
+      if (resolveColor(toUse) === color) return send(`That already is the role's color! (${role.hexColor})`);
       const doFunc = () => role.setColor(toUse || 0, reason);
       const hexColor: string = (role.hexColor ||
         Constants.colors.ROLE_DEFAULT) === Constants.colors.ROLE_DEFAULT ?
@@ -261,13 +268,79 @@ value. (To view the list of Discord-defined color **names**, see \`${p}help role
       const colorURL: string = http.www.colourlovers.com(`/img/${newHex.replace(/^#/, "")}/1240/640`).toString();
       const embed = new Embed()
         .setTitle("Role Color Change")
-        .setColor(role.color || null)
+        .setColor(color || null)
         .addField("Old Color (Sidebar)", hexColor + (hexColor === Constants.colors.ROLE_DISPLAY_DEFAULT ? " (Default)" : ""))
         .addField("New Color (Image)", newHex + (newHex === Constants.colors.ROLE_DISPLAY_DEFAULT ? " (Default)" : ""))
         .setImage(colorURL)
         .setFooter(`Role ID: ${role.id}`);
 
       await doIt(doFunc, "Successfully changed the role's color!", "Failed to change the role's color! (Try again?)", embed);
+    } else if (action === "hoist" || action === "separate") {
+      const doFunc = () => role.setHoist(!hoist, reason);
+      await doIt(
+        doFunc, `Successfully made the role named **${escMarkdown(name)}** ${hoist ? "not " : ""}display separately!`,
+        "Failed to toggle the role's separate display status! (Try again?)"
+      );
+    } else if (action === "position") {
+      const canReact = channel.permissionsFor(guild.me).has("ADD_REACTIONS");
+      const roleList = guild.roles.sort((a, b) => b.position - a.position);
+      const barrierBot: Role = guild.me.roles.highest;
+      const barrierSelf: Role = member.id === guild.ownerID ? null : member.roles.highest;
+      const barrierTop: Role = barrierBot.position > barrierSelf.position ? barrierBot : barrierSelf;
+      const barrierBottom: Role = guild.roles.get(guild.id); // 0
+      if (
+        (
+          position + 1 === barrierTop.position || // role immediately above is barrier
+          !roleList.find(r => r.position > position) // or no roles above it (only role)
+        ) &&
+        position - 1 === 0
+      ) {
+        return reply("There is no position possible to move this role to! The role is at the bottom, and either there are \
+no other roles, or the role immediately above this one is innacessible (your/my highest role)!");
+      }
+      let currentPos: number = position;
+      let text: string = "";
+      const genList = () => {
+        const list: Role[] = [];
+        const top = +Constants.numbers.rolePosition.TOP; // add that
+        const bottom = -top; // remove from pos
+        for (let i = currentPos + bottom; i < currentPos + top + 1; i++) {
+          const newRole = roleList.find(r => r.position === i);
+          if (newRole) {
+            list.push(newRole);
+          }
+        }
+        return list;
+      };
+      const genText = (list?: Role[], set: boolean = true) => {
+        let newText: string = "";
+        const roles = list || genList();
+        const { length } = roles.reduce((p, c) => p.name.length > c.name.length ? p : c).name;
+        const bar = "~~" + " ".repeat(length) + "~~\n";
+        for (const r of roles) {
+          if (barrierBottom.position === r.position) {
+            newText += bar;
+          }
+          const escName: string = escMarkdown(r.name);
+          const highLowText: string = r.position < 1 ?
+            " Lowest" :
+            r.position >= roleList.size - 1 ?
+              " Highest" :
+              "";
+          newText += `**\`${r.position}.\`${highLowText}** ${r.id === role.id ? `**${escName}**` : escName}\n`;
+          if (barrierTop.position === r.position) {
+            newText += bar;
+          }
+        }
+        if (set) text = newText;
+        return newText;
+      };
+      if (canReact) {
+        const { up, down } = Constants.emoji.arrows;
+        
+      } else {
+
+      }
     }
   }
 };
@@ -282,6 +355,7 @@ export const rolecmd = new Command({
   name: "role",
   perms: permlist,
   default: true,
+  guildOnly: true,
   description: `Manage a role by specifying an action.
 
 The list of actions is specified in the Subpages section (except for "discordColors" – seeing help for that will show the list \

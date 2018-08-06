@@ -70,6 +70,16 @@ export default {
       ONE: "▶",
       SUP: "⏩",
       END: "⏭"
+    },
+    up: {
+      END: "⏫",
+      SUP: "⬆",
+      ONE: "🔼"
+    },
+    down: {
+      ONE: "🔽",
+      SUP: "⬇",
+      END: "⏬"
     }
   },
   resolved: {

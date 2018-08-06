@@ -425,6 +425,7 @@ const mappedAFKtimeout = Constants.numbers.afkTimeoutVals.MILLISECONDS.map(n => 
 export const servercmd = new Command({
   func,
   name: "server",
+  guildOnly: true,
   perms: {
     "info.server": true, "server.name": false,
     "server.icon": false, "server.region": false, "server.splash": false,
