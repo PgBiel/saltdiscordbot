@@ -1,6 +1,8 @@
 # Salt Discord Bot
 NOTE: The master branch is outdated (contains old code); Check the experiment-lol branches for new Salt (Salt's Rewrite).
 
+[![Discord Bots](https://discordbots.org/api/widget/244533925408538624.svg)](https://discordbots.org/bot/244533925408538624)
+
 ## About
 This is a multi-feature bot combining many ideas and suggestions, coded in [discord.js](https://github.com/hydrabolt/discord.js). It can really help you with multiple things, such as warning and muting people.
 ## Inviting
