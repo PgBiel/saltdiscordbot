@@ -1,3 +1,6 @@
+"""
+Work with JSON.
+"""
 import json
 
 def load(file_path: str) -> dict:

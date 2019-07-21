@@ -2,7 +2,8 @@ import discord
 from discord.ext import commands
 import asyncio
 import formatter
-from utils import checks
+import ast
+from utils import checks # pylint: disable=no-name-in-module
 
 def evalText(ctx: commands.Context, inp: str, outp, errored: bool = False, coro: bool = False) -> str:
   if coro:
@@ -18,6 +19,14 @@ Input
 {result}
 ```"""
 
+def multiline_eval(expr: str, global_vals, local_vals):
+  "Evaluate several lines of input, returning the result of the last line"
+  tree = ast.parse(expr)
+  eval_expr = ast.Expression(tree.body[-1].value)
+  exec_expr = ast.Module(tree.body[:-1])
+  exec(compile(exec_expr, '/dev/null', 'exec'), global_vals, local_vals)
+  return eval(compile(eval_expr, '/dev/null', 'eval'), global_vals, local_vals)
+
 class Dev(commands.Cog):
   @commands.is_owner()
   @commands.command(name='eval', pass_context=True)
@@ -31,7 +40,7 @@ class Dev(commands.Cog):
     success = None
     coro = False
     try:
-      result = eval(arg, new_globals, locals())
+      result = multiline_eval(arg, new_globals, locals())
       success = True
     except Exception as err:
       result = err

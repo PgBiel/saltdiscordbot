@@ -4,6 +4,7 @@ import traceback
 import sys
 from discord.ext import commands
 from utils.jsonwork import load as json_load
+from classes.scontext import SContext
 
 description = """
 Salt Bot, moderation, administration, utility and fun all in one!
@@ -41,3 +42,6 @@ class Salt(commands.Bot):
   def make_config(self) -> None:
     parsed_config = json_load("../config.json")
     self.config = parsed_config
+  
+  def get_context(self, msg: discord.Message):
+    ctx = super().get_context(msg, cls=SContext)
