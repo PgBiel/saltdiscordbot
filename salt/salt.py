@@ -11,6 +11,7 @@ Salt Bot, moderation, administration, utility and fun all in one!
 
 cogs_ext_list = (
   "cogs.test",
+  "cogs.dev"
 )
 class Salt(commands.Bot):
   def __init__(self):
@@ -25,7 +26,7 @@ class Salt(commands.Bot):
         print(f'Failed to load extension {cog_ext}.', file=sys.stderr)
         traceback.print_exc()
   
-  def prefix(self, _bot, msg: discord.Message):
+  def prefix(self, _bot, msg: discord.Message) -> list:
     # ctx = self.get_context(msg)
     user_id = self.user.id
     member_ping_prefix = '<@!{0}> '.format(user_id)
@@ -34,9 +35,9 @@ class Salt(commands.Bot):
     prefixes.append('+') # gonna wait until later to add per-guild prefix
     return prefixes
   
-  def run(self):
+  def run(self) -> None:
     super().run(self.config["token"])
 
-  def make_config(self):
+  def make_config(self) -> None:
     parsed_config = json_load("../config.json")
     self.config = parsed_config
