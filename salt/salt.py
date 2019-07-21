@@ -1,5 +1,7 @@
 import os
 import discord
+import traceback
+import sys
 from discord.ext import commands
 from utils.jsonwork import load as json_load
 
@@ -7,7 +9,7 @@ description = """
 Salt Bot, moderation, administration, utility and fun all in one!
 """
 
-cogs_list = (
+cogs_ext_list = (
   "cogs.test"
 )
 class Salt(commands.Bot):
@@ -15,6 +17,12 @@ class Salt(commands.Bot):
     super().__init__(command_prefix=self.prefix, description=description)
     self.config = dict()
     self.make_config()
+    for cog_ext in cogs_ext_list:
+      try:
+        self.load_extension(cog_ext)
+      except Exception as _err:
+        print(f'Failed to load extension {cog_ext}.', file=sys.stderr)
+        traceback.print_exc()
   
   def prefix(self, msg: discord.Message):
     # ctx = self.get_context(msg)
