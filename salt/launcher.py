@@ -7,5 +7,10 @@ async def run(bot: Salt):
   except KeyboardInterrupt:
     await bot.logout()
 
+def exec_run():
+  loop = asyncio.get_event_loop()
+  loop.run_until_complete(run(Salt()))
+
+
 if __name__ == '__main__':
-  run(Salt())
+  exec_run()

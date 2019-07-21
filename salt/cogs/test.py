@@ -1,7 +1,8 @@
 from discord.ext import commands
 import discord
+import asyncio
 
 class Test(commands.Cog):
   @commands.Command()
-  def test(self, ctx: commands.Context):
-    ctx.send(content="Hey")
+  async def test(self, ctx: commands.Context):
+    await ctx.send(content="Hey")
