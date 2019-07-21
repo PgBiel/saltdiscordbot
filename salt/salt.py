@@ -10,7 +10,7 @@ Salt Bot, moderation, administration, utility and fun all in one!
 """
 
 cogs_ext_list = (
-  "cogs.test"
+  "cogs.test",
 )
 class Salt(commands.Bot):
   def __init__(self):
@@ -18,13 +18,14 @@ class Salt(commands.Bot):
     self.config = dict()
     self.make_config()
     for cog_ext in cogs_ext_list:
+      print(cog_ext)
       try:
         self.load_extension(cog_ext)
       except Exception as _err:
         print(f'Failed to load extension {cog_ext}.', file=sys.stderr)
         traceback.print_exc()
   
-  def prefix(self, msg: discord.Message):
+  def prefix(self, _bot, msg: discord.Message):
     # ctx = self.get_context(msg)
     user_id = self.user.id
     member_ping_prefix = '<@!{0}> '.format(user_id)
@@ -34,7 +35,7 @@ class Salt(commands.Bot):
     return prefixes
   
   def run(self):
-    super().run(self.config.token)
+    super().run(self.config["token"])
 
   def make_config(self):
     parsed_config = json_load("../config.json")
