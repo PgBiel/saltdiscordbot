@@ -44,4 +44,4 @@ class Salt(commands.Bot):
     self.config = parsed_config
   
   def get_context(self, msg: discord.Message):
-    ctx = super().get_context(msg, cls=SContext)
+    return super().get_context(msg, cls=SContext)
