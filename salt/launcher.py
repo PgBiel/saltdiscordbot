@@ -1,7 +1,7 @@
 import asyncio
 from salt import Salt
 
-def run(bot: Salt):
+async def run(bot: Salt):
   try:
     await bot.run()
   except KeyboardInterrupt:
