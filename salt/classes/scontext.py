@@ -2,6 +2,9 @@ from discord.ext import commands
 import discord
 import asyncio
 import typing
+from constants.emoji.default_emoji import WASTEBASKET
+from constants.numbers.delays import DELETABLE_REACTWAIT_TIMEOUT as DELE_TIMEOUT
+from utils.send import send as csend
 
 class SContext(commands.Context):
   """
@@ -9,9 +12,10 @@ class SContext(commands.Context):
   """
   def __init__(self, **attrs):
     super().__init__(**attrs)
+    self.bot: "salt.Salt" = self.bot
 
-  async def customSend(
-    self, content: str = None, *, deletable: bool = false, **kwargs
+  async def send(
+    self, content: str = None, *, deletable: bool = False, **kwargs
   ) -> discord.Message:
     """|coro|
     Sends a message to the destination with the content given.
@@ -45,7 +49,7 @@ class SContext(commands.Context):
         then it is silently ignored.
     deletable: :class:`bool`
         (Customized, added by Pg) If provided, add a trash can reaction on the message to be
-        deleted by the member on click.
+        deleted by the member on click (if they called the command or they have Manage Messages).
     Raises
     --------
     ~discord.HTTPException
@@ -60,6 +64,4 @@ class SContext(commands.Context):
     :class:`~discord.Message`
         The message that was sent.
     """
-    msg = await super().send(content, **kwargs)
-    if (!deletable) return msg
-    # TODO
+    return await csend(self, content, deletable=deletable, sender=super().send, **kwargs)

@@ -26,6 +26,8 @@ class Salt(commands.Bot):
       except Exception as _err:
         print(f'Failed to load extension {cog_ext}.', file=sys.stderr)
         traceback.print_exc()
+    
+
   
   def prefix(self, _bot, msg: discord.Message) -> list:
     # ctx = self.get_context(msg)
@@ -43,5 +45,7 @@ class Salt(commands.Bot):
     parsed_config = json_load("../config.json")
     self.config = parsed_config
   
-  def get_context(self, msg: discord.Message):
+  def get_context(self, msg: discord.Message) -> SContext:
+    """|coro|
+    """
     return super().get_context(msg, cls=SContext)

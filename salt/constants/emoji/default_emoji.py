@@ -1,0 +1,2 @@
+RED_X = "❌"
+WASTEBASKET = "🗑"

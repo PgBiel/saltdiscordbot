@@ -1,0 +1,1 @@
+DELETABLE_REACTWAIT_TIMEOUT = 120 # seconds for trash can emoji to be removed
