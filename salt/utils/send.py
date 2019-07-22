@@ -1,9 +1,9 @@
-import discord
 import asyncio
+import typing
+import discord
 from discord.ext import commands
 from constants.numbers.delays import DELETABLE_REACTWAIT_TIMEOUT as DELE_TIMEOUT
 from constants.emoji.default_emoji import WASTEBASKET
-import typing
 
 async def send(
   ctx: commands.Context, content: str = None, *,
@@ -24,49 +24,49 @@ async def send(
   Parameters
   ------------
   content: :class:`str`
-      The content of the message to send.
+    The content of the message to send.
   tts: :class:`bool`
-      Indicates if the message should be sent using text-to-speech.
+    Indicates if the message should be sent using text-to-speech.
   embed: :class:`~discord.Embed`
-      The rich embed for the content.
+    The rich embed for the content.
   file: :class:`~discord.File`
-      The file to upload.
+    The file to upload.
   files: List[:class:`~discord.File`]
-      A list of files to upload. Must be a maximum of 10.
+    A list of files to upload. Must be a maximum of 10.
   nonce: :class:`int`
-      The nonce to use for sending this message. If the message was successfully sent,
-      then the message will have a nonce with this value.
+    The nonce to use for sending this message. If the message was successfully sent,
+    then the message will have a nonce with this value.
   delete_after: :class:`float`
-      If provided, the number of seconds to wait in the background
-      before deleting the message we just sent. If the deletion fails,
-      then it is silently ignored.
+    If provided, the number of seconds to wait in the background
+    before deleting the message we just sent. If the deletion fails,
+    then it is silently ignored.
   deletable: :class:`bool`
-      (Customized, added by Pg) If provided, add a trash can reaction on the message to be
-      deleted by the member on click (if they called the command or they have Manage Messages).
+    (Customized, added by Pg) If provided, add a trash can reaction on the message to be
+    deleted by the member on click (if they called the command or they have Manage Messages).
   Raises
   --------
   ~discord.HTTPException
-      Sending the message failed.
+    Sending the message failed.
   ~discord.Forbidden
-      You do not have the proper permissions to send the message.
+    You do not have the proper permissions to send the message.
   ~discord.InvalidArgument
-      The ``files`` list is not of the appropriate size or
-      you specified both ``file`` and ``files``.
+    The ``files`` list is not of the appropriate size or
+    you specified both ``file`` and ``files``.
   Returns
   ---------
   :class:`~discord.Message`
-      The message that was sent.
+    The message that was sent.
   """
   sender = sender or ctx.send
   msg: discord.Message = await sender(content, **kwargs)
-  myperms: discord.Permissions = ctx.guild.me.permissions_in(ctx.channel) if ctx.guild != None else None
+  myperms: discord.Permissions = ctx.guild.me.permissions_in(ctx.channel) if ctx.guild is not None else None
   if deletable and (True if ctx.guild is None else (myperms.add_reactions and myperms.read_message_history)):
     def delcheck(reaction: discord.Reaction, member: typing.Union[discord.Member, discord.User]):
       return member.id != ctx.bot.user.id         \
       and msg.id == reaction.message.id           \
       and msg.channel == reaction.message.channel \
       and (                                       \
-        member == ctx.author or                   \
+        member == ctx.author or                 \
         (member.permissions_in(ctx.channel).manage_messages if ctx.guild != None else False) \
       )                                           \
       and str(reaction.emoji) == WASTEBASKET
@@ -75,8 +75,8 @@ async def send(
       await msg.add_reaction(WASTEBASKET)
     except discord.Forbidden as _e:
       return msg
-    
-    async def waitingFor():
+      
+    async def waiting_for():
       try:
         await ctx.bot.wait_for("reaction_add", timeout=DELE_TIMEOUT, check=delcheck)
       except asyncio.TimeoutError:
@@ -84,6 +84,6 @@ async def send(
       else:
         await msg.delete()
 
-    ctx.bot.loop.create_task(waitingFor())
+    ctx.bot.loop.create_task(waiting_for())
 
   return msg

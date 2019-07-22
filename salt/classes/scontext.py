@@ -2,8 +2,6 @@ from discord.ext import commands
 import discord
 import asyncio
 import typing
-from constants.emoji.default_emoji import WASTEBASKET
-from constants.numbers.delays import DELETABLE_REACTWAIT_TIMEOUT as DELE_TIMEOUT
 from utils.send import send as csend
 
 class SContext(commands.Context):
@@ -14,7 +12,7 @@ class SContext(commands.Context):
     super().__init__(**attrs)
     self.bot: "salt.Salt" = self.bot
 
-  async def send(
+  async def send( # pylint: disable=arguments-differ
     self, content: str = None, *, deletable: bool = False, **kwargs
   ) -> discord.Message:
     """|coro|
@@ -31,37 +29,37 @@ class SContext(commands.Context):
     Parameters
     ------------
     content: :class:`str`
-        The content of the message to send.
+      The content of the message to send.
     tts: :class:`bool`
-        Indicates if the message should be sent using text-to-speech.
+      Indicates if the message should be sent using text-to-speech.
     embed: :class:`~discord.Embed`
-        The rich embed for the content.
+      The rich embed for the content.
     file: :class:`~discord.File`
-        The file to upload.
+      The file to upload.
     files: List[:class:`~discord.File`]
-        A list of files to upload. Must be a maximum of 10.
+      A list of files to upload. Must be a maximum of 10.
     nonce: :class:`int`
-        The nonce to use for sending this message. If the message was successfully sent,
-        then the message will have a nonce with this value.
+      The nonce to use for sending this message. If the message was successfully sent,
+      then the message will have a nonce with this value.
     delete_after: :class:`float`
-        If provided, the number of seconds to wait in the background
-        before deleting the message we just sent. If the deletion fails,
-        then it is silently ignored.
+      If provided, the number of seconds to wait in the background
+      before deleting the message we just sent. If the deletion fails,
+      then it is silently ignored.
     deletable: :class:`bool`
-        (Customized, added by Pg) If provided, add a trash can reaction on the message to be
-        deleted by the member on click (if they called the command or they have Manage Messages).
+      (Customized, added by Pg) If provided, add a trash can reaction on the message to be
+      deleted by the member on click (if they called the command or they have Manage Messages).
     Raises
     --------
     ~discord.HTTPException
-        Sending the message failed.
+      Sending the message failed.
     ~discord.Forbidden
-        You do not have the proper permissions to send the message.
+      You do not have the proper permissions to send the message.
     ~discord.InvalidArgument
-        The ``files`` list is not of the appropriate size or
-        you specified both ``file`` and ``files``.
+      The ``files`` list is not of the appropriate size or
+      you specified both ``file`` and ``files``.
     Returns
     ---------
     :class:`~discord.Message`
-        The message that was sent.
+      The message that was sent.
     """
     return await csend(self, content, deletable=deletable, sender=super().send, **kwargs)

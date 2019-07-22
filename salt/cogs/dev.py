@@ -43,7 +43,7 @@ class Dev(commands.Cog):
     try:
       result = multiline_eval(arg, new_globals, locals())
       success = True
-    except Exception as err:
+    except Exception as err: # pylint: disable=broad-except
       result = err
       success = False
 

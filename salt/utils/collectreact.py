@@ -2,11 +2,11 @@
 WIP
 """
 
-import discord
-from discord.ext import commands
+# import discord
+# from discord.ext import commands
 # from classes.scontext import SContext
-import asyncio
-import typing
+# import asyncio
+# import typing
 
 # async def collectreact(
 #   emoji: typing.Union[str, discord.Emoji], ctx: SContext, msg: discord.Message, *, timeout: float,
