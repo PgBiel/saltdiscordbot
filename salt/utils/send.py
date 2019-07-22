@@ -62,18 +62,28 @@ async def send(
   myperms: discord.Permissions = ctx.guild.me.permissions_in(ctx.channel) if ctx.guild != None else None
   if deletable and (True if ctx.guild is None else (myperms.add_reactions and myperms.read_message_history)):
     def delcheck(reaction: discord.Reaction, member: typing.Union[discord.Member, discord.User]):
-      return member.id != ctx.bot.user.id and (member == ctx.author or (member.permissions_in(ctx.channel).manage_messages if ctx.guild != None else False)) and str(reaction.emoji) == WASTEBASKET
+      return member.id != ctx.bot.user.id         \
+      and msg.id == reaction.message.id           \
+      and msg.channel == reaction.message.channel \
+      and (                                       \
+        member == ctx.author or                   \
+        (member.permissions_in(ctx.channel).manage_messages if ctx.guild != None else False) \
+      )                                           \
+      and str(reaction.emoji) == WASTEBASKET
 
     try:
       await msg.add_reaction(WASTEBASKET)
     except discord.Forbidden as _e:
       return msg
     
-    try:
-      await ctx.bot.wait_for("reaction_add", timeout=DELE_TIMEOUT, check=delcheck)
-    except asyncio.TimeoutError:
-      await msg.remove_reaction(WASTEBASKET, ctx.me)
-    else:
-      await msg.delete()
-  
+    async def waitingFor():
+      try:
+        await ctx.bot.wait_for("reaction_add", timeout=DELE_TIMEOUT, check=delcheck)
+      except asyncio.TimeoutError:
+        await msg.remove_reaction(WASTEBASKET, ctx.me)
+      else:
+        await msg.delete()
+
+    ctx.bot.loop.create_task(waitingFor())
+
   return msg

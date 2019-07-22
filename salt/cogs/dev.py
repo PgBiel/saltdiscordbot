@@ -62,7 +62,7 @@ class Dev(commands.Cog):
       await msg_sent.edit(content=second_out_str)
     else:
       out_str = evalText(ctx, arg, result, not success, False)
-      await ctx.send(out_str)
+      await ctx.send(out_str, deletable=True)
   
   # async def reloadcog(ctx: commands.Context)
 
