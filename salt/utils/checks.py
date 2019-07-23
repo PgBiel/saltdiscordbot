@@ -40,7 +40,7 @@ async def has_saltmod_role():
 async def or_checks(*decorators: Callable[..., Any]):
     def or_decorator(func: Callable[..., Any]):
         predicates = []
-        _decorator_res: List[Callable[..., Any]] = [decorator() for decorator in decorators]
+        _decorator_res: List[Callable[..., Any]] = [decorator(func) for decorator in decorators]
         if isinstance(func, commands.Command):
             cmd: commands.Command = func
             checks: List[Callable[..., bool]] = cmd.checks
@@ -59,7 +59,7 @@ async def or_checks(*decorators: Callable[..., Any]):
 
             return cond
 
-        return commands.check(or_check)
+        return commands.check(or_check)(func)
     return or_decorator
 
 
