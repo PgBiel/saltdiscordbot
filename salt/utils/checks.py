@@ -11,6 +11,21 @@ from discord.ext import commands
 from classes.scontext import SContext
 
 
+def _get_predicates(func: Callable[..., Any], *decorators: Callable[..., Any]) -> List[Callable[[SContext], bool]]:
+    predicates: List[Callable[[SContext], bool]] = []
+    _decorator_res: List[Callable[..., Any]] = [decorator(func) for decorator in decorators]
+    if isinstance(func, commands.Command):
+        cmd: commands.Command = func
+        checks: List[Callable[[SContext], bool]] = cmd.checks
+        predicates.extend(cmd.checks[len(checks) - len(decorators):len(checks)])
+        del cmd.checks[len(checks) - len(decorators):len(checks)]
+    else:
+        checks: List[Callable[[SContext], bool]] = func.__commands_checks__
+        predicates.extend(func.__commands_checks__[len(checks) - len(decorators):len(checks)])
+        del func.__commands_checks__[len(checks) - len(decorators):len(checks)]
+    return predicates
+
+
 def is_owner():
 
     def do_check(ctx: SContext) -> bool:
@@ -39,23 +54,13 @@ async def has_saltmod_role():
 
 async def or_checks(*decorators: Callable[..., Any]):
     def or_decorator(func: Callable[..., Any]):
-        predicates = []
-        _decorator_res: List[Callable[..., Any]] = [decorator(func) for decorator in decorators]
-        if isinstance(func, commands.Command):
-            cmd: commands.Command = func
-            checks: List[Callable[..., bool]] = cmd.checks
-            predicates.extend(cmd.checks[len(checks) - len(decorators):len(checks)])
-            del cmd.checks[len(checks) - len(decorators):len(checks)]
-        else:
-            checks: List[Callable[..., bool]] = func.__commands_checks__
-            predicates.extend(func.__commands_checks__[len(checks) - len(decorators):len(checks)])
-            del func.__commands_checks__[len(checks) - len(decorators):len(checks)]
+        predicates = _get_predicates(func, *decorators)
 
-        def or_check(ctx: SContext) -> bool:  # TODO: Separate into get_predicates(*decs)
+        def or_check(ctx: SContext) -> bool:
             cond = False
 
-            for pred in predicates:
-                cond = cond or pred(ctx)
+            for predicate in predicates:
+                cond = cond or predicate(ctx)
 
             return cond
 
