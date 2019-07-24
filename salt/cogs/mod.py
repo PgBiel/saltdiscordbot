@@ -5,5 +5,10 @@ from utils.checks import or_checks, is_owner, has_saltmod_role
 
 class Moderation(commands.Cog):
     @or_checks(is_owner(), has_saltmod_role(), commands.has_permissions(kick_members=True))
+    @commands.command(name="kick", pass_context=True, description="Kick people.")
     async def kick(self, ctx: SContext):
         await ctx.send("Congrats, you have perms!")
+
+
+def setup(bot: commands.Bot) -> None:
+    bot.add_cog(Moderation(bot))

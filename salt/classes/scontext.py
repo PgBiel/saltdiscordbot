@@ -1,23 +1,27 @@
 from discord.ext import commands
 import discord
-import asyncio
 import typing
 from utils.send import send as csend
+import motor.motor_asyncio
 
 if typing.TYPE_CHECKING:
     from salt import Salt  # avoid recursive import
-    import motor.motor_asyncio
 
 
 class SContext(commands.Context):
     """
     For typing purposes. This is our customization of the Context
     """
+    channel: discord.abc.Messageable
+    guild: discord.Guild
+    author: typing.Union[discord.User, discord.Member]  # typing purposes & stuff
+
     def __init__(self, **attrs):
         super().__init__(**attrs)
         self.bot: "Salt" = self.bot
+        self.message: discord.Message = self.message
 
-    async def send( # pylint: disable=arguments-differ
+    async def send(  # pylint: disable=arguments-differ
             self, content: str = None, *, deletable: bool = False, **kwargs
     ) -> discord.Message:
         """|coro|
@@ -70,21 +74,5 @@ class SContext(commands.Context):
         return await csend(self, content, deletable=deletable, sender=super().send, **kwargs)
 
     @property
-    def guild(self) -> discord.Guild: # typing purposes
-        return super().guild
-
-    @property
-    def channel(self) -> discord.abc.Messageable:
-        return super().channel
-
-    @property
     def db(self) -> motor.motor_asyncio.AsyncIOMotorDatabase:
         return self.bot.mondb
-
-    @property
-    def message(self) -> discord.Message:
-        return super().message
-
-    @property
-    def author(self) -> typing.Union[discord.User, discord.Member]:
-        return super().author

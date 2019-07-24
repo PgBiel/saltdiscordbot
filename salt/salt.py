@@ -13,7 +13,8 @@ Salt Bot, moderation, administration, utility and fun all in one!
 
 cogs_ext_list = (
     "cogs.test",
-    "cogs.dev"
+    "cogs.dev",
+    "cogs.mod"
 )
 
 

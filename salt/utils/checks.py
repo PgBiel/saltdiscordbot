@@ -6,15 +6,15 @@ import motor.motor_asyncio
 import motor.core
 import discord
 import typing
-from typing import Iterable, Any, Callable, List, Sized
+from typing import Iterable, Any, Callable, List, Union, Coroutine
 from discord.ext import commands
 from classes.scontext import SContext
 
 
 async def _get_predicates(
-        func: typing.Union[Callable[..., Any], commands.Command],
-        *decorators: typing.Union[Callable[..., Any], typing.Coroutine[Any, Any, Callable[..., Any]]]
-) -> List[Callable[[SContext], bool]]:
+        func: Union[Callable[..., Any], commands.Command],
+        *decorators: Union[Callable[..., Any], Coroutine[Any, Any, Callable[..., Any]]]
+) -> List[Union[Callable[[SContext], bool], Callable[[SContext], Coroutine[Any, Any, bool]]]]:
     """
     Get the predicates from checks. (Specifically, their decorators - called checks)
     :param func: For decorator use, the function receiving it.
@@ -22,8 +22,10 @@ async def _get_predicates(
     :return: The predicates, or condition functions.
     """
     predicates: List[Callable[[SContext], bool]] = []
-    _decorator_res: List[Callable[..., Any]] = [decorator(func) for decorator in decorators]
-    _decorator_res = [(await res) if asyncio.iscoroutine(res) else res for res in _decorator_res]
+    for decorator in decorators:
+        res = decorator(func)
+        if asyncio.iscoroutine(res):
+            await res
     if isinstance(func, commands.Command):
         cmd: commands.Command = func
         checks: List[Callable[[SContext], bool]] = cmd.checks
@@ -52,7 +54,7 @@ async def has_saltmod_role():
     Check if the member has the Salt Mod role.
     :return: Check decorator.
     """
-    def do_check(ctx: SContext) -> bool:
+    async def do_check(ctx: SContext) -> bool:
         if not ctx.guild:
             return False
         mondb = ctx.db
@@ -72,21 +74,24 @@ async def has_saltmod_role():
 T = typing.TypeVar("T", Callable[..., Any], Callable[..., Any])
 
 
-def or_checks(*decorators: typing.Union[Callable[..., Any], typing.Coroutine[Any, Any, Callable[..., Any]]]):
+def or_checks(*decorators: Union[Callable[..., Any], Coroutine[Any, Any, Callable[..., Any]]]):
     """
     Do one check OR the other (any amount of checks - A or B or C or D or ... or Z)
 
     :param decorators: The checks. Note: **They must be called for this to work.**
     :return: The resulting check decorator.
     """
-    async def or_decorator(func: typing.Union[Callable[..., Any], commands.Command]):
+    async def or_decorator(func: Union[Callable[..., Any], commands.Command]):
         predicates = await _get_predicates(func, *decorators)
 
-        def or_check(ctx: SContext) -> bool:
+        async def or_check(ctx: SContext) -> bool:
             cond = False
 
             for predicate in predicates:
-                cond = cond or predicate(ctx)
+                evaluated = predicate(ctx)
+                if asyncio.iscoroutine(evaluated):
+                    evaluated = await evaluated
+                cond = cond or evaluated
 
             return cond
 
