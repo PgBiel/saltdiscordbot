@@ -4,7 +4,7 @@ WIP
 
 # import discord
 # from discord.ext import commands
-# from classes.scontext import SContext
+# from classes import SContext
 # import asyncio
 # import typing
 
