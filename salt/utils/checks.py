@@ -23,9 +23,10 @@ async def _get_predicates(
     """
     predicates: List[Callable[[SContext], bool]] = []
     for decorator in decorators:
-        res = decorator(func)
-        if asyncio.iscoroutine(res):
-            await res
+        deco = decorator
+        if asyncio.iscoroutine(deco):
+            deco = await deco
+        deco(func)
     if isinstance(func, commands.Command):
         cmd: commands.Command = func
         checks: List[Callable[[SContext], bool]] = cmd.checks
@@ -81,8 +82,9 @@ def or_checks(*decorators: Union[Callable[..., Any], Coroutine[Any, Any, Callabl
     :param decorators: The checks. Note: **They must be called for this to work.**
     :return: The resulting check decorator.
     """
-    async def or_decorator(func: Union[Callable[..., Any], commands.Command]):
-        predicates = await _get_predicates(func, *decorators)
+    def or_decorator(func: Union[Callable[..., Any], commands.Command]):
+        loop = asyncio.get_event_loop()
+        predicates = loop.run_until_complete(_get_predicates(func, *decorators))
 
         async def or_check(ctx: SContext) -> bool:
             cond = False
