@@ -63,9 +63,8 @@ async def has_saltmod_role():
         mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = await mods.find_one({"guild_id": str(ctx.guild.id)})
         role_ids: Iterable[str] = mods_entry_cursor["moderator"]
         for role_id in role_ids:
-            for role in ctx.author.roles:
-                if int(role.id) == role_id:
-                    return True
+            if discord.utils.get(ctx.author.roles, id=int(role_id)):
+                return True
 
         return False
 
@@ -90,9 +89,13 @@ def or_checks(*decorators: Union[Callable[..., Any], Coroutine[Any, Any, Callabl
             cond = False
 
             for predicate in predicates:
-                evaluated = predicate(ctx)
-                if asyncio.iscoroutine(evaluated):
-                    evaluated = await evaluated
+                evaluated = False
+                try:
+                    evaluated = predicate(ctx)
+                    if asyncio.iscoroutine(evaluated):
+                        evaluated = await evaluated
+                except commands.errors.MissingPermissions as _err:
+                    pass
                 cond = cond or evaluated
 
             return cond

@@ -48,7 +48,7 @@ class Dev(commands.Cog):
             result = err
             success = False
 
-        if asyncio.iscoroutine(result) and success:
+        if (asyncio.iscoroutine(result) or asyncio.isfuture(result)) and success:
             coro = True
             first_out_str = evalText(ctx, arg, "[Coroutine, awaiting...]", not success, False)
             msg_sent: discord.Message = await ctx.send(first_out_str, deletable=True)
