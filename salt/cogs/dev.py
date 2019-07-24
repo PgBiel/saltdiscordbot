@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from classes.scontext import SContext
+from classes import SContext, MultilineEvalNoLastExprValue
 import asyncio
 import ast
 
@@ -21,12 +21,24 @@ Input
 
 
 def multiline_eval(expr: str, global_vals, local_vals):
-    "Evaluate several lines of input, returning the result of the last line"
+    """
+    Eval a multiline string.
+    :param expr: The string to eval.
+    :param global_vals: The global vars.
+    :param local_vals: The local vars.
+    :return:
+    :raise: MultilineEvalNoLastExprValue - when attempting to eval an expression.
+    """
     tree = ast.parse(expr)
-    eval_expr = ast.Expression(tree.body[-1].value)
+    ast_eval_expr = tree.body[-1]
+    eval_expr = ast.Expression(ast_eval_expr.value) if hasattr(ast_eval_expr, "value") else None
     exec_expr = ast.Module(tree.body[:-1])
     exec(compile(exec_expr, '/dev/null', 'exec'), global_vals, local_vals)
-    return eval(compile(eval_expr, '/dev/null', 'eval'), global_vals, local_vals)
+    if eval_expr is not None:
+        return eval(compile(eval_expr, '/dev/null', 'eval'), global_vals, local_vals)
+    else:
+        exec(compile(ast.Module([ast_eval_expr]), '/dev/null', 'exec'), global_vals, local_vals)
+        raise MultilineEvalNoLastExprValue
 
 
 class Dev(commands.Cog):
@@ -44,7 +56,10 @@ class Dev(commands.Cog):
         try:
             result = multiline_eval(arg, new_globals, locals())
             success = True
-        except Exception as err: # pylint: disable=broad-except
+        except MultilineEvalNoLastExprValue as e:
+            result = "(No value)"
+            success = True
+        except Exception as err:  # pylint: disable=broad-except
             result = err
             success = False
 

@@ -1,3 +1,6 @@
+"""
+The custom sender.
+"""
 import asyncio
 import typing
 import discord

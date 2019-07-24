@@ -8,7 +8,7 @@ import typing
 from typing import List
 from discord.ext import commands
 from utils.jsonwork import load as json_load
-from utils import humanize_perm
+from utils import humanize_perm, humanize_list
 from classes import SContext, MissingSaltModRole, MissingSaltAdminRole, NoPermissions
 
 description = """
@@ -126,7 +126,18 @@ class Salt(commands.Bot):
             return
 
         if isinstance(error, commands.DisabledCommand):
-            await ctx.author.send('This command is disabled!')
+            await ctx.send('This command is disabled!')
+            return
+
+        if isinstance(error, commands.BadArgument):
+            try:
+                await ctx.send(
+                    'You specified a command parameter wrongly{0}'.format("!" if str(error) == "" else f": {str(error)}")
+                )
+            except discord.HTTPException:
+                await ctx.send(
+                    "You specified a command parameter wrongly! (The message was too big/couldn't be displayed.)"
+                )
             return
 
         if isinstance(error, commands.CheckFailure):
@@ -135,23 +146,56 @@ class Salt(commands.Bot):
                 hum_missing = [humanize_perm(perm) for perm in missing]
                 pronouns = ("I", "I'm") if isinstance(error, commands.BotMissingPermissions) \
                     else ("You", "You're")
-                await ctx.send("{0} don't have enough Discord Permissions for this! {1} missing permission{2} {3}.".format(
+                await ctx.send("{0} don't have enough Discord Permissions for this! {1} missing permission{2} {3}."
+                               .format(
                                     pronouns[0], pronouns[1],
                                     "s" if len(missing) > 1 else None,
-                                    hum_missing[0] if len(missing) < 2 else (
-                                        "{0}{1} and {2}".format(
-                                            hum_missing[:-1], "," if len(missing) > 2 else None,
-                                            hum_missing[-1]
-                                        )
-                                    )
-                                )
+                                    humanize_list(hum_missing)
+                               )
+                               )
+                return
+
+            if isinstance(error, commands.BotMissingRole) or isinstance(error, commands.MissingRole):
+                role_given: typing.Union[str, int] = error.missing_role
+                pronouns = ("I", "I'm") if isinstance(error, commands.BotMissingRole) else ("You", "You're")
+                role_name: str = ""
+                if isinstance(role_given, int):
+                    role_in_guild: discord.Role = ctx.guild.get_role(role_given)
+                    if role_in_guild is None:
+                        await ctx.send("You're missing some unknown role!")
+                        return
+                    else:
+                        role_name = role_in_guild.name
+                else:
+                    role_name = role_given
+
+                await ctx.send("{0} missing the role {1!r} required for this command!".format(pronouns[1], role_name))
+                return
+
+            if isinstance(error, commands.BotMissingAnyRole) or isinstance(error, commands.MissingAnyRole):
+                roles_given: List[typing.Union[str, int]] = error.missing_roles
+                pronouns = ("I", "I'm") if isinstance(error, commands.BotMissingAnyRole) else ("You", "You're")
+                role_names: List[str] = []
+                for role_given in roles_given:
+                    if isinstance(role_given, int):
+                        role_in_guild: discord.Role = ctx.guild.get_role(role_given)
+                        if role_in_guild is None:
+                            role_names.append("(Unknown Role)")
+                            continue
+                        else:
+                            role_names.append("'{0}'".format(role_in_guild.name))
+                    else:
+                        role_names.append("'{0}'".format(role_given))
+                await ctx.send(
+                    "{0} missing at least one of the following roles required for this command: {1}"
+                    .format(pronouns[1], humanize_list(role_names, connector="or"))
                 )
                 return
 
             if isinstance(error, MissingSaltModRole) or isinstance(error, MissingSaltAdminRole):
                 await ctx.send(
                     "You're missing this server's Salt {0.title()} Role(s)! (See the `salt{0}` command for info.)"
-                        .format("mod" if isinstance(error, MissingSaltModRole) else "admin")
+                    .format("mod" if isinstance(error, MissingSaltModRole) else "admin")
                 )
                 return
 
@@ -169,12 +213,12 @@ class Salt(commands.Bot):
         if hasattr(error, "original"):
             original = error.original
             if isinstance(original, discord.Forbidden):
-                await ctx.send("I don't have enough Discord Permissions to execute this command! :frown:")
+                await ctx.send("I don't have enough Discord Permissions to execute this command! :frowning:")
                 return
 
             if isinstance(original, discord.HTTPException):
                 await ctx.send("It seems communication with Discord failed! (Perhaps I tried to send something \
-too big?) :frown:")
+too big?) :frowning:")
                 return
 
             if isinstance(original, asyncio.TimeoutError):
@@ -182,9 +226,13 @@ too big?) :frown:")
                 return
 
             print(f'In {ctx.command.qualified_name}:', file=sys.stderr)
-            traceback.print_tb(error.original.__traceback__)
-            print(f'{error.original.__class__.__name__}: {error.original}', file=sys.stderr)
+            traceback.print_tb(original.__traceback__)
+            print(f'{original.__class__.__name__}: {original}', file=sys.stderr)
             await ctx.send("There was an unexpected error in the command!")
             return
 
-        # TODO: Catch more types of errors; Add a general catch case identical to the one above this comment.
+        print(f'In {ctx.command.qualified_name}:', file=sys.stderr)
+        traceback.print_tb(error.__traceback__)
+        print(f'{error.__class__.__name__}: {error}', file=sys.stderr)
+        await ctx.send("There was an unexpected error in the command!")
+        return

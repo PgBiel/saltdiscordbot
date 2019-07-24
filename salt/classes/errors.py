@@ -42,3 +42,15 @@ class NoPermissions(SaltCheckFailure):
     Occurs when there are missing permissions because you have absolutely no permission!
     """
     pass
+
+
+class SaltCommandException(SaltException):
+    pass
+
+
+class SaltEvalException(SaltCommandException):
+    pass
+
+
+class MultilineEvalNoLastExprValue(SaltEvalException):
+    pass

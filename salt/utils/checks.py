@@ -71,9 +71,7 @@ def or_checks(
                         evaluated = await evaluated
                 except (commands.errors.CheckFailure, SaltCheckFailure) as _err:
                     evaluated = False
-                print("[OR] Evaluated: {0} / Old Cond: {1}".format(evaluated, cond))
                 cond = cond or evaluated
-                print(f"[OR] New Cond: {cond}")
 
             if not cond and exception is not None:
                 raise exception
