@@ -11,9 +11,19 @@ from discord.ext import commands
 from classes.scontext import SContext
 
 
-def _get_predicates(func: Callable[..., Any], *decorators: Callable[..., Any]) -> List[Callable[[SContext], bool]]:
+async def _get_predicates(
+        func: typing.Union[Callable[..., Any], commands.Command],
+        *decorators: typing.Union[Callable[..., Any], typing.Coroutine[Any, Any, Callable[..., Any]]]
+) -> List[Callable[[SContext], bool]]:
+    """
+    Get the predicates from checks. (Specifically, their decorators - called checks)
+    :param func: For decorator use, the function receiving it.
+    :param decorators: The decorators that result from calling the check.
+    :return: The predicates, or condition functions.
+    """
     predicates: List[Callable[[SContext], bool]] = []
     _decorator_res: List[Callable[..., Any]] = [decorator(func) for decorator in decorators]
+    _decorator_res = [(await res) if asyncio.iscoroutine(res) else res for res in _decorator_res]
     if isinstance(func, commands.Command):
         cmd: commands.Command = func
         checks: List[Callable[[SContext], bool]] = cmd.checks
@@ -27,7 +37,10 @@ def _get_predicates(func: Callable[..., Any], *decorators: Callable[..., Any]) -
 
 
 def is_owner():
-
+    """
+    Check if the user is the bot's application owner.
+    :return: Check decorator.
+    """
     def do_check(ctx: SContext) -> bool:
         return ctx.author.id == ctx.bot.config["owner"]
 
@@ -35,16 +48,20 @@ def is_owner():
 
 
 async def has_saltmod_role():
+    """
+    Check if the member has the Salt Mod role.
+    :return: Check decorator.
+    """
     def do_check(ctx: SContext) -> bool:
         if not ctx.guild:
             return False
         mondb = ctx.db
         mods: motor.motor_asyncio.AsyncIOMotorCollection = mondb.mods
-        mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = await mods.find_one({"guild_id": ctx.guild.id})
-        role_ids: Iterable[int] = mods_entry_cursor["moderator"]
+        mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = await mods.find_one({"guild_id": str(ctx.guild.id)})
+        role_ids: Iterable[str] = mods_entry_cursor["moderator"]
         for role_id in role_ids:
             for role in ctx.author.roles:
-                if role.id == role_id:
+                if int(role.id) == role_id:
                     return True
 
         return False
@@ -52,9 +69,18 @@ async def has_saltmod_role():
     return commands.check(do_check)
 
 
-async def or_checks(*decorators: Callable[..., Any]):
-    def or_decorator(func: Callable[..., Any]):
-        predicates = _get_predicates(func, *decorators)
+T = typing.TypeVar("T", Callable[..., Any], Callable[..., Any])
+
+
+def or_checks(*decorators: typing.Union[Callable[..., Any], typing.Coroutine[Any, Any, Callable[..., Any]]]):
+    """
+    Do one check OR the other (any amount of checks - A or B or C or D or ... or Z)
+
+    :param decorators: The checks. Note: **They must be called for this to work.**
+    :return: The resulting check decorator.
+    """
+    async def or_decorator(func: typing.Union[Callable[..., Any], commands.Command]):
+        predicates = await _get_predicates(func, *decorators)
 
         def or_check(ctx: SContext) -> bool:
             cond = False
