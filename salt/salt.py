@@ -164,6 +164,7 @@ class Salt(commands.Bot):
 
             await ctx.send("You cannot use this command!")
             return
+            # TODO: Catch more types of errors.
 
         if hasattr(error, "original"):
             original = error.original
@@ -185,3 +186,5 @@ too big?) :frown:")
             print(f'{error.original.__class__.__name__}: {error.original}', file=sys.stderr)
             await ctx.send("There was an unexpected error in the command!")
             return
+
+        # TODO: Catch more types of errors; Add a general catch case identical to the one above this comment.
