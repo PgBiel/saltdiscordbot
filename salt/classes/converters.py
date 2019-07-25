@@ -8,7 +8,8 @@ from typing import List
 from discord.ext import commands
 from discord.ext.commands.converter import _get_from_guilds
 from classes import SContext
-from utils import caseless_equal, normalize
+from constants.regex import USER_MENTION
+from utils import caseless_equal, normalize_equal, match_id, search_user_or_member
 
 
 class AmbiguityMemberConverter(commands.MemberConverter):
@@ -21,51 +22,32 @@ class AmbiguityMemberConverter(commands.MemberConverter):
         Slightly modified MemberConverter#convert
         :param ctx: The context
         :param argument: The argument to convert.
-        :param insensitive: Whether it should be case
+        :param insensitive: Whether it should be case-insensitive.
         :return:
         """
-        bot = ctx.bot
-        match = self._get_id_match(argument) or re.match(r'<@!?([0-9]+)>$', argument)
         guild = ctx.guild
         result = None
-        if match is None:
-            # not a mention...
-            if guild:  # here come the changes
-                if len(argument) > 5 and argument[-5] == '#':  # check if a name and discrim was specified
-                    # The 5 length is checking to see if #0000 is in the string,
-                    # as a#0000 has a length of 6, the minimum for a potential
-                    # discriminator lookup.
-                    potential_discriminator = argument[-4:]
+        if guild:
+            matched_id = match_id(argument, mention_regex=USER_MENTION)
+            if matched_id:
+                result = guild.get_member(matched_id)
+                if result:
+                    return result
+            members: List[discord.Member] = guild.members
+            possibilities = search_user_or_member(argument, members)
 
-                    # do the actual lookup and return if found
-                    # if it isn't found then we'll do a full name lookup below.
-                    res = discord.utils.get(
-                        guild.members,
-                        name=argument[:-5],
-                        discriminator=potential_discriminator
-                    )
-                    if res is not None:
-                        return res
+            if len(possibilities) == 1:
+                return possibilities[0]
 
-                possibilities: List[discord.Member] = []
-                norm_arg: str = normalize(argument)
-                for member in guild.members:
-                    member: discord.Member = member
-                    nick: str = member.nick
-                    name: str = member.name
-                    if self.case_insensitive:
-                        if caseless_equal(nick, argument) or caseless_equal(name, argument):
-                            possibilities.append(member)
-                    else:
-                        if normalize(nick) == norm_arg or normalize(name) == norm_arg:
-                            possibilities.append(member)
-                if len(possibilities) > 0:
-                    if len(possibilities) < 2:
-                        return possibilities[0]
-                    # TODO: Add ambiguity solve menu.
+            if len(possibilities) > 1:
+                if len(possibilities) > 11:
+                    raise commands.BadArgument("Too many possibilities of members (>11), be more specific.")
+                # ...
+            # TODO: Add ambiguity solve menu.
             else:
                 result = _get_from_guilds(bot, 'get_member_named', argument)
         else:
+            # WIP
             user_id = int(match.group(1))
             if guild:
                 result = guild.get_member(user_id)

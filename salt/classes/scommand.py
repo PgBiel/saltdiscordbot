@@ -13,7 +13,7 @@ class SCommand(commands.Command):
     saltadmin_usable: bool = False
 
     def __init__(self, func, **kwargs):
-        super().__init__(self, func, **kwargs)
+        super().__init__(func, **kwargs)
         self.guild_only = self.dm_only = self.dev_only = self.saltmod_usable = self.saltadmin_usable = False
 
         if hasattr(func, "__scmd_attribs__"):
@@ -22,7 +22,7 @@ class SCommand(commands.Command):
 
     def _load_attribs(self, **attribs):
         self.guild_only = attribs.get("guild_only", self.guild_only or False)
-        self.dm_only = attribs.get("dm_only", self.dm_onl or False)
+        self.dm_only = attribs.get("dm_only", self.dm_only or False)
         self.dev_only = attribs.get("dev_only", self.dev_only or False)
         self.saltmod_usable = attribs.get("saltmod_usable", self.saltmod_usable or False)
         self.saltadmin_usable = attribs.get("saltadmin_usable", self.saltadmin_usable or False)

@@ -1,8 +1,9 @@
 import discord
-from discord.ext import commands
-from classes import SContext, MultilineEvalNoLastExprValue, scommand
 import asyncio
 import ast
+from discord.ext import commands
+from classes import SContext, MultilineEvalNoLastExprValue, scommand
+from utils import privacy_sanitize
 
 
 def evalText(ctx: SContext, inp: str, outp, errored: bool = False, coro: bool = False) -> str:
@@ -10,7 +11,7 @@ def evalText(ctx: SContext, inp: str, outp, errored: bool = False, coro: bool = 
         bottom_text = "Coro Error" if errored else "Coro Output"
     else:
         bottom_text = "Error ({0.__class__.__name__})".format(outp) if errored else "Output"
-    result = str(outp).replace(ctx.bot.config["token"], "[DATA EXPUNGED]")
+    result = privacy_sanitize(str(outp), ctx)
     return f"""
 ```py
 Input
@@ -43,7 +44,7 @@ def multiline_eval(expr: str, global_vals, local_vals):
 
 class Dev(commands.Cog):
     @commands.is_owner()
-    @scommand(name='eval', pass_context=True, description="Just testing")
+    @scommand(name='eval', pass_context=True, description="Just testing", hidden=True)
     async def eval(self, ctx: SContext, *, arg: str) -> None:
         # arg = arg.strip("`")
 
@@ -79,7 +80,23 @@ class Dev(commands.Cog):
             out_str = evalText(ctx, arg, result, not success, False)
             await ctx.send(out_str, deletable=True)
 
-    # async def reloadcog(ctx: commands.Context)
+    @commands.is_owner()
+    @scommand(name='reloadcog', description="Reload cogs.", hidden=True)
+    async def reloadcog(self, ctx: SContext, *, arg: str):
+        msg = None
+        try:
+            msg = await ctx.send(f"Reloading cog **{arg}**...")
+        except discord.HTTPException:
+            pass
+
+        try:
+            ctx.bot.reload_extension(arg)
+            if msg is not None:
+                await msg.edit(content=f"Successfully reloaded cog **{arg}**.")
+        except commands.ExtensionError as err:
+            if msg is not None:
+                await msg.edit(content=f"Failed to reload cog **{arg}**:\n{err.__class__.__name__}: {str(err)}")
+            print("Manual cog {0!r} reload failed: {1}: {2}".format(arg, err.__class__.__name__, str(err)))
 
 
 def setup(bot: commands.Bot) -> None:

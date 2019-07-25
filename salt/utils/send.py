@@ -76,9 +76,9 @@ async def send(
             return member.id != ctx.bot.user.id \
                    and msg.id == reaction.message.id \
                    and msg.channel == reaction.message.channel \
-                   and ( \
-                               member == ctx.author or \
-                               (member.permissions_in(ctx.channel).manage_messages if ctx.guild != None else False) \
+                   and (
+                               member == ctx.author or
+                               (member.permissions_in(ctx.channel).manage_messages if ctx.guild != None else False)
                        ) \
                    and str(reaction.emoji) == WASTEBASKET
 

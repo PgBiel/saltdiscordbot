@@ -2,7 +2,9 @@
 Operations using strings and/or returning strings.
 """
 import unicodedata
-from typing import Sequence, Optional
+from typing import Sequence, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from classes import SContext
 
 
 def humanize_perm(perm: str) -> str:
@@ -38,6 +40,7 @@ def humanize_list(target_list: Sequence, *, no_and: bool = False, connector: str
 def normalize(text: str, *, method: Optional[str] = "NFKD") -> str:
     """
     Normalize possibly unicode text.
+
     :param text: String to be normalized.
     :param method: Method of normalization (Default: "NFKD").
     :return: Normalized text.
@@ -58,6 +61,7 @@ def normalize_caseless(text: str) -> str:
 def normalize_equal(left: str, right: str) -> bool:
     """
     A simple, case-sensitive unicode-supported equality comparison between two strings.
+
     :param left: String 1 to compare.
     :param right: String 2 to compare.
     :return: Whether both are equal.
@@ -68,6 +72,7 @@ def normalize_equal(left: str, right: str) -> bool:
 def normalize_contains(container: str, contained: str) -> bool:
     """
     Do a simple, case-sensitive unicode-supported "contains" operation between two strings.
+
     :param container: The string that could contain the other.
     :param contained: The string that could be contained in the first.
     :return: Whether the container contains the contained.
@@ -78,6 +83,7 @@ def normalize_contains(container: str, contained: str) -> bool:
 def caseless_equal(left: str, right: str) -> bool:
     """
     Do a case-insensitive unicode-supported equality comparison between two strings.
+
     :param left: String 1 to compare.
     :param right: String 2 to compare.
     :return: Whether both are equal.
@@ -88,8 +94,20 @@ def caseless_equal(left: str, right: str) -> bool:
 def caseless_contains(container: str, contained: str) -> bool:
     """
     Do a case-insensitive unicode-supported "contains" operation between two strings.
+
     :param container: The string that could contain the other.
     :param contained: The string that could be contained in the first.
     :return: Whether the container contains the contained.
     """
     return normalize_caseless(contained) in normalize_caseless(container)
+
+
+def privacy_sanitize(text: str, ctx: "SContext") -> str:
+    """
+    Remove private info from a string.
+
+    :param text: String to remove private info from.
+    :param ctx: The context, in order to determine which private info to remove.
+    :return: The sanitized string.
+    """
+    return text.replace(ctx.bot.config["token"], "[DATA EXPUNGED]")
