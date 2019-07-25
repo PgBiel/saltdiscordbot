@@ -10,6 +10,7 @@ from discord.ext.commands.converter import _get_from_guilds
 from classes import SContext
 from utils import caseless_equal, normalize
 
+
 class AmbiguityMemberConverter(commands.MemberConverter):
     def __init__(self, *, case_insensitive: bool = True):
         super().__init__()
@@ -79,6 +80,7 @@ class AmbiguityMemberConverter(commands.MemberConverter):
 
 # class InsensitiveMemberConverter(commands.MemberConverter):
 #     async def convert(self, ctx: SContext, argument: str):  # TODO: Decide what to do with this
+
 
 class SearchableMember(commands.MemberConverter):
     async def convert(self, ctx: SContext, argument: str):

@@ -55,11 +55,41 @@ def normalize_caseless(text: str) -> str:
     return normalize(text.casefold())
 
 
+def normalize_equal(left: str, right: str) -> bool:
+    """
+    A simple, case-sensitive unicode-supported equality comparison between two strings.
+    :param left: String 1 to compare.
+    :param right: String 2 to compare.
+    :return: Whether both are equal.
+    """
+    return normalize(left) == normalize(right)
+
+
+def normalize_contains(container: str, contained: str) -> bool:
+    """
+    Do a simple, case-sensitive unicode-supported "contains" operation between two strings.
+    :param container: The string that could contain the other.
+    :param contained: The string that could be contained in the first.
+    :return: Whether the container contains the contained.
+    """
+    return normalize(contained) in normalize(container)
+
+
 def caseless_equal(left: str, right: str) -> bool:
     """
-    Do a case-insensitive unicode-supported comparison between two strings.
+    Do a case-insensitive unicode-supported equality comparison between two strings.
     :param left: String 1 to compare.
     :param right: String 2 to compare.
     :return: Whether both are equal.
     """
     return normalize_caseless(left) == normalize_caseless(right)
+
+
+def caseless_contains(container: str, contained: str) -> bool:
+    """
+    Do a case-insensitive unicode-supported "contains" operation between two strings.
+    :param container: The string that could contain the other.
+    :param contained: The string that could be contained in the first.
+    :return: Whether the container contains the contained.
+    """
+    return normalize_caseless(contained) in normalize_caseless(container)

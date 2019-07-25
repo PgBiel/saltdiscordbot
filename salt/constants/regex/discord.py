@@ -1,0 +1,5 @@
+ANY_MENTION = r'<(?:@[!&]?|#)([0-9]+)>'
+USER_MENTION = r'<@!?([0-9]+)>'
+ROLE_MENTION = r'<@&([0-9]+)>'
+CHANNEL_MENTION = r'<#([0-9]+)>'
+ID_MATCH = r'([0-9]{15,21})'
