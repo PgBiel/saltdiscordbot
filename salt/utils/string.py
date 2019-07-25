@@ -1,7 +1,8 @@
 """
 Operations using strings and/or returning strings.
 """
-from typing import Sequence
+import unicodedata
+from typing import Sequence, Optional
 
 
 def humanize_perm(perm: str) -> str:
@@ -32,3 +33,33 @@ def humanize_list(target_list: Sequence, *, no_and: bool = False, connector: str
             ", ".join(target_list[:-1]), connector or "and",
             "," if len(target_list) > 2 else "", target_list[-1]
         )
+
+
+def normalize(text: str, *, method: Optional[str] = "NFKD") -> str:
+    """
+    Normalize possibly unicode text.
+    :param text: String to be normalized.
+    :param method: Method of normalization (Default: "NFKD").
+    :return: Normalized text.
+    """
+    return unicodedata.normalize(method or "NFKD", text)
+
+
+def normalize_caseless(text: str) -> str:
+    """
+    Normalize and convert to caseless (generally lowercase) a possibly unicode string.
+
+    :param text: String to be normalized
+    :return: Normalized caseless string.
+    """
+    return normalize(text.casefold())
+
+
+def caseless_equal(left: str, right: str) -> bool:
+    """
+    Do a case-insensitive unicode-supported comparison between two strings.
+    :param left: String 1 to compare.
+    :param right: String 2 to compare.
+    :return: Whether both are equal.
+    """
+    return normalize_caseless(left) == normalize_caseless(right)
