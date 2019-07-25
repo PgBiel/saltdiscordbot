@@ -8,14 +8,43 @@ import discord
 import typing
 from typing import Iterable, Any, Callable, List, Union, Coroutine
 from discord.ext import commands
-from classes import SContext
+from classes import SContext, SCommand
 from classes.errors import SaltCheckFailure, MissingSaltModRole
+
+B = typing.TypeVar("B", Callable, SCommand, commands.Command)
+PredicateType = Union[Callable[[SContext], bool], Callable[[SContext], Coroutine[Any, Any, bool]]]
+CmdFuncType = Union[Callable[..., Any], commands.Command, SCommand]
+# can be sync or async predicate
+
+
+def _load_sattribs(func: CmdFuncType, **sattribs) -> None:
+    if isinstance(func, SCommand):
+        func._load_attribs(**sattribs)
+    else:
+        func.__scmd_attribs__ = sattribs
+
+
+def scheck(predicate: PredicateType, **sattribs) -> Callable[[B], B]:
+    """
+    Our check decorator generator, entirely for the purpose of satisfying SCommand's needs.
+    :param predicate: The predicate, as usual.
+    :param sattribs: Any special data for SCommand.
+    :return: Decorator.
+    """
+    def deco(func: B) -> B:
+        if len(sattribs) > 0:
+            if isinstance(func, SCommand):
+                func._load_attribs(**sattribs)
+            else:
+                func.__scmd_attribs__ = sattribs
+        return commands.check(predicate)(func)
+    return deco
 
 
 async def _get_predicates(
         func: Union[Callable[..., Any], commands.Command],
         *decorators: Union[Callable[..., Any], Coroutine[Any, Any, Callable[..., Any]]]  # supports decos and coros
-) -> List[Union[Callable[[SContext], bool], Callable[[SContext], Coroutine[Any, Any, bool]]]]:  # preds be sync or async
+) -> List[PredicateType]:  # preds be sync or async
     """
     Get the predicates from checks. (Specifically, their decorators - called checks)
     :param func: For decorator use, the function receiving it.
@@ -56,7 +85,7 @@ def or_checks(
 
     exception = error.pop("error", commands.errors.CheckFailure)
 
-    def or_decorator(func: Union[Callable[..., Any], commands.Command]):
+    def or_decorator(func: CmdFuncType):
         loop = asyncio.get_event_loop()
         predicates = loop.run_until_complete(_get_predicates(func, *decorators))
 
@@ -112,9 +141,18 @@ async def has_saltmod_role():
         raise MissingSaltModRole
         # return False
 
-    return commands.check(do_check)
+    return scheck(do_check, saltmod_usable=True)
 
 
+def sguild_only():
+    """
+    Make sure the command is only able to be executed in guilds. (Custom Salt version)
+    :return: Check decorator.
+    """
+    def sguild_deco(func: CmdFuncType):
+        _load_sattribs(func, guild_only=True)
+        return commands.guild_only()(func)
 
+    return sguild_deco
 
 

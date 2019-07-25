@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from classes import SContext, MultilineEvalNoLastExprValue
+from classes import SContext, MultilineEvalNoLastExprValue, scommand
 import asyncio
 import ast
 
@@ -9,7 +9,7 @@ def evalText(ctx: SContext, inp: str, outp, errored: bool = False, coro: bool = 
     if coro:
         bottom_text = "Coro Error" if errored else "Coro Output"
     else:
-        bottom_text = "Error" if errored else "Output"
+        bottom_text = "Error ({0.__class__.__name__})".format(outp) if errored else "Output"
     result = str(outp).replace(ctx.bot.config["token"], "[DATA EXPUNGED]")
     return f"""
 ```py
@@ -43,7 +43,7 @@ def multiline_eval(expr: str, global_vals, local_vals):
 
 class Dev(commands.Cog):
     @commands.is_owner()
-    @commands.command(name='eval', pass_context=True, description="Just testing")
+    @scommand(name='eval', pass_context=True, description="Just testing")
     async def eval(self, ctx: SContext, *, arg: str) -> None:
         # arg = arg.strip("`")
 
