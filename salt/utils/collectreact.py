@@ -4,26 +4,28 @@ WIP
 
 import discord
 from discord.ext import commands
-from classes import SContext
 import asyncio
 import typing
-from typing import Union, Optional, Callable, Sequence, Any, Coroutine
+from typing import Union, Optional, Callable, Sequence, Any, Coroutine, TYPE_CHECKING
 from constants.numbers import DEFAULT_REACTWAIT_TIMEOUT
 from utils.callable import await_if_needed
+
+if TYPE_CHECKING:
+    from classes import SContext
 
 EmojiType = Union[str, discord.Emoji]
 GenericUser = Union[discord.Member, discord.User]
 ReactionAddPredicate = Callable[[discord.Reaction, GenericUser], Union[bool, Coroutine[Any, Any, bool]]]
 ReactionAddPredicateGen = Callable[
-    [discord.Message, Sequence[EmojiType], SContext],
+    [discord.Message, Sequence[EmojiType], "SContext"],
     Union[ReactionAddPredicate, Coroutine[Any, Any, ReactionAddPredicate]]
 ]
-OnTimeoutCall = Callable[[discord.Message, Sequence[EmojiType], SContext], Any]
-OnSuccessCall = Callable[[discord.Message, Sequence[EmojiType], SContext], Any]
+OnTimeoutCall = Callable[..., Any]
+OnSuccessCall = Callable[..., Any]
 
 
 def default_react_predicate_gen(
-    message: discord.Message, emoji: Sequence[EmojiType], ctx: SContext
+    message: discord.Message, emoji: Sequence[EmojiType], ctx: "SContext"
 ) -> ReactionAddPredicate:
     def default_react_predicate(reaction: discord.Reaction, user: GenericUser):
         cond = user.id != ctx.bot.user.id \
@@ -42,20 +44,20 @@ def default_react_predicate_gen(
 
 
 async def default_on_timeout(
-    message: discord.Message, emoji: Sequence[EmojiType], ctx: SContext
+    message: discord.Message, emoji: Sequence[EmojiType], ctx: "SContext"
 ):
     for em in emoji:
         await message.remove_reaction(em, ctx.bot.user)
 
 
 async def default_on_success(
-    message: discord.Message, emoji: Sequence[EmojiType], ctx: SContext
+    message: discord.Message, emoji: Sequence[EmojiType], ctx: "SContext"
 ):
     pass  # not much to do here
 
 
 async def collect_react(
-    msg: discord.Message, emoji: Sequence[EmojiType], ctx: SContext, *,
+    msg: discord.Message, emoji: Sequence[EmojiType], ctx: "SContext", *,
     timeout: float = float(DEFAULT_REACTWAIT_TIMEOUT),
     predicate_gen: Optional[ReactionAddPredicateGen] = default_react_predicate_gen,
     predicate: Optional[ReactionAddPredicate] = None,
@@ -103,9 +105,9 @@ async def collect_react(
         try:
             await ctx.bot.wait_for("reaction_add", timeout=timeout, check=predicate_to_use)
         except asyncio.TimeoutError:
-            await await_if_needed(on_timeout(msg, emoji, ctx))
+            await await_if_needed(on_timeout())
         else:
-            await await_if_needed(on_success(msg, emoji, ctx))
+            await await_if_needed(on_success())
 
     if make_awaitable:
         await waiting_for()
