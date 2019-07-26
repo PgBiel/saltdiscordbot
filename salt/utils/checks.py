@@ -6,10 +6,10 @@ import motor.motor_asyncio
 import motor.core
 import discord
 import typing
-from typing import Iterable, Any, Callable, List, Union, Coroutine
+from typing import Iterable, Any, Callable, List, Union, Coroutine, Sequence
 from discord.ext import commands
 from classes import SContext, SCommand
-from classes.errors import SaltCheckFailure, MissingSaltModRole
+from classes.errors import SaltCheckFailure, MissingSaltModRole, NoConfiguredSaltModRole
 
 B = typing.TypeVar("B", Callable, SCommand, commands.Command)
 PredicateType = Union[Callable[[SContext], bool], Callable[[SContext], Coroutine[Any, Any, bool]]]
@@ -133,7 +133,15 @@ async def has_saltmod_role():
         mondb = ctx.db
         mods: motor.motor_asyncio.AsyncIOMotorCollection = mondb.mods
         mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = await mods.find_one({"guild_id": str(ctx.guild.id)})
-        role_ids: Iterable[str] = mods_entry_cursor["moderator"]
+
+        if mods_entry_cursor is None:
+            raise NoConfiguredSaltModRole  # There aren't any defined Salt Mod roles
+
+        role_ids: Sequence[str] = mods_entry_cursor["moderator"]
+
+        if role_ids is None or len(role_ids) == 0:
+            raise NoConfiguredSaltModRole
+
         for role_id in role_ids:
             if discord.utils.get(ctx.author.roles, id=int(role_id)):
                 return True
@@ -155,4 +163,15 @@ def sguild_only():
 
     return sguild_deco
 
+
+def sdev_only():
+    """
+    Make sure the command is only able to be executed by the developers/owners of the bot.
+    :return: Check decorator.
+    """
+    def sdev_deco(func: CmdFuncType):
+        _load_sattribs(func, dev_only=True)
+        return commands.is_owner()(func)
+
+    return sdev_deco
 

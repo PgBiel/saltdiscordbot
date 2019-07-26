@@ -9,7 +9,11 @@ from typing import List
 from discord.ext import commands
 from utils.jsonwork import load as json_load
 from utils import humanize_perm, humanize_list
-from classes import SContext, MissingSaltModRole, MissingSaltAdminRole, NoPermissions
+from classes import (
+    SContext,
+    MissingSaltModRole, MissingSaltAdminRole, NoPermissions,
+    NoConfiguredSaltModRole, NoConfiguredSaltAdminRole
+)
 
 description = """
 Salt Bot, moderation, administration, utility and fun all in one!
@@ -196,6 +200,13 @@ class Salt(commands.Bot):
                 await ctx.send(
                     "You're missing this server's Salt {0.title()} Role(s)! (See the `salt{0}` command for info.)"
                     .format("mod" if isinstance(error, MissingSaltModRole) else "admin")
+                )
+                return
+
+            if isinstance(error, NoConfiguredSaltModRole) or isinstance(error, NoConfiguredSaltAdminRole):
+                await ctx.send(
+                    "This server did not configure any Salt {0.title()} Role(s)! (See the `salt{0}` command for info.)"
+                    .format("mod" if isinstance(error, NoConfiguredSaltModRole) else "admin")
                 )
                 return
 

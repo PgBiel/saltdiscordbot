@@ -4,8 +4,13 @@ Error hierarchy:
 SaltException
   +-- SaltCheckFailure
         +-- MissingSaltModRole
+        +-- NoConfiguredSaltModRole
         +-- MissingSaltAdminRole
+        +-- NoConfiguredSaltAdminRole
         +-- MissingSaltPermissions
+  +-- SaltCommandException
+        +-- SaltEvalException
+             +-- MultilineEvalNoLastExprValue
 
 
 CheckFailure            SaltException
@@ -38,9 +43,23 @@ class MissingSaltModRole(SaltCheckFailure):
     pass
 
 
+class NoConfiguredSaltModRole(SaltCheckFailure):
+    """
+    The server did not configure any Salt Moderator role in order to be able to check.
+    """
+    pass
+
+
 class MissingSaltAdminRole(SaltCheckFailure):
     """
     The user is missing the Salt Admin role.
+    """
+    pass
+
+
+class NoConfiguredSaltAdminRole(SaltCheckFailure):
+    """
+    The server did not configure any Salt Admin role in order to be able to check.
     """
     pass
 

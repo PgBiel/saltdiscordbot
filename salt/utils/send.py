@@ -7,6 +7,7 @@ import discord
 from discord.ext import commands
 from constants.numbers.delays import DELETABLE_REACTWAIT_TIMEOUT as DELE_TIMEOUT
 from constants.emoji.default_emoji import WASTEBASKET
+from utils.collectreact import collect_react
 
 if typing.TYPE_CHECKING:
     from classes import SContext  # for typing purposes, but this isn't actually imported
@@ -78,23 +79,15 @@ async def send(
                    and msg.channel == reaction.message.channel \
                    and (
                                member == ctx.author or
-                               (member.permissions_in(ctx.channel).manage_messages if ctx.guild != None else False)
+                               (member.permissions_in(ctx.channel).manage_messages if ctx.guild is not None else False)
                        ) \
                    and str(reaction.emoji) == WASTEBASKET
 
         try:
-            await msg.add_reaction(WASTEBASKET)
+            await collect_react(
+                msg, (WASTEBASKET,), ctx, timeout=DELE_TIMEOUT, predicate=delcheck, on_success=msg.delete
+            )
         except discord.Forbidden as _e:
             return msg
-
-        async def waiting_for():
-            try:
-                await ctx.bot.wait_for("reaction_add", timeout=DELE_TIMEOUT, check=delcheck)
-            except asyncio.TimeoutError:
-                await msg.remove_reaction(WASTEBASKET, ctx.me)
-            else:
-                await msg.delete()
-
-        ctx.bot.loop.create_task(waiting_for())
 
     return msg

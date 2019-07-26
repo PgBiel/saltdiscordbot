@@ -3,7 +3,7 @@ import asyncio
 import ast
 from discord.ext import commands
 from classes import SContext, MultilineEvalNoLastExprValue, scommand
-from utils import privacy_sanitize
+from utils import privacy_sanitize, is_awaitable
 
 
 def evalText(ctx: SContext, inp: str, outp, errored: bool = False, coro: bool = False) -> str:
@@ -64,7 +64,7 @@ class Dev(commands.Cog):
             result = err
             success = False
 
-        if (asyncio.iscoroutine(result) or asyncio.isfuture(result)) and success:
+        if is_awaitable(result) and success:
             coro = True
             first_out_str = evalText(ctx, arg, "[Coroutine, awaiting...]", not success, False)
             msg_sent: discord.Message = await ctx.send(first_out_str, deletable=True)
