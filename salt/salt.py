@@ -136,15 +136,41 @@ class Salt(commands.Bot):
         if isinstance(error, commands.BadArgument):
             try:
                 await ctx.send(
-                    'You specified a command parameter wrongly{0}'.format("!" if str(error) == "" else f": {str(error)}")
+                    'You gave an invalid parameter{0}'.format("!" if str(error) == "" else f": {str(error)}")
                 )
             except discord.HTTPException:
                 await ctx.send(
-                    "You specified a command parameter wrongly! (The message was too big/couldn't be displayed.)"
+                    "You gave an invalid parameter! (The message was too big/couldn't be displayed.)"
                 )
             return
 
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("Missing required parameter {0!r}!".format(str(error.param)))
+            return
+
+        if isinstance(error, commands.TooManyArguments):
+            await ctx.send("Too many parameters specified!")
+            return
+
+        if isinstance(error, commands.ArgumentParsingError):
+            if isinstance(error, commands.UnexpectedQuoteError):
+                await ctx.send("You wrote a quote (\" or ') in the wrong spot! If you want to literally write down \
+a quote, make sure to add a backslash \\\\ before it! :smiley:")
+                return
+
+            if isinstance(error, commands.ExpectedClosingQuoteError):
+                await ctx.send("You started writing a parameter with a quote (\" or ') before it, but didn't close it \
+with another of the same kind of quote, so I got confused! :frowning:")
+                return
+
+            if isinstance(error, commands.InvalidEndOfQuotedStringError):
+                await ctx.send("After surrounding a command parameter with quotes, please ensure you add a space after \
+it so I know where the following one starts! :smiley: I am confused right now...")
+                return
+
         if isinstance(error, commands.CheckFailure):
+            if isinstance(error, commands.NotOwner):
+                return
             if isinstance(error, commands.BotMissingPermissions) or isinstance(error, commands.MissingPermissions):
                 missing: List[str] = error.missing_perms
                 hum_missing = [humanize_perm(perm) for perm in missing]

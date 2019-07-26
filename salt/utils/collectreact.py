@@ -20,8 +20,8 @@ ReactionAddPredicateGen = Callable[
     [discord.Message, Sequence[EmojiType], "SContext"],
     Union[ReactionAddPredicate, Coroutine[Any, Any, ReactionAddPredicate]]
 ]
-OnTimeoutCall = Callable[..., Any]
-OnSuccessCall = Callable[..., Any]
+OnTimeoutCall = Callable[[discord.Message, Sequence[EmojiType], "SContext"], Any]
+OnSuccessCall = Callable[[discord.Message, Sequence[EmojiType], "SContext"], Any]
 
 
 def default_react_predicate_gen(
@@ -105,9 +105,19 @@ async def collect_react(
         try:
             await ctx.bot.wait_for("reaction_add", timeout=timeout, check=predicate_to_use)
         except asyncio.TimeoutError:
-            await await_if_needed(on_timeout())
+            call = None
+            try:
+                call = on_timeout(msg, emoji, ctx)
+            except TypeError:
+                call = on_timeout()
+            await await_if_needed(call)
         else:
-            await await_if_needed(on_success())
+            call = None
+            try:
+                call = on_success(msg, emoji, ctx)
+            except TypeError:
+                call = on_success()
+            await await_if_needed(call)
 
     if make_awaitable:
         await waiting_for()

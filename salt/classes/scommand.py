@@ -13,7 +13,8 @@ class SCommand(commands.Command):
     saltadmin_usable: bool = False
 
     def __init__(self, func, **kwargs):
-        super().__init__(func, **kwargs)
+        if not kwargs.pop("no_super_init", False):
+            super().__init__(func, **kwargs)
         self.guild_only = self.dm_only = self.dev_only = self.saltmod_usable = self.saltadmin_usable = False
 
         if hasattr(func, "__scmd_attribs__"):
@@ -28,5 +29,46 @@ class SCommand(commands.Command):
         self.saltadmin_usable = attribs.get("saltadmin_usable", self.saltadmin_usable or False)
 
 
+class SGroup(commands.Group, SCommand):
+    """
+    Salt'' customization of the Group class.
+    """
+
+    def __init__(self, func, **kwargs):
+        commands.Group.__init__(self, func, **kwargs)
+        kwargs["no_super_init"] = True
+        SCommand.__init__(self, func, **kwargs)
+
+    def command(self, *args, **kwargs):
+        """A shortcut decorator that invokes scommand and adds it to
+        the internal command list via add_command.
+        """
+
+        def decorator(func):
+            kwargs.setdefault('parent', self)
+            result = scommand(*args, **kwargs)(func)
+            self.add_command(result)
+            return result
+
+        return decorator
+
+    def group(self, *args, **kwargs):
+        """A shortcut decorator that invokes sgroup and adds it to
+        the internal command list via add_command.
+        """
+
+        def decorator(func):
+            kwargs.setdefault('parent', self)
+            result = sgroup(*args, **kwargs)(func)
+            self.add_command(result)
+            return result
+
+        return decorator
+
+
 def scommand(name: str, *, cls: Optional[Type[Any]] = SCommand, **attrs):
     return commands.command(name, cls=cls, **attrs)
+
+
+def sgroup(name: str, *, cls: Optional[Type[Any]] = SGroup, **attrs):
+    return commands.group(name, cls=SGroup, **attrs)

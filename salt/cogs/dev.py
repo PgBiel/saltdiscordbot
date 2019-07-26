@@ -2,8 +2,8 @@ import discord
 import asyncio
 import ast
 from discord.ext import commands
-from classes import SContext, MultilineEvalNoLastExprValue, scommand
-from utils import privacy_sanitize, is_awaitable
+from classes import SContext, MultilineEvalNoLastExprValue, scommand, sgroup
+from utils import privacy_sanitize, is_awaitable, sdev_only
 
 
 def evalText(ctx: SContext, inp: str, outp, errored: bool = False, coro: bool = False) -> str:
@@ -43,7 +43,7 @@ def multiline_eval(expr: str, global_vals, local_vals):
 
 
 class Dev(commands.Cog):
-    @commands.is_owner()
+    @sdev_only()
     @scommand(name='eval', pass_context=True, description="Just testing", hidden=True)
     async def eval(self, ctx: SContext, *, arg: str) -> None:
         # arg = arg.strip("`")
@@ -80,8 +80,13 @@ class Dev(commands.Cog):
             out_str = evalText(ctx, arg, result, not success, False)
             await ctx.send(out_str, deletable=True)
 
-    @commands.is_owner()
-    @scommand(name='reloadcog', description="Reload cogs.", hidden=True)
+    @sdev_only()
+    @sgroup(name='cog', description="Cog work, see subcommands.", aliases=["cogs"])
+    async def cog(self, *args, **kwargs):
+        pass
+
+    @sdev_only()
+    @cog.command(name='reload', description="Reload cogs.")
     async def reloadcog(self, ctx: SContext, *, arg: str):
         msg = None
         try:
@@ -97,6 +102,47 @@ class Dev(commands.Cog):
             if msg is not None:
                 await msg.edit(content=f"Failed to reload cog **{arg}**:\n{err.__class__.__name__}: {str(err)}")
             print("Manual cog {0!r} reload failed: {1}: {2}".format(arg, err.__class__.__name__, str(err)))
+
+    @sdev_only()
+    @cog.command(name='load', description="Load cogs.")
+    async def loadcogs(self, ctx: SContext, *, arg: str):
+        msg = None
+        try:
+            msg = await ctx.send(f"Loading cog **{arg}**...")
+        except discord.HTTPException:
+            pass
+
+        try:
+            ctx.bot.load_extension(arg)
+            if msg is not None:
+                await msg.edit(content=f"Successfully loaded cog **{arg}**.")
+        except commands.ExtensionError as err:
+            if msg is not None:
+                await msg.edit(content=f"Failed to load cog **{arg}**:\n{err.__class__.__name__}: {str(err)}")
+            print("Manual cog {0!r} load failed: {1}: {2}".format(arg, err.__class__.__name__, str(err)))\
+
+    @sdev_only()
+    @cog.command(name='unload', description="Reload cogs.")
+    async def unloadcog(self, ctx: SContext, *, arg: str):
+        msg = None
+        try:
+            msg = await ctx.send(f"Unloading cog **{arg}**...")
+        except discord.HTTPException:
+            pass
+
+        try:
+            ctx.bot.unload_extension(arg)
+            if msg is not None:
+                await msg.edit(content=f"Successfully unloaded cog **{arg}**.")
+        except commands.ExtensionError as err:
+            if msg is not None:
+                await msg.edit(content=f"Failed to unload cog **{arg}**:\n{err.__class__.__name__}: {str(err)}")
+            print("Manual cog {0!r} unload failed: {1}: {2}".format(arg, err.__class__.__name__, str(err)))
+
+    @sdev_only()
+    @cog.command(name="list", description="List cogs.")
+    async def listcogs(self, ctx: SContext):
+        await ctx.send("List of cogs:\n• {0}".format("\n• ".join(ctx.bot.extensions.keys())))
 
 
 def setup(bot: commands.Bot) -> None:
