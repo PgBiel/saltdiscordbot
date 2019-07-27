@@ -12,7 +12,8 @@ from utils import humanize_perm, humanize_list
 from classes import (
     SContext,
     MissingSaltModRole, MissingSaltAdminRole, NoPermissions,
-    NoConfiguredSaltModRole, NoConfiguredSaltAdminRole
+    NoConfiguredSaltModRole, NoConfiguredSaltAdminRole,
+    AutoCancelledException
 )
 
 description = """
@@ -22,7 +23,8 @@ Salt Bot, moderation, administration, utility and fun all in one!
 cogs_ext_list = (
     "cogs.test",
     "cogs.dev",
-    "cogs.mod"
+    "cogs.mod",
+    "cogs.fun"
 )
 
 
@@ -122,6 +124,9 @@ class Salt(commands.Bot):
         :param error: The error that occurred.
         :return: None
         """
+        if isinstance(error, AutoCancelledException):
+            return
+
         if isinstance(error, commands.NoPrivateMessage):
             await ctx.send('This command cannot be used in private messaging!')
             return

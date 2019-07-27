@@ -11,6 +11,8 @@ SaltException
   +-- SaltCommandException
         +-- SaltEvalException
              +-- MultilineEvalNoLastExprValue
+  +-- SaltConversionError
+        +-- AutoCancelledException
 
 
 CheckFailure            SaltException
@@ -95,5 +97,20 @@ class SaltEvalException(SaltCommandException):
 class MultilineEvalNoLastExprValue(SaltEvalException):
     """
     Represents error when the last information given to the +Eval cmd is not an expression.
+    """
+    pass
+
+
+class SaltConversionError(SaltException, commands.ConversionError):
+    """
+    Related to custom Salt converters.
+    """
+    def __init__(self, converter=None, original=None):
+        super().__init__(converter=converter, original=original)
+
+
+class AutoCancelledException(SaltConversionError):
+    """
+    Occurs when the command was already cancelled and dealt with, and no further action is required.
     """
     pass

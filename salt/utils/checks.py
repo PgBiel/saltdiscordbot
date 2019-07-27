@@ -8,11 +8,14 @@ import discord
 import typing
 from typing import Iterable, Any, Callable, List, Union, Coroutine, Sequence
 from discord.ext import commands
-from classes import SContext, SCommand, SGroup
+from classes.scommand import SCommand, SGroup
 from classes.errors import SaltCheckFailure, MissingSaltModRole, NoConfiguredSaltModRole
 
+if typing.TYPE_CHECKING:
+    from classes.scontext import SContext
+
 B = typing.TypeVar("B", Callable, SCommand, commands.Command)
-PredicateType = Union[Callable[[SContext], bool], Callable[[SContext], Coroutine[Any, Any, bool]]]
+PredicateType = Union[Callable[["SContext"], bool], Callable[["SContext"], Coroutine[Any, Any, bool]]]
 CmdFuncType = Union[Callable[..., Any], commands.Command, SCommand, commands.Group, SGroup]
 # can be sync or async predicate
 
@@ -51,7 +54,7 @@ async def _get_predicates(
     :param decorators: The decorators that result from calling the check.
     :return: The predicates, or condition functions.
     """
-    predicates: List[Callable[[SContext], bool]] = []
+    predicates: List[Callable[["SContext"], bool]] = []
     for decorator in decorators:
         deco = decorator
         if asyncio.iscoroutine(deco):
@@ -59,11 +62,11 @@ async def _get_predicates(
         deco(func)
     if isinstance(func, commands.Command):
         cmd: commands.Command = func
-        checks: List[Callable[[SContext], bool]] = cmd.checks
+        checks: List[Callable[["SContext"], bool]] = cmd.checks
         predicates.extend(cmd.checks[len(checks) - len(decorators):len(checks)])
         del cmd.checks[len(checks) - len(decorators):len(checks)]
     else:
-        checks: List[Callable[[SContext], bool]] = func.__commands_checks__
+        checks: List[Callable[["SContext"], bool]] = func.__commands_checks__
         predicates.extend(func.__commands_checks__[len(checks) - len(decorators):len(checks)])
         del func.__commands_checks__[len(checks) - len(decorators):len(checks)]
     return predicates
@@ -89,7 +92,7 @@ def or_checks(
         loop = asyncio.get_event_loop()
         predicates = loop.run_until_complete(_get_predicates(func, *decorators))
 
-        async def or_check(ctx: SContext) -> bool:
+        async def or_check(ctx: "SContext") -> bool:
             cond = False
 
             for predicate in predicates:
@@ -116,7 +119,7 @@ def is_owner():
     Check if the user is the bot's application owner.
     :return: Check decorator.
     """
-    def do_check(ctx: SContext) -> bool:
+    def do_check(ctx: "SContext") -> bool:
         return ctx.author.id == ctx.bot.config["owner"]
 
     return commands.check(do_check)
@@ -127,25 +130,25 @@ async def has_saltmod_role():
     Check if the member has the Salt Mod role.
     :return: Check decorator.
     """
-    async def do_check(ctx: SContext) -> bool:
+    async def do_check(ctx: "SContext") -> bool:
         if not ctx.guild:
             return False
         mondb = ctx.db
         mods: motor.motor_asyncio.AsyncIOMotorCollection = mondb.mods
         mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = await mods.find_one({"guild_id": str(ctx.guild.id)})
         if mods_entry_cursor is None:
-            raise NoConfiguredSaltModRole  # There aren't any defined Salt Mod roles
+            raise NoConfiguredSaltModRole("Server did not configure SaltMod role.")
 
         role_ids: Sequence[str] = mods_entry_cursor["moderator"]
 
         if role_ids is None or len(role_ids) == 0:
-            raise NoConfiguredSaltModRole
+            raise NoConfiguredSaltModRole("Server did not configure SaltMod role.")
 
         for role_id in role_ids:
             if discord.utils.get(ctx.author.roles, id=int(role_id)):
                 return True
 
-        raise MissingSaltModRole
+        raise MissingSaltModRole("Member does not have any of the server's configured SaltMod role(s).")
         # return False
 
     return scheck(do_check, saltmod_usable=True)

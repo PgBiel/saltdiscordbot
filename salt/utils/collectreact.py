@@ -20,8 +20,10 @@ ReactionAddPredicateGen = Callable[
     [discord.Message, Sequence[EmojiType], "SContext"],
     Union[ReactionAddPredicate, Coroutine[Any, Any, ReactionAddPredicate]]
 ]
-OnTimeoutCall = Callable[[discord.Message, Sequence[EmojiType], "SContext"], Any]
-OnSuccessCall = Callable[[discord.Message, Sequence[EmojiType], "SContext"], Any]
+OnTimeoutCall = Union[Callable[[discord.Message, Sequence[EmojiType], "SContext"], Any], Callable[[], Any]]
+OnSuccessCall = Union[
+    Callable[[discord.Message, Sequence[EmojiType], "SContext", discord.Reaction], Any], Callable[[], Any]
+]
 
 
 def default_react_predicate_gen(
@@ -51,9 +53,35 @@ async def default_on_timeout(
 
 
 async def default_on_success(
-    message: discord.Message, emoji: Sequence[EmojiType], ctx: "SContext"
+    *args
 ):
     pass  # not much to do here
+
+
+@typing.overload
+async def collect_react(
+    msg: discord.Message, emoji: Sequence[EmojiType], ctx: "SContext", *,
+    timeout: float = float(DEFAULT_REACTWAIT_TIMEOUT),
+    predicate_gen: Optional[ReactionAddPredicateGen] = default_react_predicate_gen,
+    predicate: Optional[ReactionAddPredicate] = None,
+    on_timeout: Optional[OnTimeoutCall] = default_on_timeout,
+    on_success: Optional[OnSuccessCall] = default_on_success,
+    make_awaitable: Optional[typing.Literal[True]]
+) -> discord.Reaction:
+    pass
+
+
+@typing.overload
+async def collect_react(
+    msg: discord.Message, emoji: Sequence[EmojiType], ctx: "SContext", *,
+    timeout: float = float(DEFAULT_REACTWAIT_TIMEOUT),
+    predicate_gen: Optional[ReactionAddPredicateGen] = default_react_predicate_gen,
+    predicate: Optional[ReactionAddPredicate] = None,
+    on_timeout: Optional[OnTimeoutCall] = default_on_timeout,
+    on_success: Optional[OnSuccessCall] = default_on_success,
+    make_awaitable: typing.Literal[False]
+) -> None:
+    pass
 
 
 async def collect_react(
@@ -63,7 +91,7 @@ async def collect_react(
     predicate: Optional[ReactionAddPredicate] = None,
     on_timeout: Optional[OnTimeoutCall] = default_on_timeout,
     on_success: Optional[OnSuccessCall] = default_on_success,
-    make_awaitable: Optional[bool] = False
+    make_awaitable: Optional[bool] = True
 ):
     """|coro|
     Collect reactions, as in a menu. This should be used until discord.ext.menu is released.
@@ -77,9 +105,12 @@ async def collect_react(
     :param predicate: The effective predicate that takes only Reaction and User, checks if we should consider that the
         user clicked something in our menu or not.
     :param on_timeout: What to do when the timeout rings, by default removes all bot-authored reactions.
+        Takes 3 parameters: msg (discord.Message), emoji (Sequence[EmojiType]) and ctx (SContext).
     :param on_success: What to do when we successfully receive the reaction.
+        Takes 4 parameters(!): msg (discord.Message), emoji (Sequence[EmojiType]), ctx (SContext) and reaction
+        (discord.Reaction).
     :param make_awaitable: Whether the function should wait until either the reaction is clicked or the time passes;
-        defaults to False.
+        defaults to True.
     """
     # WIP
     # def reaccheck(reaction: discord.Reaction, user: discord.User):
@@ -102,24 +133,30 @@ async def collect_react(
         await msg.add_reaction(em)
 
     async def waiting_for():
+        reacted: Optional[discord.Reaction] = None
         try:
-            await ctx.bot.wait_for("reaction_add", timeout=timeout, check=predicate_to_use)
+            reacted = await ctx.bot.wait_for("reaction_add", timeout=timeout, check=predicate_to_use)
+            if type(reacted) == tuple:
+                reacted = reacted[0]
         except asyncio.TimeoutError:
-            call = None
-            try:
-                call = on_timeout(msg, emoji, ctx)
-            except TypeError:
-                call = on_timeout()
-            await await_if_needed(call)
+            if on_timeout and callable(on_timeout):
+                call = None
+                try:
+                    call = on_timeout(msg, emoji, ctx)
+                except TypeError:
+                    call = on_timeout()
+                await await_if_needed(call)
         else:
-            call = None
-            try:
-                call = on_success(msg, emoji, ctx)
-            except TypeError:
-                call = on_success()
-            await await_if_needed(call)
+            if on_success and callable(on_success):
+                call = None
+                try:
+                    call = on_success(msg, emoji, ctx, reacted)
+                except TypeError:
+                    call = on_success()
+                await await_if_needed(call)
+        return reacted
 
     if make_awaitable:
-        await waiting_for()
+        return await waiting_for()
     else:
         ctx.bot.loop.create_task(waiting_for())

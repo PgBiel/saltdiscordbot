@@ -49,7 +49,7 @@ def search_name_and_discrim(
 
 
 def search_in_group(
-        text: str, group: Iterable[T], *attrs, **operation: Callable[[str, str], bool]
+        text: str, group: Iterable[T], *attrs, **kwargs: [Callable[[str, str], bool], int]
 ) -> Tuple[T]:
     """
     Search an element in a group of same type elements.
@@ -58,20 +58,25 @@ def search_in_group(
     :param group: The group to search in.
     :param attrs: All attributes to compare. (e.g. "nick" and "name")
     :param operation: The comparison function to execute between two strings. Default: caseless_contains
+    :param limit: Max length of the resulting tuple. Default: 12 (to be able to check for >11)
     :return: The found elements in the group, if any.
     :raises: TypeError: If missing attributes.
     """
     if len(attrs) < 1:
         raise TypeError("Missing attributes.")
 
-    operation_to_use: Callable[[str, str], bool] = operation.pop("operation", caseless_contains)
+    operation_to_use: Callable[[str, str], bool] = kwargs.pop("operation", caseless_contains)
+    limit: int = kwargs.pop("limit", 12)
     found: List[T] = []
     for el in group:
         for attr in attrs:
             val: str = getattr(el, attr)
-            if operation_to_use(val, text):
+            if val and operation_to_use(val, text):
                 found.append(el)
                 break
+        if len(found) >= limit:
+            break
+
     return tuple(found)
 
 
@@ -79,7 +84,8 @@ M = TypeVar("M", discord.User, discord.Member)
 
 
 def search_user_or_member(
-        text: str, group: Sequence[M], *, operation: Optional[Callable[[str, str], bool]] = caseless_contains
+    text: str, group: Sequence[M], *, operation: Optional[Callable[[str, str], bool]] = caseless_contains,
+    limit: int = 12
 ) -> Tuple[M]:
     searched_id = search_id(text, group, mention_regex=USER_MENTION)
     if searched_id is not None:  # first, we try searching for id
@@ -93,24 +99,26 @@ def search_user_or_member(
     attrs_to_compare = ["name"]
     if is_member:
         attrs_to_compare.append("nick")
-    return search_in_group(text, group, *attrs_to_compare, operation=operation)
+    return search_in_group(text, group, *attrs_to_compare, operation=operation, limit=limit)
 
 
 def search_role(
-        text: str, group: Iterable[discord.Role], *, operation: Optional[Callable[[str, str], bool]] = caseless_contains
+    text: str, group: Iterable[discord.Role], *, operation: Optional[Callable[[str, str], bool]] = caseless_contains,
+    limit: int = 12
 ) -> Tuple[discord.Role]:
     searched_id = search_id(text, group, mention_regex=ROLE_MENTION)
     if searched_id:
         return tuple([searched_id])
 
-    return search_in_group(text, group, "name", operation=operation)
+    return search_in_group(text, group, "name", operation=operation, limit=limit)
 
 
 def search_channel(
-        text: str, group: Iterable[ChannelType], *, operation: Optional[Callable[[str, str], bool]] = caseless_contains
+    text: str, group: Iterable[ChannelType], *, operation: Optional[Callable[[str, str], bool]] = caseless_contains,
+    limit: int = 12
 ) -> Tuple[ChannelType]:
     searched_id = search_id(text, group, mention_regex=CHANNEL_MENTION)
     if searched_id:
         return tuple([searched_id])
 
-    return search_in_group(text, group, "name", operation=operation)
+    return search_in_group(text, group, "name", operation=operation, limit=limit)

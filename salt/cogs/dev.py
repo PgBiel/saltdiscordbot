@@ -33,7 +33,7 @@ def multiline_eval(expr: str, global_vals, local_vals):
     tree = ast.parse(expr)
     ast_eval_expr = tree.body[-1]
     eval_expr = ast.Expression(ast_eval_expr.value) if hasattr(ast_eval_expr, "value") else None
-    exec_expr = ast.Module(tree.body[:-1])
+    exec_expr = ast.Module(tree.body[:-1], type_ignores=[])
     exec(compile(exec_expr, '/dev/null', 'exec'), global_vals, local_vals)
     if eval_expr is not None:
         return eval(compile(eval_expr, '/dev/null', 'eval'), global_vals, local_vals)

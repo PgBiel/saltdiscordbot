@@ -2,7 +2,8 @@
 Operations using strings and/or returning strings.
 """
 import unicodedata
-from typing import Sequence, Optional, TYPE_CHECKING
+import discord
+from typing import Sequence, Optional, Union, TYPE_CHECKING
 if TYPE_CHECKING:
     from classes import SContext
 
@@ -14,7 +15,7 @@ def humanize_perm(perm: str) -> str:
     :param perm: The discord permission, as a string.
     :return: The humanized string.
     """
-    new_perm = str.replace("_", " ").replace("guild", "server")
+    new_perm = perm.replace("_", " ").replace("guild", "server")
     return new_perm.title()
 
 
@@ -111,3 +112,18 @@ def privacy_sanitize(text: str, ctx: "SContext") -> str:
     :return: The sanitized string.
     """
     return text.replace(ctx.bot.config["token"], "[DATA EXPUNGED]")
+
+
+def tag(
+        subject: Union[discord.abc.User, discord.abc.GuildChannel, discord.abc.PrivateChannel, discord.Role]
+) -> str:
+    """
+    Get the appearance of the subject (member/user/channel/role) when shown.
+    :param subject: What to show.
+    :return: The string form.
+    """
+    if isinstance(subject, discord.abc.User):
+        return "{0}#{1}".format(subject.name, subject.discriminator)
+    if isinstance(subject, discord.TextChannel):
+        return f"#{subject.name}"
+    return subject.name

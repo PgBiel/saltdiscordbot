@@ -85,7 +85,8 @@ async def send(
 
         try:
             await collect_react(
-                msg, (WASTEBASKET,), ctx, timeout=DELE_TIMEOUT, predicate=delcheck, on_success=msg.delete
+                msg, (WASTEBASKET,), ctx, timeout=DELE_TIMEOUT, predicate=delcheck, on_success=msg.delete,
+                make_awaitable=False
             )
         except discord.Forbidden as _e:
             return msg
