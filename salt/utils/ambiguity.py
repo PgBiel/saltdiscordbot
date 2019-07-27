@@ -24,8 +24,17 @@ AmbiguityResponse = NamedTuple("AmbiguityResponse", [("chosen", Optional[T]), ("
 
 
 async def ambiguity_solve(
-        ctx: "SContext", subjects: Sequence[T], *, type_name: str, timeout: int = DEFAULT_AMBIGUITY_TIMEOUT
+        ctx: "SContext", subjects: Sequence[T], *, type_name: str, timeout: float = float(DEFAULT_AMBIGUITY_TIMEOUT)
 ):
+    """
+    Solve ambiguity when we search and find 2+ results. (Prompt member to choose one.)
+    :param ctx: The context of the command.
+    :param subjects: The list of results to pick from.
+    :param type_name: The written name of what we're picking, e.g. "member" or "channel".
+    :param timeout: Max amount of time for member to answer, in seconds (float); Default: 25 secs
+    :return: AmbiguityResolve - a NamedTuple with property `chosen` - the chosen result, or None if cancelled - and
+        `cancelled` - bool of whether it was cancelled by the user.
+    """
     can_react = True
     if ctx.guild is not None and not cast(discord.Member, ctx.guild.me).permissions_in(ctx.channel).add_reactions:
         can_react = False
