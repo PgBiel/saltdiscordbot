@@ -8,12 +8,12 @@ import discord
 import typing
 from typing import Iterable, Any, Callable, List, Union, Coroutine, Sequence
 from discord.ext import commands
-from classes import SContext, SCommand
+from classes import SContext, SCommand, SGroup
 from classes.errors import SaltCheckFailure, MissingSaltModRole, NoConfiguredSaltModRole
 
 B = typing.TypeVar("B", Callable, SCommand, commands.Command)
 PredicateType = Union[Callable[[SContext], bool], Callable[[SContext], Coroutine[Any, Any, bool]]]
-CmdFuncType = Union[Callable[..., Any], commands.Command, SCommand]
+CmdFuncType = Union[Callable[..., Any], commands.Command, SCommand, commands.Group, SGroup]
 # can be sync or async predicate
 
 
@@ -133,7 +133,6 @@ async def has_saltmod_role():
         mondb = ctx.db
         mods: motor.motor_asyncio.AsyncIOMotorCollection = mondb.mods
         mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = await mods.find_one({"guild_id": str(ctx.guild.id)})
-
         if mods_entry_cursor is None:
             raise NoConfiguredSaltModRole  # There aren't any defined Salt Mod roles
 

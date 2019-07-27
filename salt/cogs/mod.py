@@ -12,6 +12,7 @@ class Moderation(commands.Cog):
         is_owner(), has_saltmod_role(), commands.has_permissions(kick_members=True),
         error=NoPermissions(moderation_dperm_error_fmt.format("Kick Members", "kick"))
     )
+    @commands.bot_has_permissions(kick_members=True)
     @sguild_only()
     @scommand(name="kick", description="Kick people.")
     async def kick(self, ctx: SContext, member: discord.Member):

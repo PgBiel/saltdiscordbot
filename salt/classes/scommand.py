@@ -1,5 +1,5 @@
 from discord.ext import commands
-from typing import Type, Any, Optional
+from typing import Type, Any, Optional, Callable
 
 
 class SCommand(commands.Command):
@@ -31,7 +31,7 @@ class SCommand(commands.Command):
 
 class SGroup(commands.Group, SCommand):
     """
-    Salt'' customization of the Group class.
+    Salt's customization of the Group class.
     """
 
     def __init__(self, func, **kwargs):
@@ -66,9 +66,9 @@ class SGroup(commands.Group, SCommand):
         return decorator
 
 
-def scommand(name: str, *, cls: Optional[Type[Any]] = SCommand, **attrs):
+def scommand(name: str, *, cls: Optional[Type[Any]] = SCommand, **attrs) -> Callable[[Callable[..., Any]], SCommand]:
     return commands.command(name, cls=cls, **attrs)
 
 
-def sgroup(name: str, *, cls: Optional[Type[Any]] = SGroup, **attrs):
+def sgroup(name: str, *, cls: Optional[Type[Any]] = SGroup, **attrs) -> Callable[[Callable[..., Any]], SGroup]:
     return commands.group(name, cls=SGroup, **attrs)
