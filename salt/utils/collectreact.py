@@ -9,6 +9,7 @@ import typing
 from typing import Union, Optional, Callable, Sequence, Any, Coroutine, TYPE_CHECKING
 from constants.numbers import DEFAULT_REACTWAIT_TIMEOUT
 from utils.callable import await_if_needed
+from contextlib import suppress
 
 if TYPE_CHECKING:
     from classes import SContext
@@ -129,8 +130,21 @@ async def collect_react(
     predicate_to_use: ReactionAddPredicate = predicate or (
         await await_if_needed(predicate_gen(msg, emoji, ctx))
     )
+    errored_in_task = False
+
+    async def add_reaction(em):
+        nonlocal errored_in_task
+        if errored_in_task:
+            return
+        try:
+            return await msg.add_reaction(em)
+        except (discord.HTTPException, discord.NotFound):
+            errored_in_task = True
+
     for em in emoji:
-        await msg.add_reaction(em)
+        ctx.bot.loop.create_task(add_reaction(em))
+        if errored_in_task:
+            break
 
     async def waiting_for():
         reacted: Optional[discord.Reaction] = None

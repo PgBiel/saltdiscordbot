@@ -17,7 +17,9 @@ class Moderation(commands.Cog):
     @sguild_only()
     @scommand(name="kick", description="Kick people.")
     async def kick(self, ctx: SContext, member: AmbiguityMemberConverter):
-        await ctx.send(f"You gave member {member.name}#{member.discriminator}!")
+        if type(member) == list:
+            member = [str(memb) for memb in member]
+        await ctx.send(f"You gave member {str(member)}!")
 
 
 def setup(bot: commands.Bot) -> None:

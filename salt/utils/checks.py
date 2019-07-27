@@ -89,10 +89,12 @@ def or_checks(
     exception = error.pop("error", commands.errors.CheckFailure)
 
     def or_decorator(func: CmdFuncType):
-        loop = asyncio.get_event_loop()
-        predicates = loop.run_until_complete(_get_predicates(func, *decorators))
+        predicates = []
 
         async def or_check(ctx: "SContext") -> bool:
+            nonlocal predicates
+            if len(predicates) < 1:
+                predicates = await _get_predicates(func, *decorators)
             cond = False
 
             for predicate in predicates:
