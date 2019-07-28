@@ -127,3 +127,12 @@ def tag(
     if isinstance(subject, discord.TextChannel):
         return f"#{subject.name}"
     return subject.name
+
+
+def discord_sanitize(text: str) -> str:
+    """
+    Sanitize text for use in Discord. (Escape Markdown and mentions)
+    :param text: The text to sanitize.
+    :return: The sanitized, properly escaped text.
+    """
+    return discord.utils.escape_markdown(discord.utils.escape_mentions(text))

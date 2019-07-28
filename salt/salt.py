@@ -24,14 +24,14 @@ cogs_ext_list = (
     "cogs.test",
     "cogs.dev",
     "cogs.mod",
-    "cogs.fun"
+    "cogs.utility"
 )
 
 
 class Salt(commands.Bot):
 
     def __init__(self):
-        super().__init__(command_prefix=self.prefix, description=description)
+        super().__init__(command_prefix=self.prefix, description=description, case_insensitive=True)
         self.config: dict = dict()
         self.make_config()
         for cog_ext in cogs_ext_list:
@@ -150,7 +150,7 @@ class Salt(commands.Bot):
             return
 
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Missing required parameter {0!r}!".format(str(error.param)))
+            await ctx.send("Missing required parameter {0!r}!".format(error.param.name))
             return
 
         if isinstance(error, commands.TooManyArguments):

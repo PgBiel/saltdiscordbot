@@ -13,6 +13,9 @@ from utils import caseless_contains, normalize_contains, match_id, search_user_o
 
 
 class AmbiguityMemberConverter(commands.MemberConverter):
+    """
+    Converter that searches for members and prompts the user in case of multiple matches.
+    """
     def __init__(self, *, case_insensitive: bool = True):
         super().__init__()
         self.case_insensitive: bool = case_insensitive
@@ -48,7 +51,7 @@ class AmbiguityMemberConverter(commands.MemberConverter):
                     ctx=ctx, subjects=possibilities, type_name="member"
                 )
                 if cancelled:
-                    raise AutoCancelledException(converter=AmbiguityMemberConverter)
+                    raise AutoCancelledException()
                 return result
         else:
             if user_id := match_id(argument, mention_regex=USER_MENTION):

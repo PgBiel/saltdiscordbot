@@ -10,6 +10,7 @@ from typing import Iterable, Any, Callable, List, Union, Coroutine, Sequence
 from discord.ext import commands
 from classes.scommand import SCommand, SGroup
 from classes.errors import SaltCheckFailure, MissingSaltModRole, NoConfiguredSaltModRole
+from utils.callable import await_if_needed
 
 if typing.TYPE_CHECKING:
     from classes.scontext import SContext
@@ -127,17 +128,19 @@ def is_owner():
     return commands.check(do_check)
 
 
-async def has_saltmod_role():
+def has_saltmod_role():
     """
     Check if the member has the Salt Mod role.
     :return: Check decorator.
     """
-    async def do_check(ctx: "SContext") -> bool:
+    def do_check(ctx: "SContext") -> bool:
         if not ctx.guild:
             return False
         mondb = ctx.db
         mods: motor.motor_asyncio.AsyncIOMotorCollection = mondb.mods
-        mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = await mods.find_one({"guild_id": str(ctx.guild.id)})
+        mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = ctx.bot.loop.run_until_complete(
+            mods.find_one({"guild_id": str(ctx.guild.id)})
+        )
         if mods_entry_cursor is None:
             raise NoConfiguredSaltModRole("Server did not configure SaltMod role.")
 

@@ -112,5 +112,12 @@ class SaltConversionError(SaltException, commands.ConversionError):
 class AutoCancelledException(SaltConversionError):
     """
     Occurs when the command was already cancelled and dealt with, and no further action is required.
+
+    :members:
+    Attributes
+    ----------
+    :attr a: int
+        bruh
     """
-    pass
+    def __init__(self):
+        self.a = 5

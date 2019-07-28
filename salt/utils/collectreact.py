@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 EmojiType = Union[str, discord.Emoji]
 GenericUser = Union[discord.Member, discord.User]
-ReactionAddPredicate = Callable[[discord.Reaction, GenericUser], Union[bool, Coroutine[Any, Any, bool]]]
+ReactionAddPredicate = Callable[[discord.Reaction, GenericUser], bool]  # can only be sync!
 ReactionAddPredicateGen = Callable[
     [discord.Message, Sequence[EmojiType], "SContext"],
     Union[ReactionAddPredicate, Coroutine[Any, Any, ReactionAddPredicate]]

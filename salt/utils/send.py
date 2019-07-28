@@ -20,15 +20,20 @@ async def send(
 ) -> discord.Message:
     """|coro|
     Sends a message to the destination with the content given.
+
     The content must be a type that can convert to a string through ``str(content)``.
+
     If the content is set to ``None`` (the default), then the ``embed`` parameter must
     be provided.
+
     To upload a single file, the ``file`` parameter should be used with a
     single :class:`~discord.File` object. To upload multiple files, the ``files``
     parameter should be used with a :class:`list` of :class:`~discord.File` objects.
     **Specifying both parameters will lead to an exception**.
+
     If the ``embed`` parameter is provided, it must be of type :class:`~discord.Embed` and
     it must be a rich embed type.
+
     Parameters
     ------------
     ctx: :class:`SContext`
@@ -55,6 +60,7 @@ async def send(
       deleted by the member on click (if they called the command or they have Manage Messages).
     sender:
       Sends the message.
+
     Raises
     --------
     ~discord.HTTPException

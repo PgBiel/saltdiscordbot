@@ -89,8 +89,8 @@ automatically expire in {timeout} seconds. React with {RED_X} to cancel."
             nonlocal found
             nonlocal cancelled
             is_same_user: bool = new_msg.channel == ctx.channel \
-                                 and new_msg.author == ctx.author \
-                                 and new_msg.author != ctx.bot.user
+                and new_msg.author == ctx.author \
+                and new_msg.author != ctx.bot.user
             if not is_same_user:
                 return False
             content: str = new_msg.content
