@@ -24,7 +24,8 @@ cogs_ext_list = (
     "cogs.test",
     "cogs.dev",
     "cogs.mod",
-    "cogs.utility"
+    "cogs.utility",
+    "cogs.fun"
 )
 
 
