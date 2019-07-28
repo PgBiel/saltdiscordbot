@@ -11,6 +11,8 @@ def _kick_or_bannable_gen(perm: str):
     ) -> bool:
         guild: discord.Guild = member.guild
         me: discord.Member = performer or guild.me
+        if guild.owner_id == me.id:
+            return True  # if this is the owner of the guild, then it doesn't matter lol
         if needs_the_perm and not getattr(me.guild_permissions, perm):  # bot needs Kick Members or Ban Members
             return False
         if guild.owner_id == member.id:  # cannot kick/ban owner

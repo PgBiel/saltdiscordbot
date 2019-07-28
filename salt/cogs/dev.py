@@ -81,6 +81,11 @@ class Dev(commands.Cog):
             await ctx.send(out_str, deletable=True)
 
     @sdev_only()
+    @scommand(name='say', description="Make Salt talk.")
+    async def say(self, ctx: SContext, *, text_to_say: str):
+        await ctx.send(text_to_say[:2000])
+
+    @sdev_only()
     @sgroup(name='cog', description="Cog work, see subcommands.", aliases=["cogs"])
     async def cog(self, *args, **kwargs):
         pass

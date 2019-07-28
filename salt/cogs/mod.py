@@ -98,46 +98,6 @@ class Moderation(commands.Cog):
     @scommand(name="kick", description="Kick people.")
     async def kick(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
         await _kick_or_ban(ctx, member=cast(discord.Member, member), reason=reason, verb="kick", color=KICK_COLOR)
-#         memb: discord.Member = cast(discord.Member, member)
-#         emb_desc: str = f"Are you sure you want to kick the member {discord_sanitize(str(memb))}? Type __y__es to \
-# confirm, and __n__o or `cancel` to cancel."
-#         embed = discord.Embed(color=KICK_COLOR, description=emb_desc, timestamp=datetime.datetime.now()) \
-#             .set_author(name=f"Kicking {str(memb)}", icon_url=memb.avatar_url) \
-#             .set_thumbnail(memb.avatar_url)                                    \
-#             .set_footer("Please confirm")
-#         received, cancelled = await prompt(
-#             "Are you sure?", ctx=ctx, embed=embed, already_asked=False, predicate_gen=confirmation_predicate_gen,
-#             cancellable=True, partial_question=False
-#         )
-#         if cancelled or normalize_caseless(received.content).startswith("n"):
-#             await ctx.send("Command cancelled.")
-#             return
-#
-#         base_text = "Kicking member... ({})"
-#         status_msg = await ctx.send(base_text.format("Sending DM..."))
-#         try:
-#             reason_embed: discord.Embed = discord.Embed(
-#                 color=KICK_COLOR, description=reason or "No reason given", timestamp=datetime.datetime.now(),
-#                 title="Kick reason"
-#             ) \
-#                 .set_footer(text=f"Kicked from server '{discord_sanitize(ctx.guild.name)}'") \
-#                 .set_thumbnail(url=ctx.guild.icon_url)
-#
-#             await memb.send(
-#                 f"You were kicked from the server '{discord_sanitize(ctx.guild.name)}'!",
-#                 embed=reason_embed
-#             )
-#             await status_msg.edit(content=base_text.format("DM sent, kicking..."))
-#         except discord.HTTPException:
-#             await status_msg.edit(content=base_text.format("DM failed, kicking anyway..."))
-#         try:
-#             await memb.kick(reason=reason)
-#         except discord.Forbidden:
-#             await status_msg.edit(content="Uh oh, it seems I cannot kick this member! :frowning:")
-#         except discord.HTTPException:
-#             await status_msg.edit(content="Uh oh, it seems kicking failed! (Try again?) :frowning:")
-#         else:
-#             await status_msg.edit(content=f"Successfully kicked member {discord_sanitize(str(memb))}.")
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(ban_members=True),

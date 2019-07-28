@@ -5,7 +5,7 @@ from classes import scommand, SContext
 from typing import List
 
 
-class Fun(commands.Cog):
+class Utility(commands.Cog):
 
     @scommand(name="len", aliases=["length"], description="Tells you the length of your message.")
     async def len(self, ctx: SContext, *, text: str):
@@ -31,4 +31,4 @@ class Fun(commands.Cog):
 
 
 def setup(bot: commands.bot):
-    bot.add_cog(Fun(bot))
+    bot.add_cog(Utility(bot))

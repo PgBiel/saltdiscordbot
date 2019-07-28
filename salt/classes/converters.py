@@ -51,7 +51,7 @@ class AmbiguityMemberConverter(commands.MemberConverter):
                     ctx=ctx, subjects=possibilities, type_name="member"
                 )
                 if cancelled:
-                    raise AutoCancelledException()
+                    raise AutoCancelledException(converter=AmbiguityMemberConverter)
                 return result
         else:
             if user_id := match_id(argument, mention_regex=USER_MENTION):

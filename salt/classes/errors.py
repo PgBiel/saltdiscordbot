@@ -21,6 +21,7 @@ CheckFailure            SaltException
         +-- MissingSaltAdminRole
         +-- MissingSaltPermissions
 """
+import typing
 from discord.ext import commands
 
 
@@ -105,19 +106,12 @@ class SaltConversionError(SaltException, commands.ConversionError):
     """
     Related to custom Salt converters.
     """
-    def __init__(self, converter=None, original=None):
+    def __init__(self, converter: typing.Type[commands.Converter] = None, original: Exception = None):
         super().__init__(converter=converter, original=original)
 
 
 class AutoCancelledException(SaltConversionError):
     """
     Occurs when the command was already cancelled and dealt with, and no further action is required.
-
-    :members:
-    Attributes
-    ----------
-    :attr a: int
-        bruh
     """
-    def __init__(self):
-        self.a = 5
+    pass
