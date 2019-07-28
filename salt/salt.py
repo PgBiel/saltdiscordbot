@@ -17,7 +17,7 @@ from classes import (
 )
 
 description = """
-Salt Bot, moderation, administration, utility and fun all in one!
+Salt Bot - moderation, administration, utility and fun all in one!
 """
 
 cogs_ext_list = (

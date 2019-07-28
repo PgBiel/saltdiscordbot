@@ -1,2 +1,2 @@
-RED_X = "❌"
-WASTEBASKET = "🗑"
+RED_X = "\N{CROSS MARK}"  # ❌
+WASTEBASKET = "\N{WASTEBASKET}"  # 🗑

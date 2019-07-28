@@ -23,10 +23,10 @@ async def _kick_or_ban(
             return
         top_role = member.top_role
         if top_role.position > ctx.me.top_role.position:
-            await ctx.send(f"I cannot {verb} the specified member, because his/her highest role is higher than mine!")
+            await ctx.send(f"I cannot {verb} the specified member, because their highest role is higher than mine!")
             return
         if top_role.position == ctx.me.top_role.position:
-            await ctx.send(f"I cannot {verb} the specified member, because his/her highest role is the same as mine!")
+            await ctx.send(f"I cannot {verb} the specified member, because their highest role is the same as mine!")
             return
         await ctx.send(f"I cannot {verb} the specified member!")
         return
@@ -35,12 +35,15 @@ async def _kick_or_ban(
         if member.id == ctx.guild.owner_id:
             await ctx.send(f"You cannot {verb} the specified member, because that is the owner!")
             return
+        if member == ctx.author:
+            await ctx.send(f"You cannot {verb} yourself! :eyes:")
+            return
         top_role = member.top_role
         if top_role.position > ctx.author.top_role.position:
-            await ctx.send(f"You cannot {verb} the specified member, because his/her highest role is higher than yours!")
+            await ctx.send(f"You cannot {verb} the specified member, because their highest role is higher than yours!")
             return
         if top_role.position == ctx.author.top_role.position:
-            await ctx.send(f"You cannot {verb} the specified member, because his/her highest role is the same as yours!")
+            await ctx.send(f"You cannot {verb} the specified member, because their highest role is the same as yours!")
             return
         await ctx.send(f"You cannot {verb} the specified member!")
         return
