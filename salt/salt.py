@@ -1,4 +1,3 @@
-import os
 import asyncio
 import discord
 import traceback
@@ -7,13 +6,14 @@ import motor.motor_asyncio
 import typing
 from typing import List
 from discord.ext import commands
-from utils.jsonwork import load as json_load
-from utils import humanize_perm, humanize_list
+from utils.funcs.jsonwork import load as json_load
+from utils.funcs import humanize_perm, humanize_list
 from classes import (
     SContext,
     MissingSaltModRole, MissingSaltAdminRole, NoPermissions,
     NoConfiguredSaltModRole, NoConfiguredSaltAdminRole,
-    AutoCancelledException
+    AutoCancelledException,
+    BotMissingOneChannelPermissions, BotMissingThisChannelPermissions
 )
 
 description = """
@@ -39,7 +39,7 @@ class Salt(commands.Bot):
             print(cog_ext)
             try:
                 self.load_extension(cog_ext)
-            except Exception as _err:
+            except commands.ExtensionError as _err:
                 print(f'Failed to load extension {cog_ext}.', file=sys.stderr)
                 traceback.print_exc()
         self.monclient: motor.motor_asyncio.AsyncIOMotorClient = motor.motor_asyncio.AsyncIOMotorClient()
@@ -185,10 +185,18 @@ it so I know where the following one starts! :smiley: I am confused right now...
                 await ctx.send("{0} don't have enough Discord Permissions for this! {1} missing permission{2} {3}."
                                .format(
                                     pronouns[0], pronouns[1],
-                                    "s" if len(missing) > 1 else None,
+                                    "s" if len(missing) > 1 else "",
                                     humanize_list(hum_missing)
                                )
                                )
+                return
+            if isinstance(error, BotMissingOneChannelPermissions) or isinstance(error, BotMissingThisChannelPermissions):
+                missing: List[str] = error.missing_perms
+                hum_missing = [humanize_perm(perm) for perm in missing]
+                format = "I don't have enough Discord Permissions (in this channel, at least) for this! I'm missing \
+permission{0} {1}." if isinstance(error, BotMissingThisChannelPermissions) else "I don't have the permission{0} {1} in \
+any of this server's channels!"
+                await ctx.send(format.format("s" if len(missing) > 1 else "", humanize_list(hum_missing)))
                 return
 
             if isinstance(error, commands.BotMissingRole) or isinstance(error, commands.MissingRole):

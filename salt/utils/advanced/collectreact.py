@@ -3,13 +3,11 @@ WIP
 """
 
 import discord
-from discord.ext import commands
 import asyncio
 import typing
 from typing import Union, Optional, Callable, Sequence, Any, Coroutine, TYPE_CHECKING
 from constants.numbers import DEFAULT_REACTWAIT_TIMEOUT
-from utils.callable import await_if_needed
-from contextlib import suppress
+from utils.funcs.callable import await_if_needed
 
 if TYPE_CHECKING:
     from classes import SContext

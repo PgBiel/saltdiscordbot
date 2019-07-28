@@ -6,11 +6,14 @@ import motor.motor_asyncio
 import motor.core
 import discord
 import typing
-from typing import Iterable, Any, Callable, List, Union, Coroutine, Sequence
+from typing import Any, Callable, List, Union, Coroutine, Sequence
 from discord.ext import commands
+from utils.funcs import sync_await
 from classes.scommand import SCommand, SGroup
-from classes.errors import SaltCheckFailure, MissingSaltModRole, NoConfiguredSaltModRole
-from utils.callable import await_if_needed
+from classes.errors import (
+    SaltCheckFailure, MissingSaltModRole, NoConfiguredSaltModRole,
+    BotMissingOneChannelPermissions
+)
 
 if typing.TYPE_CHECKING:
     from classes.scontext import SContext
@@ -138,7 +141,7 @@ def has_saltmod_role():
             return False
         mondb = ctx.db
         mods: motor.motor_asyncio.AsyncIOMotorCollection = mondb.mods
-        mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = ctx.bot.loop.run_until_complete(
+        mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = sync_await(
             mods.find_one({"guild_id": str(ctx.guild.id)})
         )
         if mods_entry_cursor is None:
@@ -182,3 +185,26 @@ def sdev_only():
 
     return sdev_deco
 
+
+def bot_has_this_channel_permissions(**perms):
+    return commands.bot_has_permissions(**perms)  # is same thing
+
+
+def bot_has_one_channel_permissions(**perms):
+    """
+    Ensure that the bot has certain permissions in at least one of the channels of the server.
+    :param perms: The permissions to check.
+    :return: The check decorator.
+    """
+    def predicate(ctx: "SContext"):
+        missing = list(perms.keys())
+        for channel in ctx.guild.channels:
+            perm_l: discord.Permissions = channel.permissions_for(ctx.me)
+            for perm, val in perms:
+                if getattr(perm_l, perm) == val and perm in missing:
+                    missing.remove(perm)
+        if len(missing) < 1:
+            raise BotMissingOneChannelPermissions(missing_perms=missing)
+        return True
+
+    return commands.check(predicate)

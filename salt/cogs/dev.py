@@ -3,10 +3,11 @@ import asyncio
 import ast
 from discord.ext import commands
 from classes import SContext, MultilineEvalNoLastExprValue, scommand, sgroup
-from utils import privacy_sanitize, is_awaitable, sdev_only
+from utils.advanced import sdev_only
+from utils.funcs import privacy_sanitize, is_awaitable
 
 
-def evalText(ctx: SContext, inp: str, outp, errored: bool = False, coro: bool = False) -> str:
+def eval_text(ctx: SContext, inp: str, outp, errored: bool = False, coro: bool = False) -> str:
     if coro:
         bottom_text = "Coro Error" if errored else "Coro Output"
     else:
@@ -38,7 +39,7 @@ def multiline_eval(expr: str, global_vals, local_vals):
     if eval_expr is not None:
         return eval(compile(eval_expr, '/dev/null', 'eval'), global_vals, local_vals)
     else:
-        exec(compile(ast.Module([ast_eval_expr]), '/dev/null', 'exec'), global_vals, local_vals)
+        exec(compile(ast.Module([ast_eval_expr], type_ignores=[]), '/dev/null', 'exec'), global_vals, local_vals)
         raise MultilineEvalNoLastExprValue
 
 
@@ -66,7 +67,7 @@ class Dev(commands.Cog):
 
         if is_awaitable(result) and success:
             coro = True
-            first_out_str = evalText(ctx, arg, "[Coroutine, awaiting...]", not success, False)
+            first_out_str = eval_text(ctx, arg, "[Coroutine, awaiting...]", not success, False)
             msg_sent: discord.Message = await ctx.send(first_out_str, deletable=True)
             try:
                 result = await result
@@ -74,10 +75,10 @@ class Dev(commands.Cog):
             except Exception as err:
                 result = err
                 success = False
-            second_out_str = evalText(ctx, arg, result, not success, True)
+            second_out_str = eval_text(ctx, arg, result, not success, True)
             await msg_sent.edit(content=second_out_str)
         else:
-            out_str = evalText(ctx, arg, result, not success, False)
+            out_str = eval_text(ctx, arg, result, not success, False)
             await ctx.send(out_str, deletable=True)
 
     @sdev_only()

@@ -7,7 +7,11 @@ SaltException
         +-- NoConfiguredSaltModRole
         +-- MissingSaltAdminRole
         +-- NoConfiguredSaltAdminRole
-        +-- MissingSaltPermissions
+        +-- SaltMissingPermissions
+            +-- MissingSaltPermissions
+            +-- BotMissingThisChannelPermissions
+            +-- BotMissingOneChannelPermissions
+            +-- NoPermissions
   +-- SaltCommandException
         +-- SaltEvalException
              +-- MultilineEvalNoLastExprValue
@@ -15,12 +19,13 @@ SaltException
         +-- AutoCancelledException
 
 
-CheckFailure            SaltException
-  +-- SaltCheckFailure --+
-        +-- MissingSaltModRole
-        +-- MissingSaltAdminRole
-        +-- MissingSaltPermissions
+discord.ext.commands.CheckFailure            SaltException
+                        +-- SaltCheckFailure --+
+
+discord.ext.commands.ConversionError         SaltException
+                        +-- SaltConversionError --+
 """
+import discord
 import typing
 from discord.ext import commands
 
@@ -67,14 +72,52 @@ class NoConfiguredSaltAdminRole(SaltCheckFailure):
     pass
 
 
-class MissingSaltPermissions(SaltCheckFailure):
+class SaltMissingPermissions(SaltCheckFailure):
     """
-    The user missing the Saltperm.
+    The user is missing some permissions.
+
+    Attributes
+        missing_perms: List of permissions missing, or None if unspecified.
+    """
+    missing_perms: typing.Optional[typing.List[str]]
+
+    def __init__(
+            self, message: typing.Optional[str] = None, *,
+            missing_perms: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None
+    ):
+        super().__init__(message=message)
+        self.missing_perms = list(missing_perms) if missing_perms else None
+
+
+class MissingSaltPermissions(SaltMissingPermissions):
+    """
+    The user is missing the Saltperm(s).
+
+    Attributes
+        missing_perms: The list of saltperms the user is missing, or None if unknown/unspecified.
     """
     pass
 
 
-class NoPermissions(SaltCheckFailure):
+class BotMissingThisChannelPermissions(SaltMissingPermissions):
+    """
+    The bot is missing permissions in the channel being spoken in.
+
+    Attributes
+        misisng_perms: The list of permissions the bot is missing in this channel
+    """
+
+
+class BotMissingOneChannelPermissions(SaltMissingPermissions):
+    """
+    The bot is missing permissions in any of the channels in the guild. (Needs to have those permissions in at least 1)
+
+    Attributes
+        perm: The list of permissions the bot is missing in any of this guild's channels
+    """
+
+
+class NoPermissions(SaltMissingPermissions):
     """
     Occurs when there are missing permissions because you have absolutely none of the possible ways of using the cmd.
     """

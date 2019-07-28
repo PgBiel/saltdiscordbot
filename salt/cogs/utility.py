@@ -1,8 +1,8 @@
 import unicodedata
 import discord
 from discord.ext import commands
-from classes import scommand, SContext
-from typing import List
+from classes import scommand, sgroup, SContext, AmbiguityUserOrMemberConverter
+from typing import List, Union, cast
 
 
 class Utility(commands.Cog):
@@ -28,6 +28,15 @@ class Utility(commands.Cog):
             )
 
         await ctx.send(text[0:2000], deletable=True)
+
+    @sgroup(name="info", description="Provides info about something.")
+    async def info(self, ctx: SContext):
+        pass
+
+    @info.command(name="user", description="View info about an user.")
+    async def info_user(self, ctx: SContext, *, member: AmbiguityUserOrMemberConverter):
+        memb_or_user = cast(Union[discord.Member, discord.User], member)
+        await ctx.send(f"User given: {str(memb_or_user)}")
 
 
 def setup(bot: commands.bot):

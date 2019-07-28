@@ -1,13 +1,11 @@
 import discord
 import asyncio
 import re
-from utils.collectreact import collect_react, EmojiType
-from utils.string import tag, normalize_equal, caseless_equal, caseless_contains
-from utils.search import search_user_or_member, search_channel, search_role
-from discord.ext import commands
-from collections import namedtuple
+from utils.advanced.collectreact import collect_react, default_on_timeout
+from utils.funcs.string import tag, normalize_equal, caseless_equal, caseless_contains
+from utils.advanced.search import search_user_or_member, search_channel, search_role
 from typing import (
-    Sequence, Union, TypeVar, Optional, NamedTuple, Iterable, List, Tuple,
+    Sequence, TypeVar, Optional, NamedTuple, Tuple,
     TYPE_CHECKING, cast
 )
 from constants.numbers import DEFAULT_AMBIGUITY_TIMEOUT, DEFAULT_AMBIGUITY_CANCEL_NOTIFICATION_DELETE_DELAY
@@ -61,17 +59,24 @@ automatically expire in {timeout} seconds. React with {RED_X} to cancel."
         def on_timeout(*_args):
             raise asyncio.TimeoutError
 
-        with suppress(discord.HTTPException):
+        reaction: discord.Reaction = cast(discord.Reaction, None)
+        try:
+            reaction: discord.Reaction = await collect_react(
+                msg=msg, emoji=emoji, ctx=ctx, timeout=timeout, on_timeout=on_timeout, make_awaitable=True
+            )
+        except asyncio.TimeoutError:
+            await ctx.send(cancelled_text)
             try:
-                reaction: discord.Reaction = await collect_react(
-                    msg=msg, emoji=emoji, ctx=ctx, timeout=timeout, on_timeout=on_timeout, make_awaitable=True
-                )
-            except asyncio.TimeoutError:
-                await ctx.send(cancelled_text)
-                return AmbiguityResponse(chosen=None, cancelled=True)
+                await msg.clear_reactions()
+            except discord.Forbidden:
+                for em in emoji:
+                    ctx.bot.loop.create_task(msg.remove_reaction(em, ctx.bot.user))
+            return AmbiguityResponse(chosen=None, cancelled=True)
+        except discord.HTTPException:
+            pass
 
-            reacted_emj = str(reaction.emoji)
-
+        reacted_emj = str(reaction.emoji if reaction else "")
+        with suppress(discord.HTTPException):
             if reacted_emj == RED_X or reacted_emj not in emoji:
                 new_sent = await ctx.send(cancelled_text)
                 if reacted_emj == RED_X:

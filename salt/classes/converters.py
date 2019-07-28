@@ -4,12 +4,13 @@ Custom Salt Converters.
 import discord
 import re
 import typing
-from typing import List
+from typing import List, Union
 from discord.ext import commands
 from discord.ext.commands.converter import _get_from_guilds
 from classes import SContext, AutoCancelledException
 from constants.regex import USER_MENTION
-from utils import caseless_contains, normalize_contains, match_id, search_user_or_member, ambiguity_solve
+from utils.funcs import caseless_contains, normalize_contains
+from utils.advanced import match_id, search_user_or_member, ambiguity_solve
 
 
 class AmbiguityMemberConverter(commands.MemberConverter):
@@ -20,17 +21,18 @@ class AmbiguityMemberConverter(commands.MemberConverter):
         super().__init__()
         self.case_insensitive: bool = case_insensitive
 
-    async def convert(self, ctx: SContext, argument: str, insensitive: bool = True):
+    async def convert(self, ctx: SContext, argument: str) -> Union[discord.Member, discord.User]:
         """
         Slightly modified MemberConverter#convert
         :param ctx: The context
         :param argument: The argument to convert.
-        :param insensitive: Whether it should be case-insensitive.
-        :return:
+        :return: The found member.
+        :raises: commands.BadArgument: if the member was not found.
         """
         guild = ctx.guild
         bot = ctx.bot
         result = None
+        insensitive = self.case_insensitive
         if guild:
             matched_id = match_id(argument, mention_regex=USER_MENTION)
             if matched_id:
@@ -63,6 +65,23 @@ class AmbiguityMemberConverter(commands.MemberConverter):
             raise commands.BadArgument('Member "{}" not found'.format(argument))
 
         return result
+
+
+class AmbiguityUserOrMemberConverter(AmbiguityMemberConverter):
+    async def convert(self, ctx: SContext, argument: str) -> Union[discord.Member, discord.User]:
+        matched_id = match_id(argument, mention_regex=USER_MENTION)
+        if matched_id:
+            got_member = None
+            if ctx.guild is not None and (got_member := ctx.guild.get_member(matched_id)):
+                return got_member
+            if found_user := ctx.bot.get_user(matched_id):
+                return found_user
+            try:
+                if fetched_user := (await ctx.bot.fetch_user(matched_id)):
+                    return fetched_user
+            except discord.HTTPException:
+                pass
+        return await super().convert(ctx=ctx, argument=argument)
 
 # class InsensitiveMemberConverter(commands.MemberConverter):
 #     async def convert(self, ctx: SContext, argument: str):  # TODO: Decide what to do with this

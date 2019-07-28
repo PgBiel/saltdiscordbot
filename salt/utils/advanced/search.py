@@ -1,7 +1,7 @@
 import discord
 import re
 from typing import Iterable, TypeVar, Optional, List, Tuple, Callable, Pattern, Match, Union, Sequence
-from utils import caseless_contains
+from utils.funcs import caseless_contains
 from constants.regex import ANY_MENTION, ID_MATCH, USER_MENTION, ROLE_MENTION, CHANNEL_MENTION, TEST_NAME_AND_DISCRIM
 
 T = TypeVar("T")

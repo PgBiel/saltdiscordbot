@@ -1,13 +1,11 @@
 """
 The custom sender.
 """
-import asyncio
 import typing
 import discord
-from discord.ext import commands
 from constants.numbers.delays import DELETABLE_REACTWAIT_TIMEOUT as DELE_TIMEOUT
 from constants.emoji.default_emoji import WASTEBASKET
-from utils.collectreact import collect_react
+from utils.advanced.collectreact import collect_react
 
 if typing.TYPE_CHECKING:
     from classes import SContext  # for typing purposes, but this isn't actually imported

@@ -1,5 +1,6 @@
 import asyncio
 from typing import Callable, Coroutine, TypeVar, Union, Any
+from utils.funcs import loop
 
 R = TypeVar("R")
 
@@ -21,3 +22,12 @@ async def await_if_needed(res: Union[Coroutine[Any, Any, J], J]) -> J:
     if is_awaitable(res):
         res = await res
     return res
+
+S = TypeVar("S")
+
+
+def sync_await(coro_or_future: Coroutine[Any, Any, S]) -> S:
+    if asyncio.isfuture(coro_or_future):
+        return asyncio.futures._get_loop(coro_or_future).run_until_complete(coro_or_future)
+    else:
+        return loop.run_until_complete(coro_or_future)

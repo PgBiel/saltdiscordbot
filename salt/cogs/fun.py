@@ -23,7 +23,7 @@ class Fun(commands.Cog):
                 new_text += letters[j]
             j += 1
         fmt = ">>> __**Scrambled Text**__\n{}"
-        await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]))
+        await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]), deletable=True)
 
     @scommand(name='rearrange', description="Rearrange a text's words' letters.")
     async def rearrange(self, ctx: SContext, *, text: str):
@@ -40,7 +40,7 @@ class Fun(commands.Cog):
                     new_text += char
 
         fmt = ">>> __**Rearranged Text**__\n{}"
-        await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]))
+        await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]), deletable=True)
 
     @scommand(name='shuffle', description="Shuffle a text's words.")
     async def shuffle(self, ctx: SContext, *, text: str):
@@ -56,7 +56,12 @@ class Fun(commands.Cog):
                 pass
 
         fmt = ">>> __**Shuffled Text**__\n{}"
-        await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]))
+        await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]), deletable=True)
+
+    @scommand(name='reverse', aliases=["rev"], description="Reverse a piece of text.")
+    async def reverse(self, ctx: SContext, *, text: str):
+        fmt = ">>> __**Reversed Text**__\n{}"
+        await ctx.send(fmt.format(text[::-1][:(2000 - (len(fmt) - 2))]), deletable=True)
 
 
 def setup(bot: commands.Bot):

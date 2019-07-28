@@ -3,8 +3,9 @@ import datetime
 from discord.ext import commands
 from classes import SContext, NoPermissions, scommand
 from classes.converters import AmbiguityMemberConverter
-from utils.checks import or_checks, is_owner, has_saltmod_role, sguild_only
-from utils import confirmation_predicate_gen, prompt, discord_sanitize, normalize_caseless, kickable, bannable
+from utils.advanced.checks import or_checks, is_owner, has_saltmod_role, sguild_only
+from utils.advanced import confirmation_predicate_gen, prompt
+from utils.funcs import discord_sanitize, normalize_caseless, kickable, bannable
 from constants.colors import KICK_COLOR, BAN_COLOR
 from typing import Optional, cast
 

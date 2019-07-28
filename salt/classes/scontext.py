@@ -1,7 +1,7 @@
 from discord.ext import commands
 import discord
 import typing
-from utils.send import send as csend
+from utils.advanced.send import send as csend
 import motor.motor_asyncio
 
 if typing.TYPE_CHECKING:

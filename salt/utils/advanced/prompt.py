@@ -1,21 +1,22 @@
 import discord
 import re
 import asyncio
-from typing import Optional, Callable, Literal, Any, NamedTuple, Union, Coroutine, overload
-from classes import SContext
+from typing import Optional, Callable, Any, NamedTuple, Union, Coroutine, TYPE_CHECKING
 from constants.numbers import DEFAULT_PROMPT_TIMEOUT
 from constants.regex import PROMPT_CANCEL, PROMPT_SKIP, PROMPT_CONFIRMATION
-from utils.callable import await_if_needed
-from utils.string import normalize_caseless
+from utils.funcs.callable import await_if_needed
+
+if TYPE_CHECKING:
+    from classes import SContext
 
 PromptPredicate = Callable[[discord.Message], bool]  # can only be sync, not async.
-PromptPredicateGen = Callable[[SContext], Union[PromptPredicate, Coroutine[Any, Any, PromptPredicate]]] # sync or async!
+PromptPredicateGen = Callable[['SContext'], Union[PromptPredicate, Coroutine[Any, Any, PromptPredicate]]] # sync or async!
 PromptResponse = NamedTuple(
     "PromptResponse", [("message", Optional[discord.Message]), ("cancelled", bool), ("skipped", bool)]
 )
 
 
-def default_predicate_gen(ctx: SContext) -> PromptPredicate:
+def default_predicate_gen(ctx: 'SContext') -> PromptPredicate:
     def default_predicate(msg: discord.Message):
         return msg.author == ctx.author    \
             and msg.author != ctx.bot.user
@@ -23,7 +24,7 @@ def default_predicate_gen(ctx: SContext) -> PromptPredicate:
     return default_predicate
 
 
-def confirmation_predicate_gen(ctx: SContext) -> PromptPredicate:
+def confirmation_predicate_gen(ctx: 'SContext') -> PromptPredicate:
     """
     For asking the user to confirm an action. Accepts y/yes/ok and n/no/nah. Reacts if the user passes an invalid param.
     :param ctx: The context.
@@ -44,7 +45,7 @@ def confirmation_predicate_gen(ctx: SContext) -> PromptPredicate:
 
 
 async def prompt(
-        question: Optional[str] = "", *, ctx: SContext, embed: Optional[discord.Embed] = None,
+        question: Optional[str] = "", *, ctx: 'SContext', embed: Optional[discord.Embed] = None,
         already_asked: Optional[bool] = False, timeout: Optional[float] = float(DEFAULT_PROMPT_TIMEOUT),
         predicate_gen: Optional[PromptPredicateGen] = default_predicate_gen,
         predicate: Optional[PromptPredicate] = None,
