@@ -1,0 +1,17 @@
+from typing import NamedTuple
+
+ONLINE_EMOJI = "<:online:605195304740061210>"
+IDLE_EMOJI = "<:idle:605195304786198534>"
+DND_EMOJI = "<:dnd:605195304714895361>"
+OFFLINE_EMOJI = "<:offline:605195304781742080>"
+
+
+CustomEmojiPair = NamedTuple("CustomEmojiPair", [("emoji", str), ("name", str)])
+
+PAIR_ONLINE_EMOJI = CustomEmojiPair(ONLINE_EMOJI, "online")
+PAIR_IDLE_EMOJI = CustomEmojiPair(IDLE_EMOJI, "idle")
+PAIR_DND_EMOJI = CustomEmojiPair(DND_EMOJI, "dnd")
+PAIR_OFFLINE_EMOJI = CustomEmojiPair(OFFLINE_EMOJI, "offline")
+
+STATUS_EMOJI = [ONLINE_EMOJI, IDLE_EMOJI, DND_EMOJI, OFFLINE_EMOJI]
+PAIR_STATUS_EMOJI = [PAIR_ONLINE_EMOJI, PAIR_IDLE_EMOJI, PAIR_DND_EMOJI, PAIR_OFFLINE_EMOJI]
