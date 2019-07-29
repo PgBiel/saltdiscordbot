@@ -107,7 +107,7 @@ class Utility(commands.Cog):
                 .add_field(name="Status", value=status_val)                    \
                 .add_field(name="Activity", value=activity_val or "None")
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, deletable=True)
 
 
 def setup(bot: commands.bot):
