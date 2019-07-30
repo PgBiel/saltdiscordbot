@@ -3,10 +3,11 @@ import re
 import discord
 from discord.ext import commands
 from classes import scommand, SContext
-
+from constants import FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE
 
 class Fun(commands.Cog):
 
+    @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @scommand(name='scramble', description="Scramble a text's letters.")
     async def scramble(self, ctx: SContext, *, text: str):
         letters = list("".join(re.split(r'\s+', text)))
@@ -25,6 +26,7 @@ class Fun(commands.Cog):
         fmt = ">>> __**Scrambled Text**__\n{}"
         await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]), deletable=True)
 
+    @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @scommand(name='rearrange', description="Rearrange a text's words' letters.")
     async def rearrange(self, ctx: SContext, *, text: str):
         arrs = [list(part) for part in re.split(r'\s+', text)]
@@ -42,6 +44,7 @@ class Fun(commands.Cog):
         fmt = ">>> __**Rearranged Text**__\n{}"
         await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]), deletable=True)
 
+    @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @scommand(name='shuffle', description="Shuffle a text's words.")
     async def shuffle(self, ctx: SContext, *, text: str):
         origin_words = re.split(r'(\s+)', text)
@@ -58,6 +61,7 @@ class Fun(commands.Cog):
         fmt = ">>> __**Shuffled Text**__\n{}"
         await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]), deletable=True)
 
+    @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @scommand(name='reverse', aliases=["rev"], description="Reverse a piece of text.")
     async def reverse(self, ctx: SContext, *, text: str):
         fmt = ">>> __**Reversed Text**__\n{}"

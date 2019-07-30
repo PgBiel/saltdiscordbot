@@ -1,5 +1,6 @@
 import discord
 import datetime
+import re
 from discord.ext import commands
 from classes import SContext, NoPermissions, scommand
 from classes.converters import AmbiguityMemberConverter
@@ -7,6 +8,7 @@ from utils.advanced.checks import or_checks, is_owner, has_saltmod_role, sguild_
 from utils.advanced import confirmation_predicate_gen, prompt
 from utils.funcs import discord_sanitize, normalize_caseless, kickable, bannable
 from constants.colors import KICK_COLOR, BAN_COLOR
+from constants.regex import MUTE_REGEX
 from typing import Optional, cast
 
 moderation_dperm_error_fmt = "Missing permissions! For this command, you need either {0}, a Salt Mod role or the \
@@ -112,6 +114,24 @@ class Moderation(commands.Cog):
     @scommand(name="ban", description="Ban people.")
     async def ban(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
         await _kick_or_ban(ctx, member=cast(discord.Member, member), reason=reason, verb="ban", color=BAN_COLOR)
+
+    @or_checks(
+        is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
+        error=NoPermissions(moderation_dperm_error_fmt.format("Ban Members", "ban"))
+    )
+    @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @sguild_only()
+    @scommand(name='mute', description="(WIP) Mute people.")
+    async def mute(self, ctx: SContext, member: AmbiguityMemberConverter, *, time_and_reason: Optional[str]):
+        time_to_mute = datetime.timedelta(seconds=60 * 10)  # default: 10 min
+        reason_to_mute: str = ""
+        if time_and_reason:
+            match = re.fullmatch(MUTE_REGEX, time_and_reason, re.RegexFlag.X)
+            if match:
+                time, mins, mins2, reason = (
+                    match.group("time"), match.group("mins"), match.group("mins2"), match.group("reason")
+                )
+                # TODO: Finish mute
 
 
 def setup(bot: commands.Bot) -> None:

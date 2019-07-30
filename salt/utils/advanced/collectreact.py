@@ -1,5 +1,5 @@
 """
-WIP
+Collect reactions, for a menu.
 """
 
 import discord

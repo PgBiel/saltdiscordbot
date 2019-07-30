@@ -79,7 +79,7 @@ class Dev(commands.Cog):
             await msg_sent.edit(content=second_out_str)
         else:
             out_str = eval_text(ctx, arg, result, not success, False)
-            await ctx.send(out_str, deletable=True)
+            await ctx.send(out_str, deletable=True)  # TODO: Work on Repl and Sudo
 
     @sdev_only()
     @scommand(name='say', description="Make Salt talk.")

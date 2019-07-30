@@ -4,8 +4,12 @@ import datetime
 from discord.ext import commands
 from discord.ext.commands.converter import _get_from_guilds
 from utils.funcs import humanize_delta, humanize_list, humanize_voice_region, humanize_discord_syntax, discord_sanitize
+from utils.advanced import sguild_only
 from classes import scommand, sgroup, SContext, AmbiguityUserOrMemberConverter, AmbiguityRoleConverter
-from constants import DATETIME_DEFAULT_FORMAT, PAIR_STATUS_EMOJI, EMBED_FIELD_VALUE_LIMIT
+from constants import (
+    DATETIME_DEFAULT_FORMAT, PAIR_STATUS_EMOJI, EMBED_FIELD_VALUE_LIMIT,
+    INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE
+)
 from typing import List, Union, Optional, cast
 
 
@@ -14,6 +18,7 @@ class Information(commands.Cog):
     async def info(self, ctx: SContext):
         pass
 
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @commands.bot_has_permissions(embed_links=True)
     @info.command(name="user", description="View info about an user.")
     async def info_user(self, ctx: SContext, *, member: Optional[AmbiguityUserOrMemberConverter]):
@@ -97,6 +102,8 @@ class Information(commands.Cog):
 
         await ctx.send(embed=embed, deletable=True)
 
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @sguild_only()
     @info.command(name='role', description='View info about a role.')
     async def info_role(self, ctx: SContext, *, role_name: AmbiguityRoleConverter):
         role: discord.Role = cast(discord.Role, role_name)
@@ -148,6 +155,8 @@ class Information(commands.Cog):
 
         await ctx.send(embed=embed, deletable=True)
 
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @sguild_only()
     @info.command(name='server', aliases=['guild'], description="View info about the current server.")
     async def info_server(self, ctx: SContext):
         guild = ctx.guild

@@ -140,6 +140,12 @@ class Salt(commands.Bot):
             await ctx.send('This command is disabled!')
             return
 
+        if isinstance(error, commands.CommandOnCooldown):
+            await ctx.send(
+                f'**Chill, pal!** You\'ll be able to use this command in **{str(error.retry_after)[:4]} seconds**.'
+            )
+            return
+
         if isinstance(error, commands.BadArgument):
             try:
                 await ctx.send(

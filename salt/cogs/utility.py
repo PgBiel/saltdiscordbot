@@ -35,6 +35,7 @@ class Utility(commands.Cog):
 
         await ctx.send(text[0:2000], deletable=True)
 
+    @commands.cooldown(2, 1, commands.BucketType.member)
     @scommand(name="ping", description="Check the bot's connection to Discord.")
     async def ping(self, ctx: SContext):
         before = get_now()
