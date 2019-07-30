@@ -5,11 +5,13 @@ import unicodedata
 import discord
 import datetime
 import re
-from typing import Sequence, Optional, Union, TYPE_CHECKING, List
+from typing import Sequence, Optional, Union, TYPE_CHECKING, List, Iterable, overload, TypeVar
 from utils.funcs import clean_falsy_values, extract_delta
 from math import floor
 if TYPE_CHECKING:
     from classes import SContext
+
+T = TypeVar("T", Iterable, Iterable)
 
 
 def humanize_perm(perm: str) -> str:
@@ -21,6 +23,49 @@ def humanize_perm(perm: str) -> str:
     """
     new_perm = perm.replace("_", " ").replace("guild", "server")
     return new_perm.title()
+
+
+@overload
+def humanize_discord_syntax(inputs: str) -> str:
+    pass
+
+
+@overload
+def humanize_discord_syntax(inputs: Iterable[str]) -> List[str]:
+    pass
+
+
+def humanize_discord_syntax(inputs: Union[str, Iterable[str]]) -> Union[str, List[str]]:
+    """
+    Used for humanizing any kind of Discord syntax for things.
+    :param inputs: Any input or inputs to humanize.
+    :return: The humanized input (if one was given) or list of inputs (if more than one was given).
+    """
+    fixed = []
+    for inp in ([inputs] if type(inputs) == str else list(inputs)):
+        split = re.split(r'[_-]+', inp)
+        text = ''
+        for part in split:
+            if text:
+                text += " "
+            if part in ('vip', 'eu', 'us', 'url'):
+                text += part.upper()
+            elif part == 'southafrica':
+                text += "South Africa"
+            else:
+                text += part.title()
+        fixed.append(text)
+
+    return fixed[0] if type(inputs) == str else fixed
+
+
+def humanize_voice_region(voice_region: discord.VoiceRegion) -> str:
+    """
+    Humanize a Voice Region.
+    :param voice_region: Voice Region to humanize.
+    :return: Humanized Voice Region string.
+    """
+    return humanize_discord_syntax(str(voice_region))
 
 
 def humanize_list(target_list: Sequence, *, no_and: bool = False, connector: str = "and") -> str:
@@ -44,6 +89,7 @@ def humanize_list(target_list: Sequence, *, no_and: bool = False, connector: str
 
 def humanize_delta(
         delta: datetime.timedelta, *, no_and: bool = False, connector: str = "and",
+        scale: bool = False,
         **kwargs
 ) -> str:
     """
@@ -52,6 +98,8 @@ def humanize_delta(
     :param delta: The timedelta object.
     :param no_and: (humanize_list param) (bool) Whether should remove the "and" at the end of the string; default=False
     :param connector: (humanize_list param) (str) Connector to be used at the end of the string; default='and'
+    :param scale: (bool=False) Whether to automatically choose which measures should be included in the string. If True,
+        all the other time measure params (years, months, ...) are ignored.
     :param years: (bool, default=True) Whether to include years in the string.
     :param months: (bool, default=True) Whether to include months in the string.
     :param weeks: (bool, default=True) Whether to include weeks in the string.
@@ -61,12 +109,25 @@ def humanize_delta(
     :param seconds: (bool, default=True) Whether to include seconds in the string.
     :return: Humanized delta.
     """
+    included: List[str] = []
     extracted = extract_delta(delta)
+    if scale:
+        if delta.days > 0:
+            if not extracted['years'] and not extracted['months'] and extracted['weeks']:
+                included.extend(('weeks', 'days'))
+            else:
+                extracted = extract_delta(delta, ignore_week=True)  # don't want to get an imprecise result
+                included.extend(('years', 'months', 'days'))
+        elif extracted['hours'] or extracted['minutes']:
+            included.extend(('hours', 'minutes'))
+        else:
+            included.extend(['seconds'])
     list_strs: List[str] = []
     for name in extracted:
-        if kwargs.pop(name, True):
+        if (scale and name in included) or (not scale and kwargs.pop(name, True)):
             v = extracted[name]
-            list_strs.append(f"{v} {re.sub(r's$', '', name) if v == 1 else name}")
+            if v:
+                list_strs.append(f"{v} {re.sub(r's$', '', name) if v == 1 else name}")
     return humanize_list(list_strs, no_and=no_and, connector=connector)
 
 

@@ -1,6 +1,6 @@
 import discord
 import re
-from typing import Iterable, TypeVar, Optional, List, Tuple, Callable, Pattern, Match, Union, Sequence
+from typing import Iterable, TypeVar, Optional, List, Tuple, Callable, Pattern, Match, Union, Sequence, cast
 from utils.funcs import caseless_contains
 from constants.regex import ANY_MENTION, ID_MATCH, USER_MENTION, ROLE_MENTION, CHANNEL_MENTION, TEST_NAME_AND_DISCRIM
 
@@ -71,6 +71,8 @@ def search_in_group(
     for el in group:
         for attr in attrs:
             val: str = getattr(el, attr)
+#             print(f"(CHECKING) val: {val} | text: {text} | operation: {operation_to_use.__name__} | {bool(val)} and \
+# {bool(operation_to_use(val, text))}")
             if val and operation_to_use(val, text):
                 found.append(el)
                 break
@@ -89,11 +91,11 @@ def search_user_or_member(
 ) -> Tuple[M]:
     searched_id = search_id(text, group, mention_regex=USER_MENTION)
     if searched_id is not None:  # first, we try searching for id
-        return tuple([searched_id])
+        return tuple([cast(M, searched_id)])
 
     searched_name_and_discrim = search_name_and_discrim(text, group)
     if searched_name_and_discrim is not None:  # then, for name#discrim
-        return tuple([searched_name_and_discrim])
+        return tuple([cast(M, searched_name_and_discrim)])
 
     is_member = isinstance(group[0], discord.Member)  # finally, let's look through every single member.
     attrs_to_compare = ["name"]

@@ -10,7 +10,7 @@ from discord.ext.commands.converter import _get_from_guilds
 from classes import SContext, AutoCancelledException
 from constants.regex import USER_MENTION
 from utils.funcs import caseless_contains, normalize_contains
-from utils.advanced import match_id, search_user_or_member, ambiguity_solve
+from utils.advanced import match_id, search_user_or_member, ambiguity_solve, search_role, search_channel
 
 
 class AmbiguityMemberConverter(commands.MemberConverter):
@@ -62,7 +62,9 @@ class AmbiguityMemberConverter(commands.MemberConverter):
                 result = _get_from_guilds(bot, 'get_member', user_id)
 
         if result is None:
-            raise commands.BadArgument('Member "{}" not found'.format(argument))
+            fmt = 'Member "{}" not found'
+            text = fmt.format("<too big to display>" if 2000-len(fmt)-len(argument)+2 < 0 else argument)
+            raise commands.BadArgument(text)
 
         return result
 
@@ -82,6 +84,28 @@ class AmbiguityUserOrMemberConverter(AmbiguityMemberConverter):
             except discord.HTTPException:
                 pass
         return await super().convert(ctx=ctx, argument=argument)
+
+
+class AmbiguityRoleConverter(commands.RoleConverter):
+
+    async def convert(self, ctx: SContext, argument: str):
+        results = search_role(argument, ctx.guild.roles)
+        fmt = 'Role "{}" not found.'
+        text = fmt.format("<too big to display>" if 2000-len(fmt)-len(argument)+2 < 0 else argument)
+        if results is None or len(results) == 0:
+            raise commands.BadArgument(text)
+        if len(results) == 1:
+            return results[0]
+        if len(results) > 1:
+            if len(results) > 11:
+                raise commands.BadArgument("Too many possibilities of roles (>11), be more specific.")
+            result, cancelled = await ambiguity_solve(
+                ctx=ctx, subjects=results, type_name="role"
+            )
+            if cancelled:
+                raise AutoCancelledException(converter=self.__class__)
+            return result
+        raise commands.BadArgument(text)
 
 # class InsensitiveMemberConverter(commands.MemberConverter):
 #     async def convert(self, ctx: SContext, argument: str):  # TODO: Decide what to do with this

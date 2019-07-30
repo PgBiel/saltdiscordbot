@@ -1,13 +1,14 @@
 import unicodedata
 import datetime
+import re
 import discord
 from discord.ext import commands
-from discord.ext.commands.converter import _get_from_guilds
-from utils.funcs import humanize_delta, humanize_list
-from classes import scommand, sgroup, SContext, AmbiguityUserOrMemberConverter
-from constants.string import DATETIME_DEFAULT_FORMAT
-from constants.emoji import PAIR_STATUS_EMOJI
+from classes import scommand, SContext
 from typing import List, Union, Optional, cast
+
+
+def get_now():
+    return datetime.datetime.now()
 
 
 class Utility(commands.Cog):
@@ -34,80 +35,37 @@ class Utility(commands.Cog):
 
         await ctx.send(text[0:2000], deletable=True)
 
-    @sgroup(name="info", description="Provides info about something.")
-    async def info(self, ctx: SContext):
-        pass
-
-    @commands.bot_has_permissions(embed_links=True)
-    @info.command(name="user", description="View info about an user.")
-    async def info_user(self, ctx: SContext, *, member: Optional[AmbiguityUserOrMemberConverter]):
-        memb_or_user = cast(Union[discord.Member, discord.User], member) or ctx.author
-        is_member = isinstance(memb_or_user, discord.Member) and ctx.guild and ctx.guild.get_member(memb_or_user.id)
-        role_color = memb_or_user.colour if is_member else None
-        created_at = memb_or_user.created_at
-        formatted_created_at = created_at.strftime(DATETIME_DEFAULT_FORMAT) + " UTC"
-        desc = "Joined Discord at {0} ({1} ago)".format(
-            formatted_created_at,
-            humanize_delta(datetime.datetime.now()-created_at)
+    @scommand(name="ping", description="Check the bot's connection to Discord.")
+    async def ping(self, ctx: SContext):
+        before = get_now()
+        msg = await ctx.trigger_typing()
+        after = get_now()
+        ping_delta = after-before
+        ping: int = int(
+            ping_delta.days * 24 * 60 * 60 * 1000 + ping_delta.seconds * 1000 + ping_delta.microseconds / 1000
         )
-        avatar = memb_or_user.avatar_url
-        status: discord.Status = memb_or_user.status if is_member else None
-        embed = discord.Embed(description=desc)                                                             \
-            .set_author(name=f"Info for user {str(memb_or_user)}", icon_url=avatar, url=avatar)             \
-            .set_footer(text=f"Click the title for avatar URL | User ID: {memb_or_user.id}")                \
-            .set_thumbnail(url=avatar)
+        if ping <= 0:
+            rating: str = "IMPOSSIBLE to be achieved..."
+        elif 0 < ping <= 50:
+            rating: str = "extremely fast!"
+        elif 50 < ping <= 100:
+            rating: str = "very, very fast!"
+        elif 100 < ping <= 200:
+            rating: str = "very fast."
+        elif 200 < ping <= 300:
+            rating: str = "rather fast."
+        elif 300 < ping <= 400:
+            rating: str = "sort of slow."
+        elif 400 < ping <= 500:
+            rating: str = "slow."
+        elif 500 < ping <= 750:
+            rating: str = "very slow."
+        else:
+            rating: str = "extremely slow."
 
-        if is_member:
-            if role_color.value != 0:
-                embed.color = role_color
-            status_emoji = None
-            for em in PAIR_STATUS_EMOJI:
-                if em.name == str(status):
-                    status_emoji = em
-            status_val = f"{str(status).title()}{status_emoji.emoji}" if status_emoji else "None"
-
-            activity = memb_or_user.activity
-            activity_verb = str(activity.type).replace('ActivityType.', '').title() if activity else None
-            if activity_verb == "Listening":
-                activity_verb += " to"
-            activity_val = f"{activity_verb} **{activity.name}**" if activity else None
-
-            joined_at = memb_or_user.joined_at
-            formatted_joined_at = joined_at.strftime(DATETIME_DEFAULT_FORMAT)
-
-            normal_roles: List[discord.Role] = memb_or_user.roles
-            normal_roles.pop(0)  # remove @everyone role from list
-            role_count = len(normal_roles)
-            role_mentions = [role.mention for role in normal_roles]
-
-            embed                                                                                       \
-                .add_field(name="Status", value=status_val)                                             \
-                .add_field(name="Activity", value=activity_val or "None")                               \
-                .add_field(
-                    name="Display Color (sidebar)", value=str(role_color if role_color.value != 0 else "Default")
-                )                                                                                       \
-                .add_field(name="Permissions (see +perms)", value=memb_or_user.guild_permissions.value) \
-                .add_field(name="Server Join (UTC)", value=formatted_joined_at)                         \
-                .add_field(
-                    name=f"Roles ({role_count})", value=", ".join(role_mentions) if role_count > 0 else "None",
-                    inline=False
-                )
-        elif found_member := _get_from_guilds(ctx.bot, "get_member", memb_or_user.id):
-            status_emoji = None
-            for em in PAIR_STATUS_EMOJI:
-                if em.name == str(found_member.status):
-                    status_emoji = em
-            status_val = f"{str(found_member.status).title()}{status_emoji.emoji}" if status_emoji else "None"
-            activity = found_member.activity
-            activity_verb = str(activity.type).replace('ActivityType.', '').title() if activity else None
-            if activity_verb == "Listening":
-                activity_verb += " to"
-            activity_val = f"{activity_verb} **{activity.name}**" if activity else None
-            embed                                                              \
-                .add_field(name="Status", value=status_val)                    \
-                .add_field(name="Activity", value=activity_val or "None")
-
-        await ctx.send(embed=embed, deletable=True)
+        await ctx.send("Pong! The ping is {0}ms. I'd say it is {1}".format(
+            ping, rating
+        ))
 
 
 def setup(bot: commands.bot):
