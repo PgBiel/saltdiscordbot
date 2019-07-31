@@ -1,5 +1,4 @@
 import discord
+BAN_COLOR = discord.Color.red()
 KICK_COLOR = discord.Color.orange()
-BAN_COLOR = discord.Color.red(
-
-)
+MUTE_COLOR = discord.Color.gold()

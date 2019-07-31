@@ -91,7 +91,7 @@ def humanize_delta(
         delta: datetime.timedelta, *, no_and: bool = False, connector: str = "and",
         scale: bool = False,
         **kwargs
-) -> str:
+) -> str:  # TODO: Support relativedelta
     """
     Humanize a time delta.
 

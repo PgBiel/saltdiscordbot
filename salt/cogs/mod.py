@@ -6,9 +6,11 @@ from classes import SContext, NoPermissions, scommand
 from classes.converters import AmbiguityMemberConverter
 from utils.advanced.checks import or_checks, is_owner, has_saltmod_role, sguild_only
 from utils.advanced import confirmation_predicate_gen, prompt
-from utils.funcs import discord_sanitize, normalize_caseless, kickable, bannable
-from constants.colors import KICK_COLOR, BAN_COLOR
-from constants.regex import MUTE_REGEX
+from utils.funcs import discord_sanitize, normalize_caseless, kickable, bannable, make_delta, humanize_delta
+from constants.colors import KICK_COLOR, BAN_COLOR, MUTE_COLOR
+from constants.regex import MUTE_REGEX, TIME_MATCH, TIME_SPLIT_REGEX
+from constants.numbers import DEFAULT_MUTE_MINUTES
+from constants.maps import TIME_ALIASES
 from typing import Optional, cast
 
 moderation_dperm_error_fmt = "Missing permissions! For this command, you need either {0}, a Salt Mod role or the \
@@ -51,12 +53,13 @@ async def _kick_or_ban(
         await ctx.send(f"You cannot {verb} the specified member!")
         return
 
-    emb_desc: str = f"Are you sure you want to {verb} the member {discord_sanitize(str(member))}? Type __y__es to \
-    confirm, and __n__o or `cancel` to cancel."
+    emb_desc: str = f"Are you sure you want to {verb} the member {discord_sanitize(str(member))}? Type **__y__es** to \
+    confirm or **__n__o** to cancel."
 
-    embed = discord.Embed(color=color, description=emb_desc, timestamp=datetime.datetime.now()) \
+    embed = discord.Embed(color=color, description=emb_desc, timestamp=datetime.datetime.utcnow()) \
         .set_author(name=f"{verb_alt.title()}ing {str(member)}", icon_url=member.avatar_url) \
         .set_thumbnail(url=member.avatar_url) \
+        .add_field(name="Reason", value=reason or "None") \
         .set_footer(text="Please confirm")
     received, cancelled, _s = await prompt(
         "Are you sure?", ctx=ctx, embed=embed, already_asked=False, predicate_gen=confirmation_predicate_gen,
@@ -123,15 +126,57 @@ class Moderation(commands.Cog):
     @sguild_only()
     @scommand(name='mute', description="(WIP) Mute people.")
     async def mute(self, ctx: SContext, member: AmbiguityMemberConverter, *, time_and_reason: Optional[str]):
-        time_to_mute = datetime.timedelta(seconds=60 * 10)  # default: 10 min
+        memb: discord.Member = cast(discord.Member, member)
+        time_to_mute = datetime.timedelta(seconds=60 * DEFAULT_MUTE_MINUTES)  # default: 10 min
         reason_to_mute: str = ""
         if time_and_reason:
-            match = re.fullmatch(MUTE_REGEX, time_and_reason, re.RegexFlag.X)
+            match = re.fullmatch(MUTE_REGEX, time_and_reason, re.RegexFlag.X | re.RegexFlag.I)
             if match:
                 time, mins, mins2, reason = (
                     match.group("time"), match.group("mins"), match.group("mins2"), match.group("reason")
                 )
-                # TODO: Finish mute
+                if mins or mins2:
+                    time_to_mute = datetime.timedelta(seconds=60 * int(mins or mins2))
+                elif time:
+                    time = time.strip("\"'").strip().replace(",", "").replace("and", "")
+                    parts = re.findall(TIME_SPLIT_REGEX, time, flags=re.RegexFlag.I)
+                    units = dict()
+                    for part in parts:
+                        p_match = re.fullmatch(TIME_MATCH, part)
+                        num_str, time_str = (p_match.group("number"), p_match.group("unit"))
+                        amount = int(num_str)
+                        unit = TIME_ALIASES[time_str.lower()]
+                        if units.get(unit):
+                            units[unit] += amount
+                        else:
+                            units[unit] = amount
+                    time_to_mute = make_delta(**units)
+                if reason:
+                    reason_to_mute = reason
+
+        mute_at = datetime.datetime.utcnow() + time_to_mute
+        await ctx.send(
+            f"Mute time and reason: time={time_to_mute}; reason={reason_to_mute=}. Member: {member} \
+muteduntil {mute_at}"
+        )
+
+        emb_desc: str = f"Are you sure you want to mute the member {discord_sanitize(str(member))}? Type **__y__es** \
+to confirm or **__n__o** to cancel. (**Note:** You can disable this confirmation screen with `{ctx.prefix}pconfig set \
+mute_confirm no`)"
+
+        embed = discord.Embed(color=MUTE_COLOR, description=emb_desc, timestamp=datetime.datetime.utcnow()) \
+            .set_author(name=f"Muting {str(memb)}", icon_url=memb.avatar_url) \
+            .set_thumbnail(url=memb.avatar_url) \
+            .add_field(name="Muted for", value=humanize_delta(time_to_mute)) \
+            .add_field(name="Reason", value=reason_to_mute[:512] or "None") \
+            .set_footer(text="Please confirm")
+        received, cancelled, _s = await prompt(
+            "Are you sure?", ctx=ctx, embed=embed, already_asked=False, predicate_gen=confirmation_predicate_gen,
+            cancellable=True, partial_question=False
+        )
+        if cancelled or normalize_caseless(received.content).startswith("n"):
+            await ctx.send("Command cancelled.")
+            return
 
 
 def setup(bot: commands.Bot) -> None:

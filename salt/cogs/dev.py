@@ -6,6 +6,7 @@ import inspect, dis
 import typing
 from discord.ext import commands
 from classes import SContext, MultilineEvalNoLastExprValue, scommand, sgroup, AmbiguityMemberConverter
+from constants import REPL_EXPIRE
 from utils.advanced import sdev_only
 from utils.funcs import privacy_sanitize, is_awaitable
 from copy import copy
@@ -46,7 +47,7 @@ def multiline_eval(expr: str, global_vals, local_vals, *, update_locals: bool = 
     global_vals["_locs"] = local_vals
     global_vals["_globs"] = global_vals
     tree = ast.parse(expr)
-    update_tree = ast.parse("_locs.update(locals());_globs.update(globals())")
+    update_tree = ast.parse("_locs.update(locals());_globs.update(globals())")  # make assignments last on REPL
     update_to_add = update_tree.body
     if update_locals and len(tree.body) > 1:
         for i in range(len(tree.body)):
@@ -59,7 +60,7 @@ def multiline_eval(expr: str, global_vals, local_vals, *, update_locals: bool = 
     run(exec, exec_expr)
     if eval_expr is not None:
         eval_mode = "eval"
-        if update_locals and isinstance(ast_eval_expr, ast.Assign):
+        if update_locals and isinstance(ast_eval_expr, ast.Assign):  # return the assigned value.
             last_name: ast.Name = ast_eval_expr.targets[-1]
             if isinstance(last_name, ast.Tuple):
                 last_name = last_name.elts[-1]
@@ -146,7 +147,7 @@ class Dev(commands.Cog):
             except MultilineEvalNoLastExprValue as e:
                 result = "(No value)"
                 success = True
-            except (SyntaxError, NameError):
+            except (SyntaxError, NameError):  # let us talk
                 raise
             except Exception as err:  # pylint: disable=broad-except
                 result = err
@@ -172,7 +173,7 @@ class Dev(commands.Cog):
         try:
             while True:
                 received: discord.Message = await ctx.bot.wait_for(
-                    "message", timeout=60, check=lambda x: x.author == ctx.author and x.channel == ctx.channel
+                    "message", timeout=REPL_EXPIRE, check=lambda x: x.author == ctx.author and x.channel == ctx.channel
                 )
                 if received.content == 'exit':
                     await ctx.send("Exiting Repl mode.")
@@ -182,11 +183,17 @@ class Dev(commands.Cog):
                 except (SyntaxError, NameError):
                     pass
         except asyncio.TimeoutError:
-            await ctx.send("Leaving Repl mode after 60 seconds of inactivity.")
+            await ctx.send(f"Leaving Repl mode after {REPL_EXPIRE} seconds of inactivity.")
 
     @sdev_only()
     @scommand(name='sudo', description='Make someone do something.')
     async def sudo(self, ctx: SContext, member: AmbiguityMemberConverter, *, cmd: str):
+        """
+        Make someone execute a command.
+
+        member: The member that will execute it.
+        cmd: The command that the member will execute.
+        """
         new_msg = copy(ctx.message)
         new_msg.author = member
         new_msg.content = (ctx.prefix if re.match(r'^[a-zA-Z]', cmd) else "") + cmd

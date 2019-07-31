@@ -1,3 +1,8 @@
+TIME_SPLIT_REGEX = r'\d+\s*(?:(?:mo|(?:months?))|(?:s|(?:sec|second)s?)|(?:m|(?:min|minute?s?))|(?:h|(?:hours?))|\
+(?:d|(?:days?))|(?:w|(?:weeks?))|(?:y|(?:years?)))'
+
+TIME_MATCH = r'(?P<number>\d+)\s*(?P<unit>\w+)$'
+
 MUTE_REGEX = r"""
 ^ # Start of string.
     (?P<all> # User & Time.
@@ -20,7 +25,7 @@ MUTE_REGEX = r"""
             |(?:d|(?:days?)) # d, day, days
             |(?:w|(?:weeks?)) # w, week, weeks
             |(?:y|(?:years?)) # y, year, years
-          ) # Leaving valid time units.
+          ),*(?:\s+(?:and|&))? # Leaving valid time units.
         ) # End of first time unit.
         (?: # Holder for any extra time units.
           \s* # Whitespace if you want.
@@ -34,7 +39,7 @@ MUTE_REGEX = r"""
             |(?:d|(?:days?)) # d, day, days
             |(?:w|(?:weeks?)) # w, week, weeks
             |(?:y|(?:years?)) # y, year, years
-          ) # Leaving valid time units.
+          ),*(?:\s+(?:and|&))? # Leaving valid time units.
         )* # Exiting holder for extra time units. Can be any amount.
       ) # Exiting the group of time units.
       [\"']* # Optional quotes

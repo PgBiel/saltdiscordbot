@@ -1,0 +1,1 @@
+DEFAULT_MUTE_MINUTES = 10  # min
