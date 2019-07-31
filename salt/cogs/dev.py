@@ -5,9 +5,10 @@ import re
 import inspect, dis
 import typing
 from discord.ext import commands
-from classes import SContext, MultilineEvalNoLastExprValue, scommand, sgroup
+from classes import SContext, MultilineEvalNoLastExprValue, scommand, sgroup, AmbiguityMemberConverter
 from utils.advanced import sdev_only
 from utils.funcs import privacy_sanitize, is_awaitable
+from copy import copy
 
 
 def eval_text(ctx: SContext, inp: str, outp, errored: bool = False, coro: bool = False) -> str:
@@ -182,6 +183,14 @@ class Dev(commands.Cog):
                     pass
         except asyncio.TimeoutError:
             await ctx.send("Leaving Repl mode after 60 seconds of inactivity.")
+
+    @sdev_only()
+    @scommand(name='sudo', description='Make someone do something.')
+    async def sudo(self, ctx: SContext, member: AmbiguityMemberConverter, *, cmd: str):
+        new_msg = copy(ctx.message)
+        new_msg.author = member
+        new_msg.content = (ctx.prefix if re.match(r'^[a-zA-Z]', cmd) else "") + cmd
+        await ctx.bot.process_commands(new_msg)
 
     @sdev_only()
     @scommand(name='say', description="Make Salt talk.")

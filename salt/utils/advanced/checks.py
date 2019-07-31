@@ -119,18 +119,6 @@ def or_checks(
         return commands.check(or_check)(func)
     return or_decorator
 
-
-def is_owner():
-    """
-    Check if the user is the bot's application owner.
-    :return: Check decorator.
-    """
-    def do_check(ctx: "SContext") -> bool:
-        return ctx.author.id == ctx.bot.config["owner"]
-
-    return commands.check(do_check)
-
-
 def has_saltmod_role():
     """
     Check if the member has the Salt Mod role.
@@ -179,11 +167,20 @@ def sdev_only():
     Make sure the command is only able to be executed by the developers/owners of the bot.
     :return: Check decorator.
     """
-    def sdev_deco(func: CmdFuncType):
-        _load_sattribs(func, dev_only=True)
-        return commands.is_owner()(func)
+    def predicate(ctx: "SContext"):
+        if ctx.author.id in ctx.bot.config["owners"] or ctx.author.id == ctx.bot.owner_id:
+            return True
+        raise commands.NotOwner()
 
-    return sdev_deco
+    return scheck(predicate, dev_only=True)
+
+
+def is_owner():
+    """
+    Check if the user is the bot's application owner.
+    :return: Check decorator.
+    """
+    return sdev_only()
 
 
 def bot_has_this_channel_permissions(**perms):
