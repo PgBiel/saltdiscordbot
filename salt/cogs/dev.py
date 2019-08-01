@@ -2,13 +2,17 @@ import discord
 import asyncio
 import ast
 import re
-import inspect, dis
+import inspect
+import dis
+import datetime
+from dateutil.relativedelta import relativedelta  # to expose to eval
+import multiprocessing
 import typing
 from discord.ext import commands
 from classes import SContext, MultilineEvalNoLastExprValue, scommand, sgroup, AmbiguityMemberConverter
 from constants import REPL_EXPIRE
 from utils.advanced import sdev_only
-from utils.funcs import privacy_sanitize, is_awaitable
+from utils.funcs import privacy_sanitize, is_awaitable, asyncproc
 from copy import copy
 
 
@@ -30,7 +34,12 @@ def source(func: typing.Callable) -> str:
     return inspect.getsource(func)
 
 
-def multiline_eval(expr: str, global_vals, local_vals, *, update_locals: bool = False):
+@asyncproc
+def test_proc(t):
+    return 5 * t
+
+
+async def multiline_eval(expr: str, global_vals, local_vals, *, update_locals: bool = False):
     """
     Eval a multiline string.
     :param expr: The string to eval.
@@ -96,9 +105,17 @@ class Dev(commands.Cog):
         result = None
         success = None
         coro = False
+        # pool = multiprocessing.Pool(processes=1)
         try:
-            result = multiline_eval(arg, new_globals, locals())
+            # pool_result = pool.apply_async(
+            #     multiline_eval, args=(arg, new_globals, locals())
+            # )
+            # result = pool_result.get(timeout=30)
+            result = await multiline_eval(arg, new_globals, locals(), update_locals=False)
             success = True
+        except multiprocessing.TimeoutError:
+            await ctx.send("(Eval) The process timed out.")
+            return
         except MultilineEvalNoLastExprValue as e:
             result = "(No value)"
             success = True
@@ -140,10 +157,18 @@ class Dev(commands.Cog):
             result = None
             success = None
             coro = False
+            # pool = multiprocessing.Pool(processes=1)
             try:
                 new_locals.update(locals())
-                result = multiline_eval(arg, new_globals, new_locals, update_locals=True)
+                # pool_result = pool.apply_async(
+                #     multiline_eval, args=(arg, new_globals, new_locals), kwds=dict(update_locals=True)
+                # )
+                # result = pool_result.get(30)
+                result = await multiline_eval(arg, new_globals, new_locals, update_locals=True)
                 success = True
+            except multiprocessing.TimeoutError:
+                await ctx.send("(Repl) The process timed out.")
+                return
             except MultilineEvalNoLastExprValue as e:
                 result = "(No value)"
                 success = True
@@ -267,6 +292,11 @@ class Dev(commands.Cog):
     @cog.command(name="list", description="List cogs.")
     async def listcogs(self, ctx: SContext):
         await ctx.send("List of cogs:\n• {0}".format("\n• ".join(ctx.bot.extensions.keys())))
+
+    @sdev_only()
+    @scommand(name="ttt", description="TTT")
+    async def ttt(self, ctx: SContext, num: int):
+        await ctx.send(f"Given: {num=} | Expected = 5t | Result: {test_proc(num).get()}")
 
 
 def setup(bot: commands.Bot) -> None:

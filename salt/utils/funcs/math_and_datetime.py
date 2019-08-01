@@ -33,7 +33,21 @@ def extract_delta(delta: Union[datetime.timedelta, relativedelta], ignore_week: 
             del dict_all['weeks']
         return dict_all
     elif type(delta) == relativedelta:
-        return delta.__dict__
+        now = datetime.datetime.now()
+        result = relativedelta(now + delta, now).__dict__
+        # if result['seconds'] / 60 >= 1:
+        #     result['minutes'] += result['seconds'] // 60
+        #     result['seconds'] %= 60
+        #
+        # if result['minutes'] / 60 >= 1:
+        #     result['hours'] += result['minutes'] // 60
+        #     result['minutes'] %= 60
+        #
+        # if result['hours'] / 24 >= 1:
+        #     result['days'] += result['hours'] // 24
+        #     result['hours'] %= 24
+
+        return result
 
 
 def make_delta(

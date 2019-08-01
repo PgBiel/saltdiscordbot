@@ -1,7 +1,13 @@
-TIME_SPLIT_REGEX = r'\d+\s*(?:(?:mo|(?:months?))|(?:s|(?:sec|second)s?)|(?:m|(?:min|minute?s?))|(?:h|(?:hours?))|\
-(?:d|(?:days?))|(?:w|(?:weeks?))|(?:y|(?:years?)))'
+TIME_SPLIT_REGEX = r'''
+(?: # Amount of it.
+    \d+(?:\.\d+)?
+    |\.\d+
+)
+\s*(?:(?:mo|(?:months?))|(?:s|(?:sec|second)s?)|(?:m|(?:min|minute?s?))|(?:h|(?:hours?))|
+(?:d|(?:days?))|(?:w|(?:weeks?))|(?:y|(?:years?)))
+'''
 
-TIME_MATCH = r'(?P<number>\d+)\s*(?P<unit>\w+)$'
+TIME_MATCH = r'(?P<number>\d+(?:\.\d+)?|\.\d+)\s*(?P<unit>\w+)'
 
 MUTE_REGEX = r"""
 ^ # Start of string.
@@ -15,7 +21,11 @@ MUTE_REGEX = r"""
       [\"']* # Optional quotes
       (?P<time> # The group of time units.
         (?: # First time unit.
-          \d+ # Amount of it.
+          [-+]*
+          (?: # Amount of it.
+            \d+(?:\.\d+)?
+            |\.\d+
+          )
           \s* # Whitespace if you desire.
           (?: # Entering valid time units.
             (?:mo|(?:months?)) # mo, month, months
@@ -29,7 +39,11 @@ MUTE_REGEX = r"""
         ) # End of first time unit.
         (?: # Holder for any extra time units.
           \s* # Whitespace if you want.
-          \d+ # Amount of time unit.
+          [-+]*
+          (?: # Amount of time unit.
+            \d+(?:\.\d+)?
+            |\.\d+
+          )
           \s* # Optional Whitespace.
           (?: # Once again, entering valid time units.
             (?:mo|(?:months?)) # mo, month, months
@@ -53,6 +67,7 @@ MUTE_REGEX = r"""
       # \s+ # Whitespaces
       [\"']* # Optional quotes
       (?P<mins> # Match...
+        [-+]*
         \d+ # ...Numbers. (Naked numbers are converted to minutes)
       )
       [\"']* # Optional quotes
@@ -67,6 +82,7 @@ MUTE_REGEX = r"""
       # \s+ # Whitespaces
       # ["']* # Optional quotes
       (?P<mins2> # Match...
+        [-+]*
         \d+ # ...Numbers. (Naked numbers are converted to minutes)
       )
       [\"']* # Optional quotes

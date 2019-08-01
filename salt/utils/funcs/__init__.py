@@ -1,3 +1,4 @@
+from utils.funcs.processes import *
 from utils.funcs.list import *
 from utils.funcs.dict import *
 from utils.funcs.math_and_datetime import *

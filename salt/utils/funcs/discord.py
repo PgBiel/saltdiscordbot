@@ -2,7 +2,9 @@
 Discord.py-related operations.
 """
 import discord
-from typing import Optional
+from typing import Optional, TYPE_CHECKING, List, NamedTuple
+if TYPE_CHECKING:
+    from classes import SContext  # remove any possibility of cyclic import.
 
 
 def _kick_or_bannable_gen(perm: str):
@@ -41,3 +43,45 @@ bannable = _kick_or_bannable_gen("ban_members")
 :param needs_the_perm: (Optional) If the punisher needs the Ban Members permission, defaults to True. (Used for
     ban command.)
 :return (bool) Whether the member can or not be banned."""
+
+
+CreateMuteRoleResponse = NamedTuple(  # returns CreateMuteRoleResponse(role=[new role], unable_to_channels=[channels we
+    "CreateMuteRoleResponse", [("role", discord.Role), ("unable_to_channels", List[discord.TextChannel])] # can't change
+)                                                                                                         # perms])
+
+
+async def create_mute_role(ctx: "SContext", *, name: str = "SaltMuted", old_role: discord.Role = None):
+    """
+    Create the SaltMuted role, or fix an existing one.
+    :param ctx: The context in which to create the role.
+    :param name: Name of the role, default is SaltMuted.
+    :param old_role: If one already exists, use it.
+    :return: CreateMuteRoleResponse(role=The created role, unable_to_channels=Channels we can't change perms in)
+    """
+    new_role = old_role or (
+        await ctx.guild.create_role(
+            reason="[Mute role, required for mute command]",
+            name=name or "SaltMuted", permissions=discord.Permissions.none()  # Give no permissions to this boi
+        )
+    )
+
+    unable_to_channels: List[discord.TextChannel] = list()  # channels we weren't able to modify permissions in
+    for chan in ctx.guild.text_channels:  # Iterate over channels to remove Send Messages permission.
+        if (
+                (overwrites := chan.overwrites_for(new_role))
+                and not overwrites.is_empty()        # If there are overwrites...
+                and (pair := overwrites.pair())      #
+                and pair[1].send_messages is False   # ...and send messages is already negated for the mute role
+        ):
+            continue  # Then nothing to do here
+
+        if not chan.permissions_for(ctx.me).manage_channels:  # Or if can't modify the permissions in this channel
+            unable_to_channels.append(chan)
+            continue
+
+        chan.set_permissions(
+            new_role, overwrite=discord.PermissionOverwrite(send_messages=False),  # Negate Send Messages
+            reason="[Mute role has to be unable to talk]"
+        )
+
+    return CreateMuteRoleResponse(role=new_role, unable_to_channels=unable_to_channels)

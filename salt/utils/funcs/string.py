@@ -7,6 +7,8 @@ import datetime
 import re
 from typing import Sequence, Optional, Union, TYPE_CHECKING, List, Iterable, overload, TypeVar
 from utils.funcs import clean_falsy_values, extract_delta
+from constants import TIME_ALIASES
+from dateutil.relativedelta import relativedelta
 from math import floor
 if TYPE_CHECKING:
     from classes import SContext
@@ -88,12 +90,12 @@ def humanize_list(target_list: Sequence, *, no_and: bool = False, connector: str
 
 
 def humanize_delta(
-        delta: datetime.timedelta, *, no_and: bool = False, connector: str = "and",
+        delta: Union[datetime.timedelta, relativedelta], *, no_and: bool = False, connector: str = "and",
         scale: bool = False,
         **kwargs
-) -> str:  # TODO: Support relativedelta
+) -> str:
     """
-    Humanize a time delta.
+    Humanize a time delta. (Or relative delta)
 
     :param delta: The timedelta object.
     :param no_and: (humanize_list param) (bool) Whether should remove the "and" at the end of the string; default=False
@@ -124,10 +126,10 @@ def humanize_delta(
             included.extend(['seconds'])
     list_strs: List[str] = []
     for name in extracted:
-        if (scale and name in included) or (not scale and kwargs.pop(name, True)):
+        if (scale and name in included) or (not scale and name in TIME_ALIASES and kwargs.pop(name, True)):
             v = extracted[name]
             if v:
-                list_strs.append(f"{v} {re.sub(r's$', '', name) if v == 1 else name}")
+                list_strs.append(f"{int(v) if v % 1 == 0 else v} {re.sub(r's$', '', name) if v == 1 else name}")
     return humanize_list(list_strs, no_and=no_and, connector=connector)
 
 
