@@ -4,12 +4,13 @@ import traceback
 import sys
 import motor.motor_asyncio
 import typing
+import datetime
 from typing import List
 from discord.ext import commands
 from utils.funcs.jsonwork import load as json_load
-from utils.funcs import humanize_perm, humanize_list
+from utils.funcs import humanize_perm, humanize_list, salt_loop
 from classes import (
-    SContext,
+    SContext, RepeatedTimer,
     MissingSaltModRole, MissingSaltAdminRole, NoPermissions,
     NoConfiguredSaltModRole, NoConfiguredSaltAdminRole,
     AutoCancelledException,
@@ -43,7 +44,8 @@ class Salt(commands.Bot):
             except commands.ExtensionError as _err:
                 print(f'Failed to load extension {cog_ext}.', file=sys.stderr)
                 traceback.print_exc()
-        self.monclient: motor.motor_asyncio.AsyncIOMotorClient = motor.motor_asyncio.AsyncIOMotorClient()
+        monclient = motor.motor_asyncio.AsyncIOMotorClient()
+        self.monclient: motor.motor_asyncio.AsyncIOMotorClient = monclient
         self.mondb: motor.motor_asyncio.AsyncIOMotorDatabase = self.monclient.salt
 
     def prefix(self, _bot, msg: discord.Message) -> list:
@@ -55,8 +57,52 @@ class Salt(commands.Bot):
         prefixes.append('+')  # gonna wait until later to add per-guild prefix
         return prefixes
 
+    async def mute_check(self):
+        """
+        Do a check if all mutes are alright, and remove or re-add mute role in all servers where it is needed to.
+        """
+        active_mutes_col: motor.motor_asyncio.AsyncIOMotorCollection = self.mondb.activemutes
+        active_mutes: motor.motor_asyncio.AsyncIOMotorCursor = active_mutes_col.find({})
+        async for el in active_mutes:
+            g_id = el['guild_id']
+            u_id = el['user_id']
+            timestamp_str = el.get('timestamp')
+            permanent = el.get('permanent')
+            if permanent or not timestamp_str:
+                continue
+            guild: discord.Guild = self.get_guild(int(g_id))
+            member: typing.Optional[discord.Member] = guild.get_member(int(u_id))
+            if member:
+                mute_info: motor.motor_asyncio.AsyncIOMotorCursor = await self.mondb.mutes.find_one(dict(
+                    guild_id=g_id
+                ))
+                m_r_id = mute_info['mute_role_id'] if mute_info else None
+                role = guild.get_role(int(m_r_id)) if mute_info else None
+                if (
+                    (now := datetime.datetime.utcnow()) > (
+                        timestamp := datetime.datetime.fromtimestamp(float(timestamp_str))
+                    )
+                ):
+                    if mute_info and m_r_id and role:
+                        try:
+                            await member.remove_roles(role, reason="[Auto unmute]")
+                        except discord.HTTPException:   # Time passed, let's remove the role, but if we can't...
+                            pass                        # ...welp, w/e
+                    active_mutes_col.delete_one(dict(_id=el["_id"]))
+                elif now < timestamp and mute_info and m_r_id and role:
+                    try:
+                        await member.add_roles(role, reason="[Member is muted.]")
+                    except discord.HTTPException:
+                        pass
+
     def run(self) -> None:
-        super().run(self.config["token"])
+        timer = RepeatedTimer(interval=10.0, function=self.mute_check, loop=self.monclient.io_loop)
+        timer.start()
+        try:
+            super().run(self.config["token"])
+        finally:
+            timer.stop()
+            salt_loop.close()
 
     def make_config(self) -> None:
         parsed_config = json_load("../config.json")

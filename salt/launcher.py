@@ -15,5 +15,4 @@ def run(bot: Salt) -> None:
 
 
 if __name__ == '__main__':
-    asyncproc.pool = Pool(processes=2)
     run(Salt())

@@ -13,7 +13,8 @@ if typing.TYPE_CHECKING:
 
 async def send(
     ctx: "SContext", content: str = None, *,
-    deletable: bool = False, sender: typing.Callable[..., discord.Message] = None,
+    deletable: bool = False, allow_everyone: bool = False,
+    sender: typing.Callable[..., discord.Message] = None,
     **kwargs
 ) -> discord.Message:
     """|coro|
@@ -56,6 +57,8 @@ async def send(
     deletable: :class:`bool`
       (Customized, added by Pg) If provided, add a trash can reaction on the message to be
       deleted by the member on click (if they called the command or they have Manage Messages).
+    allow_everyone: :class:`bool`
+        If should allow @ everyone or @ here mentions in the message. Default is False (prevents those pings).
     sender:
       Sends the message.
 
@@ -74,6 +77,8 @@ async def send(
       The message that was sent.
     """
     sender = sender or ctx.send
+    if content and not allow_everyone:
+        content = content.replace("@everyone", "@\u200beveryone").replace("@here", "@\u200bhere")
     msg: discord.Message = await sender(content, **kwargs)
     myperms: discord.Permissions = ctx.guild.me.permissions_in(ctx.channel) if ctx.guild is not None else None
     if deletable and (True if ctx.guild is None else (myperms.add_reactions and myperms.read_message_history)):

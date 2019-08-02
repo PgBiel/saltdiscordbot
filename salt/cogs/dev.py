@@ -34,11 +34,6 @@ def source(func: typing.Callable) -> str:
     return inspect.getsource(func)
 
 
-@asyncproc
-def test_proc(t):
-    return 5 * t
-
-
 async def multiline_eval(expr: str, global_vals, local_vals, *, update_locals: bool = False):
     """
     Eval a multiline string.

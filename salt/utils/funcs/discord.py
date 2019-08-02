@@ -79,7 +79,7 @@ async def create_mute_role(ctx: "SContext", *, name: str = "SaltMuted", old_role
             unable_to_channels.append(chan)
             continue
 
-        chan.set_permissions(
+        await chan.set_permissions(
             new_role, overwrite=discord.PermissionOverwrite(send_messages=False),  # Negate Send Messages
             reason="[Mute role has to be unable to talk]"
         )

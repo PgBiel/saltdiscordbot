@@ -51,5 +51,5 @@ class ActiveMutesModel:
     """
     guild_id: str
     user_id: str
-    timestamp: int = None
+    timestamp: str = None
     permanent: bool = False

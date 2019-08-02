@@ -3,16 +3,18 @@ import datetime
 import re
 import math
 import motor.motor_asyncio
+from dataclasses import asdict
 from dateutil.relativedelta import relativedelta
 from discord.ext import commands
-from classes import SContext, NoPermissions, scommand, MutesModel
+from classes import SContext, NoPermissions, scommand, MutesModel, ActiveMutesModel
 from classes.converters import AmbiguityMemberConverter
 from utils.advanced.checks import or_checks, is_owner, has_saltmod_role, sguild_only
 from utils.advanced import confirmation_predicate_gen, prompt
 from utils.funcs import (
     discord_sanitize, normalize_caseless, kickable, bannable, make_delta, humanize_delta,
-    create_mute_role
+    create_mute_role, humanize_list
 )
+from constants import DATETIME_DEFAULT_FORMAT
 from constants.colors import KICK_COLOR, BAN_COLOR, MUTE_COLOR
 from constants.regex import MUTE_REGEX, TIME_MATCH, TIME_SPLIT_REGEX
 from constants.numbers import DEFAULT_MUTE_MINUTES
@@ -93,7 +95,7 @@ async def _kick_or_ban(
     status_msg = await ctx.send(base_text.format("Sending DM..."))  # Let's keep our mod updated with what's going on
     try:
         reason_embed: discord.Embed = discord.Embed(  # Embed to send to DMs alerting the dude he was punished.
-            color=color, description=reason or "No reason given", timestamp=datetime.datetime.now(),
+            color=color, description=reason or "No reason given", timestamp=datetime.datetime.utcnow(),
             title=f"{verb.title()} reason"
         ) \
             .set_footer(text=f"{verb_alt.title()}ed from server '{discord_sanitize(ctx.guild.name)}'") \
@@ -115,6 +117,20 @@ async def _kick_or_ban(
     else:
         await status_msg.edit(content=f"Successfully {verb_alt}ed member {discord_sanitize(str(member))}.")
         # Succeeded! Member yeeted away from the server.
+
+
+async def _unmute(ctx: SContext, *, member: discord.Member, found: motor.motor_asyncio.AsyncIOMotorCursor):
+    await ctx.db.activemutes.delete_one(dict(  # Remove active mute entry from db
+        _id=found['_id']
+    ))
+    mute_obj = await ctx.db.mutes.find_one(dict(  # Now we gotta remove the mute role.
+        guild_id=str(ctx.guild.id)
+    ))
+    if mute_obj and (m_r_id := mute_obj['mute_role_id']) and (m_role := ctx.guild.get_role(int(m_r_id))):
+        try:  # If there's a mute role then we remove it.
+            await member.remove_roles(m_role, reason="[Auto unmute]")  # Removing...
+        except discord.HTTPException:  # well we couldn't so whatever
+            pass
 
 
 class Moderation(commands.Cog):
@@ -141,13 +157,25 @@ class Moderation(commands.Cog):
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
-        error=NoPermissions(moderation_dperm_error_fmt.format("Ban Members", "ban"))
+        error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "mute"))
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @sguild_only()
-    @scommand(name='mute', description="(WIP) Mute people.")
+    @scommand(name='mute', description="Mute people.")
     async def mute(self, ctx: SContext, member: AmbiguityMemberConverter, *, time_and_reason: Optional[str]):
         memb: discord.Member = cast(discord.Member, member)  # (Typing purposes)
+        do_extend = getattr(ctx, "_mute_extend", False)  # If invoked as `emute`, in which you can re-mute muted people
+        check_active_mutes: motor.motor_asyncio.AsyncIOMotorCollection = ctx.db.activemutes
+        found_active_mute: motor.motor_asyncio.AsyncIOMotorCursor = await check_active_mutes.find_one(dict(
+            guild_id=str(ctx.guild.id), user_id=str(memb.id)
+        ))
+        if found_active_mute and not do_extend:  # Otherwise don't let them re-mute.
+            await ctx.send(f"That member is already muted! To change their mute duration, use the `emute` command.")
+            return
+        elif do_extend and not found_active_mute:
+            await ctx.send("That member is not muted! This command changes duration of already existing mutes. \
+To mute someone, use the `mute` command.")
+            return
         time_to_mute = relativedelta(minutes=DEFAULT_MUTE_MINUTES)  # default: 10 min
         reason_to_mute: str = ""  # reasoning
         if time_and_reason:  # if user provided a time or reason
@@ -188,46 +216,171 @@ class Moderation(commands.Cog):
         except (OverflowError, OSError, ValueError):  # Except that's too far away.
             return await ctx.send("You specified a number that is too big!")
 
-        await ctx.send(  # TODO: Remove this debug thing.
-            f"Mute time and reason: time={time_to_mute}; {reason_to_mute=}. Member: {member} \
-muteduntil {mute_at}"
-        )
+        duration_str = humanize_delta(time_to_mute) or "0 seconds"
 
-        emb_desc: str = f"Are you sure you want to mute the member {discord_sanitize(str(member))}? Type **__y__es** \
-to confirm or **__n__o** to cancel. (**Note:** You can disable this confirmation screen with `{ctx.prefix}pconfig set \
-mute_confirm no`)"
+        if not do_extend:  # No need to confirm changing mute duration, nor add mute role during it (member alr. muted)
+            emb_desc: str = f"Are you sure you want to mute the member {discord_sanitize(str(member))}? Type \
+**__y__es** to confirm or **__n__o** to cancel. (**Note:** You can disable this confirmation screen with \
+`{ctx.prefix}pconfig set mute_confirm no`)"
+            # Confirmation embed.
+            embed = discord.Embed(color=MUTE_COLOR, description=emb_desc, timestamp=datetime.datetime.utcnow()) \
+                .set_author(name=f"Muting {str(memb)}", icon_url=memb.avatar_url) \
+                .set_thumbnail(url=memb.avatar_url) \
+                .add_field(name="Muted for", value=duration_str) \
+                .add_field(name="Reason", value=reason_to_mute[:512] or "None") \
+                .set_footer(text="Please confirm")
 
-        # Confirmation embed.
-        embed = discord.Embed(color=MUTE_COLOR, description=emb_desc, timestamp=datetime.datetime.utcnow()) \
-            .set_author(name=f"Muting {str(memb)}", icon_url=memb.avatar_url) \
-            .set_thumbnail(url=memb.avatar_url) \
-            .add_field(name="Muted for", value=humanize_delta(time_to_mute) or "0 seconds") \
-            .add_field(name="Reason", value=reason_to_mute[:512] or "None") \
-            .set_footer(text="Please confirm")
+            received, cancelled, _s = await prompt(  # Prompt 'em for confirmation, in case it parsed wrong or smth
+                "Are you sure?", ctx=ctx, embed=embed, already_asked=False, predicate_gen=confirmation_predicate_gen,
+                cancellable=True, partial_question=False
+            )
+            if cancelled or normalize_caseless(received.content).startswith("n"):  # Dude said no, nvm let's not mute
+                await ctx.send("Command cancelled.")
+                return
 
-        received, cancelled, _s = await prompt(  # Prompt 'em for confirmation, in case it parsed wrong or smth
-            "Are you sure?", ctx=ctx, embed=embed, already_asked=False, predicate_gen=confirmation_predicate_gen,
-            cancellable=True, partial_question=False
-        )
-        if cancelled or normalize_caseless(received.content).startswith("n"):  # Dude said no, nvm let's not mute
-            await ctx.send("Command cancelled.")
-            return
+            mutes_col: motor.motor_asyncio.AsyncIOMotorCollection = ctx.db.mutes  # Let's see if we have muterole stored
+            mutes_entry: motor.motor_asyncio.AsyncIOMotorCursor = await mutes_col.find_one(dict(
+                guild_id=str(ctx.guild.id)
+            ))
+            mute_role: discord.Role = cast(discord.Role, None)  # Let's initialize to not have problems
+            mute_role_id_str: str = ""
+            if (
+                    not mutes_entry                                           # No mutes entry for this guild
+                    or not (mute_role_id_str := mutes_entry['mute_role_id'])  # No mute role set
+                    or not (mute_role := ctx.guild.get_role(int(mute_role_id_str)))          # mute role not found
+                    or mute_role >= ctx.me.top_role
+            ):
+                msg: Optional[discord.Message] = None
+                try:
+                    msg = await ctx.send("Mute role not found, creating...")  # Let's keep them updated.
+                except discord.HTTPException:                                 # If we can't though, not a problem
+                    pass
+                new_role, unable_to_channels = await create_mute_role(ctx)  # Create mute role
+                mute_role = new_role
+                mute_role_id_str = new_role.id
+                if mutes_entry:                                 # If there was already a mute role in place,
+                    _id_to_replace = mutes_entry['_id']         # then gotta replace it, cuz it seems it's borke.
+                    await mutes_col.update_one(
+                        dict(_id=_id_to_replace), dict(mute_role_id=str(new_role.id))
+                    )
+                else:  # First mute role of the guild.
+                    await mutes_col.insert_one(  # insert that crap
+                        asdict(MutesModel(guild_id=str(ctx.guild.id), mute_role_id=str(new_role.id)))
+                    )
+                if msg:  # Let's keep them updated!
+                    unable_to_channels = [chan.mention for chan in unable_to_channels]
+                    multiple_chans = len(unable_to_channels) > 1  # If there's more than one Unable Channel
+                    extra_chans = len(unable_to_channels[10:])  # Limit of 10 channels displayed
+                    await msg.edit(
+                        content="Mute role created successfully!{}".format(  # Yay
+                            " However, {0} text channel{1} couldn't have the mute role's \
+    `Send Messages` permission due to missing permissions in {2}: {3}{4}".format(  # However, some channels not changed
+                                len(unable_to_channels), "s" if multiple_chans else "",
+                                "those channels" if multiple_chans else "that channel",
+                                humanize_list(unable_to_channels[:10], no_and=bool(extra_chans)),
+                                f" and {extra_chans} more." if extra_chans else ""
+                            ) if unable_to_channels else ""
+                        )
+                    )
+        # Mute role stuff is okay, now time to mute.
+        sanitized_m = discord_sanitize(str(memb))
+        msg_fmt = "{0} {1}... ({2})".format("Re-muting" if do_extend else "Muting", sanitized_m, "{}")
 
-        mutes_col: motor.motor_asyncio.AsyncIOMotorCollection = ctx.db.mutes  # Let's see if we have a mute role stored
-        mutes_entry: motor.motor_asyncio.AsyncIOMotorCursor = await mutes_col.find_one(dict(guild_id=str(ctx.guild.id)))
-        mute_role_id_str: str = ""
-        if (
-                not mutes_entry                                           # No mutes entry for this guild
-                or not (mute_role_id_str := mutes_entry['mute_role_id'])  # No mute role set
-                or not ctx.guild.get_role(int(mute_role_id_str))          # mute role not found
-        ):
-            new_role, unable_to_channels = create_mute_role(ctx)
-            if mutes_entry:
-                _id_to_replace = mutes_entry['_id']
-                await mutes_col.replace_one(dict(_id=_id_to_replace), dict(mute_role_id=str(new_role.id)))
+        is_myself = memb == ctx.me
+
+        sent_msg: discord.Message = await ctx.send(msg_fmt.format("Sending DM..." if not is_myself else (
+            "Re-muting..." if do_extend else "Muting..."
+        )))
+        try:
+            if not is_myself:
+                reason_embed: discord.Embed = discord.Embed(  # Embed to send to DMs alerting the dude he was punished.
+                    color=MUTE_COLOR, description=reason_to_mute or "No reason given",
+                    timestamp=datetime.datetime.utcnow(), title="Mute reason"
+                ) \
+                    .set_footer(text=f"Muted from server '{discord_sanitize(ctx.guild.name)}'") \
+                    .set_thumbnail(url=ctx.guild.icon_url) if not do_extend else None
+
+                await memb.send(
+                    "{0} in the server '{1}'!".format(
+                        f"Your mute duration changed to **{duration_str}**" if do_extend else "You were muted",
+                        discord_sanitize(ctx.guild.name)
+                    ),
+                    embed=reason_embed or None
+                )
+                await sent_msg.edit(content=msg_fmt.format("DM Sent, {0}...".format(
+                    "changing duration" if do_extend else "muting")
+                ))
+        except discord.HTTPException:
+            await sent_msg.edit(content=msg_fmt.format("DM Failed, {0} anyway...".format(
+                "changing duration" if do_extend else "muting")
+            ))
+
+        try:  # Now we mute for real
+            if not do_extend:
+                reason_str = f" {reason_to_mute}" if reason_to_mute else ""
+                await memb.add_roles(mute_role, reason=f"[Mute command by {ctx.author}]{reason_str}")
+        except discord.HTTPException:
+            await sent_msg.edit(content="Sorry, adding the mute role failed! (Try again?) :frowning:")
+        else:
+            active_mutes_col: motor.motor_asyncio.AsyncIOMotorCollection = ctx.db.activemutes
+            if do_extend:  # Change mute duration
+                await active_mutes_col.update_one(
+                    dict(_id=found_active_mute['_id']), {"$set": dict(timestamp=str(mute_at.timestamp()))}
+                )
             else:
-                await mutes_col.insert_one(MutesModel(guild_id=str(ctx.guild.id), mute_role_id=str(new_role.id)))
-        # TODO: Finish this; warn that some channels didnt have perms changed
+                await active_mutes_col.insert_one(
+                    asdict(ActiveMutesModel(
+                        guild_id=str(ctx.guild.id), user_id=str(memb.id), timestamp=str(mute_at.timestamp()),
+                        permanent=False
+                    ))
+                )
+            await sent_msg.edit(
+                content="Successfully {0} {1} {2} {3}!".format(
+                    "changed the mute duration of the member" if do_extend else "muted member",
+                    sanitized_m,
+                    "to" if do_extend else "for",
+                    duration_str
+                )
+            )
+
+    @or_checks(
+        is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
+        error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "mute"))
+    )
+    @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @sguild_only()
+    @scommand(name='emute', description="Change how long someone is muted for.")
+    async def emute(self, ctx: SContext, member: AmbiguityMemberConverter, *, time_and_reason: Optional[str]):
+        ctx._mute_extend = True
+        await ctx.invoke(self.mute, member, time_and_reason=time_and_reason)
+
+    @sguild_only()
+    @scommand(name='mutetime', description="See how long someone is muted for.")
+    async def mutetime(self, ctx: SContext, member: AmbiguityMemberConverter):
+        memb: discord.Member = cast(discord.Member, member)  # Typing purposes
+        check_active_mutes: motor.motor_asyncio.AsyncIOMotorCollection = ctx.db.activemutes
+        found_active_mute: motor.motor_asyncio.AsyncIOMotorCursor = await check_active_mutes.find_one(dict(
+            guild_id=str(ctx.guild.id), user_id=str(memb.id)
+        ))
+        if found_active_mute:  # If the member is muted:
+            try:
+                timestamp = found_active_mute['timestamp']  # Until when they are muted
+                muted_until = datetime.datetime.fromtimestamp(float(timestamp))  # ^
+                now = datetime.datetime.utcnow()
+                if now > muted_until:  # If the mute already expired and we did not realize:
+                    await _unmute(ctx, member=memb, found=found_active_mute)  # Unmute them.
+                else:
+                    delta = relativedelta(muted_until, now)
+                    await ctx.send(
+                        f"The member {discord_sanitize(str(memb))} is muted for {humanize_delta(delta)} (until \
+{muted_until.strftime(DATETIME_DEFAULT_FORMAT)}, UTC)!"
+                    )
+                    return
+            except (OverflowError, OSError, ValueError):
+                await _unmute(ctx, member=memb, found=found_active_mute)
+                await ctx.send(f"The member {discord_sanitize(str(memb))} was muted for too long, so they were now \
+unmuted!")
+        await ctx.send(f"The member {discord_sanitize(str(memb))} is not muted!")
 
 
 def setup(bot: commands.Bot) -> None:

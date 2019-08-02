@@ -105,7 +105,7 @@ def or_checks(
                 evaluated = False
                 try:
                     evaluated = predicate(ctx)
-                    if asyncio.iscoroutine(evaluated):
+                    if asyncio.iscoroutine(evaluated) or asyncio.isfuture(evaluated):
                         evaluated = await evaluated
                 except (commands.errors.CheckFailure, SaltCheckFailure) as _err:
                     evaluated = False
@@ -119,17 +119,18 @@ def or_checks(
         return commands.check(or_check)(func)
     return or_decorator
 
+
 def has_saltmod_role():
     """
     Check if the member has the Salt Mod role.
     :return: Check decorator.
     """
-    def do_check(ctx: "SContext") -> bool:
+    async def do_check(ctx: "SContext") -> bool:
         if not ctx.guild:
             return False
         mondb = ctx.db
         mods: motor.motor_asyncio.AsyncIOMotorCollection = mondb.mods
-        mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = sync_await(
+        mods_entry_cursor: motor.motor_asyncio.AsyncIOMotorCursor = await (
             mods.find_one({"guild_id": str(ctx.guild.id)})
         )
         if mods_entry_cursor is None:

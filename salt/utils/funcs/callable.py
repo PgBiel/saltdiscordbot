@@ -1,6 +1,6 @@
 import asyncio
 from typing import Callable, Coroutine, TypeVar, Union, Any
-from utils.funcs import loop
+from utils.funcs import salt_loop
 
 R = TypeVar("R")
 
@@ -30,4 +30,4 @@ def sync_await(coro_or_future: Coroutine[Any, Any, S]) -> S:
     if asyncio.isfuture(coro_or_future):
         return asyncio.futures._get_loop(coro_or_future).run_until_complete(coro_or_future)
     else:
-        return loop.run_until_complete(coro_or_future)
+        return salt_loop.run_until_complete(coro_or_future)
