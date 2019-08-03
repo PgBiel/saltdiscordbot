@@ -109,7 +109,10 @@ async def _kick_or_ban(
     except discord.HTTPException:
         await status_msg.edit(content=base_text.format(f"DM failed, {verb_alt}ing anyway..."))  # DM failed, but w/e
     try:
-        await (getattr(member, verb)(reason=reason))  # Punishing now (member.kick or member.ban)
+        reason_str = f" {reason}" if reason else None
+        await (getattr(member, verb)(  # Punishing now (member.kick or member.ban)
+            reason=f"[{verb.title()} command by {discord_sanitize(str(ctx.author))}]{reason_str}")
+        )
     except discord.Forbidden:
         await status_msg.edit(content=f"Uh oh, it seems I cannot {verb} this member! :frowning:")  # bruh wth
     except discord.HTTPException:
@@ -119,16 +122,33 @@ async def _kick_or_ban(
         # Succeeded! Member yeeted away from the server.
 
 
-async def _unmute(ctx: SContext, *, member: discord.Member, found: motor.motor_asyncio.AsyncIOMotorCursor):
+async def _unmute(
+        ctx: SContext, *, member: discord.Member, am_entry: motor.motor_asyncio.AsyncIOMotorCursor,
+        reason: Optional[str] = None, author: Optional[discord.abc.User] = None
+):
+    """
+    Unmute a member.
+
+    :param ctx: Context of command.
+    :param member: Member being unmuted.
+    :param am_entry: The DB activemutes entry to be removed.
+    :param reason: Optionally, a reason for unmuting, for audit logs.
+    :param author: Optionally, who did this, for audit logs.
+    """
     await ctx.db.activemutes.delete_one(dict(  # Remove active mute entry from db
-        _id=found['_id']
+        _id=am_entry['_id']
     ))
     mute_obj = await ctx.db.mutes.find_one(dict(  # Now we gotta remove the mute role.
         guild_id=str(ctx.guild.id)
     ))
     if mute_obj and (m_r_id := mute_obj['mute_role_id']) and (m_role := ctx.guild.get_role(int(m_r_id))):
+        mute_bracket_part = f"[Unmute command by {discord_sanitize(str(author))}]" if author else "[Auto unmute]"
+        reason_str = f" {reason}" if reason else None
         try:  # If there's a mute role then we remove it.
-            await member.remove_roles(m_role, reason="[Auto unmute]")  # Removing...
+            await member.remove_roles(
+                m_role,
+                reason=f"{mute_bracket_part}{reason_str}"
+            )  # Removing...
         except discord.HTTPException:  # well we couldn't so whatever
             pass
 
@@ -261,7 +281,7 @@ To mute someone, use the `mute` command.")
                 if mutes_entry:                                 # If there was already a mute role in place,
                     _id_to_replace = mutes_entry['_id']         # then gotta replace it, cuz it seems it's borke.
                     await mutes_col.update_one(
-                        dict(_id=_id_to_replace), dict(mute_role_id=str(new_role.id))
+                        dict(_id=_id_to_replace), { "$set": dict(mute_role_id=str(new_role.id)) }
                     )
                 else:  # First mute role of the guild.
                     await mutes_col.insert_one(  # insert that crap
@@ -352,11 +372,31 @@ To mute someone, use the `mute` command.")
     @scommand(name='emute', description="Change how long someone is muted for.")
     async def emute(self, ctx: SContext, member: AmbiguityMemberConverter, *, time_and_reason: Optional[str]):
         ctx._mute_extend = True
-        await ctx.invoke(self.mute, member, time_and_reason=time_and_reason)
+        await ctx.invoke(self.mute, member, time_and_reason=time_and_reason)@or_checks(
+        is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
+        error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "mute"))
+    )
+
+    @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @sguild_only()
+    @scommand(name='unmute', description="Unmute a member.")
+    async def unmute(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str] = None):
+        memb: discord.Member = cast(discord.Member, member)  # Typing purposes
+        check_active_mutes: motor.motor_asyncio.AsyncIOMotorCollection = ctx.db.activemutes
+        found_active_mute: motor.motor_asyncio.AsyncIOMotorCursor = await check_active_mutes.find_one(dict(
+            guild_id=str(ctx.guild.id), user_id=str(memb.id)
+        ))
+        if found_active_mute:
+            await _unmute(ctx=ctx, member=memb, am_entry=found_active_mute, reason=reason, author=ctx.author)
+            await ctx.send(f"Member {discord_sanitize(str(memb))} unmuted successfully!")
+            return
+        else:
+            await ctx.send("That member is not muted!")
+            return
 
     @sguild_only()
     @scommand(name='mutetime', description="See how long someone is muted for.")
-    async def mutetime(self, ctx: SContext, member: AmbiguityMemberConverter):
+    async def mutetime(self, ctx: SContext, *, member: AmbiguityMemberConverter):
         memb: discord.Member = cast(discord.Member, member)  # Typing purposes
         check_active_mutes: motor.motor_asyncio.AsyncIOMotorCollection = ctx.db.activemutes
         found_active_mute: motor.motor_asyncio.AsyncIOMotorCursor = await check_active_mutes.find_one(dict(
@@ -368,7 +408,7 @@ To mute someone, use the `mute` command.")
                 muted_until = datetime.datetime.fromtimestamp(float(timestamp))  # ^
                 now = datetime.datetime.utcnow()
                 if now > muted_until:  # If the mute already expired and we did not realize:
-                    await _unmute(ctx, member=memb, found=found_active_mute)  # Unmute them.
+                    await _unmute(ctx, member=memb, am_entry=found_active_mute)  # Unmute them.
                 else:
                     delta = relativedelta(muted_until, now)
                     await ctx.send(
@@ -377,7 +417,7 @@ To mute someone, use the `mute` command.")
                     )
                     return
             except (OverflowError, OSError, ValueError):
-                await _unmute(ctx, member=memb, found=found_active_mute)
+                await _unmute(ctx, member=memb, am_entry=found_active_mute)
                 await ctx.send(f"The member {discord_sanitize(str(memb))} was muted for too long, so they were now \
 unmuted!")
         await ctx.send(f"The member {discord_sanitize(str(memb))} is not muted!")

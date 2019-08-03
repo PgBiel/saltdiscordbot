@@ -14,7 +14,9 @@ if typing.TYPE_CHECKING:
 async def send(
     ctx: "SContext", content: str = None, *,
     deletable: bool = False, allow_everyone: bool = False,
-    sender: typing.Callable[..., discord.Message] = None,
+    sender: typing.Callable[
+        ..., typing.Coroutine[typing.Any, typing.Any, discord.Message]
+    ] = None,
     **kwargs
 ) -> discord.Message:
     """|coro|
