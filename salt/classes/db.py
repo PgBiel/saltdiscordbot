@@ -16,31 +16,7 @@ class DBModel:
         Returns the dict representation of the dataclass.
         :return: Dataclass as dict
         """
-        return self.__dict__()
-
-    def __dict__(self):
         return asdict(self)
-
-    def __call__(self, *args, **kwargs):
-        return self.__dict__()
-
-    # def change_field(f):
-    #     f.default = PARTIAL_MISSING
-    #     return (f.name, f.type, f)
-    #
-    # def p_init(self):
-    #     for tfield in fields(self):
-    #         if hasattr(self, tfield) and getattr(self, tfield) == PARTIAL_MISSING:
-    #             delattr(self, tfield)
-    # given_fields = fields(cls)
-    # new_cls = make_dataclass(
-    #     cls,
-    #     [change_field(f) for f in given_fields],
-    #     *args,
-    #     **kwargs
-    # )
-    # new_cls.__post_init__ = p_init
-    # return new_cls
 
 
 @dataclass
@@ -137,7 +113,7 @@ class PartialActiveMutesModel(ActiveMutesModel):
     """
     guild_id: str = None
     user_id: str = None
-    permanent: bool = False
+    permanent: bool = None
     # the rest is already optional
 
 

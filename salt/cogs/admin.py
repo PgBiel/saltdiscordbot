@@ -1,6 +1,6 @@
 import typing
 from discord.ext import commands
-from constants import PREFIX_LIMIT
+from constants import PREFIX_LIMIT, DEFAULT_PREFIX
 from classes import scommand, SContext, PrefixesModel, PartialPrefixesModel
 from utils.funcs import discord_sanitize
 
@@ -16,17 +16,18 @@ class Administration(commands.Cog):
                 raise commands.MissingPermissions(missing_perms=["manage_guild"])
             if len(new_prefix) > PREFIX_LIMIT:
                 await ctx.send(f"Too big! The max prefix length is **{PREFIX_LIMIT} characters**. (Remember: \
-any kind of mentions - user mentions, channel & role mentions - and custom emojis represent a larger amount of \
+any kind of mentions - user, channel or role mentions - and custom emojis represent a larger amount of \
 characters than you see!)")
                 return
             if found:  # If there already was a custom prefix in database, then change it
                 await prefixes.update_one(dict(guild_id=str(ctx.guild.id)), {"$set": dict(prefix=new_prefix)})
             else:
-                await prefixes.insert_one(PrefixesModel(guild_id=str(ctx.guild.id), prefix=new_prefix))
-            await ctx.send(f"Successfully set the server prefix to '{discord_sanitize(new_prefix)}'!")
+                await prefixes.insert_one(PrefixesModel(guild_id=str(ctx.guild.id), prefix=new_prefix).asdict())
+            await ctx.send(f"Successfully set the server prefix to '{discord_sanitize(new_prefix)}'! Keep in mind that \
+this command in specific doesn't change its prefix.")
         else:
-            curr_prefix = found['prefix'] if found else "+"
-            await ctx.send(f"This server's current prefix is '{curr_prefix or '+'}'!")
+            curr_prefix = found['prefix'] if found else DEFAULT_PREFIX
+            await ctx.send(f"This server's current prefix is '{curr_prefix or DEFAULT_PREFIX}'!")
 
 
 def setup(bot: commands.Bot):

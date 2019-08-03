@@ -5,12 +5,14 @@ import sys
 import motor.motor_asyncio
 import typing
 import datetime
+import re
 from typing import List
 from discord.ext import commands
 from utils.funcs.jsonwork import load as json_load
 from utils.funcs import humanize_perm, humanize_list, salt_loop
+from constants import DEFAULT_PREFIX
 from classes import (
-    SContext, RepeatedTimer,
+    SContext, RepeatedTimer, SCommand,
     MissingSaltModRole, MissingSaltAdminRole, NoPermissions,
     NoConfiguredSaltModRole, NoConfiguredSaltAdminRole,
     AutoCancelledException,
@@ -24,10 +26,11 @@ Salt Bot - moderation, administration, utility and fun all in one!
 cogs_ext_list = (
     "cogs.test",
     "cogs.dev",
+    "cogs.admin",
     "cogs.mod",
     "cogs.utility",
     "cogs.information",
-    "cogs.fun"
+    "cogs.fun",
 )
 
 
@@ -48,13 +51,45 @@ class Salt(commands.Bot):
         self.monclient: motor.motor_asyncio.AsyncIOMotorClient = monclient
         self.mondb: motor.motor_asyncio.AsyncIOMotorDatabase = self.monclient.salt
 
-    def prefix(self, _bot, msg: discord.Message) -> list:
-        # ctx = self.get_context(msg)
+    async def prefix(self, _bot, msg: discord.Message) -> List[str]:
+        """
+        Get the prefix to be used to invoke commands.
+
+        :param _bot: The bot instance. (Ignored!)
+        :param msg: The message sent.
+        :return:
+        """
+        # ctx = await self.get_context(msg)  # THIS CAUSES RECURSION
         user_id = self.user.id
         member_ping_prefix = '<@!{0}> '.format(user_id)
         ping_prefix = '<@{0}> '.format(user_id)
-        prefixes = list([ping_prefix, member_ping_prefix])
-        prefixes.append('+')  # gonna wait until later to add per-guild prefix
+        prefixes: typing.List[str] = list([ping_prefix, member_ping_prefix])
+        if msg.guild:
+            prefixes_col = self.mondb['prefixes']
+            g_entry = await prefixes_col.find_one(dict(guild_id=str(msg.guild.id)))
+            if g_entry and (g_prefix := g_entry['prefix']):
+                used_prefix = g_prefix or DEFAULT_PREFIX
+                if (
+                    msg.content.startswith(used_prefix)
+                    and used_prefix != DEFAULT_PREFIX
+                    and re.match(
+                        r'^(?:prefix|eval|repl|cogs?)', msg.content[len(used_prefix):], re.RegexFlag.I
+                    )
+                ):
+                    return prefixes  # don't allow them to be invoked with other than default prefix
+                elif (
+                    msg.content.startswith(DEFAULT_PREFIX)
+                    and re.match(
+                        r'^(?:prefix|eval|repl|cogs?)', msg.content[len(DEFAULT_PREFIX):], re.RegexFlag.I
+                    )
+                ):
+                    prefixes.append(DEFAULT_PREFIX)  # Those cmds only accept the default prefix.
+                else:
+                    prefixes.append(g_prefix or DEFAULT_PREFIX)
+            else:
+                prefixes.append(DEFAULT_PREFIX)
+        else:
+            prefixes.append(DEFAULT_PREFIX)
         return prefixes
 
     async def mute_check(self):
