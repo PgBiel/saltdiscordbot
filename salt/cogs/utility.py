@@ -15,7 +15,7 @@ class Utility(commands.Cog):
 
     @scommand(name="len", aliases=["length"], description="Tells you the length of your message.")
     async def len(self, ctx: SContext, *, text: str):
-        await ctx.send(f"Your text is **{len(text)} chars** long.")  # Self-explanatory
+        await ctx.send(f"Your text is **{len(text)} chars** long.", deletable=True)  # Self-explanatory
 
     @scommand(name="char", aliases=["character"], description="Provides info about a unicode character.")
     async def char(self, ctx: SContext, *, characters: str):
@@ -66,7 +66,7 @@ class Utility(commands.Cog):
 
         await ctx.send("Pong! The ping is {0}ms. I'd say it is {1}".format(
             ping, rating
-        ))
+        ), deletable=True)
 
 
 def setup(bot: commands.bot):

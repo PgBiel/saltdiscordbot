@@ -1,7 +1,7 @@
 import typing
 from discord.ext import commands
 from constants import PREFIX_LIMIT, DEFAULT_PREFIX
-from classes import scommand, SContext, PrefixesModel, PartialPrefixesModel
+from classes import scommand, SContext, PrefixesModel, PartialPrefixesModel, set_op
 from utils.funcs import discord_sanitize
 
 
@@ -20,9 +20,14 @@ any kind of mentions - user, channel or role mentions - and custom emojis repres
 characters than you see!)")
                 return
             if found:  # If there already was a custom prefix in database, then change it
-                await prefixes.update_one(dict(guild_id=str(ctx.guild.id)), {"$set": dict(prefix=new_prefix)})
+                await prefixes.update_one(
+                    PartialPrefixesModel(guild_id=str(ctx.guild.id)).as_dict(),
+                    set_op(PartialPrefixesModel(prefix=new_prefix).as_dict())
+                )
             else:
-                await prefixes.insert_one(PrefixesModel(guild_id=str(ctx.guild.id), prefix=new_prefix).asdict())
+                await prefixes.insert_one(
+                    PrefixesModel(guild_id=str(ctx.guild.id), prefix=new_prefix).as_dict()
+                )
             await ctx.send(f"Successfully set the server prefix to '{discord_sanitize(new_prefix)}'! Keep in mind that \
 this command in specific doesn't change its prefix.")
         else:

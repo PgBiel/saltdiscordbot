@@ -3,8 +3,35 @@ import sys
 from dateutil.relativedelta import relativedelta
 from math import floor
 from utils.funcs import clean_falsy_values
-from typing import Optional, Union
+from typing import Optional, Union, overload
 from constants import AVERAGE_DAYS_IN_A_MONTH, AVERAGE_DAYS_IN_A_YEAR
+
+
+@overload
+def clamp(num: int, maxv: int, minv: int) -> int:
+    pass
+
+
+@overload
+def clamp(num: float, maxv: float, minv: float) -> float:
+    pass
+
+
+@overload
+def clamp(num: Union[int, float], maxv: Union[int, float], minv: Union[int, float]) -> Union[int, float]:
+    pass
+
+
+def clamp(num: Union[int, float], maxv: Union[int, float], minv: Union[int, float]) -> Union[int, float]:
+    """
+    Clamp a number between some range.
+
+    :param num: int or float to clamp
+    :param maxv: max int or float
+    :param minv: min int or float
+    :return: The clamped int or float.
+    """
+    return min(minv, max(maxv, num))
 
 
 def extract_delta(delta: Union[datetime.timedelta, relativedelta], ignore_week: bool = False):

@@ -73,14 +73,16 @@ class Salt(commands.Bot):
                     msg.content.startswith(used_prefix)
                     and used_prefix != DEFAULT_PREFIX
                     and re.match(
-                        r'^(?:prefix|eval|repl|cogs?)', msg.content[len(used_prefix):], re.RegexFlag.I
+                        r'^(?:(?:prefix|eval|repl|cogs?) |(?:prefix|eval|repl|cogs?))',
+                    msg.content[len(used_prefix):], re.RegexFlag.I
                     )
                 ):
                     return prefixes  # don't allow them to be invoked with other than default prefix
                 elif (
                     msg.content.startswith(DEFAULT_PREFIX)
                     and re.match(
-                        r'^(?:prefix|eval|repl|cogs?)', msg.content[len(DEFAULT_PREFIX):], re.RegexFlag.I
+                        r'^(?:(?:prefix|eval|repl|cogs?) |(?:prefix|eval|repl|cogs?))',
+                        msg.content[len(DEFAULT_PREFIX):], re.RegexFlag.I
                     )
                 ):
                     prefixes.append(DEFAULT_PREFIX)  # Those cmds only accept the default prefix.
@@ -99,10 +101,14 @@ class Salt(commands.Bot):
         active_mutes_col: motor.motor_asyncio.AsyncIOMotorCollection = self.mondb.activemutes
         active_mutes: motor.motor_asyncio.AsyncIOMotorCursor = active_mutes_col.find({})
         async for el in active_mutes:
-            g_id = el['guild_id']
-            u_id = el['user_id']
+            g_id = el.get('guild_id')
+            u_id = el.get('user_id')
+            if not g_id or not u_id:
+                await active_mutes_col.delete_one(dict(_id=el["_id"]))  # invalid entry
+                continue
+
             timestamp_str = el.get('timestamp')
-            permanent = el.get('permanent')
+            permanent = el.get('permanent', False)
             if permanent or not timestamp_str:
                 continue
             guild: discord.Guild = self.get_guild(int(g_id))
@@ -123,7 +129,7 @@ class Salt(commands.Bot):
                             await member.remove_roles(role, reason="[Auto unmute]")
                         except discord.HTTPException:   # Time passed, let's remove the role, but if we can't...
                             pass                        # ...welp, w/e
-                    active_mutes_col.delete_one(dict(_id=el["_id"]))
+                    await active_mutes_col.delete_one(dict(_id=el["_id"]))
                 elif now < timestamp and mute_info and m_r_id and role:
                     try:
                         await member.add_roles(role, reason="[Member is muted.]")

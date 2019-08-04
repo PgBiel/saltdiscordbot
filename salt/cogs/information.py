@@ -15,9 +15,29 @@ from typing import List, Union, Optional, cast
 
 
 class Information(commands.Cog):
+
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @scommand(name="avatar", description="Get an user's avatar.")
+    async def avatar(self, ctx: SContext, *, user: Optional[AmbiguityUserOrMemberConverter]):
+        user = user or ctx.author
+        usr: discord.User = cast(discord.User, user)
+        av: str = usr.avatar_url
+        tag: str = discord_sanitize(str(usr))
+        embed = discord.Embed(timestamp=datetime.datetime.utcnow()) \
+            .set_author(name=f"Avatar of user {tag}", url=av, icon_url=av)      \
+            .set_image(url=av)                                                  \
+            .set_footer(text=f"Click the title for Avatar URL | User ID: {usr.id}")
+
+        await ctx.send(embed=embed, deletable=True)
+
     @sgroup(name="info", description="Provides info about something.")
     async def info(self, ctx: SContext):
         pass
+
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @info.command(name="avatar", description="Get an user's avatar. (Alias for `avatar`)")
+    async def info_avatar(self, ctx: SContext, *, user: Optional[AmbiguityUserOrMemberConverter]):
+        await ctx.invoke(self.avatar, user=user)
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @commands.bot_has_permissions(embed_links=True)

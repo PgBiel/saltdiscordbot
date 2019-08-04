@@ -1,5 +1,6 @@
 from copy import deepcopy
 import dataclasses as dc
+import attr
 from typing import TypeVar, Optional, Type, Any
 
 Cls = TypeVar("Cls", Type[Any], Type[Any])
@@ -71,17 +72,48 @@ def partial_dataclass(cls, *args, **kwargs):
     return dc.dataclass(ncls, **kwargs)
 
 
-def as_dict(d_cls: Type[Any]) -> dict:
+def as_dict(self: Any) -> dict:
     """
-    Get a dict representation of a dataclass.
+    Get a dict representation of a dataclass or attr class INSTANCE.
 
-    :param d_cls:
+    :param self: The dataclass or attr class instance.
     :return: The dict.
     """
-    formed_dict = dc.asdict(d_cls)
+    formed_dict: dict = dict()
+    try:
+        formed_dict = dc.asdict(self)
+    except TypeError:
+        formed_dict = attr.asdict(self)
     new_dict = dict()
     for k in formed_dict:
         if k is not PARTIAL_MISSING and not isinstance(k, _PartialMissingType):
             new_dict[k] = formed_dict[k]
 
     return new_dict
+
+
+ACls = TypeVar("ACls", type, type)
+
+
+def make_partial_attrs_class(cls: ACls, **kwargs) -> ACls:
+    """
+    Make a partial 'attr' class.
+
+    :param cls: The class.
+    :param kwargs: Any options to pass into make_class.
+    :return: The Partial class.
+    """
+    attrs: tuple = cls.__attrs_attrs__
+    field_dict = dict()
+    for att in attrs:
+        slots = att.__slots__
+        params_dict = {}
+        for slot in slots:
+            params_dict[slot] = getattr(att, slot)
+        params_dict['default'] = PARTIAL_MISSING
+        field_dict[att.name] = attr.ib(**params_dict)
+
+    return attr.make_class(
+        f'Partial{cls.__name__}', attrs=field_dict, bases=cls.__bases__,
+        **kwargs
+    )
