@@ -1,3 +1,4 @@
+from utils.funcs.compress import *
 from utils.funcs.classes import *
 from utils.funcs.loop import *
 from utils.funcs.processes import *

@@ -18,7 +18,7 @@ def compress(string: typing.Union[str, int]) -> str:
     if len(text) % 2 != 0:  # odd length
         text = "0" + text
 
-    return codecs.decode(text, "hex").decode("ascii")
+    return codecs.decode(text, "hex").decode("utf-8")
 
 
 def decompress(string: typing.Union[str, bytes]) -> str:
@@ -31,7 +31,7 @@ def decompress(string: typing.Union[str, bytes]) -> str:
     if len(string) == 1:
         return string
     result: str = codecs.encode(bytes(string, "ascii") if not isinstance(string, bytes) else string, "hex") \
-        .decode("ascii")
+        .decode("utf-8")
     if result[0] == '0':
         result = result[1:]
     return result
@@ -61,24 +61,29 @@ def avatar_compress(url: typing.Union[str, discord.Asset], include_id: bool = Fa
     return string
 
 
-def avatar_decompress(compressed: str, *, user_id: str = "", ext: str = "png") -> str:
+def avatar_decompress(compressed: str, *, user_id: str, ext: str = "webp", size: int = 1024) -> str:
     """
     Decompress a previously compressed avatar string.
 
     :param compressed: The compressed string.
     :param user_id: ID of user who was using this avatar. If include_id was set to True, this is ignored.
-    :param ext: The extension when it's an immobile (non-animated) avatar. Defaults to "png"
+    :param ext: The extension when it's an immobile (non-animated) avatar. Defaults to "webp"
+    :param size: (int) Size of the image in pixels (px  x  px). Defaults to 1024.
     :return: The avatar URL.
     """
     origin = 'https://cdn.discordapp.com/avatars/'
-    if "g+" in compressed or "a_" in compressed:
+    if "g+" in compressed or "a_" in compressed:  # animated avatar
         ext = "gif"
     elif "w+" in compressed:
         ext = "webm"
+
     compressed = compressed.replace("g+", "").replace("w+", "")
     if "/" in compressed:  # means we used include_id=True
         origin += compressed + f".{ext}"
-        return origin
     else:
-        origin += user_id + f"/{compressed}.{ext}"
-        return origin
+        origin += str(user_id) + f"/{compressed}.{ext}"
+
+    if size:
+        origin += f"?size={size}"
+
+    return origin
