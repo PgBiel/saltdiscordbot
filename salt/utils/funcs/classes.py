@@ -30,7 +30,9 @@ def copy_class(cls: Cls, prefix: Optional[str] = "") -> Cls:
 
 
 class _PartialMissingType:
-    pass
+
+    def __repr__(self) -> str:
+        return "PARTIAL_MISSING"
 
 
 PARTIAL_MISSING = _PartialMissingType()
@@ -84,10 +86,10 @@ def as_dict(self: Any) -> dict:
         formed_dict = dc.asdict(self)
     except TypeError:
         formed_dict = attr.asdict(self)
-    new_dict = dict()
-    for k in formed_dict:
-        if k is not PARTIAL_MISSING and not isinstance(k, _PartialMissingType):
-            new_dict[k] = formed_dict[k]
+
+    new_dict = dict(  # Filter out PARTIAL_MISSING
+        {v for k, v in formed_dict if v is not PARTIAL_MISSING and not isinstance(v, _PartialMissingType)}
+    )
 
     return new_dict
 

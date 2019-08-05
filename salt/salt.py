@@ -130,7 +130,7 @@ class Salt(commands.Bot):
                         except discord.HTTPException:   # Time passed, let's remove the role, but if we can't...
                             pass                        # ...welp, w/e
                     await active_mutes_col.delete_one(dict(_id=el["_id"]))
-                elif now < timestamp and mute_info and m_r_id and role:
+                elif now < timestamp and mute_info and m_r_id and role and not role in member.roles:
                     try:
                         await member.add_roles(role, reason="[Member is muted.]")
                     except discord.HTTPException:

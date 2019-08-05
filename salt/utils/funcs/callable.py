@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 from typing import Callable, Coroutine, TypeVar, Union, Any
 from utils.funcs import salt_loop
 
@@ -6,7 +7,8 @@ R = TypeVar("R")
 
 
 def is_awaitable(possible_coro: Any) -> bool:
-    return asyncio.iscoroutine(possible_coro) or asyncio.isfuture(possible_coro)
+    # return asyncio.iscoroutine(possible_coro) or asyncio.isfuture(possible_coro)
+    return inspect.isawaitable(possible_coro)  # generators should return False
 
 
 async def run_or_await(func: Callable[..., Union[R, Coroutine[Any, Any, R]]], *args, **kwargs) -> R:

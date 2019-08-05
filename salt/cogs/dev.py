@@ -29,7 +29,6 @@ def eval_text(ctx: SContext, inp: str, outp, errored: bool = False, coro: bool =
 {2}
 ```""".format(f"Input\n{inp}" if inp else "", bottom_text, result)
 
-
 def source(func: typing.Callable) -> str:
     return inspect.getsource(func)
 
