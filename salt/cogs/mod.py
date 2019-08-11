@@ -6,11 +6,14 @@ import motor.motor_asyncio
 from dataclasses import asdict
 from dateutil.relativedelta import relativedelta
 from discord.ext import commands
+from copy import copy
 from classes import SContext, NoPermissions, scommand, MutesModel, ActiveMutesModel, set_op, \
-    AmbiguityUserOrMemberConverter
+    AmbiguityUserOrMemberConverter, sgroup, PartialPunishmentsModel, PunishmentsModel
 from classes.converters import AmbiguityMemberConverter
 from utils.advanced.checks import or_checks, is_owner, has_saltmod_role, sguild_only
-from utils.advanced import confirmation_predicate_gen, prompt, actionlog
+from utils.advanced import (
+    confirmation_predicate_gen, prompt, actionlog, generate_actionlog_embed, generate_actionlog_embed_from_entry
+)
 from utils.funcs import (
     discord_sanitize, normalize_caseless, kickable, bannable, make_delta, humanize_delta,
     create_mute_role, humanize_list, clamp
@@ -554,6 +557,115 @@ To mute someone, use the `mute` command.")
                 await ctx.send(f"The member {sanitized_m} was muted way for too long, so they were automatically \
 unmuted!")
         await ctx.send(f"The member {sanitized_m} is not muted!")
+
+    @sguild_only()
+    @sgroup(name="case", description="View action log cases.", invoke_without_command=True)
+    async def case(self, ctx: SContext, number: int):
+        found_dict = await ctx.db['punishments'].find_one(
+            PartialPunishmentsModel(guild_id=str(ctx.guild.id), case=number).as_dict()
+        )
+        if not found_dict or found_dict['deleted']:
+            await ctx.send(f"Case #{number} not found!")
+            return
+        try:
+            await ctx.send(embed=await generate_actionlog_embed_from_entry(ctx, found_dict, attempt_to_fetch=True))
+            return
+        except discord.NotFound:
+            pass
+
+        await ctx.send("That case has an invalid user! :frowning:")
+
+    @sguild_only()
+    @case.command(name="reason", description="Change an action log's reason.")
+    async def case_reason(self, ctx: SContext, number: int, new_reason: str):
+        found_dict = await ctx.db['punishments'].find_one(
+            PartialPunishmentsModel(guild_id=str(ctx.guild.id), case=number).as_dict()
+        )
+        if not found_dict or found_dict['deleted']:
+            await ctx.send(f"Case #{number} not found!")
+            return
+        provide_dict = copy(found_dict)
+        del provide_dict['_id']
+
+        found = PunishmentsModel(**provide_dict)
+        if found.moderator_id != str(ctx.author.id) and not ctx.author.guild_permissions.administrator:
+            await ctx.send(f"That case is not yours! To edit others' cases, you need the `Administrator` Discord \
+permission, a Salt Admin role or the `case others` saltperm!")
+            return
+        found.reason = new_reason
+        await ctx.db['punishments'].update_one(dict(_id=found_dict['_id']), set_op(dict(reason=new_reason)))
+
+        try:
+            if (
+                found.channel_id and (chan := ctx.guild.get_channel(int(found.channel_id)))
+                and found.message_id
+                and (msg := await cast(discord.TextChannel, chan).fetch_message(int(found.message_id)))
+                and msg.embeds and len(msg.embeds) > 0
+            ):  # if action log message exists
+                embed = msg.embeds[0]
+                modified: bool = False
+                for i in range(len(embed.fields)):
+                    field = embed.fields[i]
+                    if field and hasattr(field, "name") and field.name.lower() == "reason":
+                        embed.set_field_at(index=i, name="Reason", value=new_reason, inline=field.inline)
+                        modified = True
+                        break
+                if modified:
+                    await msg.edit(embed=embed)
+        except discord.HTTPException:
+            pass
+
+        await ctx.send(f"Successfully changed Case #{number}'s reason!")
+
+    @sguild_only()
+    @case.command(name="togglethumb", description="Toggle an action log's thumbnail. \
+(In case avatar is innapropriate or something like that)")
+    async def case_togglethumb(self, ctx: SContext, number: int, on_or_off: bool = None):
+        found_dict = await ctx.db['punishments'].find_one(
+            PartialPunishmentsModel(guild_id=str(ctx.guild.id), case=number).as_dict()
+        )
+        if not found_dict or found_dict['deleted']:
+            await ctx.send(f"Case #{number} not found!")
+            return
+        provide_dict = copy(found_dict)
+        del provide_dict['_id']
+
+        found = PunishmentsModel(**provide_dict)
+        if found.moderator_id != str(ctx.author.id) and not ctx.author.guild_permissions.administrator:
+            await ctx.send(f"That case is not yours! To edit others' cases, you need the `Administrator` Discord \
+permission, a Salt Admin role or the `case others` saltperm!")
+            return
+        on_or_off = not found.thumb_on if on_or_off is None else on_or_off
+        found.thumb_on = on_or_off
+        await ctx.db['punishments'].update_one(dict(_id=found_dict['_id']), set_op(dict(thumb_on=on_or_off)))
+
+        try:
+            if (
+                found.channel_id and (chan := ctx.guild.get_channel(int(found.channel_id)))
+                and found.message_id
+                and (msg := await cast(discord.TextChannel, chan).fetch_message(int(found.message_id)))
+                and msg.embeds and len(msg.embeds) > 0
+            ):  # if action log message exists
+                embed = msg.embeds[0]
+                as_dict = embed.to_dict()
+                modified: bool = False
+                if (
+                    on_or_off and not as_dict.get('thumbnail', None)
+                    or not on_or_off and as_dict.get('thumbnail', None)
+                ):
+                    if not on_or_off:
+                        del as_dict['thumbnail']
+                        embed = discord.Embed.from_dict(as_dict)
+                    else:
+                        embed = await generate_actionlog_embed_from_entry(ctx, found.as_dict())
+                    modified = True
+
+                if modified:
+                    await msg.edit(embed=embed)
+        except discord.HTTPException:
+            pass
+
+        await ctx.send(f"Successfully toggled Case #{number}'s thumbnail {'on' if on_or_off else 'off'}!")
 
 
 def setup(bot: commands.Bot) -> None:

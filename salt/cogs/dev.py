@@ -288,6 +288,15 @@ class Dev(commands.Cog):
         await ctx.send("List of cogs:\n• {0}".format("\n• ".join(ctx.bot.extensions.keys())))
 
     @sdev_only()
+    @scommand(name="debug", description="Toggle debug on/off.")
+    async def debug(self, ctx: SContext, on_or_off: bool = None):
+        if on_or_off is None:
+            on_or_off = not ctx.bot.debug
+
+        ctx.bot.debug = on_or_off
+        await ctx.send(f"Successfully toggled debug to '{'on' if on_or_off else 'off'}'!")
+
+    @sdev_only()
     @scommand(name="ttt", description="TTT")
     async def ttt(self, ctx: SContext, num: int):
         await ctx.send(f"Given: {num=} | Expected = 5t | Result: {test_proc(num).get()}")

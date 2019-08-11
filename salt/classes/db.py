@@ -221,13 +221,15 @@ class PunishmentsModel(DBModel):
 
         reason: (Optional) Reason given, or None, for the punishment.
 
+        permanent_mute: (Optional bool) Whether or not this is a permanent mute; defaults to False.
+
         muted_until: (Optional) Until when is this user muted, as a stringified timestamp float, or None.
 
         deleted: (Optional bool) If this case was deleted or not. Defaults to False.
 
         thumbnail: (Optional) Compressed link to user's avatar, or None if none is available.
 
-        thumb_is_avatar: (Optional bool) Whether the thumbnail represents a compressed avatar, defaults to True.
+        thumb_is_avatar: (Optional bool) Whether the thumbnail represents a compressed avatar; defaults to True.
     """
     guild_id: str
     type: str = attr.ib(
@@ -241,6 +243,7 @@ class PunishmentsModel(DBModel):
     channel_id: Optional[str] = None
     thumb_on: bool = True  # Whether the thumbnail is on or off. Defaults to on (True)
     reason: Optional[str] = None
+    permanent_mute: bool = False
     muted_until: Optional[str] = None
     deleted: bool = False
     thumbnail: Optional[str] = None  # COMPRESSED AVATAR
@@ -273,6 +276,8 @@ class PartialPunishmentsModel(DBModel):
 
         reason: (Optional) Reason given, or None, for the punishment.
 
+        permanent_mute: (Optional bool) Whether or not this is a permanent mute; defaults to False.
+
         muted_until: (Optional) Until when is this user muted, as a stringified timestamp float, or None.
 
         deleted: (Optional bool) If this case was deleted or not. Defaults to False.
@@ -294,6 +299,7 @@ class PartialPunishmentsModel(DBModel):
     channel_id: Optional[str] = PARTIAL_MISSING
     thumb_on: bool = PARTIAL_MISSING  # Whether the thumbnail is on or off. Defaults to on (True)
     reason: Optional[str] = PARTIAL_MISSING
+    permanent_mute: bool = PARTIAL_MISSING
     muted_until: Optional[str] = PARTIAL_MISSING
     deleted: bool = PARTIAL_MISSING
     thumbnail: Optional[str] = PARTIAL_MISSING  # COMPRESSED AVATAR

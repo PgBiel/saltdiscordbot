@@ -51,6 +51,7 @@ class Salt(commands.Bot):
         monclient = motor.motor_asyncio.AsyncIOMotorClient()
         self.monclient: motor.motor_asyncio.AsyncIOMotorClient = monclient
         self.mondb: motor.motor_asyncio.AsyncIOMotorDatabase = self.monclient.salt
+        self.debug = False
 
     async def prefix(self, _bot, msg: discord.Message) -> List[str]:
         """
@@ -169,6 +170,11 @@ class Salt(commands.Bot):
         :param error: The error that occurred.
         :return: None
         """
+        if self.debug:
+            print(f'In {ctx.command.qualified_name}:', file=sys.stderr)
+            traceback.print_tb(error.__traceback__)
+            print(f'{error.__class__.__name__}: {error}', file=sys.stderr)
+
         if isinstance(error, AutoCancelledException):
             return
 
