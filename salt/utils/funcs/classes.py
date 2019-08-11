@@ -87,9 +87,12 @@ def as_dict(self: Any) -> dict:
     except TypeError:
         formed_dict = attr.asdict(self)
 
-    new_dict = dict(  # Filter out PARTIAL_MISSING
-        {v for k, v in formed_dict if v is not PARTIAL_MISSING and not isinstance(v, _PartialMissingType)}
-    )
+    if not formed_dict:
+        return formed_dict
+
+    new_dict = {  # Filter out PARTIAL_MISSING
+        k: v for k, v in formed_dict.items() if v is not PARTIAL_MISSING and not isinstance(v, _PartialMissingType)
+    }
 
     return new_dict
 

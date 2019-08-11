@@ -4,6 +4,7 @@ from typing import (
     Generic, Type, TypeVar, List, Tuple, Optional, Dict, TypedDict, Sequence, Union, Any,
     overload, Callable
 )
+from constants import DB_PUNISHMENT_TYPES
 from utils.funcs import make_partial_attrs_class, PARTIAL_MISSING, as_dict
 # from dataclasses import dataclass, field, asdict, fields, make_dataclass
 
@@ -202,7 +203,7 @@ class PunishmentsModel(DBModel):
     Attributes
         guild_id: ID of guild the punishment occurred in.
 
-        type: Type of punishment (one of "mute", "kick", "ban" or "softban")
+        type: Type of punishment (one of "mute", "remute", "unban", "unmute", "kick", "ban" or "softban")
 
         target_id: ID of user that suffered the punishment.
 
@@ -220,8 +221,6 @@ class PunishmentsModel(DBModel):
 
         reason: (Optional) Reason given, or None, for the punishment.
 
-        duration_str: (Optional) The duration string for the mute, or None.
-
         muted_until: (Optional) Until when is this user muted, as a stringified timestamp float, or None.
 
         deleted: (Optional bool) If this case was deleted or not. Defaults to False.
@@ -229,16 +228,68 @@ class PunishmentsModel(DBModel):
         thumbnail: (Optional) Compressed link to user's avatar, or None if none is available.
     """
     guild_id: str
-    type: str = attr.ib(validator=lambda s: s in ("mute", "kick", "ban", "softban"))  # "mute"/"kick"/"ban"/"softban"
+    type: str = attr.ib(validator=lambda s: s in DB_PUNISHMENT_TYPES)  # "mute"/"kick"/"ban"/"softban"/"remute"
     target_id: str
-    moderator_id: str
+    moderator_id: Optional[str]  # Optional in case it failed
     case: int  # case id
     timestamp: str
     message_id: Optional[str] = None
     channel_id: Optional[str] = None
     thumb_on: bool = True  # Whether the thumbnail is on or off. Defaults to on (True)
     reason: Optional[str] = None
-    duration_str: Optional[str] = None
     muted_until: Optional[str] = None
     deleted: bool = False
     thumbnail: Optional[str] = None  # COMPRESSED AVATAR
+
+
+@attr.s(auto_attribs=True, frozen=False)
+class PartialPunishmentsModel(DBModel):
+    """
+    PARTIAL Model for the `punishments` collection of the Salt db. Stores action log cases.
+
+    Attributes
+        guild_id: (Optional) ID of guild the punishment occurred in.
+
+        type: (Optional) Type of punishment (one of "mute", "kick", "ban" or "softban")
+
+        target_id: (Optional) ID of user that suffered the punishment.
+
+        moderator_id: (Optional) ID of user that executed the punishment.
+
+        case: (Optional) Case number in that guild.
+
+        timestamp: (Optional) When this case occurred.
+
+        message_id: (Optional) ID of the message in the case channel, or None if removed.
+
+        channel_id: (Optional) ID of the channel the message is in, or None if removed.
+
+        thumb_on: (Optional bool) Whether the embed thumbnail is on or off; defaults to True (on).
+
+        reason: (Optional) Reason given, or None, for the punishment.
+
+        muted_until: (Optional) Until when is this user muted, as a stringified timestamp float, or None.
+
+        deleted: (Optional bool) If this case was deleted or not. Defaults to False.
+
+        thumbnail: (Optional) Compressed link to user's avatar, or None if none is available.
+    """
+    guild_id: str = PARTIAL_MISSING
+    type: str = attr.ib(
+        default=PARTIAL_MISSING,
+        validator=lambda s: s == PARTIAL_MISSING or s in DB_PUNISHMENT_TYPES
+    )  # "mute"/"kick"/"ban"/"softban"
+    target_id: str = PARTIAL_MISSING
+    moderator_id: str = PARTIAL_MISSING
+    case: int = PARTIAL_MISSING  # case id
+    timestamp: str = PARTIAL_MISSING
+    message_id: Optional[str] = PARTIAL_MISSING
+    channel_id: Optional[str] = PARTIAL_MISSING
+    thumb_on: bool = PARTIAL_MISSING  # Whether the thumbnail is on or off. Defaults to on (True)
+    reason: Optional[str] = PARTIAL_MISSING
+    muted_until: Optional[str] = PARTIAL_MISSING
+    deleted: bool = PARTIAL_MISSING
+    thumbnail: Optional[str] = PARTIAL_MISSING  # COMPRESSED AVATAR
+
+
+

@@ -13,7 +13,8 @@ class RepeatedTimer:
     Repeat an action over time.
     """
     def __init__(
-            self, *, interval: float, function: typing.Callable, args: typing.Sequence = tuple(), kwargs: dict = dict(),
+            self, *, interval: float, function: typing.Callable,
+            args: typing.Optional[typing.Sequence] = None, kwargs: typing.Optional[dict] = None,
             loop: typing.Optional[asyncio.AbstractEventLoop] = None
     ):
         """
@@ -22,13 +23,13 @@ class RepeatedTimer:
         :param interval: Amount of seconds after which to repeat the action.
         :param function: Function to execute on every repeat.
         :param args: Args to pass to function. (Tuple)
-        :param kwargs: Kwargs to pass to function.
+        :param kwargs: Kwargs to pass to function. (Dict)
         """
         self._timer = None
         self.interval = interval
         self.function = function
-        self.args = args
-        self.kwargs = kwargs
+        self.args = args or tuple()
+        self.kwargs = kwargs or dict()
         self.loop = loop or salt_loop
         self.is_running = False
         self.next_call = time.time()

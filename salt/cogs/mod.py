@@ -10,7 +10,7 @@ from classes import SContext, NoPermissions, scommand, MutesModel, ActiveMutesMo
     AmbiguityUserOrMemberConverter
 from classes.converters import AmbiguityMemberConverter
 from utils.advanced.checks import or_checks, is_owner, has_saltmod_role, sguild_only
-from utils.advanced import confirmation_predicate_gen, prompt
+from utils.advanced import confirmation_predicate_gen, prompt, actionlog
 from utils.funcs import (
     discord_sanitize, normalize_caseless, kickable, bannable, make_delta, humanize_delta,
     create_mute_role, humanize_list, clamp
@@ -48,6 +48,14 @@ async def _kick_or_ban(
     checker_func = kickable if verb == "kick" else bannable
     member_str = "user" if is_outsider else "member"
     # Which function should we use to check if the member is punishable?
+
+    if is_outsider:  # Ensure we don't re-ban people.
+        try:
+            if await ctx.guild.fetch_ban(user=discord.Object(member.id)):
+                await ctx.send("That user is already banned!")
+                return
+        except discord.HTTPException:
+            pass
 
     if not is_outsider:
         if not checker_func(member):  # If the member is not punishable BY THE BOT, then let's say why.
@@ -144,6 +152,7 @@ async def _kick_or_ban(
     else:
         await status_msg.edit(content=f"Successfully {verb_alt}ed {member_str} {discord_sanitize(str(member))}.")
         # Succeeded! Member yeeted away from the server.
+    await actionlog(ctx, punish_type=verb, target=member, moderator=ctx.author, reason=reason)
 
 
 async def _unmute(
@@ -450,13 +459,18 @@ To mute someone, use the `mute` command.")
                 )
             )
 
+        await actionlog(
+            ctx, punish_type="{}mute".format("re" if do_extend else ""), target=memb, moderator=ctx.author,
+            reason=reason_to_mute, permanent_mute=is_permanent or False, punished_at=now, muted_until=mute_at
+        )
+
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
         error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "mute"))
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @sguild_only()
-    @scommand(name='emute', description="Change how long someone is muted for.")
+    @scommand(name='emute', aliases=["remute"], description="Change how long someone is muted for.")
     async def emute(self, ctx: SContext, member: AmbiguityMemberConverter, *, time_and_reason: Optional[str]):
         ctx._mute_extend = True
         await ctx.invoke(self.mute, member, time_and_reason=time_and_reason)\
@@ -468,7 +482,7 @@ To mute someone, use the `mute` command.")
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @sguild_only()
-    @scommand(name='epmute', description="Change a mute to a permanent mute.")
+    @scommand(name='epmute', aliases=["repmute"], description="Change a mute to a permanent mute.")
     async def epmute(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
         ctx._mute_extend = True
         ctx._mute_permanent = True
@@ -501,6 +515,9 @@ To mute someone, use the `mute` command.")
         if found_active_mute:
             await _unmute(ctx=ctx, member=memb, am_entry=found_active_mute, reason=reason, author=ctx.author)
             await ctx.send(f"Member {discord_sanitize(str(memb))} unmuted successfully!")
+            await actionlog(
+                ctx, punish_type="unmute", target=memb, moderator=ctx.author, reason=reason
+            )
             return
         else:
             await ctx.send("That member is not muted!")
