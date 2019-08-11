@@ -226,6 +226,8 @@ class PunishmentsModel(DBModel):
         deleted: (Optional bool) If this case was deleted or not. Defaults to False.
 
         thumbnail: (Optional) Compressed link to user's avatar, or None if none is available.
+
+        thumb_is_avatar: (Optional bool) Whether the thumbnail represents a compressed avatar, defaults to True.
     """
     guild_id: str
     type: str = attr.ib(validator=lambda s: s in DB_PUNISHMENT_TYPES)  # "mute"/"kick"/"ban"/"softban"/"remute"
@@ -240,6 +242,7 @@ class PunishmentsModel(DBModel):
     muted_until: Optional[str] = None
     deleted: bool = False
     thumbnail: Optional[str] = None  # COMPRESSED AVATAR
+    thumb_is_avatar: bool = True
 
 
 @attr.s(auto_attribs=True, frozen=False)
@@ -273,6 +276,8 @@ class PartialPunishmentsModel(DBModel):
         deleted: (Optional bool) If this case was deleted or not. Defaults to False.
 
         thumbnail: (Optional) Compressed link to user's avatar, or None if none is available.
+
+        thumb_is_avatar: (Optional bool) Whether the thumbnail represents a compressed avatar, defaults to True.
     """
     guild_id: str = PARTIAL_MISSING
     type: str = attr.ib(
@@ -290,6 +295,7 @@ class PartialPunishmentsModel(DBModel):
     muted_until: Optional[str] = PARTIAL_MISSING
     deleted: bool = PARTIAL_MISSING
     thumbnail: Optional[str] = PARTIAL_MISSING  # COMPRESSED AVATAR
+    thumb_is_avatar: bool = PARTIAL_MISSING
 
 
 

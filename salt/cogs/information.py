@@ -6,7 +6,10 @@ from discord.ext.commands.converter import _get_from_guilds
 from dateutil.relativedelta import relativedelta
 from utils.funcs import humanize_delta, humanize_list, humanize_voice_region, humanize_discord_syntax, discord_sanitize
 from utils.advanced import sguild_only
-from classes import scommand, sgroup, SContext, AmbiguityUserOrMemberConverter, AmbiguityRoleConverter
+from classes import (
+    scommand, sgroup, SContext, AmbiguityUserOrMemberConverter, AmbiguityRoleConverter, CONVERT_FAILED,
+    GetSContextAttr
+)
 from constants import (
     DATETIME_DEFAULT_FORMAT, PAIR_STATUS_EMOJI, EMBED_FIELD_VALUE_LIMIT,
     INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE
@@ -18,7 +21,10 @@ class Information(commands.Cog):
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @scommand(name="avatar", description="Get an user's avatar.")
-    async def avatar(self, ctx: SContext, *, user: Optional[AmbiguityUserOrMemberConverter]):
+    async def avatar(
+            self, ctx: SContext, *,
+            user: AmbiguityUserOrMemberConverter = None
+    ):
         user = user or ctx.author
         usr: discord.User = cast(discord.User, user)
         av: str = usr.avatar_url
@@ -36,13 +42,13 @@ class Information(commands.Cog):
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @info.command(name="avatar", description="Get an user's avatar. (Alias for `avatar`)")
-    async def info_avatar(self, ctx: SContext, *, user: Optional[AmbiguityUserOrMemberConverter]):
+    async def info_avatar(self, ctx: SContext, *, user: AmbiguityUserOrMemberConverter = None):
         await ctx.invoke(self.avatar, user=user)
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @commands.bot_has_permissions(embed_links=True)
     @info.command(name="user", description="View info about an user.")  # User or member. Defaults to author
-    async def info_user(self, ctx: SContext, *, member: Optional[AmbiguityUserOrMemberConverter]):
+    async def info_user(self, ctx: SContext, *, member: AmbiguityUserOrMemberConverter = None):
         memb_or_user = cast(Union[discord.Member, discord.User], member) or ctx.author  # Typing purposes, or default
         is_member = isinstance(memb_or_user, discord.Member) and ctx.guild and ctx.guild.get_member(memb_or_user.id)
         # ^ Check if we're in a guild and checking a member in that guild

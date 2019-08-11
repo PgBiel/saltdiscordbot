@@ -110,7 +110,7 @@ def generate_actionlog_embed(
         .add_field(name="Author", value=f"{moderator.mention} ({str(moderator)})", inline=True) \
         .set_footer(text=f"Target's ID: {target.id}")
 
-    if "mute" in punish_type:
+    if "mute" in punish_type and punish_type != "unmute":
         embed.add_field(
             name="Muted For", value="Forever" if permanent_mute else humanize_delta(
                 relativedelta(muted_until, punished_at)
