@@ -33,61 +33,6 @@ AMBIG_CANCELLED = AmbiguityCancelled()  # Constant returned when ambiguity solve
 CONVERT_FAILED = ConverterFailed()  # Constant returned when converting failed
 
 
-A_C = TypeVar("A_C")
-
-
-# def _make_allow_class(name: str, prop: str, val):
-#     class AllowX(typing.Generic[A_C]):
-#         def __init__(self):
-#             self.__name__ = self.name = name
-#             self.prop = prop
-#             self.val = val
-#
-#         def __getitem__(self, cls: Type[A_C]) -> A_C:
-#             return cls(**{prop: val})
-#
-#     return AllowX()
-#
-# class AllowFail(typing.Generic[A_C]):
-#
-#     def __init__(self, *, clz: Union[Type[A_C], A_C] = None):
-#         self.cls = clz
-#
-#     def convert(self, *args, **kwargs):
-#         inst = self.cls
-#         if type(inst) == type:
-#             inst = inst(return_convert_failed=True)
-#
-#         return inst.convert(*args, **kwargs)
-#
-#     def __class_getitem__(cls, item: A_C):
-#         if typing.TYPE_CHECKING:
-#             return super().__class_getitem__(item)
-#         else:
-#             return cls(clz=item)
-
-# def AllowFail(cls: Type[A_C]) -> A_C:
-#     """
-#     Pass the `return_convert_failed=True` parameter to a Converter class. This allows it to fail by returning the
-#     CONVERT_FAILED constant.
-#
-#     :param cls: The converter class.
-#     :return: The converter instance with `return_convert_failed=True`.
-#     """
-#     return cls(return_convert_failed=True)
-
-
-# def AllowAmbiguityCancel(cls: Type[A_C]) -> A_C:
-#     """
-#     Pass the `return_ambig_cancel=True` parameter to a Converter class. This allows it to be cancelled by returning the
-#     AMBIG_CANCELLED constant.
-#
-#     :param cls: The converter class.
-#     :return: The converter instance with `return_ambig_cancel=True`.
-#     """
-#     return cls(return_ambig_cancel=True)
-
-
 class AmbiguityMemberConverter(commands.MemberConverter):
     """
     Converter that searches for members and prompts the user in case of multiple matches.

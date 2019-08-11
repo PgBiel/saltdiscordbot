@@ -230,7 +230,9 @@ class PunishmentsModel(DBModel):
         thumb_is_avatar: (Optional bool) Whether the thumbnail represents a compressed avatar, defaults to True.
     """
     guild_id: str
-    type: str = attr.ib(validator=lambda s: s in DB_PUNISHMENT_TYPES)  # "mute"/"kick"/"ban"/"softban"/"remute"
+    type: str = attr.ib(
+        validator=lambda s, *_args, **_kwargs: s in DB_PUNISHMENT_TYPES
+    )  # "mute"/"kick"/"ban"/"softban"/"remute"
     target_id: str
     moderator_id: Optional[str]  # Optional in case it failed
     case: int  # case id
@@ -282,7 +284,7 @@ class PartialPunishmentsModel(DBModel):
     guild_id: str = PARTIAL_MISSING
     type: str = attr.ib(
         default=PARTIAL_MISSING,
-        validator=lambda s: s == PARTIAL_MISSING or s in DB_PUNISHMENT_TYPES
+        validator=lambda s, *_args, **_kwargs: s == PARTIAL_MISSING or s in DB_PUNISHMENT_TYPES
     )  # "mute"/"kick"/"ban"/"softban"
     target_id: str = PARTIAL_MISSING
     moderator_id: str = PARTIAL_MISSING

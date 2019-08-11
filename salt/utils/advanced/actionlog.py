@@ -5,9 +5,9 @@ from discord.ext import commands
 from typing import Optional, Union, Dict, Any
 from essentials import send
 from constants import PUNISH_COLOR_MAP, DB_PUNISHMENT_TYPES
-from utils.funcs import discord_sanitize, humanize_delta, avatar_compress
+from utils.funcs import discord_sanitize, humanize_delta, avatar_compress, avatar_decompress
 from dateutil.relativedelta import relativedelta
-
+from classes import PunishmentsModel
 if typing.TYPE_CHECKING:
     from classes import SContext
 
@@ -62,16 +62,17 @@ async def actionlog(
         msg = await send(ctx, embed=embed, sender=log_chan.send)  # gotta use custom sender :)
     except discord.HTTPException:
         msg = None
-    punish_entry = dict(  # cant use model :(
+    punish_entry = PunishmentsModel(  # cant use model :(
         target_id=str(target.id), guild_id=str(ctx.guild.id), moderator_id=str(moderator.id),
         type=punish_type,
         message_id=str(msg.id) if msg else None, case=new_case, timestamp=str(now.timestamp()),
         channel_id=str(log_chan.id), thumb_on=True, reason=reason,
         muted_until=str(muted_until.timestamp()) if muted_until else None,
-        deleted=msg is None, thumbnail=avatar_compress(target.avatar_url)
+        deleted=msg is None, thumbnail=avatar_compress(target.avatar_url),
+        thumb_is_avatar=True
     )
 
-    await ctx.db['punishments'].insert_one(punish_entry)  # add to DB :)
+    await ctx.db['punishments'].insert_one(punish_entry.as_dict())  # add to DB :)
 
 
 def generate_actionlog_embed(
@@ -79,7 +80,8 @@ def generate_actionlog_embed(
         moderator: Union[discord.Member, discord.User],
         punished_at: datetime.datetime, case: int, reason: Optional[str] = None,
         permanent_mute: Optional[bool] = False, muted_until: Optional[datetime.datetime] = None,
-        thumb_on: bool = True, thumbnail: Optional[str] = None
+        thumb_on: bool = True, thumbnail: Optional[str] = None,
+        thumb_is_avatar: bool = True
 ) -> discord.Embed:
     """
     Generate an actionlog embed.
@@ -94,6 +96,7 @@ def generate_actionlog_embed(
     :param thumbnail: If thumb_on, then the link to the thumbnail. (In general, the punished user's avatar.)
     :param permanent_mute: If this is a mute, whether or not the user is muted permanently.
     :param muted_until: Until when is the user muted.
+    :param thumb_is_avatar: Whether the thumbnail represents a compressed avatar; defaults to True
     :return: The generated embed.
     """
     sanitized_m = discord_sanitize(str(target))  # sanitized name, avoid markdown loopholes
@@ -103,8 +106,14 @@ def generate_actionlog_embed(
 
     emb_desc = f"**{sanitized_m}** was {alt_verb}"
 
+    thumb_to_use = None if not thumb_on else (
+        target.avatar_url if not thumbnail else (
+            avatar_decompress(thumbnail, user_id=target.id) if thumb_is_avatar else thumbnail
+        )
+    )
+
     embed = discord.Embed(
-        color=PUNISH_COLOR_MAP[punish_type], thumbnail=target.avatar_url, description=emb_desc,
+        color=PUNISH_COLOR_MAP[punish_type], thumbnail=thumb_to_use, description=emb_desc,
         title=f"Action Log #{case}", timestamp=punished_at
     ) \
         .add_field(name="Author", value=f"{moderator.mention} ({str(moderator)})", inline=True) \

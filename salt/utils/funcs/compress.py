@@ -56,7 +56,7 @@ def avatar_compress(url: typing.Union[str, discord.Asset], include_id: bool = Fa
     string = match.group("id") + match.group("avatar") if include_id else match.group("avatar")
     if ".gif" in string or "a_" in string:
         string = "g+" + string
-    if ".webm" in string:
+    elif ".webm" in string:
         string = "w+" + string
     return string
 
@@ -71,17 +71,18 @@ def avatar_decompress(compressed: str, *, user_id: str, ext: str = "webp", size:
     :param size: (int) Size of the image in pixels (px  x  px). Defaults to 1024.
     :return: The avatar URL.
     """
+    string = str(compressed)
     origin = 'https://cdn.discordapp.com/avatars/'
-    if "g+" in compressed or "a_" in compressed:  # animated avatar
+    if "g+" in string or "a_" in string:  # animated avatar
         ext = "gif"
-    elif "w+" in compressed:
+    elif "w+" in string:
         ext = "webm"
 
-    compressed = compressed.replace("g+", "").replace("w+", "")
-    if "/" in compressed:  # means we used include_id=True
-        origin += compressed + f".{ext}"
+    string = string.replace("g+", "").replace("w+", "")
+    if "/" in string:  # means we used include_id=True
+        origin += string + f".{ext}"
     else:
-        origin += str(user_id) + f"/{compressed}.{ext}"
+        origin += str(user_id) + f"/{string}.{ext}"
 
     if size:
         origin += f"?size={size}"
