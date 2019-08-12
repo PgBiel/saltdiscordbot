@@ -1,5 +1,7 @@
 from discord.ext import commands
-from typing import Type, Any, Optional, Callable
+from typing import Type, Any, Optional, Callable, List, cast
+from utils.funcs import get_bot
+import inspect
 
 
 class SCommand(commands.Command):
@@ -12,10 +14,17 @@ class SCommand(commands.Command):
     saltmod_usable: bool = False
     saltadmin_usable: bool = False
 
-    def __init__(self, func, **kwargs):
-        if not kwargs.pop("no_super_init", False):
+    def __init__(self, func, *, no_super_init: bool = False, example: Optional[str] = None, **kwargs):
+        """
+        Init a SCommand.
+        :param func: Function receiving the decorator.
+        :param no_super_init: (Optional bool) Whether we should not init commands.Command; defaults to False.
+        :param example: (Optional str) Example usage.
+        """
+        if not no_super_init:
             super().__init__(func, **kwargs)
         self.guild_only = self.dm_only = self.dev_only = self.saltmod_usable = self.saltadmin_usable = False
+        self.example: str = example
 
         if hasattr(func, "__scmd_attribs__"):
             attribs: dict = func.__scmd_attribs__
@@ -27,6 +36,17 @@ class SCommand(commands.Command):
         self.dev_only = attribs.get("dev_only", self.dev_only or False)
         self.saltmod_usable = attribs.get("saltmod_usable", self.saltmod_usable or False)
         self.saltadmin_usable = attribs.get("saltadmin_usable", self.saltadmin_usable or False)
+
+    def _get_attribs(self):
+        return dict(
+            guild_only=self.guild_only, dm_only=self.dm_only, dev_only=self.dev_only,
+            saltmod_usable=self.saltmod_usable, saltadmin_usable=self.saltadmin_usable
+        )
+
+    def _ensure_assignment_on_copy(self, other: "SCommand"):
+        ret: "SCommand" = super()._ensure_assignment_on_copy(other)
+        ret._load_attribs(**self._get_attribs())
+        return ret
 
 
 class SGroup(commands.Group, SCommand):

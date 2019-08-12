@@ -1,6 +1,6 @@
 import typing
 import discord
-from classes import SContext, SCommand
+from classes import SContext, SCommand, SGroup
 from discord.ext import commands
 from constants import HELP_COG_SHORTCUTS
 from utils.funcs import pagify_list
@@ -61,27 +61,81 @@ for a list of commands in it):\n\n"
             ctx = self.context
             if isinstance(cog, commands.Cog):
                 cmds = cog.get_commands()
-                cmds.sort(key=lambda x: x.name)
-                pages = pagify_list(cmds)
 
                 embed.title = f'List of commands in category "{cog.__class__.__name__.title()}"'
-                if len(pages) > 1:
-                    embed.title += f" (Page {page}/{len(pages)})"
 
                 embed.description = f'All commands available in that category. Type `{self.clean_prefix}help <command>`\
  to view info on a command.'
-                try:
-                    embed.add_field(
-                        name="Commands",
-                        value="• {}".format('\n• '.join(cmd.name for cmd in pages[page-1])),
-                        inline=False
-                    )
-                except IndexError:
-                    await ctx.send(f"Invalid page! Minimum is 1, and maximum is {len(pages)}.")
-                    return
 
-                await ctx.send(embed=embed)
+            elif isinstance(cog, HelpCogNone):
+                cmds = list(filter(lambda x: x.cog is None, ctx.bot.commands))
+
+                embed.title = f'List of commands in category "Others"'
+                embed.description = f'All commands available in that category. Type `{self.clean_prefix}help <command>`\
+ to view info on a command.'
+
+            else:  # All commands
+                cmds = list(ctx.bot.commands)
+
+                embed.title = "List of commands"
+                embed.description = f"All commands available. Type `{self.clean_prefix}help <command>` to view info \
+on a command."
+
+            cmds.sort(key=lambda x: x.name)
+            pages = pagify_list(cmds)
+
+            if len(pages) > 1:
+                embed.title += f" (Page {page}/{len(pages)})"
+
+            try:
+                embed.add_field(
+                    name="Commands",
+                    value="• {}".format('\n• '.join(cmd.name for cmd in pages[page-1])),
+                    inline=False
+                )
+            except IndexError:
+                await ctx.send(f"Invalid page! Minimum is 1, and maximum is {len(pages)}.")
                 return
+
+            await ctx.send(embed=embed)
+            return
+
+        async def send_group_help(self, group: SGroup):
+            return await self.send_command_help(group)
+
+        async def send_command_help(self, command: typing.Union[SCommand, SGroup]):
+            embed = discord.Embed(
+                title=f'`{self.clean_prefix}{command.qualified_name}`',
+                description=(
+                        command.help or command.description or command.brief or command.short_doc
+                ).replace("{p}", self.clean_prefix)
+            )
+            is_s = isinstance(command, SCommand) or isinstance(command, SGroup)  # if is customized command/group
+
+            embed.add_field(name="Usage", value=f"`{self.get_command_signature(command)}`", inline=False)
+
+            if isinstance(command, commands.Group):
+                embed.add_field(
+                    name="Subcommands", value=", ".join([cmd.name for cmd in list(command.commands)]),
+                    inline=False
+                )
+
+            if is_s:
+                if command.dev_only:
+                    embed.title += " (Salt Dev only!)"
+                if command.guild_only:
+                    embed.title += " (Unusable in DMs)"
+                elif command.dm_only:
+                    embed.title += " (Only usable in DMs)"
+
+                if command.example:
+                    embed.add_field(
+                        name="Example{}".format('s' if len(command.example.split('\n')) > 1 else ''),
+                        value=command.example.replace("{p}", self.clean_prefix), inline=False
+                    )
+
+            await self.context.send(embed=embed)
+            return
 
         async def command_callback(  # our case-insensitive impl.
                 self, ctx, *, command: typing.Optional[str] = None
@@ -112,13 +166,13 @@ for a list of commands in it):\n\n"
             split_cog = command.split(' ')
             first_cog = split_cog[0].lower()
             cog: commands.Cog = bot.get_cog(first_cog) or bot.get_cog(first_cog.title())
-            if cog is None and first_cog in HELP_COG_SHORTCUTS:
+            if cog is None and first_cog in HELP_COG_SHORTCUTS:   # User used a Cog Shortcut, such as "Info" or "Mod"
                 cog = bot.get_cog(HELP_COG_SHORTCUTS[first_cog].title())
-            if cog is None and first_cog in ('other', 'others'):
+            if cog is None and first_cog in ('other', 'others'):  # User wants to see non-categorized cmds
                 cog = typing.cast(commands.Cog, COG_NONE)
-            if cog is None and first_cog in ('all', 'alls'):
+            if cog is None and first_cog in ('all', 'alls'):      # User wants to list all cmds
                 cog = typing.cast(commands.Cog, COG_ALL)
-            if cog is not None:
+            if cog is not None and first_cog not in ('help', 'mutecheck'):  # those aren't cmd categories.
                 possible_page = split_cog[-1]
                 page = 1
                 if (possible_page := split_cog[-1]) and possible_page.isnumeric() and len(possible_page) < 5:
@@ -151,7 +205,7 @@ for a list of commands in it):\n\n"
                     cmd = found
 
             if isinstance(cmd, commands.Group):
-                return await self.send_group_help(cmd)
+                return await self.send_group_help(typing.cast(SGroup, cmd))
             else:
                 return await self.send_command_help(cmd)
 

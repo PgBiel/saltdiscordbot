@@ -9,7 +9,7 @@ import re
 from typing import List
 from discord.ext import commands
 from utils.funcs.jsonwork import load as json_load
-from utils.funcs import humanize_perm, humanize_list, salt_loop
+from utils.funcs import humanize_perm, humanize_list, salt_loop, set_bot
 from constants import DEFAULT_PREFIX
 from classes import (
     SContext, RepeatedTimer, SCommand,
@@ -39,6 +39,7 @@ cogs_ext_list = (
 class Salt(commands.Bot):
 
     def __init__(self):
+        set_bot(self)
         super().__init__(command_prefix=self.prefix, description=description, case_insensitive=True)
         self.config: dict = dict()
         self.make_config()

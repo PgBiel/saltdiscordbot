@@ -4,6 +4,6 @@ HELP_COG_SHORTCUTS = {
     'mod': 'Moderation',
     'util': 'Utility',
     'utils': 'Utility',
-    'info': 'Information',
+    # 'info': 'Information',  # conflicts with command +info
     'inform': 'Information'
 }

@@ -1,3 +1,4 @@
+from utils.funcs.bot_obj import *
 from utils.funcs.compress import *
 from utils.funcs.classes import *
 from utils.funcs.loop import *

@@ -267,7 +267,7 @@ class Moderation(commands.Cog):
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @sguild_only()
-    @scommand(name='mute', description="Mute people.")
+    @scommand(name='mute', description="Mute people.", example="{p}mute @Boi#0001 1 hour and 2 days being stupid")
     async def mute(self, ctx: SContext, member: AmbiguityMemberConverter, *, time_and_reason: Optional[str]):
         memb: discord.Member = cast(discord.Member, member)  # (Typing purposes)
         do_extend = getattr(ctx, "_mute_extend", False)  # If invoked as `emute`, in which you can re-mute muted people
