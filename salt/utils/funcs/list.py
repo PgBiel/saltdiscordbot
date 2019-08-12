@@ -1,4 +1,4 @@
-from typing import TypeVar, Sequence, Union, Optional
+from typing import TypeVar, Sequence, Union, Optional, List
 
 V = TypeVar("V")
 
@@ -22,6 +22,7 @@ U = TypeVar("U")
 def clean_falsy_from_list(l: Sequence[Union[Optional[U], U]]) -> Sequence[U]:
     """
     Remove any falsy (0, None, False, empty list) from a list, or Sequence in general.
+
     :param l: The list or Sequence.
     :return: Cleaned list or Sequence.
     """
@@ -31,4 +32,27 @@ def clean_falsy_from_list(l: Sequence[Union[Optional[U], U]]) -> Sequence[U]:
     for el in l:
         if el:
             new_list.append(el)
+    return type(l)(new_list)
+
+
+L = TypeVar("L")
+
+
+def pagify_list(l: Sequence[L], max_per_page: int = 10) -> Sequence[List[L]]:
+    """
+    Pagify a list.
+
+    :param l: List.
+    :param max_per_page: Max amount per page.
+    :return: The pagified list.
+    """
+    if not l or len(l) < 1:
+        return type(l)() if l else []
+
+    new_list = [[]]
+    for i in range(len(l)):
+        new_list[-1].append(l[i])
+        if len(new_list[-1]) % max_per_page == 0 and i + 1 != len(l):  # reached max amnt per page
+            new_list.append([])
+
     return type(l)(new_list)

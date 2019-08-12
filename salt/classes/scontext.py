@@ -1,11 +1,19 @@
-from discord.ext import commands
 import discord
 import typing
-from essentials.sender import send as csend
 import motor.motor_asyncio
+from essentials.sender import send as csend
+from discord.ext import commands
+from constants import HELP_COG_SHORTCUTS
 
 if typing.TYPE_CHECKING:
     from salt import Salt  # avoid recursive import
+
+
+class CogNone:
+    pass
+
+
+COG_NONE = CogNone()
 
 
 class SContext(commands.Context):
@@ -76,3 +84,76 @@ class SContext(commands.Context):
     @property
     def db(self) -> motor.motor_asyncio.AsyncIOMotorDatabase:
         return self.bot.mondb
+
+    async def send_help(self, *args):
+        """send_help(entity=<bot>)
+
+        |coro|
+
+        Shows the help command for the specified entity if given.
+        The entity can be a command or a cog.
+
+        If no entity is given, then it'll show help for the
+        entire bot.
+
+        If the entity is a string, then it looks up whether it's a
+        :class:`Cog` or a :class:`Command`.
+
+        .. note::
+
+            Due to the way this function works, instead of returning
+            something similar to :meth:`~.commands.HelpCommand.command_not_found`
+            this returns :class:`None` on bad input or no help command.
+
+        Parameters
+        ------------
+        entity: Optional[Union[:class:`Command`, :class:`Cog`, :class:`str`]]
+            The entity to show help for.
+
+        Returns
+        --------
+        Any
+            The result of the help command, if any.
+        """
+
+        bot = self.bot
+        cmd = bot.help_command
+
+        if cmd is None:
+            return None
+
+        cmd = cmd.copy()
+        cmd.context = self
+        if len(args) == 0:
+            await cmd.prepare_help_command(self, None)
+            mapping = cmd.get_bot_mapping()
+            return await cmd.send_bot_help(mapping)
+
+        entity = args[0]
+        if entity is None:
+            return None
+
+        if isinstance(entity, str):
+            new_ent = bot.get_cog(entity.lower()) or bot.get_cog(entity.title()) or bot.get_command(entity.lower())
+            if not new_ent and entity.lower() in HELP_COG_SHORTCUTS:
+                new_ent = bot.get_cog(HELP_COG_SHORTCUTS[entity.lower()].title())
+            if not new_ent and entity.lower() in ('other', 'others'):
+                new_ent = COG_NONE
+            entity = new_ent
+
+        try:
+            qualified_name = entity.qualified_name
+        except AttributeError:
+            # if we're here then it's not a cog, group, or command.
+            return None
+
+        await cmd.prepare_help_command(self, entity.qualified_name)
+
+        if hasattr(entity, '__cog_commands__') or entity == COG_NONE:
+            return await cmd.send_cog_help(entity)
+        elif isinstance(entity, commands.Group):
+            return await cmd.send_group_help(entity)
+        elif isinstance(entity, commands.Command):
+            return await cmd.send_command_help(entity)
+        else:
+            return None

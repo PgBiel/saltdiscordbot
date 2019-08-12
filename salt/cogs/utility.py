@@ -17,7 +17,7 @@ class Utility(commands.Cog):
     async def len(self, ctx: SContext, *, text: str):
         await ctx.send(f"Your text is **{len(text)} chars** long.", deletable=True)  # Self-explanatory
 
-    @scommand(name="char", aliases=["character"], description="Provides info about a unicode character.")
+    @scommand(name="char", aliases=["character", "charinfo"], description="Provides info about a unicode character.")
     async def char(self, ctx: SContext, *, characters: str):
         char_list: List[str] = list(characters.replace("\n", ""))[:10]  # Max length: 10
         text = ""

@@ -12,6 +12,7 @@ from classes import PunishmentsModel
 if typing.TYPE_CHECKING:
     from classes import SContext
 
+discord.Embed
 
 async def actionlog(
         ctx: "SContext", punish_type: str, *, target: Union[discord.User, discord.Member], moderator: discord.Member,

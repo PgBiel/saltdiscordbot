@@ -32,6 +32,7 @@ cogs_ext_list = (
     "cogs.information",
     "cogs.fun",
     "cogs.mutecheck",
+    "cogs.help"
 )
 
 
