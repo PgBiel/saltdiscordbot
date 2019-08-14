@@ -1,19 +1,39 @@
 """
 The custom sender.
 """
+import asyncio
 import typing
 import discord
-from constants.numbers.delays import DELETABLE_REACTWAIT_TIMEOUT as DELE_TIMEOUT
-from constants.emoji.default_emoji import WASTEBASKET
+import attr
+from constants.numbers.delays import (
+    DELETABLE_REACTWAIT_TIMEOUT as DELE_TIMEOUT, PAGINATE_REACTWAIT_TIMEOUT as PAGE_TIMEOUT
+)
+from constants.emoji.default_emoji import (
+    WASTEBASKET, DEL_PAGINATE_EMOJIS, PAGINATE_EMOJIS, RED_X, TRACK_PREVIOUS, TRACK_NEXT, ARROW_FORWARD, ARROW_BACKWARD
+)
+from utils.funcs import clamp
 from essentials.collectreact import collect_react
 
 if typing.TYPE_CHECKING:
     from classes import SContext  # for typing purposes, but this isn't actually imported
 
 
+@attr.s(auto_attribs=True)
+class PaginateOptions:
+    do_message_edit: typing.Callable[
+        ["PaginateOptions", discord.Message, typing.Sequence[discord.Emoji], "SContext", discord.Reaction],
+        typing.Coroutine
+    ]
+    current_page: int = 1
+    min_page: int = 1
+    max_page: typing.Optional[int] = None
+    deletable: bool = True
+    old_page: int = 1
+
+
 async def send(
     ctx: "SContext", content: str = None, *,
-    deletable: bool = False, allow_everyone: bool = False,
+    deletable: bool = False, paginate: typing.Optional[PaginateOptions] = None, allow_everyone: bool = False,
     sender: typing.Callable[
         ..., typing.Coroutine[typing.Any, typing.Any, discord.Message]
     ] = None,
@@ -59,6 +79,8 @@ async def send(
     deletable: :class:`bool`
       (Customized, added by Pg) If provided, add a trash can reaction on the message to be
       deleted by the member on click (if they called the command or they have Manage Messages).
+    paginate: :class:`PaginateOptions`
+      (Customized, added by Pg) If provided, specify pagination options.
     allow_everyone: :class:`bool`
         If should allow @ everyone or @ here mentions in the message. Default is False (prevents those pings).
     sender:
@@ -73,6 +95,7 @@ async def send(
     ~discord.InvalidArgument
       The ``files`` list is not of the appropriate size or
       you specified both ``file`` and ``files``.
+
     Returns
     ---------
     :class:`~discord.Message`
@@ -83,7 +106,52 @@ async def send(
         content = content.replace("@everyone", "@\u200beveryone").replace("@here", "@\u200bhere")
     msg: discord.Message = await sender(content, **kwargs)
     myperms: discord.Permissions = ctx.guild.me.permissions_in(ctx.channel) if ctx.guild is not None else None
-    if deletable and (True if ctx.guild is None else (myperms.add_reactions and myperms.read_message_history)):
+    if (
+        paginate and (True if ctx.guild is None else (myperms.add_reactions and myperms.read_message_history))
+        and paginate.max_page != paginate.min_page  # must have at least two pages
+    ):
+        reac_emojis = DEL_PAGINATE_EMOJIS if paginate.deletable else PAGINATE_EMOJIS
+
+        async def on_success(
+            messg: discord.Message, emj: typing.Sequence[discord.Emoji], ctx: "SContext", react: discord.Reaction
+        ):
+            if str(react.emoji) in (RED_X, WASTEBASKET):
+                await messg.delete()
+                raise asyncio.TimeoutError()
+
+            new_page: int = paginate.current_page
+            if str(react.emoji) == TRACK_PREVIOUS:
+                new_page = paginate.min_page
+            elif str(react.emoji) == ARROW_BACKWARD:
+                new_page -= 1
+            elif str(react.emoji) == ARROW_FORWARD:
+                new_page += 1
+            elif str(react.emoji) == TRACK_NEXT:
+                new_page = paginate.max_page
+
+            new_page = clamp(new_page, paginate.min_page, paginate.max_page)
+            if new_page is not None and paginate.current_page != new_page:
+                paginate.old_page = paginate.current_page
+                paginate.current_page = new_page
+                await paginate.do_message_edit(paginate, messg, emj, ctx, react)
+
+        async def on_timeout(messg: discord.Message, emj, _c):
+            try:
+                await messg.clear_reactions()
+            except discord.Forbidden:
+                for em in emj:
+                    await messg.remove_reaction(em, ctx.bot.user)
+
+        try:
+            await collect_react(
+                msg, reac_emojis, ctx, timeout=PAGE_TIMEOUT, on_success=on_success, on_timeout=on_timeout,
+                make_awaitable=False, wait_for_remove=True, keep_going=True
+            )
+        except (discord.Forbidden, asyncio.TimeoutError):
+            return msg
+
+    elif deletable and (True if ctx.guild is None else (myperms.add_reactions and myperms.read_message_history)):
+
         def delcheck(reaction: discord.Reaction, member: typing.Union[discord.Member, discord.User]):
             return member.id != ctx.bot.user.id \
                    and msg.id == reaction.message.id \

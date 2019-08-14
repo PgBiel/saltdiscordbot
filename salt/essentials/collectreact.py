@@ -65,7 +65,8 @@ async def collect_react(
     predicate: Optional[ReactionAddPredicate] = None,
     on_timeout: Optional[OnTimeoutCall] = default_on_timeout,
     on_success: Optional[OnSuccessCall] = default_on_success,
-    make_awaitable: Optional[typing.Literal[True]]
+    make_awaitable: Optional[typing.Literal[True]],
+    wait_for_remove: bool = False, keep_going: bool = False
 ) -> discord.Reaction:
     pass
 
@@ -78,7 +79,8 @@ async def collect_react(
     predicate: Optional[ReactionAddPredicate] = None,
     on_timeout: Optional[OnTimeoutCall] = default_on_timeout,
     on_success: Optional[OnSuccessCall] = default_on_success,
-    make_awaitable: typing.Literal[False]
+    make_awaitable: typing.Literal[False],
+    wait_for_remove: bool = False, keep_going: bool = False
 ) -> None:
     pass
 
@@ -90,7 +92,8 @@ async def collect_react(
     predicate: Optional[ReactionAddPredicate] = None,
     on_timeout: Optional[OnTimeoutCall] = default_on_timeout,
     on_success: Optional[OnSuccessCall] = default_on_success,
-    make_awaitable: Optional[bool] = True
+    make_awaitable: bool = True,
+    wait_for_remove: bool = False, keep_going: bool = False
 ):
     """|coro|
     Collect reactions, as in a menu. This should be used until discord.ext.menu is released.
@@ -110,6 +113,8 @@ async def collect_react(
         (discord.Reaction).
     :param make_awaitable: Whether the function should wait until either the reaction is clicked or the time passes;
         defaults to True.
+    :param wait_for_remove: Whether to also wait for reaction remove; defaults to False.
+    :param keep_going: Whether to keep waiting even after a reaction was received; defaults to False.
     """
     # WIP
     # def reaccheck(reaction: discord.Reaction, user: discord.User):
@@ -130,12 +135,12 @@ async def collect_react(
     )
     errored_in_task = False
 
-    async def add_reaction(em):
+    async def add_reaction(emj):
         nonlocal errored_in_task
         if errored_in_task:
             return
         try:
-            return await msg.add_reaction(em)
+            return await msg.add_reaction(emj)
         except (discord.HTTPException, discord.NotFound):
             errored_in_task = True
 
@@ -145,9 +150,17 @@ async def collect_react(
             break
 
     async def waiting_for():
+        nonlocal keep_going
         reacted: Optional[discord.Reaction] = None
         try:
-            reacted = await ctx.bot.wait_for("reaction_add", timeout=timeout, check=predicate_to_use)
+            reaction_add = ctx.bot.wait_for("reaction_add", timeout=timeout, check=predicate_to_use)
+            if wait_for_remove:  # wait for both add and remove to reduce api calls
+                reaction_remove = ctx.bot.wait_for("reaction_remove", timeout=timeout, check=predicate_to_use)
+                done, pending = await asyncio.wait((reaction_add, reaction_remove), return_when=asyncio.FIRST_COMPLETED)
+                reacted = done.pop().result()
+                pending.pop().cancel()
+            else:
+                reacted = await reaction_add
             if type(reacted) == tuple:
                 reacted = reacted[0]
         except asyncio.TimeoutError:
@@ -159,13 +172,19 @@ async def collect_react(
                     call = on_timeout()
                 await await_if_needed(call)
         else:
-            if on_success and callable(on_success):
-                call = None
-                try:
-                    call = on_success(msg, emoji, ctx, reacted)
-                except TypeError:
-                    call = on_success()
-                await await_if_needed(call)
+            try:
+                if on_success and callable(on_success):
+                    call = None
+                    try:
+                        call = on_success(msg, emoji, ctx, reacted)
+                    except TypeError:
+                        call = on_success()
+                    await await_if_needed(call)
+            except asyncio.TimeoutError:
+                keep_going = False
+
+            if keep_going:  # never give up
+                return await waiting_for()
         return reacted
 
     if make_awaitable:

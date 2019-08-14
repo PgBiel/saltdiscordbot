@@ -17,9 +17,11 @@ class SCommand(commands.Command):
     def __init__(self, func, *, no_super_init: bool = False, example: Optional[str] = None, **kwargs):
         """
         Init a SCommand.
+
         :param func: Function receiving the decorator.
         :param no_super_init: (Optional bool) Whether we should not init commands.Command; defaults to False.
         :param example: (Optional str) Example usage.
+        :param kwargs: Other arguments to provide to command init, such as name, description etc.
         """
         if not no_super_init:
             super().__init__(func, **kwargs)

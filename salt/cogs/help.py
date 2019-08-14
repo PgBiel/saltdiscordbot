@@ -4,6 +4,7 @@ from classes import SContext, SCommand, SGroup
 from discord.ext import commands
 from constants import HELP_COG_SHORTCUTS
 from utils.funcs import pagify_list
+from essentials import PaginateOptions
 
 if typing.TYPE_CHECKING:
     from salt import Salt  # can't import for real or would have cyclic import
@@ -97,7 +98,18 @@ on a command."
                 await ctx.send(f"Invalid page! Minimum is 1, and maximum is {len(pages)}.")
                 return
 
-            await ctx.send(embed=embed)
+            original_embed = embed.copy()
+
+            async def update_page(pag: PaginateOptions, msg: discord.Message, _emj, _ctx, _rec):
+                print(f"RECEIVED {pag=} ON HELP")
+                embed.set_field_at(
+                    -1,
+                    name="Commands", value="• {}".format('\n• '.join(cmd.name for cmd in pages[pag.current_page - 1])),
+                    inline=False
+                )
+                await msg.edit(embed=embed)
+
+            await ctx.send(embed=embed, paginate=PaginateOptions(update_page, page, max_page=len(pages)))
             return
 
         async def send_group_help(self, group: SGroup):

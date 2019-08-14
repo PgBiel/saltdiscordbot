@@ -4,6 +4,7 @@ import re
 import math
 import motor.motor_asyncio
 from dataclasses import asdict
+from pymongo import ASCENDING, DESCENDING
 from dateutil.relativedelta import relativedelta
 from discord.ext import commands
 from copy import copy
@@ -18,7 +19,8 @@ from utils.funcs import (
     discord_sanitize, normalize_caseless, kickable, bannable, make_delta, humanize_delta,
     create_mute_role, humanize_list, clamp
 )
-from constants import DATETIME_DEFAULT_FORMAT
+from essentials import PaginateOptions
+from constants import DATETIME_DEFAULT_FORMAT, TRACK_PREVIOUS, TRACK_NEXT
 from constants.colors import KICK_COLOR, BAN_COLOR, MUTE_COLOR
 from constants.regex import MUTE_REGEX, TIME_MATCH, TIME_SPLIT_REGEX
 from constants.numbers import DEFAULT_MUTE_MINUTES
@@ -197,7 +199,7 @@ class Moderation(commands.Cog):
     )
     @commands.bot_has_permissions(kick_members=True)
     @sguild_only()
-    @scommand(name="kick", description="Kick people.")
+    @scommand(name="kick", description="Kick people.", example="{p}kick @Boi#0001 Toxicity")
     async def kick(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
         await _kick_or_ban(ctx, member=cast(discord.Member, member), reason=reason, verb="kick", color=KICK_COLOR)
 
@@ -207,7 +209,7 @@ class Moderation(commands.Cog):
     )
     @commands.bot_has_permissions(ban_members=True)
     @sguild_only()
-    @scommand(name="ban", description="Ban people.")
+    @scommand(name="ban", description="Ban people.", example="{p}ban @Boi#0001 Raiding")
     async def ban(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
         await _kick_or_ban(ctx, member=cast(discord.Member, member), reason=reason, verb="ban", color=BAN_COLOR)
 
@@ -243,7 +245,10 @@ class Moderation(commands.Cog):
     )
     @commands.bot_has_permissions(ban_members=True)
     @sguild_only()
-    @scommand(name="idban", aliases=["hackban"], description="Ban people that aren't in the server by ID.")
+    @scommand(
+        name="idban", aliases=["hackban"], description="Ban people that aren't in the server by ID.",
+        example="{p}idban 261979210363437059"
+    )
     async def idban(self, ctx: SContext, member: AmbiguityUserOrMemberConverter, *, reason: Optional[str]):
         await _kick_or_ban(
             ctx, member=cast(discord.abc.User, member), reason=reason, verb="ban", color=BAN_COLOR,
@@ -257,7 +262,10 @@ class Moderation(commands.Cog):
     )
     @commands.bot_has_permissions(ban_members=True)
     @sguild_only()
-    @scommand(name="softban", description="Kick but remove messages in their way out. (Ban and unban)")
+    @scommand(
+        name="softban", description="Kick but remove messages in their way out. (Ban and unban)",
+        example="{p}softban @Boi#0001 Spamming"
+    )
     async def softban(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
         await _kick_or_ban(ctx, member=cast(discord.Member, member), reason=reason, verb="softban", color=KICK_COLOR)
 
@@ -267,7 +275,11 @@ class Moderation(commands.Cog):
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @sguild_only()
-    @scommand(name='mute', description="Mute people.", example="{p}mute @Boi#0001 1 hour and 2 days being stupid")
+    @scommand(
+        name='mute', description="Mute people.",
+        example="""{p}mute @Boi#0001 1 hour and 2 days Being stupid
+{p}mute @Boi#0001 1h2d Being stupid"""
+    )
     async def mute(self, ctx: SContext, member: AmbiguityMemberConverter, *, time_and_reason: Optional[str]):
         memb: discord.Member = cast(discord.Member, member)  # (Typing purposes)
         do_extend = getattr(ctx, "_mute_extend", False)  # If invoked as `emute`, in which you can re-mute muted people
@@ -508,7 +520,7 @@ To mute someone, use the `mute` command.")
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @sguild_only()
-    @scommand(name='unmute', description="Unmute a member.")
+    @scommand(name='unmute', description="Unmute a member.", example="{p}unmute @Boi#0001 They're good now")
     async def unmute(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str] = None):
         memb: discord.Member = cast(discord.Member, member)  # Typing purposes
         check_active_mutes: motor.motor_asyncio.AsyncIOMotorCollection = ctx.db.activemutes
@@ -559,25 +571,62 @@ unmuted!")
         await ctx.send(f"The member {sanitized_m} is not muted!")
 
     @sguild_only()
-    @sgroup(name="case", description="View action log cases.", invoke_without_command=True)
+    @sgroup(
+        name="case", description="View action log cases.", invoke_without_command=True, example="{p}case 6"
+    )
     async def case(self, ctx: SContext, number: int):
         found_dict = await ctx.db['punishments'].find_one(
-            PartialPunishmentsModel(guild_id=str(ctx.guild.id), case=number).as_dict()
+            PartialPunishmentsModel(guild_id=str(ctx.guild.id), case=number, deleted=False).as_dict()
         )
         if not found_dict or found_dict['deleted']:
             await ctx.send(f"Case #{number} not found!")
             return
-        try:
-            await ctx.send(embed=await generate_actionlog_embed_from_entry(ctx, found_dict, attempt_to_fetch=True))
-            return
-        except discord.NotFound:
-            pass
 
-        await ctx.send("That case has an invalid user! :frowning:")
+        oldest_case = await ctx.db['punishments'].find_one(
+            PartialPunishmentsModel(guild_id=str(ctx.guild.id), deleted=False).as_dict(),
+            sort=[('case', ASCENDING)]  # max=[('case', number)]
+        )  # fetch oldest case
+        latest_case = await ctx.db['punishments'].find_one(
+            PartialPunishmentsModel(guild_id=str(ctx.guild.id), deleted=False).as_dict(),
+            sort=[('case', DESCENDING)]  # max=[('case', number)]
+        )  # fetch latest case
+        min_case = oldest_case['case']
+        max_case = latest_case['case']
+
+        async def paginate(pag: PaginateOptions, msg: discord.Message, _emj, _ctx, rec: discord.Reaction):
+            nonlocal latest_case, oldest_case
+            diff = pag.current_page - pag.old_page
+            if pag.current_page > max_case or pag.current_page < min_case or not diff:
+                return  # bruh
+            max_to_use: int = pag.old_page if diff > 0 else pag.old_page + diff - 1  # account for negative diff
+            diff_to_use: int = diff - 1 if diff > 0 else 0
+            next_case = latest_case if str(rec.emoji) == TRACK_NEXT else (
+                oldest_case if str(rec.emoji) == TRACK_PREVIOUS else await ctx.db['punishments'].find_one(
+                    PartialPunishmentsModel(guild_id=str(ctx.guild.id), deleted=False).as_dict(),
+                    sort=[('case', ASCENDING)], max={'case': max_to_use},
+                    skip=diff_to_use  # "max" already skips 1 by default
+                )  # fetch next case
+            )
+            if next_case and next_case.get('case') != pag.old_page:
+                try:
+                    await msg.edit(
+                        embed=await generate_actionlog_embed_from_entry(ctx, next_case, attempt_to_fetch=True)
+                    )
+                except discord.NotFound:
+                    return
+
+        try:
+            await ctx.send(
+                embed=await generate_actionlog_embed_from_entry(ctx, found_dict, attempt_to_fetch=True),
+                paginate=PaginateOptions(paginate, current_page=number, min_page=min_case, max_page=max_case)
+            )
+        except discord.NotFound:
+            await ctx.send("That case has an invalid user! :frowning:")
+            return
 
     @sguild_only()
-    @case.command(name="reason", description="Change an action log's reason.")
-    async def case_reason(self, ctx: SContext, number: int, new_reason: str):
+    @case.command(name="reason", description="Change an action log's reason.", example="{p}case reason 6 New reason")
+    async def case_reason(self, ctx: SContext, number: int, *, new_reason: str):
         found_dict = await ctx.db['punishments'].find_one(
             PartialPunishmentsModel(guild_id=str(ctx.guild.id), case=number).as_dict()
         )
@@ -619,7 +668,7 @@ permission, a Salt Admin role or the `case others` saltperm!")
 
     @sguild_only()
     @case.command(name="togglethumb", description="Toggle an action log's thumbnail. \
-(In case avatar is innapropriate or something like that)")
+(In case avatar is innapropriate or something like that)", example="{p}case togglethumb 5")
     async def case_togglethumb(self, ctx: SContext, number: int, on_or_off: bool = None):
         found_dict = await ctx.db['punishments'].find_one(
             PartialPunishmentsModel(guild_id=str(ctx.guild.id), case=number).as_dict()
@@ -657,7 +706,8 @@ permission, a Salt Admin role or the `case others` saltperm!")
                         del as_dict['thumbnail']
                         embed = discord.Embed.from_dict(as_dict)
                     else:
-                        embed = await generate_actionlog_embed_from_entry(ctx, found.as_dict())
+                        new_embed = await generate_actionlog_embed_from_entry(ctx, found.as_dict())
+                        embed.set_thumbnail(url=new_embed.thumbnail)
                     modified = True
 
                 if modified:
