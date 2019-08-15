@@ -607,10 +607,13 @@ unmuted!")
                     skip=diff_to_use  # "max" already skips 1 by default
                 )  # fetch next case
             )
-            if next_case and next_case.get('case') != pag.old_page:
+            new_case_num = next_case.get('case')
+            if next_case and new_case_num != pag.old_page:
+                pag.current_page = new_case_num
                 try:
+                    embed = await generate_actionlog_embed_from_entry(ctx, next_case, attempt_to_fetch=False)
                     await msg.edit(
-                        embed=await generate_actionlog_embed_from_entry(ctx, next_case, attempt_to_fetch=True)
+                        embed=embed
                     )
                 except discord.NotFound:
                     return

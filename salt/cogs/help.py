@@ -55,7 +55,7 @@ for a list of commands in it):\n\n"
 
             emb = discord.Embed(title="Help", description=desc) \
                 .set_footer(text=footer)
-            await ctx.send(embed=emb)
+            await ctx.send(embed=emb, deletable=True)
 
         async def send_cog_help(self, cog: typing.Union[commands.Cog, HelpCogAll, HelpCogNone], page: int = 1):
             embed = discord.Embed()
@@ -85,6 +85,7 @@ on a command."
             cmds.sort(key=lambda x: x.name)
             pages = pagify_list(cmds)
 
+            origin_title = embed.title
             if len(pages) > 1:
                 embed.title += f" (Page {page}/{len(pages)})"
 
@@ -101,12 +102,12 @@ on a command."
             original_embed = embed.copy()
 
             async def update_page(pag: PaginateOptions, msg: discord.Message, _emj, _ctx, _rec):
-                print(f"RECEIVED {pag=} ON HELP")
                 embed.set_field_at(
                     -1,
                     name="Commands", value="• {}".format('\n• '.join(cmd.name for cmd in pages[pag.current_page - 1])),
                     inline=False
                 )
+                embed.title = f"{origin_title} (Page {pag.current_page}/{len(pages)})"
                 await msg.edit(embed=embed)
 
             await ctx.send(embed=embed, paginate=PaginateOptions(update_page, page, max_page=len(pages)))
@@ -146,7 +147,7 @@ on a command."
                         value=command.example.replace("{p}", self.clean_prefix), inline=False
                     )
 
-            await self.context.send(embed=embed)
+            await self.context.send(embed=embed, deletable=True)
             return
 
         async def command_callback(  # our case-insensitive impl.

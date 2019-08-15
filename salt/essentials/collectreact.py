@@ -156,9 +156,15 @@ async def collect_react(
             reaction_add = ctx.bot.wait_for("reaction_add", timeout=timeout, check=predicate_to_use)
             if wait_for_remove:  # wait for both add and remove to reduce api calls
                 reaction_remove = ctx.bot.wait_for("reaction_remove", timeout=timeout, check=predicate_to_use)
-                done, pending = await asyncio.wait((reaction_add, reaction_remove), return_when=asyncio.FIRST_COMPLETED)
+
+                async def rec_remove():
+                    try:
+                        return await reaction_remove
+                    except asyncio.TimeoutError:
+                        pass  # reaction_add handles that
+
+                done, pending = await asyncio.wait((reaction_add, rec_remove()), return_when=asyncio.FIRST_COMPLETED)
                 reacted = done.pop().result()
-                pending.pop().cancel()
             else:
                 reacted = await reaction_add
             if type(reacted) == tuple:

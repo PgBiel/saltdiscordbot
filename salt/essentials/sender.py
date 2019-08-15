@@ -28,7 +28,12 @@ class PaginateOptions:
     min_page: int = 1
     max_page: typing.Optional[int] = None
     deletable: bool = True
-    old_page: int = 1
+    auto_empty_cache: bool = True
+    old_page: int = 1                    # this shouldn't be set
+    cache: typing.Union[list, dict] = attr.ib(factory=list)  # this shouldn't be set
+
+    def empty_cache(self):
+        self.cache = type(self.cache)()
 
 
 async def send(
@@ -115,8 +120,12 @@ async def send(
         async def on_success(
             messg: discord.Message, emj: typing.Sequence[discord.Emoji], ctx: "SContext", react: discord.Reaction
         ):
+            if not react:
+                return
             if str(react.emoji) in (RED_X, WASTEBASKET):
                 await messg.delete()
+                if paginate.auto_empty_cache:
+                    paginate.empty_cache()
                 raise asyncio.TimeoutError()
 
             new_page: int = paginate.current_page
@@ -136,6 +145,8 @@ async def send(
                 await paginate.do_message_edit(paginate, messg, emj, ctx, react)
 
         async def on_timeout(messg: discord.Message, emj, _c):
+            if paginate.auto_empty_cache:
+                paginate.empty_cache()
             try:
                 await messg.clear_reactions()
             except discord.Forbidden:
