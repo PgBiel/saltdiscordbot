@@ -11,7 +11,7 @@ from discord.ext import commands
 from utils.funcs import sync_await
 from classes.scommand import SCommand, SGroup
 from classes.errors import (
-    SaltCheckFailure, MissingSaltModRole, NoConfiguredSaltModRole,
+    SaltCheckFailure, MissingSaltModRole, NoConfiguredSaltModRole, MissingSaltAdminRole, NoConfiguredSaltAdminRole,
     BotMissingOneChannelPermissions
 )
 
@@ -120,11 +120,22 @@ def or_checks(
     return or_decorator
 
 
-def has_saltmod_role():
+def has_saltrole(saltrole: str = "moderator"):
     """
     Check if the member has the Salt Mod role.
     :return: Check decorator.
     """
+    true_type = "moderator" if saltrole.startswith("m") else "administrator"
+
+    generic_main_error = "Server did not configure {} role."
+    generic_missing_error = "Member does not have any of the server's configured {} role(s)."
+    if true_type == "moderator":
+        main_error = NoConfiguredSaltModRole(generic_main_error.format("SaltMod"))
+        missing_error = MissingSaltModRole(generic_missing_error.format("SaltMod"))
+    else:
+        main_error = NoConfiguredSaltAdminRole(generic_main_error.format("SaltAdmin"))
+        missing_error = MissingSaltAdminRole(generic_missing_error.format("SaltAdmin"))
+
     async def do_check(ctx: "SContext") -> bool:
         if not ctx.guild:
             return False
@@ -134,21 +145,40 @@ def has_saltmod_role():
             mods.find_one({"guild_id": str(ctx.guild.id)})
         )
         if mods_entry_cursor is None:
-            raise NoConfiguredSaltModRole("Server did not configure SaltMod role.")
+            raise main_error
 
-        role_ids: Sequence[str] = mods_entry_cursor["moderator"]
+        role_ids: Sequence[str] = mods_entry_cursor[true_type]
 
         if role_ids is None or len(role_ids) == 0:
-            raise NoConfiguredSaltModRole("Server did not configure SaltMod role.")
+            raise main_error
 
         for role_id in role_ids:
             if discord.utils.get(ctx.author.roles, id=int(role_id)):
                 return True
 
-        raise MissingSaltModRole("Member does not have any of the server's configured SaltMod role(s).")
+        raise missing_error
         # return False
 
-    return scheck(do_check, saltmod_usable=True)
+    if true_type == 'moderator':
+        return scheck(do_check, saltmod_usable=True)
+    else:
+        return scheck(do_check, saltadmin_usable=True)
+
+
+def has_saltmod_role():
+    """
+    Check if the member has the Salt Mod role.
+    :return: Check decorator.
+    """
+    return has_saltrole(saltrole="moderator")
+
+
+def has_saltadmin_role():
+    """
+    Check if the member has the Salt Mod role.
+    :return: Check decorator.
+    """
+    return has_saltrole(saltrole="administrator")
 
 
 def sguild_only():

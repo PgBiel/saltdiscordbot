@@ -34,6 +34,9 @@ class _PartialMissingType:
     def __repr__(self) -> str:
         return "PARTIAL_MISSING"
 
+    def __bool__(self) -> bool:
+        return False
+
 
 PARTIAL_MISSING = _PartialMissingType()
 

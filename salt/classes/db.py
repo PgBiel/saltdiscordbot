@@ -366,7 +366,7 @@ class WarnLimitsModel(DBModel):
     punishment: str = attr.ib(
         validator=lambda s, *_args, **_kwargs: s in DB_PUNISHMENT_TYPES
     )  # "mute"/"kick"/"ban"/"softban"/"remute"/"warn"/...
-    muted_until: Optional[str] = None
+    mute_time: Optional[str] = None  # COMPRESSED DELTA
     permanent_mute: bool = False
 
 
@@ -389,7 +389,7 @@ class PartialWarnLimitsModel(DBModel):
         default=PARTIAL_MISSING,
         validator=lambda s, *_args, **_kwargs: s == PARTIAL_MISSING or s in DB_PUNISHMENT_TYPES
     )  # "mute"/"kick"/"ban"/"softban"/"warn"/...
-    muted_until: Optional[str] = PARTIAL_MISSING
+    mute_time: Optional[str] = PARTIAL_MISSING  # COMPRESSED DELTA
     permanent_mute: bool = PARTIAL_MISSING
 
 
@@ -403,7 +403,7 @@ class WarnExpiresModel(DBModel):
         expires: (Optional str) Interval of how much time should the warn expire after.
     """
     guild_id: str
-    expires: Optional[str] = None  # TODO: Add Interval somehow? compress_delta?
+    expires: Optional[str] = None  # COMPRESSED DELTA
 
 
 @attr.s(auto_attribs=True)
@@ -416,4 +416,4 @@ class PartialWarnExpiresModel(DBModel):
         expires: (Optional str) Interval of how much time should the warn expire after.
     """
     guild_id: str = PARTIAL_MISSING
-    expires: Optional[str] = PARTIAL_MISSING
+    expires: Optional[str] = PARTIAL_MISSING # COMPRESSED DELTA

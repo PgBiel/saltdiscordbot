@@ -2,6 +2,9 @@ import typing
 import discord
 import codecs
 import re
+import datetime
+from dateutil.relativedelta import relativedelta
+from constants import DELTA_COMPRESSION_MAP, DELTA_DECOMPRESSION_MAP
 
 
 def compress(string: typing.Union[str, int]) -> str:
@@ -88,3 +91,58 @@ def avatar_decompress(compressed: str, *, user_id: str, ext: str = "webp", size:
         origin += f"?size={size}"
 
     return origin
+
+
+def delta_compress(delta: typing.Union[datetime.timedelta, relativedelta], *, include_micro=False) -> str:
+    if not isinstance(delta, datetime.timedelta) and not isinstance(delta, relativedelta):
+        return ""
+
+    string = ""
+    for k in DELTA_COMPRESSION_MAP:
+        if not include_micro and k == "microseconds":
+            continue
+
+        if not include_micro and k == "milliseconds":
+            string += f"{DELTA_COMPRESSION_MAP[k]}{delta.microseconds // 1000}"
+
+        if hasattr(delta, k) and (val := getattr(delta, k)):  # has the time subdivision as attribute and it's non-zero
+            string += f"{DELTA_COMPRESSION_MAP[k]}{getattr(delta, k)}"
+
+    return string
+
+
+DeltaClass = typing.TypeVar("DeltaClass", datetime.timedelta, relativedelta)
+
+
+def delta_decompress(compressed: str, *, cls: typing.Type[DeltaClass] = relativedelta) -> DeltaClass:
+    string = ""
+    match: typing.List[str] = re.findall(r'[a-z]+[\d.]+', str(compressed), flags=re.RegexFlag.I)
+    result: DeltaClass = cls()
+    if not match:
+        return result
+
+    for part in match:
+        typeof = part[0]
+        try:
+            true_type = DELTA_DECOMPRESSION_MAP[typeof]
+        except KeyError:
+            continue
+
+        if cls == datetime.timedelta and true_type not in ('days', 'seconds', 'milliseconds', 'microseconds'):
+            continue  # timedelta only supports days, seconds and microseconds.
+
+        num_str = part[1:]
+        try:
+            num = float(num_str)
+        except ValueError:
+            continue
+        if not num:  # == 0
+            continue
+
+        if true_type == 'milliseconds':
+            true_type = "microseconds"
+            num *= 1000
+
+        setattr(result, true_type, num)
+
+    return result

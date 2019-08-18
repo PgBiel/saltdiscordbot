@@ -9,7 +9,14 @@ TIME_SPLIT_REGEX = r'''
 
 TIME_MATCH = r'(?P<number>\d+(?:\.\d+)?|\.\d+)\s*(?P<unit>\w+)'
 
-MUTE_REGEX = r"""
+_REASON_PART = r"""
+(?: # Reason group.
+  (?(all)\s+|\s*) # Whitespace to indicate reason.
+  (?P<reason>[\s\S]+) # The reason itself, any character any amount of times.
+)? # It is also optional.
+"""
+
+_STANDALONE_MUTE_REGEX = r"""(?x)
 ^ # Start of string.
     (?P<all> # User & Time.
       # ( # Possibility 1 starts here. This group is the user name
@@ -96,9 +103,8 @@ MUTE_REGEX = r"""
       #   \#\d{4}# ...A discrim.
       # ) # Possibility 4 ends here.
     )? # All the matching ends here. Phew!
-    (?: # Reason group.
-      (?(all)\s+|\s*) # Whitespace to indicate reason.
-      (?P<reason>[\s\S]+) # The reason itself, any character any amount of times.
-    )? # It is also optional.
-    $ # End of string.
 """
+
+MUTE_REGEX = _STANDALONE_MUTE_REGEX + _REASON_PART + "\n$ # End of string"
+
+MUTE_REGEX_NO_REASON = _STANDALONE_MUTE_REGEX + "\n$ # End of string"

@@ -1,7 +1,10 @@
 from discord.ext import commands
-from typing import Type, Any, Optional, Callable, List, cast
+from typing import Type, Any, Optional, Callable, List, cast, TYPE_CHECKING
 from utils.funcs import get_bot
 import inspect
+
+if TYPE_CHECKING:
+    from classes import SContext  # be able to use the "SContext" type
 
 
 class SCommand(commands.Command):
@@ -31,6 +34,10 @@ class SCommand(commands.Command):
         if hasattr(func, "__scmd_attribs__"):
             attribs: dict = func.__scmd_attribs__
             self._load_attribs(**attribs)
+
+    # async def can_run(self, ctx: "SContext"):  # activate this later
+        # if ctx.author in ctx.bot.config['owners'] or ctx.author.id == ctx.bot.owner_id:
+        #     return True
 
     def _load_attribs(self, **attribs):
         self.guild_only = attribs.get("guild_only", self.guild_only or False)
