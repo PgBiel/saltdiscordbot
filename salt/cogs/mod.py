@@ -628,7 +628,10 @@ unmuted!")
             return
 
     @sguild_only()
-    @case.command(name="reason", description="Change an action log's reason.", example="{p}case reason 6 New reason")
+    @case.command(
+        name="reason", aliases=["edit"],
+        description="Change an action log's reason.", example="{p}case reason 6 New reason"
+    )
     async def case_reason(self, ctx: SContext, number: int, *, new_reason: str):
         found_dict = await ctx.db['punishments'].find_one(
             PartialPunishmentsModel(guild_id=str(ctx.guild.id), case=number).as_dict()
@@ -719,6 +722,55 @@ permission, a Salt Admin role or the `case others` saltperm!")
             pass
 
         await ctx.send(f"Successfully toggled Case #{number}'s thumbnail {'on' if on_or_off else 'off'}!")
+
+    @sguild_only()
+    @case.command(name="delete", description="Delete a case.", example="{p}case delete 6")
+    async def case_delete(self, ctx: SContext, number: int):
+        found_dict = await ctx.db['punishments'].find_one(
+            PartialPunishmentsModel(guild_id=str(ctx.guild.id), case=number).as_dict()
+        )
+        if not found_dict or found_dict['deleted']:
+            await ctx.send(f"Case #{number} not found!")
+            return
+        provide_dict = copy(found_dict)
+        del provide_dict['_id']
+
+        found = PunishmentsModel(**provide_dict)
+        if found.moderator_id != str(ctx.author.id) and not ctx.author.guild_permissions.administrator:
+            await ctx.send(f"That case is not yours! To edit others' cases, you need the `Administrator` Discord \
+permission, a Salt Admin role or the `case others` saltperm!")
+            return
+
+        emb_desc: str = f"Are you sure you want to delete Case #{number}? **This is irreversible.** Type \
+**__y__es** to confirm or **__n__o** to cancel."  # Description for confirmation embed
+
+        # Confirmation embed - are you sure you wanna delete this case?
+        embed = discord.Embed(description=emb_desc, timestamp=datetime.datetime.utcnow()) \
+            .set_author(name=f"Deleting Case #{number}")                                  \
+            .set_footer(text="Please confirm")
+
+        received, cancelled, _s = await prompt(
+            "Are you sure?", ctx=ctx, embed=embed, already_asked=False, predicate_gen=confirmation_predicate_gen,
+            cancellable=True, partial_question=False
+        )  # Run prompt.
+
+        if cancelled or normalize_caseless(received.content).startswith("n"):  # Dude said 'no'
+            await ctx.send("Command cancelled.")
+            return
+
+        try:
+            if (
+                found.channel_id and (chan := ctx.guild.get_channel(int(found.channel_id)))
+                and found.message_id
+                and (msg := await cast(discord.TextChannel, chan).fetch_message(int(found.message_id)))
+            ):  # if action log message exists
+                await msg.delete()  # We're deleting the case after all
+        except discord.HTTPException:
+            pass
+
+        await ctx.db['punishments'].delete_one(dict(_id=found_dict['_id']))
+
+        await ctx.send(f"Case #{number} deleted successfully!")
 
 
 def setup(bot: commands.Bot) -> None:

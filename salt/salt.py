@@ -181,7 +181,7 @@ class Salt(commands.Bot):
             return
 
         if isinstance(error, commands.NoPrivateMessage):
-            await ctx.send('This command cannot be used in private messaging!')
+            await ctx.send('This command cannot be used in private messages!')
             return
 
         if isinstance(error, commands.CommandNotFound):

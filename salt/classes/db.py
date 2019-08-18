@@ -234,7 +234,7 @@ class PunishmentsModel(DBModel):
     guild_id: str
     type: str = attr.ib(
         validator=lambda s, *_args, **_kwargs: s in DB_PUNISHMENT_TYPES
-    )  # "mute"/"kick"/"ban"/"softban"/"remute"
+    )  # "mute"/"kick"/"ban"/"softban"/"remute"/"warn"/...
     target_id: str
     moderator_id: Optional[str]  # Optional in case it failed
     case: int  # case id
@@ -290,7 +290,7 @@ class PartialPunishmentsModel(DBModel):
     type: str = attr.ib(
         default=PARTIAL_MISSING,
         validator=lambda s, *_args, **_kwargs: s == PARTIAL_MISSING or s in DB_PUNISHMENT_TYPES
-    )  # "mute"/"kick"/"ban"/"softban"
+    )  # "mute"/"kick"/"ban"/"softban"/"warn"/...
     target_id: str = PARTIAL_MISSING
     moderator_id: str = PARTIAL_MISSING
     case: int = PARTIAL_MISSING  # case id
@@ -306,4 +306,114 @@ class PartialPunishmentsModel(DBModel):
     thumb_is_avatar: bool = PARTIAL_MISSING
 
 
+@attr.s(auto_attribs=True)
+class WarnsModel(DBModel):
+    """
+    Model for the `warns` collection of the Salt DB.
 
+    Attributes
+        guild_id: Guild where this warn happened in.
+        user_id: User warned.
+        moderator_id: Author of warn.
+        case: Case number.
+        warned_at: When this warn happened.
+    """
+    guild_id: str
+    user_id: str
+    moderator_id: str
+    case: int
+    warned_at: str
+
+
+@attr.s(auto_attribs=True)
+class PartialWarnsModel(DBModel):
+    """
+    PARTIAL Model for the `warns` collection of the Salt DB.
+
+    Attributes
+        guild_id: Guild where this warn happened in.
+
+        user_id: User warned.
+
+        moderator_id: Author of warn.
+
+        case: Case number.
+
+        warned_at: When this warn happened.
+    """
+    guild_id: str = PARTIAL_MISSING
+    user_id: str = PARTIAL_MISSING
+    moderator_id: str = PARTIAL_MISSING
+    case: int = PARTIAL_MISSING
+    warned_at: str = PARTIAL_MISSING
+
+
+@attr.s(auto_attribs=True)
+class WarnLimitsModel(DBModel):
+    """
+    Model for the `warnlimits` collection of the Salt DB. Regulates each of the warn limits of a server.
+
+    Attributes
+        amount: Amount of warns at which this warn limit is activated and emits a punishment.
+
+        punishment: The type of punishment emitted by the warn limit.
+
+        muted_until: (Optional str) If mute, theuntil when is the user muted for.
+
+        permanent_mute: (Optional bool) Whether or not this is a permanent mute, defaults to False.
+    """
+    amount: int
+    punishment: str = attr.ib(
+        validator=lambda s, *_args, **_kwargs: s in DB_PUNISHMENT_TYPES
+    )  # "mute"/"kick"/"ban"/"softban"/"remute"/"warn"/...
+    muted_until: Optional[str] = None
+    permanent_mute: bool = False
+
+
+@attr.s(auto_attribs=True)
+class PartialWarnLimitsModel(DBModel):
+    """
+    PARTIAL Model for the `warnlimits` collection of the Salt DB. Regulates each of the warn limits of a server.
+
+    Attributes
+        amount: Amount of warns at which this warn limit is activated and emits a punishment.
+
+        punishment: The type of punishment emitted by the warn limit.
+
+        muted_until: (Optional str) If mute, theuntil when is the user muted for.
+
+        permanent_mute: (Optional bool) Whether or not this is a permanent mute, defaults to False.
+    """
+    amount: int = PARTIAL_MISSING
+    punishment: str = attr.ib(
+        default=PARTIAL_MISSING,
+        validator=lambda s, *_args, **_kwargs: s == PARTIAL_MISSING or s in DB_PUNISHMENT_TYPES
+    )  # "mute"/"kick"/"ban"/"softban"/"warn"/...
+    muted_until: Optional[str] = PARTIAL_MISSING
+    permanent_mute: bool = PARTIAL_MISSING
+
+
+@attr.s(auto_attribs=True)
+class WarnExpiresModel(DBModel):
+    """
+    Model for the `warnexpires` collection of the Salt DB. Stores each server's +warnxepire results.
+
+    Attributes
+        guild_id: Guild whose warns are affected by this setting.
+        expires: (Optional str) Interval of how much time should the warn expire after.
+    """
+    guild_id: str
+    expires: Optional[str] = None  # TODO: Add Interval somehow? compress_delta?
+
+
+@attr.s(auto_attribs=True)
+class PartialWarnExpiresModel(DBModel):
+    """
+    Model for the `warnexpires` collection of the Salt DB. Stores each server's +warnxepire results.
+
+    Attributes
+        guild_id: Guild whose warns are affected by this setting.
+        expires: (Optional str) Interval of how much time should the warn expire after.
+    """
+    guild_id: str = PARTIAL_MISSING
+    expires: Optional[str] = PARTIAL_MISSING
