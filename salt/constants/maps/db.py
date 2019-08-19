@@ -1,6 +1,7 @@
 from pymongo import ASCENDING, DESCENDING
 
 DB_PUNISHMENT_TYPES = ("mute", "remute", "kick", "ban", "softban", "unmute", "unban")
+SETTABLE_PUNISHMENT_TYPES = ("mute", "pmute", "kick", "ban", "softban", "unmute", "unban")
 
 DB_COLLECTIONS_TO_INDEXES = {
     "punishments": [('guild_id', ASCENDING), ('case', DESCENDING), ('deleted', DESCENDING)],

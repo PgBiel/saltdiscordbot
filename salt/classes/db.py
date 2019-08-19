@@ -354,14 +354,17 @@ class WarnLimitsModel(DBModel):
     Model for the `warnlimits` collection of the Salt DB. Regulates each of the warn limits of a server.
 
     Attributes
+        guild_id: ($ index) ID of the guild where this warn limit has effect in.
+
         amount: Amount of warns at which this warn limit is activated and emits a punishment.
 
         punishment: The type of punishment emitted by the warn limit.
 
-        muted_until: (Optional str) If mute, theuntil when is the user muted for.
+        mute_time: (Optional str) If mute, the duration of the mute as a compressed delta.
 
         permanent_mute: (Optional bool) Whether or not this is a permanent mute, defaults to False.
     """
+    guild_id: str
     amount: int
     punishment: str = attr.ib(
         validator=lambda s, *_args, **_kwargs: s in DB_PUNISHMENT_TYPES
@@ -376,14 +379,17 @@ class PartialWarnLimitsModel(DBModel):
     PARTIAL Model for the `warnlimits` collection of the Salt DB. Regulates each of the warn limits of a server.
 
     Attributes
+        guild_id: ($ index) ID of the guild where this warn limit has effect in.
+
         amount: Amount of warns at which this warn limit is activated and emits a punishment.
 
         punishment: The type of punishment emitted by the warn limit.
 
-        muted_until: (Optional str) If mute, theuntil when is the user muted for.
+        mute_time: (Optional str) If mute, the duration of the mute as a compressed delta.
 
         permanent_mute: (Optional bool) Whether or not this is a permanent mute, defaults to False.
     """
+    guild_id: str = PARTIAL_MISSING
     amount: int = PARTIAL_MISSING
     punishment: str = attr.ib(
         default=PARTIAL_MISSING,

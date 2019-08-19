@@ -284,11 +284,12 @@ class Moderation(commands.Cog):
         memb: discord.Member = cast(discord.Member, member)  # (Typing purposes)
         do_extend = getattr(ctx, "_mute_extend", False)  # If invoked as `emute`, in which you can re-mute muted people
         is_permanent = getattr(ctx, "_mute_permanent", False)  # If invoked as `pmute`, in which you mute people forever
+
         check_active_mutes: motor.motor_asyncio.AsyncIOMotorCollection = ctx.db.activemutes
         found_active_mute: motor.motor_asyncio.AsyncIOMotorCursor = await check_active_mutes.find_one(dict(
             guild_id=str(ctx.guild.id), user_id=str(memb.id)
-        ))
-        if found_active_mute and not do_extend:  # Otherwise don't let them re-mute.
+        ))  # see if user is muted
+        if found_active_mute and not do_extend:  # Don't let them re-mute if not extending mute.
             await ctx.send(
                 "That member is already muted! To change their mute duration{0}, use the `e{1}mute` command.".format(
                     " to permanent" if is_permanent else "",
@@ -296,11 +297,12 @@ class Moderation(commands.Cog):
                 )
             )
             return
-        elif do_extend and not found_active_mute:
+        elif do_extend and not found_active_mute:  # Extending mute, but there's no mute to extend
             await ctx.send("That member is not muted! This command changes duration of already existing mutes. \
 To mute someone, use the `mute` command.")
             return
-        time_to_mute = relativedelta(minutes=DEFAULT_MUTE_MINUTES)  # default: 10 min
+
+        time_to_mute = relativedelta(minutes=DEFAULT_MUTE_MINUTES)  # default mute time: 10 min
         reason_to_mute: str = time_and_reason if is_permanent else ""  # reasoning
         if time_and_reason and not is_permanent:  # if user provided a time or reason
             match = re.fullmatch(MUTE_REGEX, time_and_reason, re.RegexFlag.X | re.RegexFlag.I)  # let's match it
@@ -488,8 +490,7 @@ To mute someone, use the `mute` command.")
     @scommand(name='emute', aliases=["remute"], description="Change how long someone is muted for.")
     async def emute(self, ctx: SContext, member: AmbiguityMemberConverter, *, time_and_reason: Optional[str]):
         ctx._mute_extend = True
-        await ctx.invoke(self.mute, member, time_and_reason=time_and_reason)\
-
+        await ctx.invoke(self.mute, member, time_and_reason=time_and_reason)
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),

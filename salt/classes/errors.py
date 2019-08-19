@@ -104,7 +104,7 @@ class BotMissingThisChannelPermissions(SaltMissingPermissions):
     The bot is missing permissions in the channel being spoken in.
 
     Attributes
-        misisng_perms: The list of permissions the bot is missing in this channel
+        missing_perms: The list of permissions the bot is missing in this channel
     """
 
 

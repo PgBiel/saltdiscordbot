@@ -2,10 +2,11 @@
 Operations using strings and/or returning strings.
 """
 import unicodedata
+import unidecode
 import discord
 import datetime
 import re
-from typing import Sequence, Optional, Union, TYPE_CHECKING, List, Iterable, overload, TypeVar
+from typing import Sequence, Optional, Union, TYPE_CHECKING, List, Iterable, overload, TypeVar, Sized
 from utils.funcs import clean_falsy_values, extract_delta
 from constants import TIME_ALIASES
 from dateutil.relativedelta import relativedelta
@@ -91,7 +92,7 @@ def humanize_list(target_list: Sequence, *, no_and: bool = False, connector: str
 
 def humanize_delta(
         delta: Union[datetime.timedelta, relativedelta], *, no_and: bool = False, connector: str = "and",
-        scale: bool = False,
+        scale: bool = False, default_val: str = "0 seconds",
         **kwargs
 ) -> str:
     """
@@ -102,6 +103,7 @@ def humanize_delta(
     :param connector: (humanize_list param) (str) Connector to be used at the end of the string; default='and'
     :param scale: (bool=False) Whether to automatically choose which measures should be included in the string. If True,
         all the other time measure params (years, months, ...) are ignored.
+    :param default_val: (str, default="0 seconds") Default value to return when all of the time units are equal to 0.
     :param years: (bool, default=True) Whether to include years in the string.
     :param months: (bool, default=True) Whether to include months in the string.
     :param weeks: (bool, default=True) Whether to include weeks in the string.
@@ -130,7 +132,7 @@ def humanize_delta(
             v = extracted[name]
             if v:
                 list_strs.append(f"{int(v) if v % 1 == 0 else v} {re.sub(r's$', '', name) if v == 1 else name}")
-    return humanize_list(list_strs, no_and=no_and, connector=connector)
+    return humanize_list(list_strs, no_and=no_and, connector=connector) or default_val
 
 
 def normalize(text: str, *, method: Optional[str] = "NFKD") -> str:
@@ -174,6 +176,36 @@ def normalize_contains(container: str, contained: str) -> bool:
     :return: Whether the container contains the contained.
     """
     return normalize(contained) in normalize(container)
+
+
+def no_accent(text: str) -> str:
+    """
+    Remove all accents from a string.
+
+    :param text: String to modify.
+    :return: Modified string.
+    """
+    return unidecode.unidecode(text)
+
+
+def normalize_no_accent(text: str) -> str:
+    """
+        Remove all accents from a string, and normalize it.
+
+        :param text: String to modify.
+        :return: Modified string.
+        """
+    return unidecode.unidecode(normalize(text))
+
+
+def normalize_caseless_no_accent(text: str) -> str:
+    """
+        Remove all accents from a string, and normalize_caseless() it.
+
+        :param text: String to modify.
+        :return: Modified string.
+        """
+    return unidecode.unidecode(normalize_caseless(text))
 
 
 def caseless_equal(left: str, right: str) -> bool:
@@ -227,7 +259,34 @@ def tag(
 def discord_sanitize(text: str) -> str:
     """
     Sanitize text for use in Discord. (Escape Markdown and mentions)
+
     :param text: The text to sanitize.
     :return: The sanitized, properly escaped text.
     """
     return discord.utils.escape_markdown(discord.utils.escape_mentions(text))
+
+
+def is_vocalic(text: str) -> bool:
+    """
+    Returns True if the text begins with a vowel.
+
+    :param text: String to check.
+    :return: Whether the text begins with a vowel.
+    """
+    return normalize_caseless_no_accent(text)[0] in ("a", "e", "i", "o", "u")
+
+
+def plural_s(amnt_or_iterable: Union[int, float, Sized]) -> str:
+    """
+    Returns "s" if the amount or the iterable's length passed is different than 1, otherwise "" (empty string).
+
+    :param amnt_or_iterable: Number or iterable to check.
+    :return: The "s" or "".
+    """
+    num: float
+    if isinstance(amnt_or_iterable, int) or isinstance(amnt_or_iterable, float):
+        num = float(amnt_or_iterable)
+    else:
+        num = float(len(amnt_or_iterable))
+
+    return "s" if num != 1 else ""

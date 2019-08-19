@@ -3,19 +3,22 @@ import re
 import math
 from discord.ext import commands
 from constants import (
-    PREFIX_LIMIT, DEFAULT_PREFIX, TIME_SPLIT_REGEX, MUTE_REGEX_NO_REASON, TIME_MATCH, TIME_ALIASES
+    PREFIX_LIMIT, DEFAULT_PREFIX, TIME_SPLIT_REGEX, MUTE_REGEX_NO_REASON, TIME_MATCH, TIME_ALIASES, WARNSTEP_LIMIT,
+    DEFAULT_MUTE_MINUTES, SETTABLE_PUNISHMENT_TYPES
 )
 from classes import (
-    scommand, SContext, PrefixesModel, PartialPrefixesModel, set_op, NoPermissions, PartialWarnExpiresModel,
-    WarnExpiresModel
+    scommand, sgroup, SContext, PrefixesModel, PartialPrefixesModel, set_op, NoPermissions,
+    PartialWarnExpiresModel, WarnExpiresModel, WarnLimitsModel
 )
 from dateutil.relativedelta import relativedelta
-from utils.funcs import discord_sanitize, humanize_delta, dict_except, delta_compress, delta_decompress
+from utils.funcs import (
+    discord_sanitize, humanize_delta, dict_except, delta_compress, delta_decompress, is_vocalic,
+    humanize_list, list_except
+)
 from utils.advanced import or_checks, has_saltadmin_role, is_owner
 
 administration_dperm_error_fmt = "Missing permissions! For this command, you need either Manage Server, \
 a Salt Mod role or the `{0}` saltperm."
-
 
 class Administration(commands.Cog):
 
@@ -58,7 +61,7 @@ this command in specific doesn't change its prefix.")
 towards warn limits).')
     async def warnexpire(self, ctx: SContext, *, time: typing.Optional[str] = None):
         if not time:
-            current: dict = await ctx.db['warnexpires'].find_one(dict(guild_id=ctx.guild.id))
+            current: dict = await ctx.db['warnexpires'].find_one(dict(guild_id=str(ctx.guild.id)))
             c_model = PartialWarnExpiresModel(**(dict_except(current, "_id") if current else dict()))
             expiry_time = delta_decompress(c_model.expires) if c_model.expires else relativedelta(weeks=1)
             await ctx.send(f"This server's warns expire after {humanize_delta(expiry_time)}!")
@@ -98,6 +101,147 @@ towards warn limits).')
             upsert=True
         )
         await ctx.send(f"Successfully updated time for warn expire to {humanize_delta(expire_time) or '0 seconds'}!")
+
+    @sgroup(
+        name='warnlimit', aliases=['setwarns'], description='Work with warn limits.',
+        invoke_without_command=True
+    )
+    async def warnlimit(self, ctx: SContext, limit_amount: int):
+        current: dict = await ctx.db['warnlimits'].find_one(
+            dict(guild_id=str(ctx.guild.id), amount=limit_amount)
+        ) if limit_amount <= WARNSTEP_LIMIT else None
+        if not current:
+            await ctx.send(f"Warn limit for the amount of {limit_amount} warns is not set! You can set using the \
+`warnlimit set` subcommand, if you have enough permissions.")
+            return
+
+        c_model = WarnLimitsModel(**dict_except(current, "_id"))
+        punish_type = c_model.punishment
+        mute_duration = c_model.mute_time
+        permanent_mute = c_model.permanent_mute
+
+        await ctx.send(
+            "Upon reaching {0} warns, the user receives a{1} {2}{3}{4}.".format(
+                limit_amount, 'n' if is_vocalic(punish_type) else '',
+                "permanent " if permanent_mute else "", punish_type,
+                "" if punish_type not in ('mute', 'remute') or permanent_mute else (
+                    f" for {humanize_delta(delta_decompress(mute_duration))}"
+                )
+            )
+        )
+
+    @warnlimit.command(name='get', description='Get information for a warn limit.')
+    async def warnlimit_get(self, ctx: SContext, limit_amount: int):
+        await ctx.invoke(self.warnlimit, limit_amount)  # same thing
+
+    @or_checks(
+        is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
+        error=NoPermissions(administration_dperm_error_fmt.format('warnlimit set'))
+    )
+    @warnlimit.command(name='set', description='Set a warn limit.')
+    async def warnlimit_set(
+            self, ctx: SContext, warn_amount: int, punishment: str, *, mute_duration: typing.Optional[str] = None
+    ):
+        if warn_amount > WARNSTEP_LIMIT:
+            await ctx.send(f"Invalid warn amount for warn limit! Max is {WARNSTEP_LIMIT}.")
+            return
+
+        punishment = punishment.lower()
+        if punishment not in SETTABLE_PUNISHMENT_TYPES:  # "remute" is not a 'legit' punishment
+            await ctx.send(
+                "Invalid punishment type! Must be one of {}.".format(
+                    humanize_list(list_except(SETTABLE_PUNISHMENT_TYPES, "remute"), connector='or')
+                )
+            )
+            return
+
+        model_to_set = WarnLimitsModel(guild_id=str(ctx.guild.id), amount=warn_amount, punishment=punishment)
+        if punishment == 'mute':
+            if mute_duration:
+                time = mute_duration \
+                    .strip("\"'").strip().replace(",", "").replace("and", "").replace("+", "").replace("-", "")
+                # Do some cleaning in the house
+
+                if not re.match(MUTE_REGEX_NO_REASON, time, re.RegexFlag.I | re.RegexFlag.X):
+                    await ctx.send("Invalid time specified!")
+                    return
+
+                parsed = re.findall(TIME_SPLIT_REGEX, time, flags=re.RegexFlag.I | re.RegexFlag.X)
+                try:
+                    units = dict()
+                    # Here we separate each part of time - ["5 years", "5 seconds"] - to add to our delta
+                    for part in parsed:
+                        p_match = re.fullmatch(TIME_MATCH, part,
+                                               flags=re.RegexFlag.I)  # Now let's separate "5" from "years"
+                        num_str, time_str = (p_match.group("number"), p_match.group("unit"))  # ^
+                        amount = float(num_str)  # Convert to float, or error if too big (see try/except)
+                        unit = TIME_ALIASES[time_str.lower()]  # Unit using
+                        if unit in ("years", "months"):  # On 'years' and 'months', can only use int, not float
+                            amount = math.floor(amount)  # On the rest we can use floats tho so it's ok
+                        if units.get(unit):  # If the user already specified this unit before, just sum (5s + 5s)
+                            units[unit] += amount
+                        else:  # Else just add to our dict
+                            units[unit] = amount
+
+                    mute_time = relativedelta(**units)  # Using the units parsed, we are good to go.
+                except (OverflowError, OSError, ValueError):  # Oh no, num too big
+                    await ctx.send("You specified a number (in mute duration) that is too big!")
+                    return
+
+            else:
+                mute_time = relativedelta(minutes=DEFAULT_MUTE_MINUTES)
+
+            model_to_set.mute_time = delta_compress(mute_time)
+
+        if punishment == 'pmute':
+            punishment = 'mute'
+            model_to_set.punishment = punishment
+            model_to_set.permanent_mute = True
+
+        await ctx.db['warnlimits'].update_one(
+            dict(guild_id=str(ctx.guild.id), amount=warn_amount),
+            set_op(model_to_set.as_dict()),
+            upsert=True  # if there's already a warn limit with this amount in this guild, change it, otherwise create
+        )
+        await ctx.send(
+            "Successfully set the punishment for reaching {0} warns to a{1} {2}{3}{4}!".format(
+                warn_amount, "n" if is_vocalic(punishment) else "",
+                "permanent " if model_to_set.permanent_mute else "", punishment,
+                f" for {humanize_delta(mute_time)}" if model_to_set.mute_time else ""
+            )
+        )
+
+    @or_checks(
+        is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
+        error=NoPermissions(administration_dperm_error_fmt.format('warnlimit unset'))
+    )
+    @warnlimit.command(name='unset', aliases=['remove'], description='Remove a warn limit.')
+    async def warnlimit_unset(self, ctx: SContext, warn_amount: int):
+        current: dict = await ctx.db['warnlimits'].find_one(
+            dict(guild_id=str(ctx.guild.id), amount=warn_amount)
+        ) if warn_amount <= WARNSTEP_LIMIT else None
+        if not current:
+            await ctx.send(f"Warn limit for the amount of {warn_amount} warns is not set! You can set using the \
+`warnlimit set` subcommand, if you have enough permissions.")
+            return
+
+        c_model = WarnLimitsModel(**dict_except(current, "_id"))
+        punish_type = c_model.punishment
+        mute_duration = c_model.mute_time
+        permanent_mute = c_model.permanent_mute
+
+        await ctx.db['warnlimits'].delete_one(dict(_id=current['_id']))
+
+        await ctx.send(
+            "Successfully removed the warn limit of {0} warns, in which the user, after reaching it, would receive \
+a{1} {2}{3}{4}.".format(
+                warn_amount, 'n' if is_vocalic(punish_type) else '',
+                "permanent " if permanent_mute else "", punish_type,
+                "" if punish_type not in ('mute', 'remute') or permanent_mute else (
+                    f" for {humanize_delta(delta_decompress(mute_duration))}"
+                )
+            )
+        )
 
 
 def setup(bot: commands.Bot):

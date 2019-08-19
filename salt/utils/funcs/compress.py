@@ -133,7 +133,10 @@ def delta_decompress(compressed: str, *, cls: typing.Type[DeltaClass] = relative
 
         num_str = part[1:]
         try:
-            num = float(num_str)
+            if true_type in ('years', 'months'):
+                num = int(num_str)
+            else:
+                num = float(num_str)
         except ValueError:
             continue
         if not num:  # == 0

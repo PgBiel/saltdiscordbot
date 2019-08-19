@@ -19,13 +19,13 @@ def copy_class(cls: Cls, prefix: Optional[str] = "") -> Cls:
     :return:
     """
     copy_cls = type(f'{prefix}{cls.__name__}', cls.__bases__, dict(cls.__dict__))
-    for name, attr in cls.__dict__.items():
+    for name, attrib in cls.__dict__.items():
         try:
-            hash(attr)
+            hash(attrib)
         except TypeError:
             # Assume lack of __hash__ implies mutability. This is NOT
             # a bullet proof assumption but good in many cases.
-            setattr(copy_cls, name, deepcopy(attr))
+            setattr(copy_cls, name, deepcopy(attrib))
     return copy_cls
 
 
