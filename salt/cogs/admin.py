@@ -1,6 +1,8 @@
 import typing
 import re
 import math
+import discord
+import datetime
 from discord.ext import commands
 from constants import (
     PREFIX_LIMIT, DEFAULT_PREFIX, TIME_SPLIT_REGEX, MUTE_REGEX_NO_REASON, TIME_MATCH, TIME_ALIASES, WARNSTEP_LIMIT,
@@ -8,17 +10,20 @@ from constants import (
 )
 from classes import (
     scommand, sgroup, SContext, PrefixesModel, PartialPrefixesModel, set_op, NoPermissions,
-    PartialWarnExpiresModel, WarnExpiresModel, WarnLimitsModel
+    PartialWarnExpiresModel, WarnExpiresModel, WarnLimitsModel,
+    PositiveIntConverter
 )
 from dateutil.relativedelta import relativedelta
+from utils.advanced import prompt, confirmation_predicate_gen
 from utils.funcs import (
     discord_sanitize, humanize_delta, dict_except, delta_compress, delta_decompress, is_vocalic,
-    humanize_list, list_except
+    humanize_list, list_except, normalize_caseless
 )
-from utils.advanced import or_checks, has_saltadmin_role, is_owner
+from utils.advanced import or_checks, has_saltadmin_role, is_owner, sguild_only
 
 administration_dperm_error_fmt = "Missing permissions! For this command, you need either Manage Server, \
 a Salt Mod role or the `{0}` saltperm."
+
 
 class Administration(commands.Cog):
 
@@ -26,6 +31,7 @@ class Administration(commands.Cog):
         is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
         error=NoPermissions(administration_dperm_error_fmt.format('prefix'))
     )
+    @sguild_only()
     @scommand(name='prefix', description='Views or changes the prefix of the server.')
     async def prefix(self, ctx: SContext, *, new_prefix: typing.Optional[str]):
         prefixes = ctx.db['prefixes']
@@ -57,8 +63,9 @@ this command in specific doesn't change its prefix.")
         is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
         error=NoPermissions(administration_dperm_error_fmt.format('warnexpire'))
     )
+    @sguild_only()
     @scommand(name='warnexpire', description='Set the amount of time it takes for a warn to "expire" ((stop counting \
-towards warn limits).')
+towards warn limits).', example="{p}warnexpire\n{p}warnexpire 2 weeks\n{p}warnexpire 5 days")
     async def warnexpire(self, ctx: SContext, *, time: typing.Optional[str] = None):
         if not time:
             current: dict = await ctx.db['warnexpires'].find_one(dict(guild_id=str(ctx.guild.id)))
@@ -103,15 +110,22 @@ towards warn limits).')
         await ctx.send(f"Successfully updated time for warn expire to {humanize_delta(expire_time) or '0 seconds'}!")
 
     @sgroup(
-        name='warnlimit', aliases=['setwarns'], description='Work with warn limits.',
+        name='warnlimit', aliases=['setwarns'], description="""Work with warn limits - they are an amount of warnings\
+ an user can get before receiving a certain punishment. There can be multiple of those, up to 50. Each warn limit can\
+ have a different punishment. See each of the subcommands' help for more info.
+""", example="{p}warnlimit 5",
         invoke_without_command=True
     )
-    async def warnlimit(self, ctx: SContext, limit_amount: int):
+    @sguild_only()
+    async def warnlimit(self, ctx: SContext, warn_amount: PositiveIntConverter):
+        w_amount = typing.cast(int, warn_amount)
+        # if w_amount is None:
+        #     await ctx.send(f"")
         current: dict = await ctx.db['warnlimits'].find_one(
-            dict(guild_id=str(ctx.guild.id), amount=limit_amount)
-        ) if limit_amount <= WARNSTEP_LIMIT else None
+            dict(guild_id=str(ctx.guild.id), amount=w_amount)
+        ) if w_amount <= WARNSTEP_LIMIT else None
         if not current:
-            await ctx.send(f"Warn limit for the amount of {limit_amount} warns is not set! You can set using the \
+            await ctx.send(f"Warn limit for the amount of {w_amount} warns is not set! You can set using the \
 `warnlimit set` subcommand, if you have enough permissions.")
             return
 
@@ -122,7 +136,7 @@ towards warn limits).')
 
         await ctx.send(
             "Upon reaching {0} warns, the user receives a{1} {2}{3}{4}.".format(
-                limit_amount, 'n' if is_vocalic(punish_type) else '',
+                w_amount, 'n' if is_vocalic(punish_type) else '',
                 "permanent " if permanent_mute else "", punish_type,
                 "" if punish_type not in ('mute', 'remute') or permanent_mute else (
                     f" for {humanize_delta(delta_decompress(mute_duration))}"
@@ -130,19 +144,31 @@ towards warn limits).')
             )
         )
 
-    @warnlimit.command(name='get', description='Get information for a warn limit.')
-    async def warnlimit_get(self, ctx: SContext, limit_amount: int):
-        await ctx.invoke(self.warnlimit, limit_amount)  # same thing
+    @sguild_only()
+    @warnlimit.command(
+        name='get', aliases=['limit'],
+        description='Get information about a warn limit.', example="{p}warnlimit get 26"
+    )
+    async def warnlimit_get(self, ctx: SContext, warn_amount: PositiveIntConverter):
+        await ctx.invoke(self.warnlimit, warn_amount)  # same thing
 
     @or_checks(
         is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
         error=NoPermissions(administration_dperm_error_fmt.format('warnlimit set'))
     )
-    @warnlimit.command(name='set', description='Set a warn limit.')
+    @sguild_only()
+    @warnlimit.command(name='set', example="{p}warnlimit set 5 kick\n{p}warnlimit set 6 mute 10 hours")
     async def warnlimit_set(
-            self, ctx: SContext, warn_amount: int, punishment: str, *, mute_duration: typing.Optional[str] = None
+            self, ctx: SContext, warn_amount: PositiveIntConverter,
+            punishment: str, *, mute_duration: typing.Optional[str] = None
     ):
-        if warn_amount > WARNSTEP_LIMIT:
+        """
+        Sets a warn limit. Any punishment can be specified, such as `kick` or `ban`. in case of `mute`,\
+        you must specify the mute duration after, or it defaults to 10 minutes (see: Examples).\
+        For a permanent mute, specify `pmute` as the punishment instead.
+        """
+        w_amount: int = typing.cast(int, warn_amount)
+        if w_amount > WARNSTEP_LIMIT:
             await ctx.send(f"Invalid warn amount for warn limit! Max is {WARNSTEP_LIMIT}.")
             return
 
@@ -155,7 +181,7 @@ towards warn limits).')
             )
             return
 
-        model_to_set = WarnLimitsModel(guild_id=str(ctx.guild.id), amount=warn_amount, punishment=punishment)
+        model_to_set = WarnLimitsModel(guild_id=str(ctx.guild.id), amount=w_amount, punishment=punishment)
         if punishment == 'mute':
             if mute_duration:
                 time = mute_duration \
@@ -199,13 +225,13 @@ towards warn limits).')
             model_to_set.permanent_mute = True
 
         await ctx.db['warnlimits'].update_one(
-            dict(guild_id=str(ctx.guild.id), amount=warn_amount),
+            dict(guild_id=str(ctx.guild.id), amount=w_amount),
             set_op(model_to_set.as_dict()),
             upsert=True  # if there's already a warn limit with this amount in this guild, change it, otherwise create
         )
         await ctx.send(
             "Successfully set the punishment for reaching {0} warns to a{1} {2}{3}{4}!".format(
-                warn_amount, "n" if is_vocalic(punishment) else "",
+                w_amount, "n" if is_vocalic(punishment) else "",
                 "permanent " if model_to_set.permanent_mute else "", punishment,
                 f" for {humanize_delta(mute_time)}" if model_to_set.mute_time else ""
             )
@@ -215,13 +241,17 @@ towards warn limits).')
         is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
         error=NoPermissions(administration_dperm_error_fmt.format('warnlimit unset'))
     )
-    @warnlimit.command(name='unset', aliases=['remove'], description='Remove a warn limit.')
-    async def warnlimit_unset(self, ctx: SContext, warn_amount: int):
+    @sguild_only()
+    @warnlimit.command(
+        name='unset', aliases=['remove'], description='Removes a warn limit.', example="{p}warnlimit remove 5"
+    )
+    async def warnlimit_unset(self, ctx: SContext, warn_amount: PositiveIntConverter):
+        w_amount: int = typing.cast(int, warn_amount)
         current: dict = await ctx.db['warnlimits'].find_one(
-            dict(guild_id=str(ctx.guild.id), amount=warn_amount)
-        ) if warn_amount <= WARNSTEP_LIMIT else None
+            dict(guild_id=str(ctx.guild.id), amount=w_amount)
+        ) if w_amount <= WARNSTEP_LIMIT else None
         if not current:
-            await ctx.send(f"Warn limit for the amount of {warn_amount} warns is not set! You can set using the \
+            await ctx.send(f"Warn limit for the amount of {w_amount} warns is not set! You can set using the \
 `warnlimit set` subcommand, if you have enough permissions.")
             return
 
@@ -235,13 +265,46 @@ towards warn limits).')
         await ctx.send(
             "Successfully removed the warn limit of {0} warns, in which the user, after reaching it, would receive \
 a{1} {2}{3}{4}.".format(
-                warn_amount, 'n' if is_vocalic(punish_type) else '',
+                w_amount, 'n' if is_vocalic(punish_type) else '',
                 "permanent " if permanent_mute else "", punish_type,
                 "" if punish_type not in ('mute', 'remute') or permanent_mute else (
                     f" for {humanize_delta(delta_decompress(mute_duration))}"
                 )
             )
         )
+
+    @or_checks(
+        is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
+        error=NoPermissions(administration_dperm_error_fmt.format('warnlimit clear'))
+    )
+    @sguild_only()
+    @warnlimit.command(
+        name='clear', description='Clears all warn limits (DANGER).',
+        example="{p}warnlimit clear"
+    )
+    async def warnlimit_clear(self, ctx: SContext):
+        if (await ctx.db['warnlimits'].count_documents(dict(guild_id=str(ctx.guild.id)))) < 1:
+            await ctx.send("There are no warn limits in this server to clear! :slight_smile:")
+            return
+
+        emb_desc = "Are you sure you want to clear ALL warn limits? This cannot be undone. Type **__y__es**\
+ to confirm, or **__n__o** to cancel."
+        # Confirmation embed - this is a dangerous operation.
+        embed = discord.Embed(
+            description=emb_desc, timestamp=datetime.datetime.utcnow(), title="Clearing all warn limits"
+        ) \
+            .set_footer(text="Please confirm")
+
+        received, cancelled, _s = await prompt(  # Prompt 'em for confirmation, in case it parsed wrong or smth
+            "Are you sure?", ctx=ctx, embed=embed, already_asked=False, predicate_gen=confirmation_predicate_gen,
+            cancellable=True, partial_question=False
+        )
+        if cancelled or normalize_caseless(received.content).startswith("n"):  # Dude said no, nvm let's not mute
+            await ctx.send("Command cancelled.")
+            return
+
+        await ctx.db['warnlimits'].delete_many(dict(guild_id=str(ctx.guild.id)))
+        await ctx.send("Successfully cleared all warn limits!")
 
 
 def setup(bot: commands.Bot):

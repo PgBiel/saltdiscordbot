@@ -15,7 +15,7 @@ from classes import (
     SContext, RepeatedTimer, SCommand,
     MissingSaltModRole, MissingSaltAdminRole, NoPermissions,
     NoConfiguredSaltModRole, NoConfiguredSaltAdminRole,
-    AutoCancelledException,
+    AutoCancelledException, InvalidIntegerArg,
     BotMissingOneChannelPermissions, BotMissingThisChannelPermissions
 )
 
@@ -200,6 +200,13 @@ class Salt(commands.Bot):
         if isinstance(error, commands.BadArgument):
             try:
                 fmt = 'You gave an invalid parameter{0}'
+                # if cause := error.__cause__:
+                #     if isinstance(cause, InvalidIntegerArg):
+                #         await ctx.send(
+                #             fmt.format(f": Parameter '{name}' must be a valid integer and {cause.range_str}")
+                #         )
+                #         return
+
                 if (match := re.fullmatch(
                     r'Converting to "(?P<type>[^"]+)" failed for parameter "(?P<name>[^"]+)"\.?',
                     str(error)

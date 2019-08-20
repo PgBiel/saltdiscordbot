@@ -3,25 +3,29 @@ import datetime
 import re
 import math
 import motor.motor_asyncio
+import inspect
 from dataclasses import asdict
 from pymongo import ASCENDING, DESCENDING
 from dateutil.relativedelta import relativedelta
 from discord.ext import commands
 from copy import copy
-from classes import SContext, NoPermissions, scommand, MutesModel, ActiveMutesModel, set_op, \
-    AmbiguityUserOrMemberConverter, sgroup, PartialPunishmentsModel, PunishmentsModel
+from classes import (
+    SContext, NoPermissions, scommand, MutesModel, ActiveMutesModel, set_op,
+    AmbiguityUserOrMemberConverter, sgroup, PartialPunishmentsModel, PunishmentsModel, WarnsModel, PartialWarnsModel,
+    PartialWarnLimitsModel, PartialActionLogSettingsModel
+)
 from classes.converters import AmbiguityMemberConverter
 from utils.advanced.checks import or_checks, is_owner, has_saltmod_role, sguild_only
 from utils.advanced import (
     confirmation_predicate_gen, prompt, actionlog, generate_actionlog_embed, generate_actionlog_embed_from_entry
 )
 from utils.funcs import (
-    discord_sanitize, normalize_caseless, kickable, bannable, make_delta, humanize_delta,
-    create_mute_role, humanize_list, clamp
+    discord_sanitize, normalize_caseless, kickable, bannable, delta_decompress, humanize_delta,
+    create_mute_role, humanize_list, clamp, dict_except, is_vocalic
 )
 from essentials import PaginateOptions
 from constants import DATETIME_DEFAULT_FORMAT, TRACK_PREVIOUS, TRACK_NEXT
-from constants.colors import KICK_COLOR, BAN_COLOR, MUTE_COLOR
+from constants.colors import KICK_COLOR, BAN_COLOR, MUTE_COLOR, WARN_COLOR, SOFTBAN_COLOR
 from constants.regex import MUTE_REGEX, TIME_MATCH, TIME_SPLIT_REGEX
 from constants.numbers import DEFAULT_MUTE_MINUTES
 from constants.maps import TIME_ALIASES
@@ -48,6 +52,7 @@ async def _kick_or_ban(
     :return:
     """
     is_softban = verb == 'softban'
+    is_from_warn = getattr(ctx, '_warn_punish', True)
     is_outsider = not bool(ctx.guild.get_member(member.id)) if is_idban else False
     verb_alt: str = verb + "n" if "ban" in verb else verb  # Use for alternative forms of the verb - "ban" -> "bann"ed..
     checker_func = kickable if verb == "kick" else bannable
@@ -58,7 +63,7 @@ async def _kick_or_ban(
         try:
             if await ctx.guild.fetch_ban(user=discord.Object(member.id)):
                 await ctx.send("That user is already banned!")
-                return
+                return False
         except discord.HTTPException:
             pass
 
@@ -66,59 +71,61 @@ async def _kick_or_ban(
         if not checker_func(member):  # If the member is not punishable BY THE BOT, then let's say why.
             if member == ctx.me:
                 await ctx.send(f"I won't {verb} myself! :slight_smile:")
-                return
+                return False
             if member.id == ctx.guild.owner_id:  # Member is owner, can't punish
                 await ctx.send(f"I cannot {verb} the specified member, because that is the owner!")
-                return
+                return False
             top_role = member.top_role
             if top_role.position > ctx.me.top_role.position:  # Member is from higher role
                 await ctx.send(f"I cannot {verb} the specified member, because their highest role is higher than mine!")
-                return
+                return False
             if top_role.position == ctx.me.top_role.position:  # Member is from same role position
                 await ctx.send(f"I cannot {verb} the specified member, because their highest role is the same as mine!")
-                return
+                return False
             await ctx.send(f"I cannot {verb} the specified member!")  # idk what's going on but we can't punish
-            return
+            return False
 
-        if not checker_func(member, performer=ctx.author, needs_the_perm=False):  # Now check if THE PUNISHER can do it.
+        # Now check if THE PUNISHER can do it.
+        if not checker_func(member, performer=ctx.author, needs_the_perm=False) and not is_from_warn:
             if member.id == ctx.guild.owner_id:  # Well, we already made this check before, but... Can't punish owner
                 await ctx.send(f"You cannot {verb} the specified member, because that is the owner!")
-                return
+                return False
             if member == ctx.author:  # Cannot punish yourself :)
                 await ctx.send(f"You cannot {verb} yourself! :eyes:")
-                return
+                return False
             top_role = member.top_role
             if top_role.position > ctx.author.top_role.position:  # Cannot punish people above your highest role...
                 await ctx.send(
                     f"You cannot {verb} the specified member, because their highest role is higher than yours!"
                 )
-                return
+                return False
             if top_role.position == ctx.author.top_role.position:  # ...or from same highest role position.
                 await ctx.send(
                     f"You cannot {verb} the specified member, because their highest role is the same as yours!"
                 )
-                return
+                return False
             await ctx.send(f"You cannot {verb} the specified member!")  # wth is going on
-            return
+            return False
 
-    emb_desc: str = f"Are you sure you want to {verb} the {member_str} {discord_sanitize(str(member))}? Type \
-**__y__es** to confirm or **__n__o** to cancel."  # Description for confirmation embed
+    if not is_from_warn:  # If this is from a warn limit, then obviously we don't ask for confirmation
+        emb_desc: str = f"Are you sure you want to {verb} the {member_str} {discord_sanitize(str(member))}? Type \
+    **__y__es** to confirm or **__n__o** to cancel."  # Description for confirmation embed
 
-    # Confirmation embed - are you sure you wanna kick/ban that guy? Perhaps you did a typo or something.
-    embed = discord.Embed(color=color, description=emb_desc, timestamp=datetime.datetime.utcnow()) \
-        .set_author(name=f"{verb_alt.title()}ing {str(member)}", icon_url=member.avatar_url) \
-        .set_thumbnail(url=member.avatar_url) \
-        .add_field(name="Reason", value=reason or "None") \
-        .set_footer(text="Please confirm")
-    # Author space is, for example: "Banning" or "Kicking" {member}
+        # Confirmation embed - are you sure you wanna kick/ban that guy? Perhaps you did a typo or something.
+        embed = discord.Embed(color=color, description=emb_desc, timestamp=datetime.datetime.utcnow()) \
+            .set_author(name=f"{verb_alt.title()}ing {str(member)}", icon_url=member.avatar_url) \
+            .set_thumbnail(url=member.avatar_url) \
+            .add_field(name="Reason", value=reason or "None") \
+            .set_footer(text="Please confirm")
+        # Author space is, for example: "Banning" or "Kicking" {member}
 
-    received, cancelled, _s = await prompt(
-        "Are you sure?", ctx=ctx, embed=embed, already_asked=False, predicate_gen=confirmation_predicate_gen,
-        cancellable=True, partial_question=False
-    )  # Run prompt.
-    if cancelled or normalize_caseless(received.content).startswith("n"):  # Dude said 'no'
-        await ctx.send("Command cancelled.")
-        return
+        received, cancelled, _s = await prompt(
+            "Are you sure?", ctx=ctx, embed=embed, already_asked=False, predicate_gen=confirmation_predicate_gen,
+            cancellable=True, partial_question=False
+        )  # Run prompt.
+        if cancelled or normalize_caseless(received.content).startswith("n"):  # Dude said 'no'
+            await ctx.send("Command cancelled.")
+            return False
 
     base_text = (
         "{0}ing {1}... ({2})" if not is_outsider else "{0}ing {1}..."  # We don't dm outsiders.
@@ -201,7 +208,9 @@ class Moderation(commands.Cog):
     @sguild_only()
     @scommand(name="kick", description="Kick people.", example="{p}kick @Boi#0001 Toxicity")
     async def kick(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
-        await _kick_or_ban(ctx, member=cast(discord.Member, member), reason=reason, verb="kick", color=KICK_COLOR)
+        return await _kick_or_ban(
+            ctx, member=cast(discord.Member, member), reason=reason, verb="kick", color=KICK_COLOR
+        )
 
     @or_checks(  # Same as kick's, but Ban Members perm and 'ban' saltperm
         is_owner(), has_saltmod_role(), commands.has_permissions(ban_members=True),
@@ -211,7 +220,7 @@ class Moderation(commands.Cog):
     @sguild_only()
     @scommand(name="ban", description="Ban people.", example="{p}ban @Boi#0001 Raiding")
     async def ban(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
-        await _kick_or_ban(ctx, member=cast(discord.Member, member), reason=reason, verb="ban", color=BAN_COLOR)
+        return await _kick_or_ban(ctx, member=cast(discord.Member, member), reason=reason, verb="ban", color=BAN_COLOR)
 
     @or_checks(  # Same as kick's, but Ban Members perm and 'ban' saltperm
         is_owner(), has_saltmod_role(), commands.has_permissions(ban_members=True),
@@ -221,7 +230,7 @@ class Moderation(commands.Cog):
     @sguild_only()
     @scommand(name="nodelban", description="Ban people without deleting any message.")
     async def nodelban(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
-        await _kick_or_ban(
+        return await _kick_or_ban(
             ctx, member=cast(discord.Member, member), reason=reason, verb="ban", color=BAN_COLOR,
             ban_days=0
         )
@@ -234,7 +243,7 @@ class Moderation(commands.Cog):
     @sguild_only()
     @scommand(name="weekdelban", description="Ban people and delete their messages sent up to a week ago.")
     async def weekdelban(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
-        await _kick_or_ban(
+        return await _kick_or_ban(
             ctx, member=cast(discord.Member, member), reason=reason, verb="ban", color=BAN_COLOR,
             ban_days=7
         )
@@ -250,7 +259,7 @@ class Moderation(commands.Cog):
         example="{p}idban 261979210363437059"
     )
     async def idban(self, ctx: SContext, member: AmbiguityUserOrMemberConverter, *, reason: Optional[str]):
-        await _kick_or_ban(
+        return await _kick_or_ban(
             ctx, member=cast(discord.abc.User, member), reason=reason, verb="ban", color=BAN_COLOR,
             is_idban=True
         )
@@ -267,7 +276,9 @@ class Moderation(commands.Cog):
         example="{p}softban @Boi#0001 Spamming"
     )
     async def softban(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
-        await _kick_or_ban(ctx, member=cast(discord.Member, member), reason=reason, verb="softban", color=KICK_COLOR)
+        return await _kick_or_ban(
+            ctx, member=cast(discord.Member, member), reason=reason, verb="softban", color=SOFTBAN_COLOR
+        )
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
@@ -284,27 +295,30 @@ class Moderation(commands.Cog):
         memb: discord.Member = cast(discord.Member, member)  # (Typing purposes)
         do_extend = getattr(ctx, "_mute_extend", False)  # If invoked as `emute`, in which you can re-mute muted people
         is_permanent = getattr(ctx, "_mute_permanent", False)  # If invoked as `pmute`, in which you mute people forever
-
+        is_from_warn = getattr(ctx, "_warn_punish", False)  # If invoked as a warn limit in `warn`.
+        
         check_active_mutes: motor.motor_asyncio.AsyncIOMotorCollection = ctx.db.activemutes
         found_active_mute: motor.motor_asyncio.AsyncIOMotorCursor = await check_active_mutes.find_one(dict(
             guild_id=str(ctx.guild.id), user_id=str(memb.id)
         ))  # see if user is muted
         if found_active_mute and not do_extend:  # Don't let them re-mute if not extending mute.
+            
             await ctx.send(
                 "That member is already muted! To change their mute duration{0}, use the `e{1}mute` command.".format(
                     " to permanent" if is_permanent else "",
                     "p" if is_permanent else ""
-                )
+                ) if not is_from_warn else "That member is already muted, so they cannot be muted again!"
             )
-            return
+            return False
         elif do_extend and not found_active_mute:  # Extending mute, but there's no mute to extend
             await ctx.send("That member is not muted! This command changes duration of already existing mutes. \
 To mute someone, use the `mute` command.")
-            return
+            return False
 
-        time_to_mute = relativedelta(minutes=DEFAULT_MUTE_MINUTES)  # default mute time: 10 min
+        # default mute time: 10 min
+        time_to_mute = getattr(ctx, "_mute_duration", None) or relativedelta(minutes=DEFAULT_MUTE_MINUTES)
         reason_to_mute: str = time_and_reason if is_permanent else ""  # reasoning
-        if time_and_reason and not is_permanent:  # if user provided a time or reason
+        if time_and_reason and not is_permanent and not is_from_warn:  # if user provided a time or reason
             match = re.fullmatch(MUTE_REGEX, time_and_reason, re.RegexFlag.X | re.RegexFlag.I)  # let's match it
             if match:
                 time, mins, mins2, reason = (
@@ -337,20 +351,28 @@ To mute someone, use the `mute` command.")
                 if reason:
                     reason_to_mute = reason
 
+        elif is_from_warn and time_and_reason:
+            reason_to_mute = time_and_reason
+
         now = datetime.datetime.utcnow()
         mute_at = now
         if not is_permanent:
             try:
                 mute_at += time_to_mute  # Date until when they are muted.
             except (OverflowError, OSError, ValueError):  # Except that's too far away.
-                return await ctx.send("You specified a number that is too big!")
+                return await ctx.send(
+                    "You specified a number that is too big!" if not is_from_warn else "The time specified for mute \
+was too big!"
+                )
 
         duration_str = "Forever" if is_permanent else humanize_delta(time_to_mute) or "0 seconds"
 
-        if not do_extend:  # No need to confirm changing mute duration, nor add mute role during it (member alr. muted)
+        # No need to confirm changing mute duration or warn limit punish
+        if not do_extend and not is_from_warn:
             emb_desc: str = f"Are you sure you want to mute the member {discord_sanitize(str(member))}? Type \
 **__y__es** to confirm or **__n__o** to cancel. (**Note:** You can disable this confirmation screen with \
 `{ctx.prefix}pconfig set mute_confirm no`)"
+
             # Confirmation embed.
             embed = discord.Embed(color=MUTE_COLOR, description=emb_desc, timestamp=now) \
                 .set_author(name=f"Muting {str(memb)}", icon_url=memb.avatar_url) \
@@ -367,6 +389,7 @@ To mute someone, use the `mute` command.")
                 await ctx.send("Command cancelled.")
                 return
 
+        if not do_extend:
             mutes_col: motor.motor_asyncio.AsyncIOMotorCollection = ctx.db.mutes  # Let's see if we have muterole stored
             mutes_entry: motor.motor_asyncio.AsyncIOMotorCursor = await mutes_col.find_one(dict(
                 guild_id=str(ctx.guild.id)
@@ -411,6 +434,7 @@ To mute someone, use the `mute` command.")
                             ) if unable_to_channels else ""
                         )
                     )
+
         # Mute role stuff is okay, now time to mute.
         sanitized_m = discord_sanitize(str(memb))
         msg_fmt = "{0} {1}... ({2})".format("Re-muting" if do_extend else "Muting", sanitized_m, "{}")
@@ -570,6 +594,146 @@ To mute someone, use the `mute` command.")
                 await ctx.send(f"The member {sanitized_m} was muted way for too long, so they were automatically \
 unmuted!")
         await ctx.send(f"The member {sanitized_m} is not muted!")
+
+    @or_checks(
+        is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
+        error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "mute"))
+    )
+    @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @sguild_only()
+    @scommand(
+        name='warn', description="Warn people.",
+        example="""{p}warn @Boi#0001 Arguing with people"""
+    )
+    async def warn(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str] = None):
+        memb: discord.Member = cast(discord.Member, member)
+        is_myself: bool = memb == ctx.me
+        is_bot: bool = memb.bot
+
+        count = await ctx.db['warns'].count_documents(  # how many times this user has been warned so far
+            PartialWarnsModel(guild_id=str(ctx.guild.id), user_id=str(memb.id)).as_dict()
+        )
+        new_count = count + 1  # how many times the user will have been warned after this new warn
+        new_limit_d = await ctx.db['warnlimits'].find_one(dict(guild_id=str(ctx.guild.id), amount=new_count))
+        new_limit: Optional[PartialWarnLimitsModel] = None  # limit the user will reach after this warn
+        if new_limit_d:
+            new_limit = PartialWarnLimitsModel(**dict_except(new_limit_d, '_id'))
+        are_there_limits = bool(await ctx.db['warnlimits'].find_one(dict(guild_id=str(ctx.guild.id))))
+
+        sanitized_m = discord_sanitize(str(member))
+        fmt = "Warning {0}... ({1})".format(sanitized_m, "{}")
+        sent_msg: discord.Message = await ctx.send(
+            fmt.format("Sending DM" if not new_limit and not is_myself and not is_bot else "Processing...")
+        )
+
+        if not new_limit and not is_myself and not is_bot:  # If we're reaching a limit, the punishment we invoke
+            try:                                            # will do the job of sending DM.
+                if not is_myself and not is_bot:
+                    reason_embed: discord.Embed = discord.Embed(                         # Embed to send to DMs alerting
+                        color=WARN_COLOR, description=reason or "No reason given",       # the dude he was punished
+                        timestamp=datetime.datetime.utcnow(), title="Warn reason"
+                    ) \
+                        .set_footer(text=f"Warned in the server '{discord_sanitize(ctx.guild.name)}'") \
+                        .set_thumbnail(url=ctx.guild.icon_url)
+
+                    await memb.send(
+                        f"You were warned in the server '{discord_sanitize(ctx.guild.name)}'!",
+                        embed=reason_embed or None
+                    )
+                    await sent_msg.edit(content=fmt.format("DM Sent, warning..."))
+            except discord.HTTPException:
+                await sent_msg.edit(content=fmt.format("DM Failed, warning anyway..."))
+
+        act_settings = await ctx.db['actionlogsettings'].find_one(dict(guild_id=str(ctx.guild.id)))
+        case: Optional[int] = None
+        if act_settings:
+            act_settings_model = PartialActionLogSettingsModel(**dict_except(act_settings, '_id'))
+            if (latest_c := act_settings_model.latest_case) and latest_c >= 0:
+                case = latest_c + 1
+
+        success_fmt = "Warned {0} successfully!{1}".format(sanitized_m, "{}")
+
+        if new_limit and (punish_type := new_limit.punishment):
+            mute_duration = delta_decompress(new_limit.mute_time) if new_limit.mute_time else None
+            perma_mute = new_limit.permanent_mute or False
+            res = None
+            ctx._warn_punish = True
+            ctx._mute_duration = mute_duration
+            ctx._mute_permanent = perma_mute
+            if (
+                hasattr(self, punish_type)
+                and (cmd := getattr(self, punish_type))
+                and callable(clb := getattr(cmd, 'callback', None))
+            ):
+                vowel_n = "n" if is_vocalic(punish_type) else ""
+                await sent_msg.edit(
+                    content=success_fmt.format(
+                        f" For reaching the set limit of {new_limit.amount} warns, they receive \
+a{vowel_n} **{punish_type}**."
+                    )
+                )
+                sig = inspect.signature(clb)
+                new_reason = f"[Auto warn limit punishment] {reason}".strip()
+                args = [
+                    (
+                        memb if param.annotation in (AmbiguityMemberConverter, discord.Member) else (
+                            new_reason if "reason" in param.name.lower() else None
+                        )  # affected member = warned member; reason = reason given.
+                    ) for param in sig.parameters.values() if param.kind in (
+                        inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD
+                    ) and param.name not in ('self', 'ctx') and param.annotation not in (SContext, commands.Context)
+                ]
+                kwargs = {
+                    param.name: (
+                        memb if param.annotation in (AmbiguityMemberConverter, discord.Member) else (
+                            new_reason if "reason" in param.name.lower() else None
+                        )
+                    ) for param in sig.parameters.values() if (
+                        param.kind == inspect.Parameter.KEYWORD_ONLY
+                        and param.name not in ('self', 'ctx')
+                        and param.annotation not in (
+                            SContext, commands.Context
+                        )
+                    )
+                }
+                res = await ctx.invoke(cmd, *args, **kwargs)
+            else:
+                await sent_msg.edit(
+                    content=success_fmt.format(f" They reached the set limit of {new_limit.amount} warns, but could not\
+be punished.")
+                )
+
+            highest_limit = await ctx.db['warnlimits'].find_one(
+                PartialWarnLimitsModel(guild_id=str(ctx.guild.id)).as_dict(),
+                sort=[('amount', DESCENDING)]
+            )
+            if highest_limit and new_limit.amount >= highest_limit['amount']:
+                await ctx.db['warns'].delete_many(
+                    dict(guild_id=str(ctx.guild.id), user_id=str(memb.id))
+                )
+            else:
+                await ctx.db['warns'].insert_one(
+                    WarnsModel(
+                        guild_id=str(ctx.guild.id), user_id=str(memb.id), moderator_id=str(ctx.author.id),
+                        warned_at=str(datetime.datetime.utcnow().timestamp()), case=case if res is not False else None
+                    ).as_dict()
+                )
+            return
+
+        if are_there_limits:  # no point in storing warns if there are no limits.
+            await ctx.db['warns'].insert_one(
+                WarnsModel(
+                    guild_id=str(ctx.guild.id), user_id=str(memb.id), moderator_id=str(ctx.author.id),
+                    warned_at=str(datetime.datetime.utcnow().timestamp()), case=case
+                ).as_dict()
+            )
+
+        if act_settings:
+            await actionlog(
+                ctx, punish_type="warn", target=memb, moderator=ctx.author, reason=reason
+            )
+
+        await sent_msg.edit(content=success_fmt.format(""))
 
     @sguild_only()
     @sgroup(

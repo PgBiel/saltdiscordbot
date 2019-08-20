@@ -149,8 +149,8 @@ class SaltConversionError(SaltException, commands.ConversionError):
     """
     Related to custom Salt converters.
     """
-    def __init__(self, converter: typing.Type[commands.Converter] = None, original: Exception = None):
-        super().__init__(converter=converter, original=original)
+    # def __init__(self, converter: typing.Type[commands.Converter] = None, original: Exception = None):
+    #     super().__init__(converter=converter, original=original)
 
 
 class AutoCancelledException(SaltConversionError):
@@ -158,3 +158,29 @@ class AutoCancelledException(SaltConversionError):
     Occurs when the command was already cancelled and dealt with, and no further action is required.
     """
     pass
+
+
+T = typing.TypeVar("T", typing.Optional[type], typing.Optional[type])
+
+
+class SaltBadArgument(SaltConversionError, commands.BadArgument, typing.Generic[T]):
+    """
+    Occurs when a bad argument is passed by the user.
+    """
+    def __init__(self, e_msg: str, *, typeof: T = None, original: typing.Optional[BaseException] = None):
+        super().__init__(e_msg, original=original)
+        self.typeof: T = typeof
+
+
+class InvalidIntegerArg(SaltBadArgument):
+    """
+    Occurs when an integer within an invalid range was passed.
+    """
+    typeof: typing.Type[int]
+
+    def __init__(
+            self, e_msg: str, *, range_str: typing.Optional[str] = None,
+            original: typing.Optional[BaseException] = None
+    ):
+        super().__init__(e_msg, typeof=int, original=original)
+        self.range_str: str = range_str

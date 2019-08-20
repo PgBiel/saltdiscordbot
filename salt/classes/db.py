@@ -315,14 +315,14 @@ class WarnsModel(DBModel):
         guild_id: Guild where this warn happened in.
         user_id: User warned.
         moderator_id: Author of warn.
-        case: Case number.
         warned_at: When this warn happened.
+        case: (Optional int) Case number, if any.
     """
     guild_id: str
     user_id: str
     moderator_id: str
-    case: int
     warned_at: str
+    case: Optional[int] = None
 
 
 @attr.s(auto_attribs=True)

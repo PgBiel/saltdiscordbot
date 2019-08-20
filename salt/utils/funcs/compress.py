@@ -106,7 +106,10 @@ def delta_compress(delta: typing.Union[datetime.timedelta, relativedelta], *, in
             string += f"{DELTA_COMPRESSION_MAP[k]}{delta.microseconds // 1000}"
 
         if hasattr(delta, k) and (val := getattr(delta, k)):  # has the time subdivision as attribute and it's non-zero
-            string += f"{DELTA_COMPRESSION_MAP[k]}{getattr(delta, k)}"
+            if float(int(val)) == float(val):  # if this is a float that is actually an integer -- x.0
+                val = int(val)
+
+            string += f"{DELTA_COMPRESSION_MAP[k]}{val}"
 
     return string
 

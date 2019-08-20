@@ -7,7 +7,7 @@ import typing
 from typing import List, Union, Optional, TypeVar, Type
 from discord.ext import commands
 from discord.ext.commands.converter import _get_from_guilds
-from classes import SContext, AutoCancelledException
+from classes import SContext, AutoCancelledException, InvalidIntegerArg
 from constants.regex import USER_MENTION
 from utils.funcs import caseless_contains, normalize_contains
 from utils.advanced import match_id, search_user_or_member, ambiguity_solve, search_role, search_channel
@@ -210,10 +210,73 @@ class AmbiguityRoleConverter(commands.RoleConverter):
                 elif self.default is not None:
                     return return_or_raise()
                 else:
-                    raise AutoCancelledException(converter=self.__class__)
+                    raise AutoCancelledException(converter=self.__class__, original=None)
             return result
         # if we reached this point, means no role was found.
         return return_or_raise()
+
+
+class CustomIntConverter(commands.Converter):
+    def __init__(self, condition: typing.Callable[[int], bool], range_str: Optional[str] = None):
+        """
+        Init the custom int converter.
+
+        :param condition: The condition to check. E.g.: lambda x: 0 < x < 5
+        :param range_str: The condition as a string to display in errors. E.g.: "be in the range 0 < x < 5"
+        """
+        self.condition = condition
+        self.range_str = range_str
+
+    async def convert(self, ctx: SContext, argument: str) -> int:
+        converted_int: Optional[int] = None
+        try:
+            converted_int = int(argument)
+        except ValueError:
+            pass
+
+        if converted_int is not None and self.condition(converted_int):
+            return converted_int
+
+        raise InvalidIntegerArg(
+            f"Invalid integer given! It must {self.range_str}.",
+            range_str=self.range_str
+        )
+
+
+class PositiveIntConverter(CustomIntConverter):
+    """
+    Positive (x > 0) non-null
+    """
+
+    def __init__(self):
+        super().__init__(condition=lambda x: x > 0, range_str="be a positive, non-zero integer")
+
+
+class NonNegativeIntConverter(CustomIntConverter):
+    """
+    Positive or null (x >= 0)
+    """
+
+    def __init__(self):
+        super().__init__(condition=lambda x: x >= 0, range_str="be a non-negative integer (positive or zero)")
+
+
+class NegativeIntConverter(CustomIntConverter):
+    """
+    Negative, non-null (x < 0)
+    """
+
+    def __init__(self):
+        super().__init__(condition=lambda x: x < 0, range_str="be a negative, non-zero integer")
+
+
+class NonPositiveIntConverter(CustomIntConverter):
+    """
+    Negative, non-null (x < 0)
+    """
+
+    def __init__(self):
+        super().__init__(condition=lambda x: x <= 0, range_str="be a non-positive integer (negative or zero)")
 
 # class InsensitiveMemberConverter(commands.MemberConverter):
 #     async def convert(self, ctx: SContext, argument: str):  # TODO: Decide what to do with this
