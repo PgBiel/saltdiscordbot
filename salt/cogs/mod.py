@@ -12,7 +12,8 @@ from copy import copy
 from classes import (
     SContext, NoPermissions, scommand, MutesModel, ActiveMutesModel, set_op,
     AmbiguityUserOrMemberConverter, sgroup, PartialPunishmentsModel, PunishmentsModel, WarnsModel, PartialWarnsModel,
-    PartialWarnLimitsModel, PartialActionLogSettingsModel
+    PartialWarnLimitsModel, PartialActionLogSettingsModel,
+    PositiveIntConverter, CustomIntConverter
 )
 from classes.converters import AmbiguityMemberConverter
 from utils.advanced.checks import or_checks, is_owner, has_saltmod_role, sguild_only
@@ -21,7 +22,7 @@ from utils.advanced import (
 )
 from utils.funcs import (
     discord_sanitize, normalize_caseless, kickable, bannable, delta_decompress, humanize_delta,
-    create_mute_role, humanize_list, clamp, dict_except, is_vocalic
+    create_mute_role, humanize_list, clamp, dict_except, is_vocalic, plural_s
 )
 from essentials import PaginateOptions
 from constants import DATETIME_DEFAULT_FORMAT, TRACK_PREVIOUS, TRACK_NEXT
@@ -597,7 +598,7 @@ unmuted!")
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
-        error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "mute"))
+        error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "warn"))
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @sguild_only()
@@ -936,6 +937,79 @@ permission, a Salt Admin role or the `case others` saltperm!")
         await ctx.db['punishments'].delete_one(dict(_id=found_dict['_id']))
 
         await ctx.send(f"Case #{number} deleted successfully!")
+
+    @or_checks(
+        is_owner(), has_saltmod_role(), commands.has_permissions(manage_messages=True),
+        error=NoPermissions(moderation_dperm_error_fmt.format("Manage Messages", "clear"))
+    )
+    @commands.bot_has_permissions(manage_messages=True)
+    @sguild_only()
+    @sgroup(
+        name="clear", invoke_without_command=True,
+        example="{p}clear 6\n{p}clear 10 Annoying#0001\n{p}clear 15 Raider1#0001 Raider2#0001 Raider3#0001"
+    )
+    async def clear(
+            self, ctx: SContext,
+            amount: CustomIntConverter(condition=lambda i: 0 < i <= 1000, range_str="be between 1 and 1000") = 10,
+            *users: Optional[AmbiguityMemberConverter]
+    ):
+        """
+        Clear one or more messages. If one or more users are specified (separated by space - enclose spaced names \
+        with quotes around them), only their messages are deleted. If not specified, the default amount of cleared \
+        messages is 10.
+        """
+        amnt = cast(int, amount)
+        is_clear_bot = hasattr(ctx, "_clear_bot") and getattr(ctx, "_clear_bot", False)  # invoked +clear bot
+
+        def user_check(msg: discord.Message):
+            return msg.author in users
+
+        def bot_check(msg: discord.Message):
+            return msg.author.bot
+
+        check = None
+        if is_clear_bot:
+            check = bot_check
+        elif users:
+            check = user_check
+
+        before_sending = datetime.datetime.utcnow()
+        sent_msg = await ctx.send(
+            f"Deleting {amnt} {'bot ' if is_clear_bot else ''}message{plural_s(amnt)}\
+{' sent by the specified user{}'.format(plural_s(users)) if users else ''}..."
+        )
+
+        include_clear_msg = ctx.author in users or not users
+
+        deleted = await cast(discord.TextChannel, ctx.channel).purge(
+            limit=amnt + (1 if include_clear_msg else 0),  # that " + 1" is to account for the `+clear`
+            check=check, before=before_sending    # message, which should also be deleted.
+        )
+        real_len = len(deleted) - (1 if include_clear_msg else 0)  # excluding `+clear`
+        await sent_msg.edit(content="{0} {1}message{2} {3}deleted successfully!".format(
+            real_len, "bot " if is_clear_bot else "",
+            plural_s(real_len), f"by {discord_sanitize(str(users[0]))} " if len(users) == 1 else (
+                "by the specified users " if users else ""
+            )
+        ))
+        await sent_msg.delete(delay=5)
+
+    @or_checks(
+        is_owner(), has_saltmod_role(), commands.has_permissions(manage_messages=True),
+        error=NoPermissions(moderation_dperm_error_fmt.format("Manage Messages", "clear"))
+    )
+    @commands.bot_has_permissions(manage_messages=True)
+    @sguild_only()
+    @clear.command(name="bot", example="{p}clear bot 5")
+    async def clear_bot(
+            self, ctx: SContext,
+            amount: CustomIntConverter(condition=lambda i: 0 < i <= 1000, range_str="be between 1 and 1000") = 10
+    ):
+        """
+        Clears messages from bots.
+        """
+        ctx._clear_bot = True
+        await ctx.invoke(self.clear, amount)
 
 
 def setup(bot: commands.Bot) -> None:

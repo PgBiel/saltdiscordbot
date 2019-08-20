@@ -289,4 +289,4 @@ def plural_s(amnt_or_iterable: Union[int, float, Sized]) -> str:
     else:
         num = float(len(amnt_or_iterable))
 
-    return "s" if num != 1 else ""
+    return "s" if num != 1.0 else ""
