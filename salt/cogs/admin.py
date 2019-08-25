@@ -306,6 +306,12 @@ a{1} {2}{3}{4}.".format(
         await ctx.db['warnlimits'].delete_many(dict(guild_id=str(ctx.guild.id)))
         await ctx.send("Successfully cleared all warn limits!")
 
+    @sguild_only()
+    @sgroup(name='perms', aliases=['p'], description='Work with Salt Permissions.')
+    async def perms(self, ctx: SContext):
+        await ctx.send_help(self.perms)
+
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Administration(bot))

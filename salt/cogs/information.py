@@ -115,7 +115,7 @@ class Information(commands.Cog):
                 .add_field(
                     name="Display Color (sidebar)", value=str(role_color if role_color.value != 0 else "Default")
                 )                                                                                                 \
-                .add_field(name="Permissions (see +perms)", value=memb_or_user.guild_permissions.value)           \
+                .add_field(name="Permissions (see +dperms)", value=memb_or_user.guild_permissions.value)          \
                 .add_field(name="Server Join (UTC)", value=formatted_joined_at)                                   \
                 .add_field(name="Nickname", value=nick_val)                                                       \
                 .add_field(

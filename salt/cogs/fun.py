@@ -5,6 +5,10 @@ from discord.ext import commands
 from classes import scommand, SContext
 from constants import FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, EIGHT_BALL_ANSWERS
 
+UPPER_EXPONENTS = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"]
+UPPER_MAP = {str(i): UPPER_EXPONENTS[i] for i in range(0, len(UPPER_EXPONENTS))}
+UPPER_MAP.update({"-": "⁻", "+": "⁺"})
+
 
 class Fun(commands.Cog):
 
@@ -79,6 +83,13 @@ class Fun(commands.Cog):
         id_factor = ctx.author.id % n  # also weigh in the user ID mod n
         answer_index = (sum(charcodes) + id_factor) % n  # there we go!
         await ctx.send(f">>> __**8ball Response**__\n{EIGHT_BALL_ANSWERS[answer_index]}", deletable=True)
+
+    @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @scommand(name='numupper', description="Convert numbers to their equivalent superscript characters.")
+    async def numupper(self, ctx: SContext, *, numbers: str):
+        new_text = "".join([(UPPER_MAP[d] if d in UPPER_MAP else d) for d in numbers])
+        fmt = ">>> __**Numupper Result**__\n{}"
+        await ctx.send(fmt.format(new_text[:2000 - (len(fmt) - 2)]), deletable=True)
 
 
 def setup(bot: commands.Bot):
