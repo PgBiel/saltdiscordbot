@@ -6,9 +6,10 @@ import motor.motor_asyncio
 import motor.core
 import discord
 import typing
+from pymongo import ASCENDING, DESCENDING
 from typing import Any, Callable, List, Union, Coroutine, Sequence
 from discord.ext import commands
-from utils.funcs import sync_await, permission_literal_to_tuple
+from utils.funcs import sync_await, permission_literal_to_tuple, dict_except
 from classes import PermsModel, PartialPermsModel, in_op, or_op
 from classes.scommand import SCommand, SGroup
 from classes.errors import (
@@ -208,17 +209,33 @@ def sdev_only():
     return scheck(predicate, dev_only=True)
 
 
+IDABLE_TYPE = Union[
+    discord.User, discord.Member, discord.abc.PrivateChannel, discord.abc.GuildChannel, discord.Role, discord.Guild,
+    discord.Object, discord.abc.Snowflake  # anything that has a .id
+]
+
+
 async def has_permission(
         ctx: "SContext",
-        idable: Union[
-            discord.abc.User, discord.abc.PrivateChannel, discord.abc.GuildChannel, discord.Role, discord.Guild,
-            discord.Object, discord.abc.Snowflake  # anything that has a .id
-        ], permission: Union[str, typing.Tuple[str, ...]],
+        idable: IDABLE_TYPE, permission: Union[str, typing.Tuple[str, ...]],
         *, obj_type: typing.Optional[str] = None, default: bool = False,
-        cog_name: typing.Optional[str] = None
+        cog_name: typing.Optional[str] = None,
+        user_check_context: bool = False
 ) -> bool:  # TODO: Finish this; make perm check that adds to bot perms array; make perm command and stuff
     """
     Check if something has a salt permission.
+    Hierarchy, if user_check_context is True:
+    - User (highest priority)
+    - Role
+    - Channel
+    - Guild (lowest priority)
+
+    e.g. Permission  comm sub subsub subsubsub  will be affected by, in order:
+    • all
+    • comm all
+    • comm sub all
+    • comm sub subsub all
+    • comm sub subsub subsubsub
 
     :param ctx: Context in which to check.
     :param idable: Anything that has a id; preferably a User, Member, Channel, Role or Guild object.
@@ -227,10 +244,14 @@ async def has_permission(
         one of those objects.
     :param default: (Optional bool=False) Whether or not the object can use this command by default.
     :param cog_name: (Optional str) The cog the command is in to check for cog-wide overrides.
+    :param user_check_context: (Optional bool) Whether or not we should recursively check for permissions in the
+        hierarchy (user -> role -> channel -> guild) - Default is only returned after we check for guild.
     :return: (bool) Whether or not it has permission.
     :raises TypeError: If a non-User/Member/Channel/Role/Guild object was passed in `idable` and no valid `obj_type`
         was passed to help identify which type it is.
     """
+    if not ctx.guild:
+        return True  # you can do whatever you want!
     id_n = idable.id
     if isinstance(idable, discord.abc.User):
         obj_type = 'member'
@@ -243,17 +264,20 @@ async def has_permission(
     elif not obj_type or obj_type not in DB_PERMISSION_TYPES:
         raise TypeError("Invalid type specified for obj_type.")
 
+    if obj_type == 'member' and (ctx.author.id in ctx.bot.config["owners"] or ctx.author.id == ctx.bot.owner_id):
+        return True
+
     if type(permission) == str:
         permission = permission_literal_to_tuple(permission)
 
     is_cog: bool = False
     is_custom: bool = False
-    if permission[0] == 'cog':
+    if permission[0] in ('cog', '-cog'):
         permission = permission[1:]
         if cog_name:
             is_cog = True
 
-    elif permission[0] == 'custom':
+    elif permission[0] in ('custom', '-custom'):  # can't be custom command and cog at the same time, right???
         permission = permission[1:]
         is_custom = True
 
@@ -266,6 +290,8 @@ async def has_permission(
     extraxx = permission[3] if len(permission) >= 4 else None
 
     basic = PartialPermsModel(
+        guild_id=ctx.guild.id, id=str(id_n), type=obj_type,
+        is_custom=is_custom,
         command=command, is_cog=is_cog if is_cog else False
     )
 
@@ -276,21 +302,114 @@ async def has_permission(
 
         return copied.as_dict()
 
-    # is_cog if is_cog else ({"$in": [True, False]} if cog_name else False - Saving for later
-    await ctx.db['perms'].find_one(
-        {
-            **PartialPermsModel(
-                id=str(id_n), type=obj_type,
-                is_custom=is_custom
-            ).as_dict(),
-            **or_op([
-                b_copy_as_dict(command=("all" if extra else command)),
-                *([b_copy_as_dict(extra=("all" if extrax else extra))] if extra else []),
-                *([b_copy_as_dict(extra=extra, extrax=("all" if extraxx else extrax))] if extrax else []),
-                *([b_copy_as_dict(extra=extra, extrax=extrax, extraxx=extraxx)] if extraxx else [])
-            ])
-        }
+    all_perm: dict = await ctx.db['perms'].find_one(
+        b_copy_as_dict(command="all", is_cog=False, is_custom=False)
     )
+    # if all_perm:
+    #     return not all_perm.get('is_negated', False)
+    #
+    # if not extra:
+    #     cmd_perm: dict = await ctx.db['perms'].find_one(basic.as_dict())
+    #     if cmd_perm:
+    #         return not cmd_perm.get("is_negated", False)
+    # else:
+    #     extra_all_perm: dict = await ctx.db['perms'].find_one(
+    #         b_copy_as_dict(extra="all")
+    #     )
+    #
+    #     if extra_all_perm:
+    #         return not extra_all_perm.get("is_negated", False)
+    #
+    #     if not extrax:
+    #         extra_perm: dict = await ctx.db['perms'].find_one(
+    #             b_copy_as_dict(extra=extra)
+    #         )
+    #         if extra_perm:
+    #             return not extra_perm.get("is_negated", False)
+    #
+    #     else:
+    #         extrax_all_perm: dict = await ctx.db['perms'].find_one(
+    #             b_copy_as_dict(extra=extra, extrax="all")
+    #         )
+    #         if extrax_all_perm:
+    #             return not extrax_all_perm.get("is_negated", False)
+    #
+    #         if not extraxx:
+    #             extrax_perm: dict = await ctx.db['perms'].find_one(
+    #                 b_copy_as_dict(extra=extra, extrax=extrax)
+    #             )
+    #             if extrax_perm:
+    #                 return not extrax_perm.get("is_negated", False)
+    #
+    #         else:
+    #             extraxx_all_perm: dict = await ctx.db['perms'].find_one(
+    #                 b_copy_as_dict(extra=extra, extrax=extrax, extraxx="all")
+    #             )
+    #             if extraxx_all_perm:
+    #                 return not extraxx_all_perm.get("is_negated", False)
+    #
+    #             extraxx_perm: dict = await ctx.db['perms'].find_one(
+    #                 b_copy_as_dict(extra=extra, extrax=extrax, extraxx=extraxx)
+    #             )
+    #             if extraxx_perm:
+    #                 return not extraxx_perm.get("is_negated", False)
+
+    # is_cog if is_cog else ({"$in": [True, False]} if cog_name else False - Saving for later
+    matched_cursor: motor.motor_asyncio.AsyncIOMotorCursor = ctx.db['perms'].find(
+        or_op([
+            b_copy_as_dict(command=("all" if extra else or_all(command))),
+            *([b_copy_as_dict(command=cog_name, is_cog=True, is_custom=False)] if cog_name else []),
+            *([b_copy_as_dict(extra=("all" if extrax else extra))] if extra else []),
+            *([b_copy_as_dict(extra=extra, extrax=("all" if extraxx else extrax))] if extrax else []),
+            *([b_copy_as_dict(extra=extra, extrax=extrax, extraxx=or_all(extraxx))] if extraxx else []),
+        ]),
+        sort=[('command', ASCENDING), ('extra', ASCENDING), ('extrax', ASCENDING), ('extraxx', ASCENDING)]
+    )
+    matched: List[dict] = await matched_cursor.to_list(5)  # max amount of documents this can have is 5.
+
+    if len(matched) == 0:
+        if user_check_context and obj_type != "guild":  # after guild we stop looking for permissions
+            NEXT = dict(
+                member="role",
+                role="channel",
+                channel="guild",
+                guild=None
+            )
+            next = NEXT.get(obj_type)
+            if next:
+                new_idable: IDABLE_TYPE
+                if next == 'role':
+                    new_idable = idable.top_role
+                elif next == 'channel':
+                    new_idable = ctx.channel
+                elif next == 'guild':
+                    new_idable = ctx.guild
+                return await has_permission(
+                    ctx, new_idable, permission, obj_type=next, default=default,
+                    cog_name=cog_name, user_check_context=True
+                )
+        else:
+            return bool(default or False)
+
+    def sorting_key(perm_dict) -> str:
+        perm_model = PartialPermsModel(**dict_except(perm_dict, "_id"))
+        space_num = 10 if perm_model.command == 'all' else (
+            7 if perm_model.is_cog else (
+                5 if perm_model.extra == 'all' else (
+                    4 if perm_model.extrax == 'all' else (
+                        3 if perm_model.extraxx == 'all' else 0
+                    )
+                )
+            )
+        )
+        space = " "  # gotta prefix spaces to ensure correct sorting (all goes first, then ... all, then   and so on
+        indent = space * space_num
+        return f"{indent}{perm_model.to_literal().strip()}"
+
+    in_order = sorted(matched, key=sorting_key)
+    highest_priority_override = in_order[0]
+    return not highest_priority_override.get("is_negated", False)
+
     # command = typing.cast(str, in_op(or_all(permission[0]))),
     # ** (dict(extra=in_op(or_all(permission[1]))) if permission[1] else dict()),
     # ** (dict(extrax=in_op(or_all(permission[1]))) if permission[1] else dict()),

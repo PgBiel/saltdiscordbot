@@ -450,6 +450,32 @@ class PartialWarnExpiresModel(DBModel):
 
 @attr.s(auto_attribs=True)
 class PermsModel(DBModel):
+    """
+    The model for the `perms` collection of the database.
+
+    Attributes
+        guild_id: The ID this permission override is valid at.
+
+        id: The ID of the object this permission override is for.
+
+        type: The type of object the ID refers to.
+
+        command: The first part of the permission literal, the command this is applying for.
+            (`command extra extrax extraxx`)
+
+        extra: (Optional str) The second part of the permission literal.
+
+        extrax: (Optional str) The third part of the permission literal.
+
+        extraxx: (Optional str) The fourth part of the permission literal.
+
+        is_custom: (Optional bool) Whether this permission is for a custom command.
+
+        is_cog: (Optional bool) Whether this permission is for a whole category of commands (cog).
+
+        is_negated: (Optional bool) Whether this permission is actually negating it for the object.
+    """
+    guild_id: str
     id: str
     type: str = attr.ib(
         validator=lambda s, *_a, **_kw: s in DB_PERMISSION_TYPES
@@ -460,10 +486,29 @@ class PermsModel(DBModel):
     extraxx: Optional[str] = None
     is_custom: Optional[bool] = False
     is_cog: Optional[bool] = False
+    is_negated: Optional[bool] = False
+
+    def to_literal(self) -> str:
+        """
+        Represent this permission object as a literal.
+        :return: The literal string.
+        """
+        string: str = self.command
+        if self.extra:
+            string += f" {self.extra}"
+
+        if self.extrax:
+            string += f" {self.extrax}"
+
+        if self.extraxx:
+            string += f" {self.extraxx}"
+
+        return string
 
 
 @attr.s(auto_attribs=True)
 class PartialPermsModel(DBModel):
+    guild_id: str = PARTIAL_MISSING
     id: str = PARTIAL_MISSING
     type: str = attr.ib(
         default=PARTIAL_MISSING,
@@ -475,3 +520,21 @@ class PartialPermsModel(DBModel):
     extraxx: Optional[str] = PARTIAL_MISSING
     is_custom: Optional[bool] = PARTIAL_MISSING
     is_cog: Optional[bool] = PARTIAL_MISSING
+    is_negated: Optional[bool] = PARTIAL_MISSING
+
+    def to_literal(self) -> str:
+        """
+        Represent this permission object as a literal.
+        :return: The literal string.
+        """
+        string: str = self.command or ""
+        if self.extra:
+            string += f" {self.extra}"
+
+        if self.extrax:
+            string += f" {self.extrax}"
+
+        if self.extraxx:
+            string += f" {self.extraxx}"
+
+        return string
