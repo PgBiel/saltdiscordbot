@@ -16,6 +16,7 @@ class SCommand(commands.Command):
     dev_only: bool = False
     saltmod_usable: bool = False
     saltadmin_usable: bool = False
+    perms_used: List[str] = []
 
     def __init__(self, func, *, no_super_init: bool = False, example: Optional[str] = None, **kwargs):
         """
@@ -45,11 +46,13 @@ class SCommand(commands.Command):
         self.dev_only = attribs.get("dev_only", self.dev_only or False)
         self.saltmod_usable = attribs.get("saltmod_usable", self.saltmod_usable or False)
         self.saltadmin_usable = attribs.get("saltadmin_usable", self.saltadmin_usable or False)
+        self.perms_used = attribs.get("perms_used", self.perms_used or [])
 
     def _get_attribs(self):
         return dict(
             guild_only=self.guild_only, dm_only=self.dm_only, dev_only=self.dev_only,
-            saltmod_usable=self.saltmod_usable, saltadmin_usable=self.saltadmin_usable
+            saltmod_usable=self.saltmod_usable, saltadmin_usable=self.saltadmin_usable,
+            perms_used=self.perms_used
         )
 
     def _ensure_assignment_on_copy(self, other: "SCommand"):

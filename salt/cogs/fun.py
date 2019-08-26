@@ -3,12 +3,9 @@ import re
 import discord
 from discord.ext import commands
 from classes import scommand, SContext
-from constants import FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, EIGHT_BALL_ANSWERS
-
-UPPER_EXPONENTS = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"]
-UPPER_MAP = {str(i): UPPER_EXPONENTS[i] for i in range(0, len(UPPER_EXPONENTS))}
-UPPER_MAP.update({"-": "⁻", "+": "⁺"})
-
+from constants import (
+    FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, EIGHT_BALL_ANSWERS, UPPER_MAP, SUPEXPONENT_REGEX
+)
 
 class Fun(commands.Cog):
 
@@ -85,10 +82,32 @@ class Fun(commands.Cog):
         await ctx.send(f">>> __**8ball Response**__\n{EIGHT_BALL_ANSWERS[answer_index]}", deletable=True)
 
     @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
-    @scommand(name='numupper', description="Convert numbers to their equivalent superscript characters.")
+    @scommand(
+        name='numupper', description="Convert numbers to their equivalent superscript characters.",
+        example="{p}numupper 1234567890"
+    )
     async def numupper(self, ctx: SContext, *, numbers: str):
         new_text = "".join([(UPPER_MAP[d] if d in UPPER_MAP else d) for d in numbers])
         fmt = ">>> __**Numupper Result**__\n{}"
+        await ctx.send(fmt.format(new_text[:2000 - (len(fmt) - 2)]), deletable=True)
+
+    @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @scommand(
+        name='supexponent', description="Smartly convert exponents to their equivalent superscript characters.",
+        example="{p}supexponent 2^24 + 2^-543"
+    )
+    async def supexponent(self, ctx: SContext, *, numbers: str):
+        def replace(match):
+            expr = match.group("content")
+            return "".join([(UPPER_MAP[d] if d in UPPER_MAP else d) for d in expr]).strip('()')
+
+        new_text = re.sub(
+            SUPEXPONENT_REGEX,
+            replace,
+            numbers
+        )
+
+        fmt = ">>> __**Supexponent Result**__\n{}"
         await ctx.send(fmt.format(new_text[:2000 - (len(fmt) - 2)]), deletable=True)
 
 

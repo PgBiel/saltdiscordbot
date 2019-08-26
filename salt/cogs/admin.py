@@ -312,6 +312,5 @@ a{1} {2}{3}{4}.".format(
         await ctx.send_help(self.perms)
 
 
-
 def setup(bot: commands.Bot):
     bot.add_cog(Administration(bot))

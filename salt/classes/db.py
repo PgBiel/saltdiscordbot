@@ -1,16 +1,33 @@
 import motor.motor_asyncio
 import attr
+import copy
 from typing import (
     Generic, Type, TypeVar, List, Tuple, Optional, Dict, TypedDict, Sequence, Union, Any,
     overload, Callable
 )
-from constants import DB_PUNISHMENT_TYPES
+from constants import DB_PUNISHMENT_TYPES, DB_PERMISSION_TYPES
 from utils.funcs import make_partial_attrs_class, PARTIAL_MISSING, as_dict
 # from dataclasses import dataclass, field, asdict, fields, make_dataclass
 
 
+def m_op(op: str, data: Any):
+    return {f"${op}": data}
+
+
 def set_op(data: Any):
-    return {"$set": data}
+    return m_op("set", data)
+
+
+def in_op(data: Sequence[Any]):
+    return m_op("in", data)
+
+
+def and_op(data: Sequence[Any]):
+    return m_op("and", data)
+
+
+def or_op(data: Sequence[Any]):
+    return m_op("or", data)
 
 
 class DBModel:
@@ -28,6 +45,12 @@ class DBModel:
 
     def as_dict(self):
         return as_dict(self)
+
+    def copy(self):
+        return copy.copy(self)
+
+    def deepcopy(self):
+        return copy.deepcopy(self)
 
 
 @attr.s(auto_attribs=True, frozen=False)
@@ -422,4 +445,33 @@ class PartialWarnExpiresModel(DBModel):
         expires: (Optional str) Interval of how much time should the warn expire after.
     """
     guild_id: str = PARTIAL_MISSING
-    expires: Optional[str] = PARTIAL_MISSING # COMPRESSED DELTA
+    expires: Optional[str] = PARTIAL_MISSING  # COMPRESSED DELTA
+
+
+@attr.s(auto_attribs=True)
+class PermsModel(DBModel):
+    id: str
+    type: str = attr.ib(
+        validator=lambda s, *_a, **_kw: s in DB_PERMISSION_TYPES
+    )
+    command: str
+    extra: Optional[str] = None
+    extrax: Optional[str] = None
+    extraxx: Optional[str] = None
+    is_custom: Optional[bool] = False
+    is_cog: Optional[bool] = False
+
+
+@attr.s(auto_attribs=True)
+class PartialPermsModel(DBModel):
+    id: str = PARTIAL_MISSING
+    type: str = attr.ib(
+        default=PARTIAL_MISSING,
+        validator=lambda s, *_a, **_kw: s == PARTIAL_MISSING or s in DB_PERMISSION_TYPES
+    )
+    command: str = PARTIAL_MISSING
+    extra: Optional[str] = PARTIAL_MISSING
+    extrax: Optional[str] = PARTIAL_MISSING
+    extraxx: Optional[str] = PARTIAL_MISSING
+    is_custom: Optional[bool] = PARTIAL_MISSING
+    is_cog: Optional[bool] = PARTIAL_MISSING

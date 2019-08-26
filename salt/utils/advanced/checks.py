@@ -8,12 +8,14 @@ import discord
 import typing
 from typing import Any, Callable, List, Union, Coroutine, Sequence
 from discord.ext import commands
-from utils.funcs import sync_await
+from utils.funcs import sync_await, permission_literal_to_tuple
+from classes import PermsModel, PartialPermsModel, in_op, or_op
 from classes.scommand import SCommand, SGroup
 from classes.errors import (
     SaltCheckFailure, MissingSaltModRole, NoConfiguredSaltModRole, MissingSaltAdminRole, NoConfiguredSaltAdminRole,
     BotMissingOneChannelPermissions
 )
+from constants import DB_PERMISSION_TYPES
 
 if typing.TYPE_CHECKING:
     from classes.scontext import SContext
@@ -204,6 +206,95 @@ def sdev_only():
         raise commands.NotOwner()
 
     return scheck(predicate, dev_only=True)
+
+
+async def has_permission(
+        ctx: "SContext",
+        idable: Union[
+            discord.abc.User, discord.abc.PrivateChannel, discord.abc.GuildChannel, discord.Role, discord.Guild,
+            discord.Object, discord.abc.Snowflake  # anything that has a .id
+        ], permission: Union[str, typing.Tuple[str, ...]],
+        *, obj_type: typing.Optional[str] = None, default: bool = False,
+        cog_name: typing.Optional[str] = None
+) -> bool:  # TODO: Finish this; make perm check that adds to bot perms array; make perm command and stuff
+    """
+    Check if something has a salt permission.
+
+    :param ctx: Context in which to check.
+    :param idable: Anything that has a id; preferably a User, Member, Channel, Role or Guild object.
+    :param permission: The permission literal or the tuple.
+    :param obj_type: (Optional str) One of "member", "channel", "role" or "guild", if idable is not
+        one of those objects.
+    :param default: (Optional bool=False) Whether or not the object can use this command by default.
+    :param cog_name: (Optional str) The cog the command is in to check for cog-wide overrides.
+    :return: (bool) Whether or not it has permission.
+    :raises TypeError: If a non-User/Member/Channel/Role/Guild object was passed in `idable` and no valid `obj_type`
+        was passed to help identify which type it is.
+    """
+    id_n = idable.id
+    if isinstance(idable, discord.abc.User):
+        obj_type = 'member'
+    elif isinstance(idable, discord.Role):
+        obj_type = 'role'
+    elif isinstance(idable, discord.Guild):
+        obj_type = 'guild'
+    elif isinstance(idable, discord.abc.GuildChannel) or isinstance(idable, discord.abc.PrivateChannel):
+        obj_type = 'channel'
+    elif not obj_type or obj_type not in DB_PERMISSION_TYPES:
+        raise TypeError("Invalid type specified for obj_type.")
+
+    if type(permission) == str:
+        permission = permission_literal_to_tuple(permission)
+
+    is_cog: bool = False
+    is_custom: bool = False
+    if permission[0] == 'cog':
+        permission = permission[1:]
+        if cog_name:
+            is_cog = True
+
+    elif permission[0] == 'custom':
+        permission = permission[1:]
+        is_custom = True
+
+    def or_all(*names: str):
+        return [*names, "all", "*"]
+
+    command = permission[0]
+    extra = permission[1] if len(permission) >= 2 else None
+    extrax = permission[2] if len(permission) >= 3 else None
+    extraxx = permission[3] if len(permission) >= 4 else None
+
+    basic = PartialPermsModel(
+        command=command, is_cog=is_cog if is_cog else False
+    )
+
+    def b_copy_as_dict(**attrs):
+        copied = basic.copy()
+        for k, v in attrs.items():
+            setattr(copied, k, v)
+
+        return copied.as_dict()
+
+    # is_cog if is_cog else ({"$in": [True, False]} if cog_name else False - Saving for later
+    await ctx.db['perms'].find_one(
+        {
+            **PartialPermsModel(
+                id=str(id_n), type=obj_type,
+                is_custom=is_custom
+            ).as_dict(),
+            **or_op([
+                b_copy_as_dict(command=("all" if extra else command)),
+                *([b_copy_as_dict(extra=("all" if extrax else extra))] if extra else []),
+                *([b_copy_as_dict(extra=extra, extrax=("all" if extraxx else extrax))] if extrax else []),
+                *([b_copy_as_dict(extra=extra, extrax=extrax, extraxx=extraxx)] if extraxx else [])
+            ])
+        }
+    )
+    # command = typing.cast(str, in_op(or_all(permission[0]))),
+    # ** (dict(extra=in_op(or_all(permission[1]))) if permission[1] else dict()),
+    # ** (dict(extrax=in_op(or_all(permission[1]))) if permission[1] else dict()),
+    # ** (dict(extraxx=in_op(or_all(permission[1]))) if permission[1] else dict()),
 
 
 def is_owner():

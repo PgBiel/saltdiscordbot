@@ -6,7 +6,7 @@ import motor.motor_asyncio
 import typing
 import datetime
 import re
-from typing import List
+from typing import List, Tuple
 from discord.ext import commands
 from utils.funcs.jsonwork import load as json_load
 from utils.funcs import humanize_perm, humanize_list, salt_loop, set_bot
@@ -41,8 +41,10 @@ class Salt(commands.Bot):
     def __init__(self):
         set_bot(self)
         super().__init__(command_prefix=self.prefix, description=description, case_insensitive=True)
+        self.saved_permissions: List[Tuple[str, ...]] = []  # List of permissions that are being checked by commands.
         self.config: dict = dict()
         self.make_config()
+
         for cog_ext in cogs_ext_list:
             print(cog_ext)
             try:
@@ -50,6 +52,7 @@ class Salt(commands.Bot):
             except commands.ExtensionError as _err:
                 print(f'Failed to load extension {cog_ext}.', file=sys.stderr)
                 traceback.print_exc()
+
         monclient = motor.motor_asyncio.AsyncIOMotorClient()
         self.monclient: motor.motor_asyncio.AsyncIOMotorClient = monclient
         self.mondb: motor.motor_asyncio.AsyncIOMotorDatabase = self.monclient.salt

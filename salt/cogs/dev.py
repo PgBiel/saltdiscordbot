@@ -297,11 +297,6 @@ class Dev(commands.Cog):
         ctx.bot.debug = on_or_off
         await ctx.send(f"Successfully toggled debug to '{'on' if on_or_off else 'off'}'!")
 
-    @sdev_only()
-    @scommand(name="ttt", description="TTT")
-    async def ttt(self, ctx: SContext, num: int):
-        await ctx.send(f"Given: {num=} | Expected = 5t | Result: {test_proc(num).get()}")
-
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Dev(bot))

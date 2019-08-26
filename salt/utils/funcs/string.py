@@ -6,7 +6,7 @@ import unidecode
 import discord
 import datetime
 import re
-from typing import Sequence, Optional, Union, TYPE_CHECKING, List, Iterable, overload, TypeVar, Sized
+from typing import Sequence, Optional, Union, TYPE_CHECKING, List, Iterable, overload, TypeVar, Sized, Tuple
 from utils.funcs import clean_falsy_values, extract_delta
 from constants import TIME_ALIASES
 from dateutil.relativedelta import relativedelta
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from classes import SContext
 
 T = TypeVar("T", Iterable, Iterable)
-
 
 def humanize_perm(perm: str) -> str:
     """
@@ -290,3 +289,12 @@ def plural_s(amnt_or_iterable: Union[int, float, Sized]) -> str:
         num = float(len(amnt_or_iterable))
 
     return "s" if num != 1.0 else ""
+
+
+def permission_literal_to_tuple(literal: str, separator: Optional[Union[str, re.Pattern]] = None) -> Tuple[str, ...]:
+    match_split = re.split(separator if separator else (r"\.+" if "." in literal else r"\s+"), literal)
+    return tuple(["all" if m in ("*", "alls") else m for m in match_split])
+
+
+def permission_tuple_to_literal(tup: Tuple[str, ...], separator: Optional[str] = " ") -> str:
+    return (separator or " ").join(tup)
