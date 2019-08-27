@@ -9,12 +9,12 @@ import typing
 from pymongo import ASCENDING, DESCENDING
 from typing import Any, Callable, List, Union, Coroutine, Sequence
 from discord.ext import commands
-from utils.funcs import sync_await, permission_literal_to_tuple, dict_except
+from utils.funcs import sync_await, permission_literal_to_tuple, dict_except, get_bot
 from classes import PermsModel, PartialPermsModel, in_op, or_op
 from classes.scommand import SCommand, SGroup
 from classes.errors import (
     SaltCheckFailure, MissingSaltModRole, NoConfiguredSaltModRole, MissingSaltAdminRole, NoConfiguredSaltAdminRole,
-    BotMissingOneChannelPermissions
+    BotMissingOneChannelPermissions, MissingSaltPermissions
 )
 from constants import DB_PERMISSION_TYPES
 
@@ -31,6 +31,13 @@ def _load_sattribs(func: CmdFuncType, **sattribs) -> None:
     if isinstance(func, SCommand):
         func._load_attribs(**sattribs)
     else:
+        curr_attribs = getattr(func, "__scmd_attribs__", dict())
+        conflict_solver = dict()  # some properties add up instead of being set
+        if "perms_used" in sattribs:
+            conflict_solver["perms_used"] = curr_attribs.get("perms_used", []) + sattribs["perms_used"]
+
+        curr_attribs.update(sattribs)
+        curr_attribs.update(conflict_solver)
         func.__scmd_attribs__ = sattribs
 
 
@@ -73,9 +80,10 @@ async def _get_predicates(
         predicates.extend(cmd.checks[len(checks) - len(decorators):len(checks)])
         del cmd.checks[len(checks) - len(decorators):len(checks)]
     else:
-        checks: List[Callable[["SContext"], bool]] = func.__commands_checks__
-        predicates.extend(func.__commands_checks__[len(checks) - len(decorators):len(checks)])
-        del func.__commands_checks__[len(checks) - len(decorators):len(checks)]
+        checks: List[Callable[["SContext"], bool]] = getattr(func, "__commands_checks__", [])
+        predicates.extend(checks[len(checks) - len(decorators):len(checks)])
+        if checks:
+            del func.__commands_checks__[len(checks) - len(decorators):len(checks)]
     return predicates
 
 
@@ -225,17 +233,19 @@ async def has_permission(
     """
     Check if something has a salt permission.
     Hierarchy, if user_check_context is True:
+
     - User (highest priority)
     - Role
     - Channel
     - Guild (lowest priority)
 
     e.g. Permission  comm sub subsub subsubsub  will be affected by, in order:
-    • all
-    • comm all
-    • comm sub all
-    • comm sub subsub all
-    • comm sub subsub subsubsub
+
+    - all
+    - comm all
+    - comm sub all
+    - comm sub subsub all
+    - comm sub subsub subsubsub
 
     :param ctx: Context in which to check.
     :param idable: Anything that has a id; preferably a User, Member, Channel, Role or Guild object.
@@ -264,7 +274,7 @@ async def has_permission(
     elif not obj_type or obj_type not in DB_PERMISSION_TYPES:
         raise TypeError("Invalid type specified for obj_type.")
 
-    if obj_type == 'member' and (ctx.author.id in ctx.bot.config["owners"] or ctx.author.id == ctx.bot.owner_id):
+    if obj_type == 'member' and (id_n in ctx.bot.config["owners"] or id_n == ctx.bot.owner_id):
         return True
 
     if type(permission) == str:
@@ -281,8 +291,8 @@ async def has_permission(
         permission = permission[1:]
         is_custom = True
 
-    def or_all(*names: str):
-        return [*names, "all", "*"]
+    def in_or_all(*names: str):
+        return in_op([*names, "all", "*"])
 
     command = permission[0]
     extra = permission[1] if len(permission) >= 2 else None
@@ -290,9 +300,10 @@ async def has_permission(
     extraxx = permission[3] if len(permission) >= 4 else None
 
     basic = PartialPermsModel(
-        guild_id=ctx.guild.id, id=str(id_n), type=obj_type,
+        guild_id=str(ctx.guild.id), id=str(id_n), type=obj_type,
         is_custom=is_custom,
-        command=command, is_cog=is_cog if is_cog else False
+        command=command, is_cog=is_cog if is_cog else False,
+        extra=None, extrax=None, extraxx=None
     )
 
     def b_copy_as_dict(**attrs):
@@ -302,66 +313,14 @@ async def has_permission(
 
         return copied.as_dict()
 
-    all_perm: dict = await ctx.db['perms'].find_one(
-        b_copy_as_dict(command="all", is_cog=False, is_custom=False)
-    )
-    # if all_perm:
-    #     return not all_perm.get('is_negated', False)
-    #
-    # if not extra:
-    #     cmd_perm: dict = await ctx.db['perms'].find_one(basic.as_dict())
-    #     if cmd_perm:
-    #         return not cmd_perm.get("is_negated", False)
-    # else:
-    #     extra_all_perm: dict = await ctx.db['perms'].find_one(
-    #         b_copy_as_dict(extra="all")
-    #     )
-    #
-    #     if extra_all_perm:
-    #         return not extra_all_perm.get("is_negated", False)
-    #
-    #     if not extrax:
-    #         extra_perm: dict = await ctx.db['perms'].find_one(
-    #             b_copy_as_dict(extra=extra)
-    #         )
-    #         if extra_perm:
-    #             return not extra_perm.get("is_negated", False)
-    #
-    #     else:
-    #         extrax_all_perm: dict = await ctx.db['perms'].find_one(
-    #             b_copy_as_dict(extra=extra, extrax="all")
-    #         )
-    #         if extrax_all_perm:
-    #             return not extrax_all_perm.get("is_negated", False)
-    #
-    #         if not extraxx:
-    #             extrax_perm: dict = await ctx.db['perms'].find_one(
-    #                 b_copy_as_dict(extra=extra, extrax=extrax)
-    #             )
-    #             if extrax_perm:
-    #                 return not extrax_perm.get("is_negated", False)
-    #
-    #         else:
-    #             extraxx_all_perm: dict = await ctx.db['perms'].find_one(
-    #                 b_copy_as_dict(extra=extra, extrax=extrax, extraxx="all")
-    #             )
-    #             if extraxx_all_perm:
-    #                 return not extraxx_all_perm.get("is_negated", False)
-    #
-    #             extraxx_perm: dict = await ctx.db['perms'].find_one(
-    #                 b_copy_as_dict(extra=extra, extrax=extrax, extraxx=extraxx)
-    #             )
-    #             if extraxx_perm:
-    #                 return not extraxx_perm.get("is_negated", False)
-
     # is_cog if is_cog else ({"$in": [True, False]} if cog_name else False - Saving for later
     matched_cursor: motor.motor_asyncio.AsyncIOMotorCursor = ctx.db['perms'].find(
         or_op([
-            b_copy_as_dict(command=("all" if extra else or_all(command))),
+            b_copy_as_dict(command=("all" if extra else in_or_all(command))),
             *([b_copy_as_dict(command=cog_name, is_cog=True, is_custom=False)] if cog_name else []),
             *([b_copy_as_dict(extra=("all" if extrax else extra))] if extra else []),
             *([b_copy_as_dict(extra=extra, extrax=("all" if extraxx else extrax))] if extrax else []),
-            *([b_copy_as_dict(extra=extra, extrax=extrax, extraxx=or_all(extraxx))] if extraxx else []),
+            *([b_copy_as_dict(extra=extra, extrax=extrax, extraxx=in_or_all(extraxx))] if extraxx else []),
         ]),
         sort=[('command', ASCENDING), ('extra', ASCENDING), ('extrax', ASCENDING), ('extraxx', ASCENDING)]
     )
@@ -414,6 +373,47 @@ async def has_permission(
     # ** (dict(extra=in_op(or_all(permission[1]))) if permission[1] else dict()),
     # ** (dict(extrax=in_op(or_all(permission[1]))) if permission[1] else dict()),
     # ** (dict(extraxx=in_op(or_all(permission[1]))) if permission[1] else dict()),
+
+
+def require_salt_permission(
+        perm: Union[str, typing.Tuple[str, ...]],
+        *, default: bool = False, also_uses: typing.Tuple[str, ...] = tuple(),
+        just_check_if_negated: bool = False
+):
+    """
+    Require the user to have certain permissions.
+    :param perm: Permission required. (Permission literal or tuple)
+    :param default: (Optional bool=False) Whether or not the member has this permission by default.
+    :param also_uses: (Optional tuple) List of extra permissions that the command may check for but are not
+        required for the execution of the command. This is used so that the bot can have an updated list of
+        permissions.
+    :param just_check_if_negated: (Optional bool=False) Whether or not we're just checking for negation. If True,
+        the `default` parameter is ignored and set to `True`.
+    :return: The decorator.
+    """
+    async def predicate(ctx: "SContext"):
+        can_use = await has_permission(
+            ctx, ctx.author, permission=perm, obj_type="member", default=True if just_check_if_negated else default,
+            cog_name=ctx.cog.__class__.__name__ if ctx.cog else None, user_check_context=True
+        )
+        if not can_use:
+            raise MissingSaltPermissions(missing_perms=[perm])
+
+        return True
+
+    perms_used = [perm, *(also_uses or [])]
+    bot = get_bot()
+    if bot:
+        for prm in perms_used:
+            if type(prm) == str:
+                prm = permission_literal_to_tuple(prm)
+
+            if prm not in bot.saved_permissions:
+                bot.saved_permissions.append(prm)
+    else:
+        print("(BOT NOT FOUND ON PERM CHECK.)")
+
+    return scheck(predicate, **(dict(perms_used=perms_used) if not just_check_if_negated else dict()))
 
 
 def is_owner():

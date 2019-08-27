@@ -46,7 +46,7 @@ class SCommand(commands.Command):
         self.dev_only = attribs.get("dev_only", self.dev_only or False)
         self.saltmod_usable = attribs.get("saltmod_usable", self.saltmod_usable or False)
         self.saltadmin_usable = attribs.get("saltadmin_usable", self.saltadmin_usable or False)
-        self.perms_used = attribs.get("perms_used", self.perms_used or [])
+        self.perms_used = self.perms_used + attribs.get("perms_used", self.perms_used or [])
 
     def _get_attribs(self):
         return dict(

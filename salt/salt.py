@@ -9,14 +9,15 @@ import re
 from typing import List, Tuple
 from discord.ext import commands
 from utils.funcs.jsonwork import load as json_load
-from utils.funcs import humanize_perm, humanize_list, salt_loop, set_bot
+from utils.funcs import humanize_perm, humanize_list, salt_loop, set_bot, permission_tuple_to_literal, plural_s
 from constants import DEFAULT_PREFIX
 from classes import (
     SContext, RepeatedTimer, SCommand,
     MissingSaltModRole, MissingSaltAdminRole, NoPermissions,
     NoConfiguredSaltModRole, NoConfiguredSaltAdminRole,
     AutoCancelledException, InvalidIntegerArg,
-    BotMissingOneChannelPermissions, BotMissingThisChannelPermissions
+    BotMissingOneChannelPermissions, BotMissingThisChannelPermissions,
+    MissingSaltPermissions
 )
 
 description = """
@@ -214,15 +215,15 @@ class Salt(commands.Bot):
                     r'Converting to "(?P<type>[^"]+)" failed for parameter "(?P<name>[^"]+)"\.?',
                     str(error)
                 )):
-                    type = match.group("type").lower()
+                    fail_type = match.group("type").lower()
                     name = match.group("name").lower()
-                    if type == "int":
+                    if fail_type == "int":
                         await ctx.send(fmt.format(f": Parameter '{name}' must be a valid integer!"))
                         return
-                    elif type == "float":
+                    elif fail_type == "float":
                         await ctx.send(fmt.format(f": Parameter '{name}' must be a valid number!"))
                         return
-                    elif type == "bool":
+                    elif fail_type == "bool":
                         await ctx.send(fmt.format(f": Parameter '{name}' must be one of 'yes', 'on', 'off', 'no', ..."))
                         return
                 elif str(error).lower().endswith("is not a recognised boolean option"):
@@ -267,6 +268,14 @@ it so I know where the following one starts! :smiley: I am confused right now...
         if isinstance(error, commands.CheckFailure):
             if isinstance(error, commands.NotOwner):
                 return
+            if isinstance(error, MissingSaltPermissions):
+                humanized = humanize_list(
+                    [
+                        f"`{permission_tuple_to_literal(p) if type(p) in (tuple, list) else p}`"
+                        for p in error.missing_perms
+                    ]
+                )
+                await ctx.send(f"You're missing the {humanized} saltperm{plural_s(humanized)}!")
             if isinstance(error, commands.BotMissingPermissions) or isinstance(error, commands.MissingPermissions):
                 missing: List[str] = error.missing_perms
                 hum_missing = [humanize_perm(perm) for perm in missing]

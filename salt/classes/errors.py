@@ -72,6 +72,9 @@ class NoConfiguredSaltAdminRole(SaltCheckFailure):
     pass
 
 
+SaltPermissionType = typing.Union[str, typing.Tuple[str, ...]]
+
+
 class SaltMissingPermissions(SaltCheckFailure):
     """
     The user is missing some permissions.
@@ -79,11 +82,13 @@ class SaltMissingPermissions(SaltCheckFailure):
     Attributes
         missing_perms: List of permissions missing, or None if unspecified.
     """
-    missing_perms: typing.Optional[typing.List[str]]
+    missing_perms: typing.Optional[typing.List[SaltPermissionType]]
 
     def __init__(
             self, message: typing.Optional[str] = None, *,
-            missing_perms: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None
+            missing_perms: typing.Optional[
+                typing.Union[SaltPermissionType, typing.Sequence[SaltPermissionType]]
+            ] = None
     ):
         super().__init__(message=message)
         self.missing_perms = list(missing_perms) if missing_perms else None

@@ -16,7 +16,7 @@ from classes import (
     PositiveIntConverter, CustomIntConverter
 )
 from classes.converters import AmbiguityMemberConverter
-from utils.advanced.checks import or_checks, is_owner, has_saltmod_role, sguild_only
+from utils.advanced.checks import or_checks, is_owner, has_saltmod_role, sguild_only, require_salt_permission
 from utils.advanced import (
     confirmation_predicate_gen, prompt, actionlog, generate_actionlog_embed, generate_actionlog_embed_from_entry
 )
@@ -53,7 +53,7 @@ async def _kick_or_ban(
     :return:
     """
     is_softban = verb == 'softban'
-    is_from_warn = getattr(ctx, '_warn_punish', True)
+    is_from_warn = getattr(ctx, '_warn_punish', False)
     is_outsider = not bool(ctx.guild.get_member(member.id)) if is_idban else False
     verb_alt: str = verb + "n" if "ban" in verb else verb  # Use for alternative forms of the verb - "ban" -> "bann"ed..
     checker_func = kickable if verb == "kick" else bannable
@@ -202,10 +202,12 @@ async def _unmute(
 class Moderation(commands.Cog):
 
     @or_checks(  # Either is bot dev, has SaltMod role (will be removed), has Kick Members perm or has "kick" saltperm
-        is_owner(), has_saltmod_role(), commands.has_permissions(kick_members=True),  # (saltperm to be added later)
+        is_owner(), has_saltmod_role(), commands.has_permissions(kick_members=True),
+        require_salt_permission("kick", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Kick Members", "kick"))  # TODO: Add saltperm check
     )
     @commands.bot_has_permissions(kick_members=True)
+    @require_salt_permission("kick", just_check_if_negated=True)
     @sguild_only()
     @scommand(name="kick", description="Kick people.", example="{p}kick @Boi#0001 Toxicity")
     async def kick(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
