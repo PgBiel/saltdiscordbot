@@ -3,7 +3,7 @@ import discord
 from classes import SContext, SCommand, SGroup
 from discord.ext import commands
 from constants import HELP_COG_SHORTCUTS
-from utils.funcs import pagify_list
+from utils.funcs import pagify_list, permission_tuple_to_literal
 from essentials import PaginateOptions
 
 if typing.TYPE_CHECKING:
@@ -126,6 +126,13 @@ on a command."
             is_s = isinstance(command, SCommand) or isinstance(command, SGroup)  # if is customized command/group
 
             embed.add_field(name="Usage", value=f"`{self.get_command_signature(command)}`", inline=False)
+
+            if is_s and (prms := command.perms_used):
+                embed.add_field(
+                    name="Salt Permissions used",
+                    value=", ".join([permission_tuple_to_literal(x) if type(x) != str else x for x in prms]),
+                    inline=False
+                )
 
             if isinstance(command, commands.Group):
                 embed.add_field(

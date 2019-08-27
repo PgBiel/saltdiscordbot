@@ -18,7 +18,8 @@ from classes import (
 from classes.converters import AmbiguityMemberConverter
 from utils.advanced.checks import or_checks, is_owner, has_saltmod_role, sguild_only, require_salt_permission
 from utils.advanced import (
-    confirmation_predicate_gen, prompt, actionlog, generate_actionlog_embed, generate_actionlog_embed_from_entry
+    confirmation_predicate_gen, prompt, actionlog, generate_actionlog_embed, generate_actionlog_embed_from_entry,
+    has_permission
 )
 from utils.funcs import (
     discord_sanitize, normalize_caseless, kickable, bannable, delta_decompress, humanize_delta,
@@ -217,9 +218,11 @@ class Moderation(commands.Cog):
 
     @or_checks(  # Same as kick's, but Ban Members perm and 'ban' saltperm
         is_owner(), has_saltmod_role(), commands.has_permissions(ban_members=True),
+        require_salt_permission("ban", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Ban Members", "ban"))
     )
     @commands.bot_has_permissions(ban_members=True)
+    @require_salt_permission("ban", just_check_if_negated=True)
     @sguild_only()
     @scommand(name="ban", description="Ban people.", example="{p}ban @Boi#0001 Raiding")
     async def ban(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
@@ -227,9 +230,11 @@ class Moderation(commands.Cog):
 
     @or_checks(  # Same as kick's, but Ban Members perm and 'ban' saltperm
         is_owner(), has_saltmod_role(), commands.has_permissions(ban_members=True),
+        require_salt_permission("ban", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Ban Members", "ban"))
     )
     @commands.bot_has_permissions(ban_members=True)
+    @require_salt_permission("ban", just_check_if_negated=True)
     @sguild_only()
     @scommand(name="nodelban", description="Ban people without deleting any message.")
     async def nodelban(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
@@ -240,9 +245,11 @@ class Moderation(commands.Cog):
 
     @or_checks(  # Same as kick's, but Ban Members perm and 'ban' saltperm
         is_owner(), has_saltmod_role(), commands.has_permissions(ban_members=True),
+        require_salt_permission("ban", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Ban Members", "ban"))
     )
     @commands.bot_has_permissions(ban_members=True)
+    @require_salt_permission("ban", just_check_if_negated=True)
     @sguild_only()
     @scommand(name="weekdelban", description="Ban people and delete their messages sent up to a week ago.")
     async def weekdelban(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
@@ -253,9 +260,11 @@ class Moderation(commands.Cog):
 
     @or_checks(  # Same as kick's, but Ban Members perm and 'ban' saltperm
         is_owner(), has_saltmod_role(), commands.has_permissions(ban_members=True),
+        require_salt_permission("ban", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Ban Members", "ban"))
     )
     @commands.bot_has_permissions(ban_members=True)
+    @require_salt_permission("ban", just_check_if_negated=True)
     @sguild_only()
     @scommand(
         name="idban", aliases=["hackban"], description="Ban people that aren't in the server by ID.",
@@ -270,9 +279,11 @@ class Moderation(commands.Cog):
     @or_checks(  # Same as kick's, but Ban Members perm and 'ban' saltperm
         is_owner(), has_saltmod_role(),
         commands.has_permissions(kick_members=True), commands.has_permissions(ban_members=True),  # either kick or ban
+        require_salt_permission("softban", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Kick Members, Ban Members", "softban"))
     )
     @commands.bot_has_permissions(ban_members=True)
+    @require_salt_permission("softban", just_check_if_negated=True)
     @sguild_only()
     @scommand(
         name="softban", description="Kick but remove messages in their way out. (Ban and unban)",
@@ -285,9 +296,11 @@ class Moderation(commands.Cog):
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
+        require_salt_permission("mute", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "mute"))
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @require_salt_permission("mute", just_check_if_negated=True)
     @sguild_only()
     @scommand(
         name='mute', description="Mute people.",
@@ -510,9 +523,11 @@ was too big!"
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
+        require_salt_permission("mute", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "mute"))
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @require_salt_permission("mute", just_check_if_negated=True)
     @sguild_only()
     @scommand(name='emute', aliases=["remute"], description="Change how long someone is muted for.")
     async def emute(self, ctx: SContext, member: AmbiguityMemberConverter, *, time_and_reason: Optional[str]):
@@ -521,9 +536,11 @@ was too big!"
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
+        require_salt_permission("mute", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "mute"))
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @require_salt_permission("mute", just_check_if_negated=True)
     @sguild_only()
     @scommand(name='epmute', aliases=["repmute"], description="Change a mute to a permanent mute.")
     async def epmute(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
@@ -536,6 +553,7 @@ was too big!"
         error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "mute"))
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @require_salt_permission("mute", just_check_if_negated=True)
     @sguild_only()
     @scommand(name='pmute', description="Mute someone permanently. (Until they are manually unmuted)")
     async def pmute(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str]):
@@ -544,9 +562,11 @@ was too big!"
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
+        require_salt_permission("unmute"),
         error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "mute"))
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @require_salt_permission("unmute", just_check_if_negated=True)
     @sguild_only()
     @scommand(name='unmute', description="Unmute a member.", example="{p}unmute @Boi#0001 They're good now")
     async def unmute(self, ctx: SContext, member: AmbiguityMemberConverter, *, reason: Optional[str] = None):
@@ -566,6 +586,7 @@ was too big!"
             await ctx.send("That member is not muted!")
             return
 
+    @require_salt_permission("mutetime", default=True)
     @sguild_only()
     @scommand(name='mutetime', description="See how long someone is muted for.")
     async def mutetime(self, ctx: SContext, *, member: AmbiguityMemberConverter):
@@ -600,9 +621,11 @@ unmuted!")
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_roles=True),
+        require_salt_permission("warn", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Manage Roles", "warn"))
     )
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @require_salt_permission("warn", just_check_if_negated=True)
     @sguild_only()
     @scommand(
         name='warn', description="Warn people.",
@@ -738,6 +761,7 @@ be punished.")
 
         await sent_msg.edit(content=success_fmt.format(""))
 
+    @require_salt_permission("case get", default=True)
     @sguild_only()
     @sgroup(
         name="case", description="View action log cases.", invoke_without_command=True, example="{p}case 6"
@@ -795,6 +819,7 @@ be punished.")
             await ctx.send("That case has an invalid user! :frowning:")
             return
 
+    @require_salt_permission("case reason", default=True, also_uses=("case others",))
     @sguild_only()
     @case.command(
         name="reason", aliases=["edit"],
@@ -811,7 +836,15 @@ be punished.")
         del provide_dict['_id']
 
         found = PunishmentsModel(**provide_dict)
-        if found.moderator_id != str(ctx.author.id) and not ctx.author.guild_permissions.administrator:
+        if (
+            found.moderator_id != str(ctx.author.id)
+            and not ctx.author.guild_permissions.administrator
+            and not await has_permission(
+                ctx, ctx.author, "case others",
+                obj_type="member", default=False, cog_name=ctx.command.cog.__class__.__name__,
+                user_check_context=True
+            )
+        ):
             await ctx.send(f"That case is not yours! To edit others' cases, you need the `Administrator` Discord \
 permission, a Salt Admin role or the `case others` saltperm!")
             return
@@ -840,6 +873,7 @@ permission, a Salt Admin role or the `case others` saltperm!")
 
         await ctx.send(f"Successfully changed Case #{number}'s reason!")
 
+    @require_salt_permission("case togglethumb", default=True, also_uses=["case others"])
     @sguild_only()
     @case.command(name="togglethumb", description="Toggle an action log's thumbnail. \
 (In case avatar is innapropriate or something like that)", example="{p}case togglethumb 5")
@@ -854,7 +888,15 @@ permission, a Salt Admin role or the `case others` saltperm!")
         del provide_dict['_id']
 
         found = PunishmentsModel(**provide_dict)
-        if found.moderator_id != str(ctx.author.id) and not ctx.author.guild_permissions.administrator:
+        if (
+            found.moderator_id != str(ctx.author.id)
+            and not ctx.author.guild_permissions.administrator
+            and not await has_permission(
+                ctx, ctx.author, "case others",
+                obj_type="member", default=False, cog_name=ctx.command.cog.__class__.__name__,
+                user_check_context=True
+            )
+        ):
             await ctx.send(f"That case is not yours! To edit others' cases, you need the `Administrator` Discord \
 permission, a Salt Admin role or the `case others` saltperm!")
             return
@@ -891,6 +933,7 @@ permission, a Salt Admin role or the `case others` saltperm!")
 
         await ctx.send(f"Successfully toggled Case #{number}'s thumbnail {'on' if on_or_off else 'off'}!")
 
+    @require_salt_permission("case delete", default=True, also_uses=["case others"])
     @sguild_only()
     @case.command(name="delete", description="Delete a case.", example="{p}case delete 6")
     async def case_delete(self, ctx: SContext, number: int):
@@ -904,7 +947,15 @@ permission, a Salt Admin role or the `case others` saltperm!")
         del provide_dict['_id']
 
         found = PunishmentsModel(**provide_dict)
-        if found.moderator_id != str(ctx.author.id) and not ctx.author.guild_permissions.administrator:
+        if (
+            found.moderator_id != str(ctx.author.id)
+            and not ctx.author.guild_permissions.administrator
+            and not await has_permission(
+                ctx, ctx.author, "case others",
+                obj_type="member", default=False, cog_name=ctx.command.cog.__class__.__name__,
+                user_check_context=True
+            )
+        ):
             await ctx.send(f"That case is not yours! To edit others' cases, you need the `Administrator` Discord \
 permission, a Salt Admin role or the `case others` saltperm!")
             return
@@ -942,8 +993,10 @@ permission, a Salt Admin role or the `case others` saltperm!")
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_messages=True),
+        require_salt_permission("clear", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Manage Messages", "clear"))
     )
+    @require_salt_permission("clear", just_check_if_negated=True)
     @commands.bot_has_permissions(manage_messages=True)
     @sguild_only()
     @sgroup(
@@ -998,8 +1051,10 @@ permission, a Salt Admin role or the `case others` saltperm!")
 
     @or_checks(
         is_owner(), has_saltmod_role(), commands.has_permissions(manage_messages=True),
+        require_salt_permission("clear bot", default=False),
         error=NoPermissions(moderation_dperm_error_fmt.format("Manage Messages", "clear"))
     )
+    @require_salt_permission("clear bot", just_check_if_negated=True)
     @commands.bot_has_permissions(manage_messages=True)
     @sguild_only()
     @clear.command(name="bot", example="{p}clear bot 5")

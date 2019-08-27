@@ -6,6 +6,7 @@ import motor.motor_asyncio
 import motor.core
 import discord
 import typing
+from inspect import isawaitable
 from pymongo import ASCENDING, DESCENDING
 from typing import Any, Callable, List, Union, Coroutine, Sequence
 from discord.ext import commands
@@ -50,10 +51,11 @@ def scheck(predicate: PredicateType, **sattribs) -> Callable[[B], B]:
     """
     def deco(func: B) -> B:
         if len(sattribs) > 0:
-            if isinstance(func, SCommand):
-                func._load_attribs(**sattribs)
-            else:
-                func.__scmd_attribs__ = sattribs
+            # if isinstance(func, SCommand):
+            #     func._load_attribs(**sattribs)
+            # else:
+            #     func.__scmd_attribs__ = sattribs
+            _load_sattribs(func, **sattribs)
         return commands.check(predicate)(func)
     return deco
 
@@ -71,9 +73,11 @@ async def _get_predicates(
     predicates: List[Callable[["SContext"], bool]] = []
     for decorator in decorators:
         deco = decorator
-        if asyncio.iscoroutine(deco):
+        if isawaitable(deco):
             deco = await deco
+
         deco(func)
+
     if isinstance(func, commands.Command):
         cmd: commands.Command = func
         checks: List[Callable[["SContext"], bool]] = cmd.checks
@@ -89,7 +93,7 @@ async def _get_predicates(
 
 def or_checks(
         *decorators: Union[Callable[..., Any], Coroutine[Any, Any, Callable[..., Any]]],
-        **error: typing.Optional[BaseException]
+        error: typing.Optional[BaseException] = commands.errors.CheckFailure
 ):
     """
     Do one check OR the other (any amount of checks - A or B or C or D or ... or Z)
@@ -101,7 +105,7 @@ def or_checks(
     if len(decorators) < 1:
         raise TypeError("or_checks() missing required positional argument(s) *decorators.")
 
-    exception = error.pop("error", commands.errors.CheckFailure)
+    exception = error or commands.errors.CheckFailure
 
     def or_decorator(func: CmdFuncType):
         predicates = []
@@ -377,7 +381,7 @@ async def has_permission(
 
 def require_salt_permission(
         perm: Union[str, typing.Tuple[str, ...]],
-        *, default: bool = False, also_uses: typing.Tuple[str, ...] = tuple(),
+        *, default: bool = False, also_uses: typing.Sequence[str] = tuple(),
         just_check_if_negated: bool = False
 ):
     """
@@ -401,7 +405,7 @@ def require_salt_permission(
 
         return True
 
-    perms_used = [perm, *(also_uses or [])]
+    perms_used = [permission_literal_to_tuple(x) if type(x) == str else x for x in [perm, *(also_uses or [])]]
     bot = get_bot()
     if bot:
         for prm in perms_used:
@@ -413,7 +417,7 @@ def require_salt_permission(
     else:
         print("(BOT NOT FOUND ON PERM CHECK.)")
 
-    return scheck(predicate, **(dict(perms_used=perms_used) if not just_check_if_negated else dict()))
+    return scheck(predicate, perms_used=perms_used)
 
 
 def is_owner():
