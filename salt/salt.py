@@ -269,13 +269,14 @@ it so I know where the following one starts! :smiley: I am confused right now...
             if isinstance(error, commands.NotOwner):
                 return
             if isinstance(error, MissingSaltPermissions):
-                humanized = humanize_list(
-                    [
-                        f"`{permission_tuple_to_literal(p) if type(p) in (tuple, list) else p}`"
-                        for p in error.missing_perms
-                    ]
-                )
-                await ctx.send(f"You're missing the {humanized} saltperm{plural_s(humanized)}!")
+                origin_list = [
+                    f"`{permission_tuple_to_literal(p) if type(p) in (tuple, list) else p}`"
+                    for p in error.missing_perms
+                ]
+                humanized = humanize_list(origin_list)
+                await ctx.send(f"You're missing the {humanized} saltperm{plural_s(origin_list)}!")
+                return
+
             if isinstance(error, commands.BotMissingPermissions) or isinstance(error, commands.MissingPermissions):
                 missing: List[str] = error.missing_perms
                 hum_missing = [humanize_perm(perm) for perm in missing]
@@ -289,6 +290,7 @@ it so I know where the following one starts! :smiley: I am confused right now...
                                )
                                )
                 return
+
             if isinstance(error, BotMissingOneChannelPermissions) or isinstance(error, BotMissingThisChannelPermissions):
                 missing: List[str] = error.missing_perms
                 hum_missing = [humanize_perm(perm) for perm in missing]

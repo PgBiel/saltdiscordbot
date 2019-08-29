@@ -10,7 +10,7 @@ import multiprocessing
 import typing
 from discord.ext import commands
 from classes import SContext, MultilineEvalNoLastExprValue, scommand, sgroup, AmbiguityMemberConverter
-from constants import REPL_EXPIRE
+from constants import REPL_EXPIRE, MESSAGE_CHAR_LIMIT
 from utils.advanced import sdev_only
 from utils.funcs import privacy_sanitize, is_awaitable, asyncproc
 from copy import copy
@@ -132,7 +132,7 @@ class Dev(commands.Cog):
             await msg_sent.edit(content=second_out_str)
         else:
             out_str = eval_text(ctx, arg, result, not success, False)
-            await ctx.send(out_str, deletable=True)  # TODO: Work on Repl and Sudo
+            await ctx.send(out_str, deletable=True)
 
     @sdev_only()
     @scommand(name='repl', pass_context=True, description="Just testing", hidden=True)
@@ -146,9 +146,17 @@ class Dev(commands.Cog):
 
         async def run_eval(arg: str):
             regex_code_block = r'^(```[a-zA-Z]*)([\s\S]+)(```)$'
+            used_prompt_symbol: bool = False
+
+            if arg.startswith("> ") or arg.startswith(">>> "):
+                arg = arg.replace("> " if arg.startswith("> ") else ">>> ", "", 1)
+                used_prompt_symbol = True
+
+            arg = arg.replace(">>> ", "")
             if re.fullmatch(regex_code_block, arg):
                 arg = re.sub(regex_code_block, r"\2", arg)
             arg = arg.strip()
+
             result = None
             success = None
             coro = False
@@ -167,8 +175,12 @@ class Dev(commands.Cog):
             except MultilineEvalNoLastExprValue as e:
                 result = "(No value)"
                 success = True
-            except (SyntaxError, NameError):  # let us talk
-                raise
+            except (SyntaxError, NameError) as e:  # let us talk
+                if used_prompt_symbol:
+                    result = e
+                    success = False
+                else:
+                    raise  # (Let us talk if we didn't use prompt symbol.)
             except Exception as err:  # pylint: disable=broad-except
                 result = err
                 success = False
@@ -187,6 +199,8 @@ class Dev(commands.Cog):
                 await msg_sent.edit(content=second_out_str)
             else:
                 out_str = eval_text(ctx, "", result, not success, False)
+                if len(out_str) > MESSAGE_CHAR_LIMIT:
+                    out_str = "Output too long to display. (>2000 chars)"
                 await ctx.send(out_str, deletable=True)
 
         await ctx.send("Now entering Repl mode.")

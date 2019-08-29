@@ -1,28 +1,37 @@
 import typing
+import asyncio
 import re
+import concurrent.futures
+import concurrent.futures.thread
 import math
 import discord
 import datetime
 from discord.ext import commands
 from constants import (
     PREFIX_LIMIT, DEFAULT_PREFIX, TIME_SPLIT_REGEX, MUTE_REGEX_NO_REASON, TIME_MATCH, TIME_ALIASES, WARNSTEP_LIMIT,
-    DEFAULT_MUTE_MINUTES, SETTABLE_PUNISHMENT_TYPES
+    DEFAULT_MUTE_MINUTES, SETTABLE_PUNISHMENT_TYPES, DEFAULT_PROMPT_TIMEOUT, DEFAULT_AMBIGUITY_TIMEOUT
 )
 from classes import (
     scommand, sgroup, SContext, PrefixesModel, PartialPrefixesModel, set_op, NoPermissions,
     PartialWarnExpiresModel, WarnExpiresModel, WarnLimitsModel,
-    PositiveIntConverter
+    PositiveIntConverter, PermsModel, PartialPermsModel
 )
 from dateutil.relativedelta import relativedelta
-from utils.advanced import prompt, confirmation_predicate_gen
+from utils.advanced import (
+    prompt, confirmation_predicate_gen, require_salt_permission,
+    search_user_or_member, ambiguity_solve, search_role
+)
 from utils.funcs import (
     discord_sanitize, humanize_delta, dict_except, delta_compress, delta_decompress, is_vocalic,
-    humanize_list, list_except, normalize_caseless
+    humanize_list, list_except, normalize_caseless, permission_literal_to_tuple, text_abstract,
+    permission_tuple_to_literal, plural_s
 )
 from utils.advanced import or_checks, has_saltadmin_role, is_owner, sguild_only
 
 administration_dperm_error_fmt = "Missing permissions! For this command, you need either Manage Server, \
-a Salt Mod role or the `{0}` saltperm."
+a Salt Admin role or the `{0}` saltperm."
+
+MAX_MEMBERS = MAX_ROLES = 15
 
 
 class Administration(commands.Cog):
@@ -287,8 +296,8 @@ a{1} {2}{3}{4}.".format(
             await ctx.send("There are no warn limits in this server to clear! :slight_smile:")
             return
 
-        emb_desc = "Are you sure you want to clear ALL warn limits? This cannot be undone. Type **__y__es**\
- to confirm, or **__n__o** to cancel."
+        emb_desc = "Are you sure you want to clear ALL warn limits? This cannot be undone. Type **__y__es** \
+to confirm, or **__n__o** to cancel."
         # Confirmation embed - this is a dangerous operation.
         embed = discord.Embed(
             description=emb_desc, timestamp=datetime.datetime.utcnow(), title="Clearing all warn limits"
@@ -306,10 +315,232 @@ a{1} {2}{3}{4}.".format(
         await ctx.db['warnlimits'].delete_many(dict(guild_id=str(ctx.guild.id)))
         await ctx.send("Successfully cleared all warn limits!")
 
+    @require_salt_permission("perms", default=True)
     @sguild_only()
-    @sgroup(name='perms', aliases=['p'], description='Work with Salt Permissions.')
+    @sgroup(name='perms', aliases=['p'], description='Work with Salt Permissions.', invoke_without_command=True)
     async def perms(self, ctx: SContext):
         await ctx.send_help(self.perms)
+
+    @or_checks(
+        is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
+        require_salt_permission("perms give", default=False),
+        error=NoPermissions(administration_dperm_error_fmt.format('perms give'))
+    )
+    @require_salt_permission("perms give", just_check_if_negated=True)
+    @sguild_only()
+    @perms.command(
+        name='give', aliases=['add'],
+        description='Give a Salt Permission to a member, role, channel or the guild.'
+    )
+    async def perms_give(self, ctx: SContext, *, perm: str):
+        perm = perm.lower()
+        initial_as_tuple = permission_literal_to_tuple(perm)
+        as_tuple = tuple(["all" if p in ("*", "alls") else p for p in initial_as_tuple])
+        is_cog = is_custom = is_negated = False  # type: bool
+
+        if perm.startswith("-"):  # negate permission
+            perm = perm[1:]
+            is_negated = True
+            as_tuple = (as_tuple[0][1:],) + as_tuple[1:]  # remove the `-` at tuple's first element
+
+        if as_tuple[0] in ('cog', 'category', 'categories'):
+            as_tuple = as_tuple[1:2]  # just keep the cog name
+            is_cog = True
+            if not ctx.bot.get_cog(as_tuple[0]) and not ctx.bot.get_cog(as_tuple[0].title()):
+                await ctx.send(f"Unknown cog/category `{as_tuple[0]}`! See the `help` command for a list.")
+                return
+
+        if as_tuple[0] == 'custom':
+            as_tuple = as_tuple[1:2]  # just keep the custom cmd name; there are no subperms.
+            is_custom = True
+            # TODO: Add support for custom commands
+            await ctx.send("Custom commands aren't supported yet!")
+            return
+
+        as_tuple = as_tuple[:4]  # max of 4 (command, extra, extrax, extraxx)
+
+        while len(as_tuple) >= 2 and as_tuple[-1] == as_tuple[-2] == "all":  # ["str", "all", "all"] for example
+            as_tuple = as_tuple[:-1]  # can't have multiple `all`.
+
+        literal = permission_tuple_to_literal(as_tuple, is_cog=is_cog, is_custom=is_custom, is_negated=is_negated)
+
+        if (
+            not is_cog and not is_custom and as_tuple[-1] == 'all'
+            and len(
+                [t for t in ctx.bot.saved_permissions if len(t) == len(as_tuple) and t[:-1] == as_tuple[:-1]]
+            ) < 1
+        ):  # there are no permissions that accept this 'all'
+            await ctx.send(
+                f"Invalid permission node **{discord_sanitize(text_abstract(literal, 128))}! (There are no \
+permissions that would be affected by this usage of `all`.)"
+            )
+            return
+
+        elif (
+            'all' not in as_tuple and as_tuple not in ctx.bot.saved_permissions
+        ):  # no such permission
+            await ctx.send(
+                f"Unknown permission node **{discord_sanitize(text_abstract(perm, 128))}**! (Note that it could make \
+sense to exist; this message indicates that no command ever checks for/depends on it.)"
+            )
+            return  # (Random arbitrary permission length limit as to not visually pollute.
+
+        found_members: typing.List[discord.Member] = []
+        possib_found_members: typing.List[typing.Tuple[discord.Member, ...]] = []
+
+        found_roles: typing.List[discord.Role] = []
+        possib_found_roles: typing.List[typing.Tuple[discord.Role, ...]] = []
+
+        def gen_predicate(obj_type: str):  # use same predicate model for member and role search.
+            nonlocal ctx, found_members, found_roles
+
+            def predicate(msg: discord.Message):
+                nonlocal ctx, found_members, found_roles
+                if msg.channel != ctx.channel or msg.author != ctx.author:
+                    return False
+
+                content: str = msg.content
+                the_names = content.split("\n")[:MAX_MEMBERS]  # up to 15
+                for name in the_names:
+                    possib = search_user_or_member(name, ctx.guild.members) if obj_type == 'member' else \
+                        search_role(name, ctx.guild.roles)
+                    sanitized_trimmed_m = discord_sanitize(text_abstract(name, 128))
+                    if len(possib) == 1:
+                        (
+                            possib_found_members if obj_type == 'member' else possib_found_roles
+                        ).append(possib)
+                        continue
+
+                    if len(possib) < 1:
+                        ctx.bot.loop.create_task(ctx.send(f"{obj_type.title()} '{sanitized_trimmed_m}' not found!"))
+                        return False
+
+                    if len(possib) > 11:
+                        ctx.bot.loop.create_task(
+                            ctx.send(
+                                f"Too many possibilities (>11) for searching {obj_type} '{sanitized_trimmed_m}'. \
+Be more specific."
+                            )
+                        )
+                        return False
+
+                    (possib_found_members if obj_type == 'member' else possib_found_roles).append(possib)
+                    continue
+
+                return True
+
+            return predicate
+
+        _mm, cancelled_m, skipped_m = await prompt(
+            f"To which members (up to {MAX_MEMBERS} at once), separated by a line, would you like to give this \
+permission to? Type `skip` to skip to roles, and `cancel` to cancel this command. This command expires \
+in {DEFAULT_PROMPT_TIMEOUT} seconds.",
+            ctx=ctx, timeout=DEFAULT_PROMPT_TIMEOUT, predicate=gen_predicate("member"),
+            cancellable=True, skippable=True
+        )
+        if cancelled_m:
+            await ctx.send("Command cancelled.")
+            return
+
+        if skipped_m:
+            await ctx.send("Skipped member permissions, now going to role permissions.")
+
+        elif possib_found_members:
+            for possib in possib_found_members:
+                if len(possib) == 1:
+                    found_members.append(possib[0])
+                    continue
+
+                if len(possib) < 1 or len(possib) > 11:
+                    continue
+
+                found, cancelled = await ambiguity_solve(ctx, possib, type_name="member")
+                if cancelled:
+                    return
+
+                found_members.append(found)
+
+        _mr, cancelled_r, skipped_r = await prompt(
+            f"To which roles (up to {MAX_ROLES} at once), separated by a line, would you like to give this \
+permission to?",
+            ctx=ctx, timeout=DEFAULT_PROMPT_TIMEOUT, predicate=gen_predicate("role"),
+            cancellable=True, skippable=not skipped_m, partial_question=True
+        )
+        if cancelled_r or (skipped_m and skipped_r):
+            await ctx.send("Command cancelled.")
+            return
+
+        if skipped_r:
+            await ctx.send("Skipped role permissions.")
+
+        elif possib_found_roles:
+            for possib in possib_found_roles:
+                if len(possib) == 1:
+                    found_roles.append(possib[0])
+                    continue
+
+                if len(possib) < 1 or len(possib) > 11:
+                    continue
+
+                found, cancelled = await ambiguity_solve(ctx, possib, type_name="role")
+                if cancelled:
+                    return
+
+                found_roles.append(found)
+
+        command = as_tuple[0]
+        extra = as_tuple[1] if len(as_tuple) >= 2 else None
+        extrax = as_tuple[2] if len(as_tuple) >= 3 else None
+        extraxx = as_tuple[3] if len(as_tuple) >= 4 else None
+        model = PermsModel(
+            guild_id=str(ctx.guild.id), id="", type="",
+            command=command, extra=extra, extrax=extrax, extraxx=extraxx,
+            is_custom=is_custom, is_cog=is_cog, is_negated=is_negated
+        )
+        if found_members:
+            for member in found_members:
+                member_model = model.copy()
+                member_model.id = str(member.id)
+                member_model.type = "member"
+
+                await ctx.db['perms'].update_one(
+                    PartialPermsModel(
+                        guild_id=str(ctx.guild.id), id=str(member.id), type="member",
+                        command=command, extra=extra, extrax=extrax, extraxx=extraxx,
+                        is_custom=is_custom, is_cog=is_cog  # prevent duplicates
+                    ).as_dict(),
+                    set_op(
+                        member_model.as_dict()
+                    ),
+                    upsert=True
+                )
+
+        if found_roles:
+            for role in found_roles:
+                role_model = model.copy()
+                role_model.id = str(role.id)
+                role_model.type = "role"
+
+                await ctx.db['perms'].update_one(
+                    PartialPermsModel(
+                        guild_id=str(ctx.guild.id), id=str(role.id), type="role",
+                        command=command, extra=extra, extrax=extrax, extraxx=extraxx,
+                        is_custom=is_custom, is_cog=is_cog  # prevent duplicates
+                    ).as_dict(),
+                    set_op(
+                        role_model.as_dict()
+                    ),
+                    upsert=True
+                )
+
+        await ctx.send(
+            "Successfully gave permission **`{0}`** to {1}{2}!".format(
+                literal, f"{len(found_members)} member{plural_s(found_members)}" if found_members else "",
+
+                f"{' and ' if found_members else ''}{len(found_roles)} role{plural_s(found_roles)}" if found_roles
+                else ""
+            )
+        )
 
 
 def setup(bot: commands.Bot):

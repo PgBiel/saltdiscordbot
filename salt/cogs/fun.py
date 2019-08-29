@@ -6,10 +6,13 @@ from classes import scommand, SContext
 from constants import (
     FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, EIGHT_BALL_ANSWERS, UPPER_MAP, SUPEXPONENT_REGEX
 )
+from utils.advanced import require_salt_permission
+
 
 class Fun(commands.Cog):
 
     @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("scramble", default=True)
     @scommand(name='scramble', description="Scramble a text's letters.")
     async def scramble(self, ctx: SContext, *, text: str):
         letters = list("".join(re.split(r'\s+', text)))  # get only letters to keep word order
@@ -30,6 +33,7 @@ class Fun(commands.Cog):
         await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]), deletable=True)
 
     @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("rearrange", default=True)
     @scommand(name='rearrange', description="Rearrange a text's words' letters.")
     async def rearrange(self, ctx: SContext, *, text: str):
         arrs = [list(part) for part in re.split(r'\s+', text)]  # list with each of the words in the string.
@@ -48,6 +52,7 @@ class Fun(commands.Cog):
         await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]), deletable=True)
 
     @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("shuffle", default=True)
     @scommand(name='shuffle', description="Shuffle a text's words.")
     async def shuffle(self, ctx: SContext, *, text: str):
         origin_words = re.split(r'(\s+)', text)
@@ -65,12 +70,14 @@ class Fun(commands.Cog):
         await ctx.send(fmt.format(new_text[:(2000 - (len(fmt) - 2))]), deletable=True)
 
     @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("reverse", default=True)
     @scommand(name='reverse', aliases=["rev"], description="Reverse a piece of text.")
     async def reverse(self, ctx: SContext, *, text: str):
         fmt = ">>> __**Reversed Text**__\n{}"
         await ctx.send(fmt.format(text[::-1][:(2000 - (len(fmt) - 2))]), deletable=True)
 
     @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("8ball", default=True)
     @scommand(name='8ball', aliases=['eightball'], description="Ask away!")
     async def eight_ball(self, ctx: SContext, *, question: str):                   # math to keep the same 8ball answer
         chars = list(question.upper())  # uppercase so it is case insensitive      # for the same question for same user
@@ -82,6 +89,7 @@ class Fun(commands.Cog):
         await ctx.send(f">>> __**8ball Response**__\n{EIGHT_BALL_ANSWERS[answer_index]}", deletable=True)
 
     @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("numupper", default=True)
     @scommand(
         name='numupper', description="Convert numbers to their equivalent superscript characters.",
         example="{p}numupper 1234567890"
@@ -92,6 +100,7 @@ class Fun(commands.Cog):
         await ctx.send(fmt.format(new_text[:2000 - (len(fmt) - 2)]), deletable=True)
 
     @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("supexponent", default=True)
     @scommand(
         name='supexponent', description="Smartly convert exponents to their equivalent superscript characters.",
         example="{p}supexponent 2^24 + 2^-543"

@@ -26,6 +26,7 @@ async def ambiguity_solve(
 ):
     """
     Solve ambiguity when we search and find 2+ results. (Prompt member to choose one.)
+
     :param ctx: The context of the command.
     :param subjects: The list of results to pick from.
     :param type_name: The written name of what we're picking, e.g. "member" or "channel".
@@ -34,7 +35,13 @@ async def ambiguity_solve(
         `cancelled` - bool of whether it was cancelled by the user.
     """
     can_react = True
-    if ctx.guild is not None and not cast(discord.Member, ctx.guild.me).permissions_in(ctx.channel).add_reactions:
+    if (
+        ctx.guild is not None
+        and (
+            not cast(discord.Member, ctx.guild.me).permissions_in(ctx.channel).add_reactions
+            or not cast(discord.Member, ctx.guild.me).permissions_in(ctx.channel).read_message_history
+        )
+    ):
         can_react = False
     text = f"Multiple {type_name}s have matched your search."
     end_text_m = f" Please specify one, either by writing it out or by specifying its number (on its left, see below; \
@@ -86,18 +93,20 @@ automatically expire in {timeout} seconds. React with {RED_X} to cancel."
             else:
                 await msg.delete()
                 return AmbiguityResponse(chosen=subjects[NUMBERS.index(reacted_emj)], cancelled=False)
-    else:
+    else:  # we don't have reacting permissions.
         found: Tuple[T] = tuple()
         cancelled: bool = False
 
         def on_msg_check(new_msg: discord.Message):
             nonlocal found
             nonlocal cancelled
+
             is_same_user: bool = new_msg.channel == ctx.channel \
                 and new_msg.author == ctx.author \
                 and new_msg.author != ctx.bot.user
-            if not is_same_user:
+            if not is_same_user:  # guarantee we don't read messages from other users
                 return False
+
             content: str = new_msg.content
             if match := re.fullmatch(AMBIGUITY_TWO_DIGITS, content):
                 as_int: int = int(match.group(1))

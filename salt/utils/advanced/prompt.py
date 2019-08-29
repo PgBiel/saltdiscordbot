@@ -75,7 +75,7 @@ async def prompt(
     """
     if not already_asked:
         if partial_question:
-            question += "{0}This command will expire in {1} seconds.{2}{3}".format(
+            question += "{0}This command will expire in {1} seconds. {2}{3}".format(
                 "" if question.endswith(" ") else " ", timeout,
                 "Type `cancel` to cancel{}".format("" if skippable else ".") if cancellable else "",
                 "{} `skip` to skip this part.".format(

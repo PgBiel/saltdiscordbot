@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord.ext.commands.converter import _get_from_guilds
 from dateutil.relativedelta import relativedelta
 from utils.funcs import humanize_delta, humanize_list, humanize_voice_region, humanize_discord_syntax, discord_sanitize
-from utils.advanced import sguild_only
+from utils.advanced import sguild_only, require_salt_permission
 from classes import (
     scommand, sgroup, SContext, AmbiguityUserOrMemberConverter, AmbiguityRoleConverter, CONVERT_FAILED,
     GetSContextAttr
@@ -20,6 +20,7 @@ from typing import List, Union, Optional, cast
 class Information(commands.Cog):
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("avatar", default=True)
     @scommand(name="avatar", description="Get an user's avatar.")
     async def avatar(
             self, ctx: SContext, *,
@@ -36,17 +37,20 @@ class Information(commands.Cog):
 
         await ctx.send(embed=embed, deletable=True)
 
+    @require_salt_permission("info", default=True)
     @sgroup(name="info", description="Provides info about something.")
     async def info(self, ctx: SContext):
         pass
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("avatar", default=True)
     @info.command(name="avatar", description="Get an user's avatar. (Alias for `avatar`)")
     async def info_avatar(self, ctx: SContext, *, user: AmbiguityUserOrMemberConverter = None):
         await ctx.invoke(self.avatar, user=user)
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @commands.bot_has_permissions(embed_links=True)
+    @require_salt_permission("info user", default=True)
     @info.command(name="user", description="View info about an user.")  # User or member. Defaults to author
     async def info_user(self, ctx: SContext, *, member: AmbiguityUserOrMemberConverter = None):
         memb_or_user = cast(Union[discord.Member, discord.User], member) or ctx.author  # Typing purposes, or default
@@ -144,6 +148,7 @@ class Information(commands.Cog):
         await ctx.send(embed=embed, deletable=True)
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("info role", default=True)
     @sguild_only()
     @info.command(name='role', description='View info about a role.')
     async def info_role(self, ctx: SContext, *, role_name: AmbiguityRoleConverter):
@@ -199,6 +204,7 @@ class Information(commands.Cog):
         await ctx.send(embed=embed, deletable=True)
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("info server", default=True)
     @sguild_only()
     @info.command(name='server', aliases=['guild'], description="View info about the current server.")
     async def info_server(self, ctx: SContext):

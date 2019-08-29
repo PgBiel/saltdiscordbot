@@ -99,7 +99,7 @@ class AmbiguityMemberConverter(commands.MemberConverter):
                         else:
                             return self.default
                     else:
-                        raise AutoCancelledException(converter=AmbiguityMemberConverter)
+                        raise AutoCancelledException(converter=AmbiguityMemberConverter, original=None)
                 return result
         else:
             if user_id := match_id(argument, mention_regex=USER_MENTION):

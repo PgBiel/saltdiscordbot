@@ -7,6 +7,7 @@ from discord.ext import commands
 from classes import scommand, SContext, sgroup
 from typing import List, Union, Optional, cast
 from utils.funcs import plural_s
+from utils.advanced import require_salt_permission
 
 
 def get_now():
@@ -16,6 +17,7 @@ def get_now():
 class Utility(commands.Cog):
 
     @scommand(name="len", aliases=["length"], description="Tells you the length of your message.")
+    @require_salt_permission("len", default=True)
     async def len(self, ctx: SContext, *, text: str):
         length = len(text)
         await ctx.send(
@@ -23,6 +25,7 @@ class Utility(commands.Cog):
         )  # Self-explanatory
 
     @commands.cooldown(2, 1, commands.BucketType.member)
+    @require_salt_permission("char", default=True)
     @scommand(name="char", aliases=["character", "charinfo"], description="Provides info about a unicode character.")
     async def char(self, ctx: SContext, *, characters: str):
         char_list: List[str] = list(characters.replace("\n", ""))[:10]  # Max length: 10
@@ -42,6 +45,7 @@ class Utility(commands.Cog):
         await ctx.send(text[:2000], deletable=True)
 
     @commands.cooldown(2, 1, commands.BucketType.member)
+    @require_salt_permission("ping", default=True)
     @sgroup(name="ping", description="Check the bot's connection to Discord.", invoke_without_command=True)
     async def ping(self, ctx: SContext):
         is_ws = getattr(ctx, "_is_ws", False)
@@ -79,6 +83,7 @@ class Utility(commands.Cog):
             "websocket " if is_ws else "", ping, rating
         ), deletable=True)
 
+    @require_salt_permission("ping ws", default=True)
     @commands.cooldown(2, 1, commands.BucketType.member)
     @ping.command(name='ws', description="Check the bot's websocket latency.")
     async def ping_ws(self, ctx: SContext):

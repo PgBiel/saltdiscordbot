@@ -17,7 +17,7 @@ from classes.errors import (
     SaltCheckFailure, MissingSaltModRole, NoConfiguredSaltModRole, MissingSaltAdminRole, NoConfiguredSaltAdminRole,
     BotMissingOneChannelPermissions, MissingSaltPermissions
 )
-from constants import DB_PERMISSION_TYPES
+from constants import DB_PERMISSION_TYPES, ROLES_PER_GUILD_LIMIT
 
 if typing.TYPE_CHECKING:
     from classes.scontext import SContext
@@ -223,7 +223,7 @@ def sdev_only():
 
 IDABLE_TYPE = Union[
     discord.User, discord.Member, discord.abc.PrivateChannel, discord.abc.GuildChannel, discord.Role, discord.Guild,
-    discord.Object, discord.abc.Snowflake  # anything that has a .id
+    discord.Object, List[discord.Role], discord.abc.Snowflake  # anything that has a .id
 ]
 
 
@@ -266,17 +266,22 @@ async def has_permission(
     """
     if not ctx.guild:
         return True  # you can do whatever you want!
-    id_n = idable.id
-    if isinstance(idable, discord.abc.User):
+    is_list = type(idable) in (list, tuple)
+    id_n: typing.Optional[int] = idable.id if not is_list else None
+    for_test = idable[0] if is_list else idable
+    if isinstance(for_test, discord.abc.User):
         obj_type = 'member'
-    elif isinstance(idable, discord.Role):
+    elif isinstance(for_test, discord.Role):
         obj_type = 'role'
-    elif isinstance(idable, discord.Guild):
+    elif isinstance(for_test, discord.Guild):
         obj_type = 'guild'
-    elif isinstance(idable, discord.abc.GuildChannel) or isinstance(idable, discord.abc.PrivateChannel):
+    elif isinstance(for_test, discord.abc.GuildChannel) or isinstance(for_test, discord.abc.PrivateChannel):
         obj_type = 'channel'
     elif not obj_type or obj_type not in DB_PERMISSION_TYPES:
         raise TypeError("Invalid type specified for obj_type.")
+
+    if is_list and obj_type != 'role':
+        return False  # NOTE: Not implemented.
 
     if obj_type == 'member' and (id_n in ctx.bot.config["owners"] or id_n == ctx.bot.owner_id):
         return True
@@ -304,7 +309,11 @@ async def has_permission(
     extraxx = permission[3] if len(permission) >= 4 else None
 
     basic = PartialPermsModel(
-        guild_id=str(ctx.guild.id), id=str(id_n), type=obj_type,
+        guild_id=str(ctx.guild.id),
+        id=in_op([str(role.id) for role in idable][:ROLES_PER_GUILD_LIMIT]) if is_list
+        else str(id_n),
+
+        type=obj_type,
         is_custom=is_custom,
         command=command, is_cog=is_cog if is_cog else False,
         extra=None, extrax=None, extraxx=None
@@ -322,8 +331,8 @@ async def has_permission(
         or_op([
             b_copy_as_dict(command=("all" if extra else in_or_all(command))),
             *([b_copy_as_dict(command=cog_name, is_cog=True, is_custom=False)] if cog_name else []),
-            *([b_copy_as_dict(extra=("all" if extrax else extra))] if extra else []),
-            *([b_copy_as_dict(extra=extra, extrax=("all" if extraxx else extrax))] if extrax else []),
+            *([b_copy_as_dict(extra=("all" if extrax else in_or_all(extra)))] if extra else []),
+            *([b_copy_as_dict(extra=extra, extrax=("all" if extraxx else in_or_all(extrax)))] if extrax else []),
             *([b_copy_as_dict(extra=extra, extrax=extrax, extraxx=in_or_all(extraxx))] if extraxx else []),
         ]),
         sort=[('command', ASCENDING), ('extra', ASCENDING), ('extrax', ASCENDING), ('extraxx', ASCENDING)]
@@ -342,11 +351,13 @@ async def has_permission(
             if next:
                 new_idable: IDABLE_TYPE
                 if next == 'role':
-                    new_idable = idable.top_role
+                    new_idable = sorted(idable.roles, key=lambda x: x.position, reverse=True)
                 elif next == 'channel':
-                    new_idable = ctx.channel
+                    new_idable = typing.cast(discord.TextChannel, ctx.channel)
                 elif next == 'guild':
                     new_idable = ctx.guild
+                else:
+                    return False  # wth is going on
                 return await has_permission(
                     ctx, new_idable, permission, obj_type=next, default=default,
                     cog_name=cog_name, user_check_context=True
@@ -370,13 +381,18 @@ async def has_permission(
         return f"{indent}{perm_model.to_literal().strip()}"
 
     in_order = sorted(matched, key=sorting_key)
+    if is_list:
+        has_perm = True
+        for role in idable[:ROLES_PER_GUILD_LIMIT]:
+            fltrd = list(filter(lambda x: int(x.get('id', 0)) == role.id, in_order))
+            if not fltrd:
+                continue
+            has_perm = has_perm and not fltrd[0].get('is_negated', False)
+
+        return has_perm
+
     highest_priority_override = in_order[0]
     return not highest_priority_override.get("is_negated", False)
-
-    # command = typing.cast(str, in_op(or_all(permission[0]))),
-    # ** (dict(extra=in_op(or_all(permission[1]))) if permission[1] else dict()),
-    # ** (dict(extrax=in_op(or_all(permission[1]))) if permission[1] else dict()),
-    # ** (dict(extraxx=in_op(or_all(permission[1]))) if permission[1] else dict()),
 
 
 def require_salt_permission(

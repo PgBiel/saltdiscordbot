@@ -275,6 +275,21 @@ def is_vocalic(text: str) -> bool:
     return normalize_caseless_no_accent(text)[0] in ("a", "e", "i", "o", "u")
 
 
+def text_abstract(text: str, maxlen: int, *, ending: str = "..."):
+    """
+    If necessary, trims a piece of text and adds a custom end suffix to it (default: "...").
+
+    :param text: The text.
+    :param maxlen: Max length the text can have.
+    :param ending: The suffix that will be added if the text exceeds (maxlen + len(ending)) of length. Default="..."
+    :return: The modified (or not) text.
+    """
+    true_maxlen = max(maxlen, len(ending))
+    if len(text) > true_maxlen:
+        return text[:(true_maxlen - len(ending))] + ending
+    return text
+
+
 def plural_s(amnt_or_iterable: Union[int, float, Sized]) -> str:
     """
     Returns "s" if the amount or the iterable's length passed is different than 1, otherwise "" (empty string).
@@ -296,5 +311,16 @@ def permission_literal_to_tuple(literal: str, separator: Optional[Union[str, re.
     return tuple(["all" if m in ("*", "alls") else m for m in match_split])
 
 
-def permission_tuple_to_literal(tup: Tuple[str, ...], separator: Optional[str] = " ") -> str:
-    return (separator or " ").join(tup)
+def permission_tuple_to_literal(
+        tup: Iterable[str],
+        *, separator: Optional[str] = " ", is_cog: bool = False, is_custom: bool = False, is_negated: bool = False
+) -> str:
+    res = (separator or " ").join(tup).lower()
+    if is_cog:
+        res = f"cog {res}"
+    elif is_custom:
+        res = f"custom {res}"
+    if is_negated:
+        res = f"-{res}"
+
+    return res
