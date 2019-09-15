@@ -189,3 +189,13 @@ class InvalidIntegerArg(SaltBadArgument):
     ):
         super().__init__(e_msg, typeof=int, original=original)
         self.range_str: str = range_str
+
+
+class TooLargeListArg(SaltBadArgument):
+    """
+    Occurs when a list argument passed is too large.
+    """
+    def __init__(self, e_msg: str, *, max: int, humanized_separator: str):
+        super().__init__(e_msg, typeof=list)
+        self.max = max
+        self.humanized_separator = humanized_separator

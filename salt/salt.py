@@ -233,7 +233,7 @@ class Salt(commands.Bot):
                     return
 
                 await ctx.send(
-                    fmt.format("!" if str(error) == "" else f": {str(error)}")
+                    fmt.format(f": {str(error)}" if str(error) else "!")
                 )
             except discord.HTTPException:
                 await ctx.send(

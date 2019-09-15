@@ -4,10 +4,11 @@ Custom Salt Converters.
 import discord
 import re
 import typing
-from typing import List, Union, Optional, TypeVar, Type
+from typing import List, Union, Optional, TypeVar, Type, Pattern
 from discord.ext import commands
 from discord.ext.commands.converter import _get_from_guilds
-from classes import SContext, AutoCancelledException, InvalidIntegerArg
+from enum import Enum, auto as enum_auto
+from classes import SContext, AutoCancelledException, InvalidIntegerArg, TooLargeListArg
 from constants.regex import USER_MENTION
 from utils.funcs import caseless_contains, normalize_contains
 from utils.advanced import match_id, search_user_or_member, ambiguity_solve, search_role, search_channel
@@ -277,6 +278,72 @@ class NonPositiveIntConverter(CustomIntConverter):
 
     def __init__(self):
         super().__init__(condition=lambda x: x <= 0, range_str="be a non-positive integer (negative or zero)")
+
+
+class ListMaxBehavior(Enum):  # behavior when max split is reached:
+    KEEP_REST = enum_auto()     # - keep the rest of the split
+    IGNORE_REST = enum_auto()   # - ignore the rest (default)
+    RAISE = enum_auto()         # - raise error
+
+
+ConverterType = Union[commands.Converter, Type[commands.Converter], str, int, bool]
+
+
+class ListConverter(commands.Converter):
+    """
+    Convert to a list, using split.
+    """
+    def __init__(
+            self, separator: Union[str, Pattern] = re.compile(r",;\s*"),
+            *, converter: ConverterType = str, maxsplit: Optional[int] = None,
+            human_separator: Optional[str] = ",** or **;", max_behavior: ListMaxBehavior = ListMaxBehavior.IGNORE_REST
+    ):
+        """
+        Init the list converter.
+
+        :param separator: (Optional) The separator of the list (str or Pattern). Defaults to any comma or semicolon
+            followed, optionally, by spaces (pattern r",;\\s*").
+        :param converter: (Optional type) Custom converter to apply to each item, defaults to str().
+        :param human_separator: (Optional str) Humanized string of separator to display in error message.
+        :param maxsplit: (Optional int) Max list length, defaults to None (unlimited).
+        :param max_behavior: (Optional ListMaxBehavior) What to do if max split length is reached. One of:
+            - KEEP_REST: keep the rest of the string as the last element of the list of length (max + 1);
+            - IGNORE_REST: ignore the rest, keep at max (default);
+            - RAISE: raise error when the max is surpassed.
+        """
+        super().__init__()
+        self.separator: Union[str, Pattern] = separator
+        self.converter = converter
+        self.human_separator = human_separator
+        self.maxsplit = maxsplit or None
+        self.max_behavior = max_behavior
+
+    async def convert(self, ctx: SContext, argument: str):
+        sep = self.separator
+        max = self.maxsplit or None
+        max_param = dict(maxsplit=max) if max is not None else {}
+        new_list: List[str] = argument.split(sep, **max_param) if type(sep) == str \
+            else re.split(sep, argument, **max_param)
+
+        if max is not None and len(new_list) > max and self.max_behavior != ListMaxBehavior.KEEP_REST:
+            if self.max_behavior == ListMaxBehavior.IGNORE_REST:
+                new_list.pop()
+            elif self.max_behavior == ListMaxBehavior.RAISE:
+                raise TooLargeListArg(f"List passed is too large (>{max} entries were passed). Please, specify less \
+elements. (Note: the list is separated using **{self.human_separator}**.)",
+                                      humanized_separator=self.human_separator, max=max
+                                      )
+
+        definitive_list = [
+            self.converter(el) if self.converter in [str, int, bool] else self.converter.convert(ctx, el)
+            for el in new_list
+        ]
+        return definitive_list
+
+    @classmethod
+    def __class_getitem__(cls, item):
+        return cls(converter=item)
+
 
 # class InsensitiveMemberConverter(commands.MemberConverter):
 #     async def convert(self, ctx: SContext, argument: str):  # TODO: Decide what to do with this

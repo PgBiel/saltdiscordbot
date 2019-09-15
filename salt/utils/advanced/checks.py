@@ -7,7 +7,7 @@ import motor.core
 import discord
 import typing
 from inspect import isawaitable
-from pymongo import ASCENDING, DESCENDING
+from pymongo import ASCENDING
 from typing import Any, Callable, List, Union, Coroutine, Sequence
 from discord.ext import commands
 from utils.funcs import sync_await, permission_literal_to_tuple, dict_except, get_bot
@@ -337,7 +337,10 @@ async def has_permission(
         ]),
         sort=[('command', ASCENDING), ('extra', ASCENDING), ('extrax', ASCENDING), ('extraxx', ASCENDING)]
     )
-    matched: List[dict] = await matched_cursor.to_list(5)  # max amount of documents this can have is 5.
+    max_to_fetch = 5
+    matched: List[dict] = await matched_cursor.to_list(
+        ROLES_PER_GUILD_LIMIT * max_to_fetch if is_list else max_to_fetch  # max amount of documents this can have is 5.
+    )                                                                      # (5 per object match)
 
     if len(matched) == 0:
         if user_check_context and obj_type != "guild":  # after guild we stop looking for permissions

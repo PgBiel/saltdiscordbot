@@ -6,13 +6,15 @@ import concurrent.futures.thread
 import math
 import discord
 import datetime
+from pymongo import UpdateOne
 from discord.ext import commands
 from constants import (
     PREFIX_LIMIT, DEFAULT_PREFIX, TIME_SPLIT_REGEX, MUTE_REGEX_NO_REASON, TIME_MATCH, TIME_ALIASES, WARNSTEP_LIMIT,
     DEFAULT_MUTE_MINUTES, SETTABLE_PUNISHMENT_TYPES, DEFAULT_PROMPT_TIMEOUT, DEFAULT_AMBIGUITY_TIMEOUT
 )
 from classes import (
-    scommand, sgroup, SContext, PrefixesModel, PartialPrefixesModel, set_op, NoPermissions,
+    scommand, sgroup, SContext, SaltPermission, ListConverter,
+    PrefixesModel, PartialPrefixesModel, set_op, NoPermissions,
     PartialWarnExpiresModel, WarnExpiresModel, WarnLimitsModel,
     PositiveIntConverter, PermsModel, PartialPermsModel
 )
@@ -330,60 +332,125 @@ to confirm, or **__n__o** to cancel."
     @sguild_only()
     @perms.command(
         name='give', aliases=['add'],
-        description='Give a Salt Permission to a member, role, channel or the guild.'
+        example="{p}p give case reason\\{p}p give ban, kick, mute\\{p}p give all"
     )
-    async def perms_give(self, ctx: SContext, *, perm: str):
-        perm = perm.lower()
-        initial_as_tuple = permission_literal_to_tuple(perm)
-        as_tuple = tuple(["all" if p in ("*", "alls") else p for p in initial_as_tuple])
-        is_cog = is_custom = is_negated = False  # type: bool
+    async def perms_give(
+        self, ctx: SContext,
+        *, perm_or_perms: ListConverter(
+            re.compile(r"[^a-zA-Z\d. ]+"), maxsplit=10, human_separator="any non-letter and non-digit character"
+        )
+    ):
+        """
+        Give one/multiple Salt Permission(s) to one/multiple member(s) and/or one/multiple role(s). To specify \
+        multiple permissions, separate using characters such as `,` or `;`. The targets that receive the permission \
+        are specified after the command is run, as a prompt, so that you can specify more than one per type.
+        """
+        perm_or_perms = [s.lower().strip() for s in perm_or_perms]
+        given_perms: typing.List[SaltPermission] = []
 
-        if perm.startswith("-"):  # negate permission
-            perm = perm[1:]
-            is_negated = True
-            as_tuple = (as_tuple[0][1:],) + as_tuple[1:]  # remove the `-` at tuple's first element
+        for perm in perm_or_perms:
+            initial_as_tuple = permission_literal_to_tuple(perm)
+            as_tuple = tuple(["all" if p in ("*", "alls") else p for p in initial_as_tuple])
+            is_cog = is_custom = is_negated = False  # type: bool
 
-        if as_tuple[0] in ('cog', 'category', 'categories'):
-            as_tuple = as_tuple[1:2]  # just keep the cog name
-            is_cog = True
-            if not ctx.bot.get_cog(as_tuple[0]) and not ctx.bot.get_cog(as_tuple[0].title()):
-                await ctx.send(f"Unknown cog/category `{as_tuple[0]}`! See the `help` command for a list.")
+            if perm.startswith("-"):  # negate permission
+                perm = perm[1:]
+                is_negated = True
+                as_tuple = (as_tuple[0][1:],) + as_tuple[1:]  # remove the `-` at tuple's first element
+
+            if as_tuple[0] in ('cog', 'category', 'categories'):
+                as_tuple = as_tuple[1:2]  # just keep the cog name
+                is_cog = True
+                if not ctx.bot.get_cog(as_tuple[0]) and not ctx.bot.get_cog(as_tuple[0].title()):
+                    await ctx.send(f"Unknown cog/category `{as_tuple[0]}`! See the `help` command for a list.")
+                    return
+
+            if as_tuple[0] == 'custom':
+                as_tuple = as_tuple[1:2]  # just keep the custom cmd name; there are no subperms.
+                is_custom = True
+                # TODO: Add support for custom commands
+                await ctx.send("Custom commands aren't supported yet!")
                 return
 
-        if as_tuple[0] == 'custom':
-            as_tuple = as_tuple[1:2]  # just keep the custom cmd name; there are no subperms.
-            is_custom = True
-            # TODO: Add support for custom commands
-            await ctx.send("Custom commands aren't supported yet!")
-            return
+            as_tuple = as_tuple[:4]  # max of 4 (command, extra, extrax, extraxx)
 
-        as_tuple = as_tuple[:4]  # max of 4 (command, extra, extrax, extraxx)
+            while len(as_tuple) >= 2 and as_tuple[-1] == as_tuple[-2] == "all":  # ["str", "all", "all"] for example
+                as_tuple = as_tuple[:-1]  # can't have multiple `all`.
 
-        while len(as_tuple) >= 2 and as_tuple[-1] == as_tuple[-2] == "all":  # ["str", "all", "all"] for example
-            as_tuple = as_tuple[:-1]  # can't have multiple `all`.
+            literal = permission_tuple_to_literal(as_tuple, is_cog=is_cog, is_custom=is_custom, is_negated=is_negated)
 
-        literal = permission_tuple_to_literal(as_tuple, is_cog=is_cog, is_custom=is_custom, is_negated=is_negated)
-
-        if (
-            not is_cog and not is_custom and as_tuple[-1] == 'all'
-            and len(
-                [t for t in ctx.bot.saved_permissions if len(t) == len(as_tuple) and t[:-1] == as_tuple[:-1]]
-            ) < 1
-        ):  # there are no permissions that accept this 'all'
-            await ctx.send(
-                f"Invalid permission node **{discord_sanitize(text_abstract(literal, 128))}! (There are no \
+            if (
+                not is_cog and not is_custom and as_tuple[-1] == 'all'
+                and len(
+                    [t for t in ctx.bot.saved_permissions if len(t) == len(as_tuple) and t[:-1] == as_tuple[:-1]]
+                ) < 1
+            ):  # there are no permissions that accept this 'all'
+                await ctx.send(
+                    f"Invalid permission node **{discord_sanitize(text_abstract(literal, 128))}! (There are no \
 permissions that would be affected by this usage of `all`.)"
-            )
-            return
+                )
 
-        elif (
-            'all' not in as_tuple and as_tuple not in ctx.bot.saved_permissions
-        ):  # no such permission
-            await ctx.send(
-                f"Unknown permission node **{discord_sanitize(text_abstract(perm, 128))}**! (Note that it could make \
-sense to exist; this message indicates that no command ever checks for/depends on it.)"
-            )
-            return  # (Random arbitrary permission length limit as to not visually pollute.
+            initial_as_tuple = permission_literal_to_tuple(perm)
+            as_tuple = tuple(["all" if p in ("*", "alls") else p for p in initial_as_tuple])
+            is_cog = is_custom = is_negated = False  # type: bool
+
+            if perm.startswith("-"):  # negate permission
+                perm = perm[1:]
+                is_negated = True
+                as_tuple = (as_tuple[0][1:],) + as_tuple[1:]  # remove the `-` at tuple's first element
+
+            if as_tuple[0] in ('cog', 'category', 'categories'):
+                as_tuple = as_tuple[1:2]  # just keep the cog name
+                is_cog = True
+                if not ctx.bot.get_cog(as_tuple[0]) and not ctx.bot.get_cog(as_tuple[0].title()):
+                    await ctx.send(f"Unknown cog/category `{as_tuple[0]}`! See the `help` command for a list.")
+                    return
+
+            if as_tuple[0] == 'custom':
+                as_tuple = as_tuple[1:2]  # just keep the custom cmd name; there are no subperms.
+                is_custom = True
+                # TODO: Add support for custom commands
+                await ctx.send("Custom commands aren't supported yet!")
+                return
+
+            as_tuple = as_tuple[:4]  # max of 4 (command, extra, extrax, extraxx)
+
+            while len(as_tuple) >= 2 and as_tuple[-1] == as_tuple[-2] == "all":  # ["str", "all", "all"] for example
+                as_tuple = as_tuple[:-1]  # can't have multiple `all`.
+
+            literal = permission_tuple_to_literal(as_tuple, is_cog=is_cog, is_custom=is_custom, is_negated=is_negated)
+
+            if (
+                not is_cog and not is_custom and as_tuple[-1] == 'all'
+                and len(
+                    [t for t in ctx.bot.saved_permissions if len(t) == len(as_tuple) and t[:-1] == as_tuple[:-1]]
+                ) < 1
+            ):  # there are no permissions that accept this 'all'
+                await ctx.send(
+                    f"Invalid permission node **{discord_sanitize(text_abstract(literal, 128))}! (There are no \
+permissions that would be affected by this usage of `all`.)"
+                )
+                return
+
+            elif (
+                'all' not in as_tuple and as_tuple not in ctx.bot.saved_permissions
+            ):  # no such permission
+                await ctx.send(
+                    f"Unknown permission node **{discord_sanitize(text_abstract(perm, 128))}**! (Note that it could \
+make sense to exist; this message indicates that no command ever checks for/depends on it.)"
+                )
+                return  # (Random arbitrary permission length limit as to not visually pollute.
+
+            elif (
+                'all' not in as_tuple and as_tuple not in ctx.bot.saved_permissions
+            ):  # no such permission
+                await ctx.send(
+                    f"Unknown permission node **{discord_sanitize(text_abstract(perm, 128))}**! (Note that it could \
+make sense to exist; this message indicates that no command ever checks for/depends on it.)"
+                )
+                return  # (Random arbitrary permission length limit as to not visually pollute.
+
+            given_perms.append(SaltPermission(as_tuple, is_cog=is_cog, is_custom=is_custom, is_negated=is_negated))
 
         found_members: typing.List[discord.Member] = []
         possib_found_members: typing.List[typing.Tuple[discord.Member, ...]] = []
@@ -446,15 +513,15 @@ in {DEFAULT_PROMPT_TIMEOUT} seconds.",
             await ctx.send("Skipped member permissions, now going to role permissions.")
 
         elif possib_found_members:
-            for possib in possib_found_members:
-                if len(possib) == 1:
-                    found_members.append(possib[0])
+            for possibl in possib_found_members:
+                if len(possibl) == 1:
+                    found_members.append(possibl[0])
                     continue
 
-                if len(possib) < 1 or len(possib) > 11:
+                if len(possibl) < 1 or len(possibl) > 11:
                     continue
 
-                found, cancelled = await ambiguity_solve(ctx, possib, type_name="member")
+                found, cancelled = await ambiguity_solve(ctx, possibl, type_name="member")
                 if cancelled:
                     return
 
@@ -474,69 +541,77 @@ permission to?",
             await ctx.send("Skipped role permissions.")
 
         elif possib_found_roles:
-            for possib in possib_found_roles:
-                if len(possib) == 1:
-                    found_roles.append(possib[0])
+            for possibl in possib_found_roles:
+                if len(possibl) == 1:
+                    found_roles.append(possibl[0])
                     continue
 
-                if len(possib) < 1 or len(possib) > 11:
+                if len(possibl) < 1 or len(possibl) > 11:
                     continue
 
-                found, cancelled = await ambiguity_solve(ctx, possib, type_name="role")
+                found, cancelled = await ambiguity_solve(ctx, possibl, type_name="role")
                 if cancelled:
                     return
 
                 found_roles.append(found)
 
-        command = as_tuple[0]
-        extra = as_tuple[1] if len(as_tuple) >= 2 else None
-        extrax = as_tuple[2] if len(as_tuple) >= 3 else None
-        extraxx = as_tuple[3] if len(as_tuple) >= 4 else None
-        model = PermsModel(
-            guild_id=str(ctx.guild.id), id="", type="",
-            command=command, extra=extra, extrax=extrax, extraxx=extraxx,
-            is_custom=is_custom, is_cog=is_cog, is_negated=is_negated
-        )
-        if found_members:
-            for member in found_members:
-                member_model = model.copy()
-                member_model.id = str(member.id)
-                member_model.type = "member"
+        updates = []  # updates to send to the DB in batch form instead of sending a lot of db calls
 
-                await ctx.db['perms'].update_one(
-                    PartialPermsModel(
-                        guild_id=str(ctx.guild.id), id=str(member.id), type="member",
-                        command=command, extra=extra, extrax=extrax, extraxx=extraxx,
-                        is_custom=is_custom, is_cog=is_cog  # prevent duplicates
-                    ).as_dict(),
-                    set_op(
-                        member_model.as_dict()
-                    ),
-                    upsert=True
-                )
+        for permission in given_perms:
+            as_tuple = permission.tuple
+            command = as_tuple[0]
+            extra = as_tuple[1] if len(as_tuple) >= 2 else None
+            extrax = as_tuple[2] if len(as_tuple) >= 3 else None
+            extraxx = as_tuple[3] if len(as_tuple) >= 4 else None
+            model = PermsModel(
+                guild_id=str(ctx.guild.id), id="", type="",
+                command=command, extra=extra, extrax=extrax, extraxx=extraxx,
+                is_custom=permission.is_custom, is_cog=permission.is_cog, is_negated=permission.is_negated
+            )
+            if found_members:
+                for member in found_members:
+                    member_model = model.copy()
+                    member_model.id = str(member.id)
+                    member_model.type = "member"
 
-        if found_roles:
-            for role in found_roles:
-                role_model = model.copy()
-                role_model.id = str(role.id)
-                role_model.type = "role"
+                    updates.append(UpdateOne(
+                        PartialPermsModel(
+                            guild_id=str(ctx.guild.id), id=str(member.id), type="member",
+                            command=command, extra=extra, extrax=extrax, extraxx=extraxx,
+                            is_custom=permission.is_custom, is_cog=permission.is_cog  # prevent duplicates
+                        ).as_dict(),
+                        set_op(
+                            member_model.as_dict()
+                        ),
+                        upsert=True
+                    ))
 
-                await ctx.db['perms'].update_one(
-                    PartialPermsModel(
-                        guild_id=str(ctx.guild.id), id=str(role.id), type="role",
-                        command=command, extra=extra, extrax=extrax, extraxx=extraxx,
-                        is_custom=is_custom, is_cog=is_cog  # prevent duplicates
-                    ).as_dict(),
-                    set_op(
-                        role_model.as_dict()
-                    ),
-                    upsert=True
-                )
+            if found_roles:
+                for role in found_roles:
+                    role_model = model.copy()
+                    role_model.id = str(role.id)
+                    role_model.type = "role"
+
+                    updates.append(UpdateOne(
+                        PartialPermsModel(
+                            guild_id=str(ctx.guild.id), id=str(role.id), type="role",
+                            command=command, extra=extra, extrax=extrax, extraxx=extraxx,
+                            is_custom=permission.is_custom, is_cog=permission.is_cog  # prevent duplicates
+                        ).as_dict(),
+                        set_op(
+                            role_model.as_dict()
+                        ),
+                        upsert=True
+                    ))
+
+        await ctx.db['perms'].bulk_write(updates)
+
+        literals = [f"**`{p.literal}`**" for p in given_perms]
 
         await ctx.send(
-            "Successfully gave permission **`{0}`** to {1}{2}!".format(
-                literal, f"{len(found_members)} member{plural_s(found_members)}" if found_members else "",
-
+            "Successfully gave permission{0} {1} to {2}{3}!".format(
+                plural_s(literals), humanize_list(literals),
+                f"{len(found_members)} member{plural_s(found_members)}" if found_members else "",
                 f"{' and ' if found_members else ''}{len(found_roles)} role{plural_s(found_roles)}" if found_roles
                 else ""
             )
