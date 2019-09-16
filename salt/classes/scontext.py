@@ -43,7 +43,8 @@ class SContext(commands.Context):
         **Specifying both parameters will lead to an exception**.
         If the ``embed`` parameter is provided, it must be of type :class:`~discord.Embed` and
         it must be a rich embed type.
-        Parameters
+
+        Parameters:
         ------------
         content: :class:`str`
           The content of the message to send.
@@ -65,6 +66,7 @@ class SContext(commands.Context):
         deletable: :class:`bool`
           (Customized, added by Pg) If provided, add a trash can reaction on the message to be
           deleted by the member on click (if they called the command or they have Manage Messages).
+
         Raises
         --------
         ~discord.HTTPException
@@ -74,6 +76,7 @@ class SContext(commands.Context):
         ~discord.InvalidArgument
           The ``files`` list is not of the appropriate size or
           you specified both ``file`` and ``files``.
+
         Returns
         ---------
         :class:`~discord.Message`

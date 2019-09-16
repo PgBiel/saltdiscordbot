@@ -1,8 +1,12 @@
 import random
 import re
+import typing
+import math
 import discord
+import sys
 from discord.ext import commands
-from classes import scommand, SContext
+from typing import Optional
+from classes import scommand, SContext, CustomIntConverter
 from constants import (
     FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, EIGHT_BALL_ANSWERS, UPPER_MAP, SUPEXPONENT_REGEX
 )
@@ -78,7 +82,10 @@ class Fun(commands.Cog):
 
     @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @require_salt_permission("8ball", default=True)
-    @scommand(name='8ball', aliases=['eightball'], description="Ask away!")
+    @scommand(
+        name='8ball', aliases=['eightball'], description="Ask away!",
+        example="{p}8ball Am I cool?"
+    )
     async def eight_ball(self, ctx: SContext, *, question: str):                   # math to keep the same 8ball answer
         chars = list(question.upper())  # uppercase so it is case insensitive      # for the same question for same user
         letters = list(filter(lambda x: re.fullmatch(r'[A-Z\d]', x), chars))  # filter letters and/or digits
@@ -87,6 +94,44 @@ class Fun(commands.Cog):
         id_factor = ctx.author.id % n  # also weigh in the user ID mod n
         answer_index = (sum(charcodes) + id_factor) % n  # there we go!
         await ctx.send(f">>> __**8ball Response**__\n{EIGHT_BALL_ANSWERS[answer_index]}", deletable=True)
+
+    @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("random", default=True)
+    @scommand(name='random', description="Get a random integer between two integers.", example="{p}random 1 5")
+    async def random(
+        self, ctx: SContext,
+        number1: CustomIntConverter(
+            condition=lambda i: abs(i) < 1e28, range_str="be smaller than 10²⁸ (10 to the twenty eighth)"
+        ),
+        number2: CustomIntConverter(
+            condition=lambda i: abs(i) < 1e28, range_str="be smaller than 10²⁸ (10 to the twenty eighth)"
+            )
+    ):  # math to keep the same 8ball answer
+        await ctx.send(f"**{random.randint(number1, number2)}**")
+
+    @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("coinflip", default=True)
+    @scommand(
+        name='coinflip',
+        description="Do a coinflip. Optionally specify amount of coins to flip (default 1, max 20)",
+        example=(
+            "{p}coinflip\n"
+            "{p}coinflip 5"
+        )
+    )
+    async def coinflip(
+        self, ctx: SContext,
+        amount: CustomIntConverter(condition=lambda i: 1 <= i <= 20, range_str="be between 1 and 20") = 1
+    ):
+        if amount == 1:
+            await ctx.send(f"**{'Tails' if random.randint(0, 1) else 'Heads'}!**")
+            return
+
+        ls = ['T' if random.randint(0, 1) else 'H' for i in range(0, amount)]
+        await ctx.send(
+            f"__Flipped coins:__ \
+**{' '.join(['Tails' if el == 'T' else 'Heads' for el in ls] if amount < 5 else ls)}**"
+        )
 
     @commands.cooldown(FUN_DEFAULT_COOLDOWN_PER, FUN_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @require_salt_permission("numupper", default=True)

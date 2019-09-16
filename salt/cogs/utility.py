@@ -1,13 +1,20 @@
 import unicodedata
 import datetime
+import io
+import qrcode
 import re
 import math
 import discord
+from constants import UTILITY_DEFAULT_COOLDOWN_PER, UTILITY_DEFAULT_COOLDOWN_RATE
 from discord.ext import commands
 from classes import scommand, SContext, sgroup
 from typing import List, Union, Optional, cast
 from utils.funcs import plural_s
 from utils.advanced import require_salt_permission
+
+QR_COOLDOWN_PER = 1   # commands to trigger cd.
+QR_COOLDOWN_RATE = 2  # seconds of cooldown
+QR_CHAR_LIMIT = 1024  # chars
 
 
 def get_now():
@@ -24,7 +31,7 @@ class Utility(commands.Cog):
             f"Your text is **{length} char{plural_s(length)}** long.", deletable=True
         )  # Self-explanatory
 
-    @commands.cooldown(2, 1, commands.BucketType.member)
+    @commands.cooldown(UTILITY_DEFAULT_COOLDOWN_PER, UTILITY_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @require_salt_permission("char", default=True)
     @scommand(name="char", aliases=["character", "charinfo"], description="Provides info about a unicode character.")
     async def char(self, ctx: SContext, *, characters: str):
@@ -44,7 +51,7 @@ class Utility(commands.Cog):
 
         await ctx.send(text[:2000], deletable=True)
 
-    @commands.cooldown(2, 1, commands.BucketType.member)
+    @commands.cooldown(UTILITY_DEFAULT_COOLDOWN_PER, UTILITY_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @require_salt_permission("ping", default=True)
     @sgroup(name="ping", description="Check the bot's connection to Discord.", invoke_without_command=True)
     async def ping(self, ctx: SContext):
@@ -84,11 +91,26 @@ class Utility(commands.Cog):
         ), deletable=True)
 
     @require_salt_permission("ping ws", default=True)
-    @commands.cooldown(2, 1, commands.BucketType.member)
+    @commands.cooldown(UTILITY_DEFAULT_COOLDOWN_PER, UTILITY_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @ping.command(name='ws', description="Check the bot's websocket latency.")
     async def ping_ws(self, ctx: SContext):
         ctx._is_ws = True
         await ctx.invoke(self.ping)
+
+    @require_salt_permission("qr", default=True)
+    @commands.cooldown(QR_COOLDOWN_PER, QR_COOLDOWN_RATE, commands.BucketType.user)
+    @scommand(name="qr", description=f"Make a QR code image. (Supports up to {QR_CHAR_LIMIT} characters)")
+    async def qr(self, ctx: SContext, *, content: str):
+        over_max = len(content) > QR_CHAR_LIMIT
+        content = content[:QR_CHAR_LIMIT]
+        img = qrcode.make(content)
+        byte_arr = io.BytesIO()
+        img.save(byte_arr, format="PNG")
+        await ctx.send(
+            f"__**Generated QR Code**__\
+{f' (**Warning:** string trimmed down to max of {QR_CHAR_LIMIT} chars.)' if over_max else ''}",
+            file=discord.File(io.BytesIO(byte_arr.getvalue()), f"qrcode-{ctx.author.id}.png")
+        )
 
 
 def setup(bot: commands.bot):

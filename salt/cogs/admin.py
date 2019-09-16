@@ -55,6 +55,7 @@ class Administration(commands.Cog):
             if perm.startswith("-"):  # negate permission
                 perm = perm[1:]
                 is_negated = True
+                print(f"{as_tuple=} (I)")
                 as_tuple = (as_tuple[0][1:],) + as_tuple[1:]  # remove the `-` at tuple's first element
 
             if as_tuple[0] in ('cog', 'category', 'categories'):
@@ -64,12 +65,14 @@ class Administration(commands.Cog):
                     await ctx.send(f"Unknown cog/category `{as_tuple[0]}`! See the `help` command for a list.")
                     return
 
-            if as_tuple[0] == 'custom':
+            elif as_tuple[0] == 'custom':
                 as_tuple = as_tuple[1:2]  # just keep the custom cmd name; there are no subperms.
                 is_custom = True
                 # TODO: Add support for custom commands
                 await ctx.send("Custom commands aren't supported yet!")
                 return
+
+            print(f"{as_tuple=}")
 
             as_tuple = as_tuple[:4]  # max of 4 (command, extra, extrax, extraxx)
 
@@ -565,7 +568,7 @@ to confirm, or **__n__o** to cancel."
         ) \
             .set_footer(text="Please confirm")
 
-        received, cancelled, _s = await prompt(  # Prompt 'em for confirmation, in case it parsed wrong or smth
+        received, cancelled, _s = await prompt(  # Prompt 'em for confirmation, in case it parsed wrong or something
             "Are you sure?", ctx=ctx, embed=embed, already_asked=False, predicate_gen=confirmation_predicate_gen,
             cancellable=True, partial_question=False
         )
@@ -601,7 +604,7 @@ to confirm, or **__n__o** to cancel."
     async def perms_give(
         self, ctx: SContext,
         *, perm_or_perms: ListConverter(
-            re.compile(r"[^a-zA-Z\d. ]+"), maxsplit=10, human_separator="any non-letter and non-digit character"
+            re.compile(r"[^a-zA-Z\d.\- ]+"), maxsplit=10, human_separator="any non-letter/digit/dot/hyphen character"
         )
     ):
         """
@@ -626,10 +629,10 @@ to confirm, or **__n__o** to cancel."
         example="{p}p take case reason\n{p}p take ban, kick, mute\n{p}p take all\n{p}p take -ban, -kick, mute"
     )
     async def perms_take(
-            self, ctx: SContext,
-            *, perm_or_perms: ListConverter(
-                re.compile(r"[^a-zA-Z\d. ]+"), maxsplit=10, human_separator="any non-letter and non-digit character"
-            )
+        self, ctx: SContext,
+        *, perm_or_perms: ListConverter(
+            re.compile(r"[^a-zA-Z\d.\- ]+"), maxsplit=10, human_separator="any non-letter/digit/dot/hyphen character"
+        )
     ):
         """
         Take one/multiple Salt Permission overwrites from one/multiple member(s) and/or one/multiple role(s). \
