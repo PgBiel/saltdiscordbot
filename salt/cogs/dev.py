@@ -86,6 +86,7 @@ async def multiline_eval(expr: str, global_vals, local_vals, *, update_locals: b
 
 
 class Dev(commands.Cog):
+
     @sdev_only()
     @scommand(name='eval', pass_context=True, description="Just testing", hidden=True)
     async def eval(self, ctx: SContext, *, arg: str) -> None:
