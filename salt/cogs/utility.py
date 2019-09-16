@@ -109,7 +109,8 @@ class Utility(commands.Cog):
         await ctx.send(
             f"__**Generated QR Code**__\
 {f' (**Warning:** string trimmed down to max of {QR_CHAR_LIMIT} chars.)' if over_max else ''}",
-            file=discord.File(io.BytesIO(byte_arr.getvalue()), f"qrcode-{ctx.author.id}.png")
+            file=discord.File(io.BytesIO(byte_arr.getvalue()), f"qrcode-{ctx.author.id}.png"),
+            deletable=True
         )
 
 

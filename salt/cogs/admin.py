@@ -18,7 +18,8 @@ from classes import (
     scommand, sgroup, SContext, SaltPermission, ListConverter,
     PrefixesModel, PartialPrefixesModel, set_op, NoPermissions,
     PartialWarnExpiresModel, WarnExpiresModel, WarnLimitsModel,
-    PositiveIntConverter, PermsModel, PartialPermsModel
+    PositiveIntConverter, PermsModel, PartialPermsModel,
+    ActionLogSettingsModel, PartialActionLogSettingsModel
 )
 from dateutil.relativedelta import relativedelta
 from utils.advanced import (
@@ -55,7 +56,6 @@ class Administration(commands.Cog):
             if perm.startswith("-"):  # negate permission
                 perm = perm[1:]
                 is_negated = True
-                print(f"{as_tuple=} (I)")
                 as_tuple = (as_tuple[0][1:],) + as_tuple[1:]  # remove the `-` at tuple's first element
 
             if as_tuple[0] in ('cog', 'category', 'categories'):
@@ -71,8 +71,6 @@ class Administration(commands.Cog):
                 # TODO: Add support for custom commands
                 await ctx.send("Custom commands aren't supported yet!")
                 return
-
-            print(f"{as_tuple=}")
 
             as_tuple = as_tuple[:4]  # max of 4 (command, extra, extrax, extraxx)
 
@@ -417,6 +415,7 @@ towards warn limits).', example="{p}warnexpire\n{p}warnexpire 2 weeks\n{p}warnex
             )
         )
 
+    @require_salt_permission("warnlimit get", default=True)
     @sguild_only()
     @warnlimit.command(
         name='get', aliases=['limit'],
@@ -427,8 +426,10 @@ towards warn limits).', example="{p}warnexpire\n{p}warnexpire 2 weeks\n{p}warnex
 
     @or_checks(
         is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
+        require_salt_permission("warnlimit set", default=False),
         error=NoPermissions(administration_dperm_error_fmt.format('warnlimit set'))
     )
+    @require_salt_permission("warnlimit set", just_check_if_negated=True)
     @sguild_only()
     @warnlimit.command(name='set', example="{p}warnlimit set 5 kick\n{p}warnlimit set 6 mute 10 hours")
     async def warnlimit_set(
@@ -512,8 +513,10 @@ towards warn limits).', example="{p}warnexpire\n{p}warnexpire 2 weeks\n{p}warnex
 
     @or_checks(
         is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
+        require_salt_permission("warnlimit unset", default=False),
         error=NoPermissions(administration_dperm_error_fmt.format('warnlimit unset'))
     )
+    @require_salt_permission("warnlimit unset", just_check_if_negated=True)
     @sguild_only()
     @warnlimit.command(
         name='unset', aliases=['remove'], description='Removes a warn limit.', example="{p}warnlimit remove 5"
@@ -548,8 +551,10 @@ a{1} {2}{3}{4}.".format(
 
     @or_checks(
         is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
+        require_salt_permission("warnlimit clear", default=False),
         error=NoPermissions(administration_dperm_error_fmt.format('warnlimit clear'))
     )
+    @require_salt_permission("warnlimit clear", just_check_if_negated=True)
     @sguild_only()
     @warnlimit.command(
         name='clear', description='Clears all warn limits (DANGER).',
@@ -578,6 +583,99 @@ to confirm, or **__n__o** to cancel."
 
         await ctx.db['warnlimits'].delete_many(dict(guild_id=str(ctx.guild.id)))
         await ctx.send("Successfully cleared all warn limits!")
+
+    @require_salt_permission("actionlogs", default=True)
+    @sguild_only()
+    @sgroup(name="actionlogs", aliases=['actionlog', 'alog', 'alogs'], invoke_without_command=True)
+    async def actionlogs(self, ctx: SContext):
+        """
+        Manage the server's action logs. You can either **set** ()
+        """
+        await ctx.send_help(self.actionlogs)
+
+    @or_checks(
+        is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
+        require_salt_permission("actionlogs set", default=False),
+        error=NoPermissions(administration_dperm_error_fmt.format('actionlogs set'))
+    )
+    @require_salt_permission("actionlogs set", just_check_if_negated=True)
+    @sguild_only()
+    @actionlogs.command(
+        name='set', description='Sets the action logs channel, at which punishments with Salt will be logged.',
+        example="{p}actionlogs set #channel"
+    )
+    async def actionlogs_set(self, ctx: SContext, channel: discord.TextChannel):
+        if channel not in ctx.guild.channels:
+            await ctx.send("The channel specified must be in the current guild!")  # TODO: Make this into a converter
+
+        current = await ctx.db['actionlogsettings'].find_one(dict(guild_id=str(ctx.guild.id)))
+        logs_on = current['logs_on'] if current and current['logs_on'] is not None else True
+        model = ActionLogSettingsModel(
+            guild_id=str(ctx.guild.id), logs_channel_id=str(channel.id), logs_on=logs_on,
+            latest_case=current['latest_case'] if current else 0
+        )
+        await ctx.db['actionlogsettings'].update_one(
+            dict(guild_id=str(ctx.guild.id)), set_op(model.as_dict()), upsert=True
+        )  # TODO: Fix counter disappearance
+        await ctx.send(f"Successfully set the action logging channel to {channel.mention}!", deletable=True)
+
+    @or_checks(
+        is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
+        require_salt_permission("actionlogs toggle", default=False),
+        error=NoPermissions(administration_dperm_error_fmt.format('actionlogs toggle'))
+    )
+    @require_salt_permission("actionlogs toggle", just_check_if_negated=True)
+    @sguild_only()
+    @actionlogs.command(
+        name='enable', description='Enables action logging into the set action log channel.',
+        example="{p}actionlogs enable"
+    )
+    async def actionlogs_enable(self, ctx: SContext):
+        current = await ctx.db['actionlogsettings'].find_one(dict(guild_id=str(ctx.guild.id)))
+        logs_channel_id = current['logs_channel_id'] if current else None
+        model = ActionLogSettingsModel(
+            guild_id=str(ctx.guild.id), logs_channel_id=logs_channel_id, logs_on=True,
+            latest_case=current['latest_case'] if current else 0
+        )
+        await ctx.db['actionlogsettings'].update_one(
+            dict(guild_id=str(ctx.guild.id)), set_op(model.as_dict()), upsert=True
+        )
+        await ctx.send(
+            "Successfully enabled action logging!{0}".format(
+                f" (Note: no action log channel has been set yet! Set with ``{discord_sanitize(ctx.prefix)}actionlogs \
+set #channel``." if not logs_channel_id else ""
+            ),
+            deletable=True
+        )
+
+    @or_checks(
+        is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
+        require_salt_permission("actionlogs toggle", default=False),
+        error=NoPermissions(administration_dperm_error_fmt.format('actionlogs toggle'))
+    )
+    @require_salt_permission("actionlogs toggle", just_check_if_negated=True)
+    @sguild_only()
+    @actionlogs.command(
+        name='disable', description='Disables action logging into the set action log channel.',
+        example="{p}actionlogs disable"
+    )
+    async def actionlogs_disable(self, ctx: SContext):
+        current = await ctx.db['actionlogsettings'].find_one(dict(guild_id=str(ctx.guild.id)))
+        logs_channel_id = current['logs_channel_id'] if current else None
+        model = ActionLogSettingsModel(
+            guild_id=str(ctx.guild.id), logs_channel_id=logs_channel_id, logs_on=False,
+            latest_case=current['latest_case'] if current else 0
+        )
+        await ctx.db['actionlogsettings'].update_one(
+            dict(guild_id=str(ctx.guild.id)), set_op(model.as_dict()), upsert=True
+        )
+        await ctx.send(
+            "Successfully disabled action logging!{0}".format(
+                f" (Note: no action log channel has been set yet! Set with ``{discord_sanitize(ctx.prefix)}actionlogs \
+set #channel``." if not logs_channel_id else ""
+            ),
+            deletable=True
+        )
 
     @require_salt_permission("perms", default=True)
     @sguild_only()
