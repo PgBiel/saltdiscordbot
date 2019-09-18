@@ -1,3 +1,4 @@
+import itertools
 from typing import TypeVar, Sequence, Union, Optional, List, Tuple, overload
 
 V = TypeVar("V")
@@ -9,11 +10,7 @@ def clean_nones_from_list(l: Sequence[Union[Optional[V], V]]) -> Sequence[V]:
     :param l: The list or Sequence.
     :return: Cleaned list or Sequence.
     """
-    new_list = []
-    for el in l:
-        if el is not None:
-            new_list.append(el)
-    return type(l)(new_list)  # works with tuples too
+    return type(l)(itertools.filterfalse(lambda x: x is None, l))
 
 
 U = TypeVar("U")
@@ -28,11 +25,7 @@ def clean_falsy_from_list(l: Sequence[Union[Optional[U], U]]) -> Sequence[U]:
     """
     if not any(l):
         return type(l)()
-    new_list = []
-    for el in l:
-        if el:
-            new_list.append(el)
-    return type(l)(new_list)
+    return type(l)([el for el in l if el])
 
 
 L = TypeVar("L")
@@ -46,28 +39,32 @@ def pagify_list(l: List[L], max_per_page: int = 10) -> List[List[L]]:
 
 
 @overload
-def pagify_list(l: Tuple[L], max_per_page: int = 10) -> Tuple[List[L]]:
+def pagify_list(l: Tuple[L], max_per_page: int = 10) -> Tuple[Tuple[L]]:
     pass
 
 
-def pagify_list(l: Sequence[L], max_per_page: int = 10) -> Sequence[List[L]]:
+@overload
+def pagify_list(l: Sequence[L], max_per_page: int = 10) -> Sequence[Sequence[L]]:
+    pass
+
+
+def pagify_list(l: Sequence[L], max_per_page: int = 10) -> Sequence[Sequence[L]]:
     """
     Pagify a list.
 
-    :param l: List.
+    :param l: List, tuple; sequence.
     :param max_per_page: Max amount per page.
     :return: The pagified list.
     """
-    if not l or len(l) < 1:
-        return type(l)() if l else []
+    i = 0
 
-    new_list = [[]]
-    for i in range(len(l)):
-        new_list[-1].append(l[i])
-        if len(new_list[-1]) % max_per_page == 0 and i + 1 != len(l):  # reached max amnt per page
-            new_list.append([])
+    def key_func(x: L):
+        nonlocal i
+        res = i // max_per_page
+        i += 1
+        return res
 
-    return type(l)(new_list)
+    return type(l)([type(l)(el[1]) for el in itertools.groupby(l, key=key_func)])
 
 
 @overload

@@ -10,11 +10,7 @@ def clean_none_values(dicti: T) -> T:
     :param dicti: Dictionary to modify.
     :return: Modified dictionary.
     """
-    new_dict = type(dicti)()
-    for k in dicti:
-        if (v := dicti[k]) is not None:
-            new_dict[k] = v
-    return new_dict
+    return type(dicti)({k: v for k, v in dicti.items() if v is not None})
 
 
 def clean_falsy_values(dicti: T) -> T:
@@ -24,11 +20,7 @@ def clean_falsy_values(dicti: T) -> T:
     :param dicti: Dictionary to modify.
     :return: Modified dictionary.
     """
-    new_dict = type(dicti)()
-    for k in dicti:
-        if v := dicti[k]:
-            new_dict[k] = v
-    return new_dict
+    return type(dicti)({k: v for k, v in dicti.items() if v})
 
 
 def dict_except(dicti: L, *keys: str) -> L:
@@ -39,4 +31,4 @@ def dict_except(dicti: L, *keys: str) -> L:
     :param keys: Keys to not include.
     :return: The modified dict.
     """
-    return {k: v for k, v in dicti.items() if k not in keys}
+    return type(dicti)({k: v for k, v in dicti.items() if k not in keys})

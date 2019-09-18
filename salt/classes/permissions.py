@@ -54,3 +54,6 @@ class SaltPermission:
 
     def clean_literal(self):
         return permission_tuple_to_literal(self.tuple, is_cog=False, is_custom=False, is_negated=False)
+
+    def __repr__(self):
+        return self.literal

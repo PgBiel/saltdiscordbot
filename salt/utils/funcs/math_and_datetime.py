@@ -77,6 +77,21 @@ def extract_delta(delta: Union[datetime.timedelta, relativedelta], ignore_week: 
         return result
 
 
+def test_delta(delta: Union[datetime.timedelta, relativedelta]) -> bool:
+    """
+    Tests if a delta object does not pass max date range.
+    :param delta: The delta. (timedelta / relativedelta)
+    :return: (bool) Whether or not it is valid.
+    """
+    try:
+        now = datetime.datetime.now()
+        relativedelta(now + delta, now)
+    except (OverflowError, ValueError, OSError):
+        return False
+
+    return True
+
+
 def make_delta(
         *, years: Optional[int] = 0, months: Optional[int] = 0, weeks: Optional[int] = 0, days: Optional[int] = 0,
         hours: Optional[int] = 0, minutes: Optional[int] = 0, seconds: Optional[int] = 0

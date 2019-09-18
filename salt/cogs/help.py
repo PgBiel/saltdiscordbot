@@ -99,7 +99,7 @@ on a command."
                 await ctx.send(f"Invalid page! Minimum is 1, and maximum is {len(pages)}.")
                 return
 
-            original_embed = embed.copy()
+            # original_embed = embed.copy()
 
             async def update_page(pag: PaginateOptions, msg: discord.Message, _emj, _ctx, _rec):
                 embed.set_field_at(
@@ -111,7 +111,6 @@ on a command."
                 await msg.edit(embed=embed)
 
             await ctx.send(embed=embed, paginate=PaginateOptions(update_page, page, max_page=len(pages)))
-            return
 
         async def send_group_help(self, group: SGroup):
             return await self.send_command_help(group)

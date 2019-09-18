@@ -19,7 +19,8 @@ from classes import (
     PrefixesModel, PartialPrefixesModel, set_op, NoPermissions,
     PartialWarnExpiresModel, WarnExpiresModel, WarnLimitsModel,
     PositiveIntConverter, PermsModel, PartialPermsModel,
-    ActionLogSettingsModel, PartialActionLogSettingsModel
+    ActionLogSettingsModel, PartialActionLogSettingsModel,
+    PartialWarnLimitsModel
 )
 from dateutil.relativedelta import relativedelta
 from utils.advanced import (
@@ -29,8 +30,9 @@ from utils.advanced import (
 from utils.funcs import (
     discord_sanitize, humanize_delta, dict_except, delta_compress, delta_decompress, is_vocalic,
     humanize_list, list_except, normalize_caseless, permission_literal_to_tuple, text_abstract,
-    permission_tuple_to_literal, plural_s
+    permission_tuple_to_literal, plural_s, pagify_list, test_delta
 )
+from essentials.sender import PaginateOptions
 from utils.advanced import or_checks, has_saltadmin_role, is_owner, sguild_only
 
 administration_dperm_error_fmt = "Missing permissions! For this command, you need either Manage Server, \
@@ -109,7 +111,7 @@ could make sense to exist; this message indicates that no command ever checks fo
         if invalid_perms:
             await ctx.send(
                 f"**Warning:** Unknown permission{plural_s(invalid_perms)}: \
-{humanize_list([f'**`{discord_sanitize(el[:33])}`**' for el in invalid_perms])}"
+{humanize_list([f'**`{discord_sanitize(str(el)[:33])}`**' for el in invalid_perms])}"
             )
 
         found_members: typing.List[discord.Member] = []
@@ -380,6 +382,7 @@ towards warn limits).', example="{p}warnexpire\n{p}warnexpire 2 weeks\n{p}warnex
         )
         await ctx.send(f"Successfully updated time for warn expire to {humanize_delta(expire_time) or '0 seconds'}!")
 
+    @require_salt_permission("warnlimit get", default=True)
     @sgroup(
         name='warnlimit', aliases=['setwarns'], description="""Work with warn limits - they are an amount of warnings\
  an user can get before receiving a certain punishment. There can be multiple of those, up to 50. Each warn limit can\
@@ -388,7 +391,11 @@ towards warn limits).', example="{p}warnexpire\n{p}warnexpire 2 weeks\n{p}warnex
         invoke_without_command=True
     )
     @sguild_only()
-    async def warnlimit(self, ctx: SContext, warn_amount: PositiveIntConverter):
+    async def warnlimit(self, ctx: SContext, warn_amount: PositiveIntConverter = None):
+        if warn_amount is None:
+            # TODO: call +warnlimit list
+            return
+
         w_amount = typing.cast(int, warn_amount)
         # if w_amount is None:
         #     await ctx.send(f"")
@@ -423,6 +430,56 @@ towards warn limits).', example="{p}warnexpire\n{p}warnexpire 2 weeks\n{p}warnex
     )
     async def warnlimit_get(self, ctx: SContext, warn_amount: PositiveIntConverter):
         await ctx.invoke(self.warnlimit, warn_amount)  # same thing
+
+    @require_salt_permission("warnlimit get", default=True)
+    @sguild_only()
+    @warnlimit.command(
+        name='list', aliases=['limits'], description='Get the list of warn limits.',
+        example=(
+                "{p}warnlimit list\n"
+                "{p}warnlimit list 2"
+        )
+    )  # →   little arrow
+    async def warnlimit_list(self, ctx: SContext, page: PositiveIntConverter = 1):              # v up to 50 limits
+        page: int = typing.cast(int, page)
+        limits = await ctx.db['warnlimits'].find(dict(guild_id=str(ctx.guild.id))).to_list(length=50)
+        if not limits:
+            await ctx.send("This server has no warn limits defined!")
+            return
+
+        limit_partials: typing.List[PartialWarnLimitsModel] = list(sorted([
+            PartialWarnLimitsModel(**dict_except(el, '_id')) for el in limits if el['amount'] and el['punishment']
+        ], key=lambda x: x.amount))
+        limit_strs: typing.List[str] = [
+            f"• **{lim.amount}** warn{plural_s(lim.amount)} → **{lim.punishment}**\
+{f' for {humanize_delta(delta_decompress(lim.mute_time))}' if lim.mute_time else ''}\
+{f' (permanent)' if lim.permanent_mute else ''}"
+            for lim in limit_partials
+        ]
+
+        pages: typing.List[typing.List[str]] = pagify_list(limit_strs, 15)
+        try:
+            limit_str = '\n'.join(pages[page-1])
+        except IndexError:
+            await ctx.send(f"Invalid page! Minimum is 1 and maximum, {len(pages)}.")
+            return
+
+        origin_title = "List of warn limits for this server"
+        title = f"{origin_title}{f' (Page {page}/{len(pages)})' if len(pages) > 1 else ''}"
+
+        origin_desc = f"All warn limits (punishment thresholds) in the server. \
+**Minimum: {limit_partials[0].amount}** warns; **Maximum: {limit_partials[-1].amount}** warns.\n\n\
+**Limits:**\n"
+        desc = origin_desc + limit_str
+
+        embed = discord.Embed(title=title, description=desc)
+
+        async def update_page(pag: PaginateOptions, msg: discord.Message, _emj, _ctx, _rec):
+            embed.description = origin_desc + '\n'.join(pages[pag.current_page-1])
+            embed.title = f"{origin_title} (Page {pag.current_page}/{len(pages)})"
+            await msg.edit(embed=embed)
+
+        await ctx.send(embed=embed, paginate=PaginateOptions(update_page, page, max_page=len(pages)))
 
     @or_checks(
         is_owner(), has_saltadmin_role(), commands.has_permissions(manage_guild=True),
@@ -466,24 +523,32 @@ towards warn limits).', example="{p}warnexpire\n{p}warnexpire 2 weeks\n{p}warnex
                     await ctx.send("Invalid time specified!")
                     return
 
-                parsed = re.findall(TIME_SPLIT_REGEX, time, flags=re.RegexFlag.I | re.RegexFlag.X)
                 try:
-                    units = dict()
-                    # Here we separate each part of time - ["5 years", "5 seconds"] - to add to our delta
-                    for part in parsed:
-                        p_match = re.fullmatch(TIME_MATCH, part,
-                                               flags=re.RegexFlag.I)  # Now let's separate "5" from "years"
-                        num_str, time_str = (p_match.group("number"), p_match.group("unit"))  # ^
-                        amount = float(num_str)  # Convert to float, or error if too big (see try/except)
-                        unit = TIME_ALIASES[time_str.lower()]  # Unit using
-                        if unit in ("years", "months"):  # On 'years' and 'months', can only use int, not float
-                            amount = math.floor(amount)  # On the rest we can use floats tho so it's ok
-                        if units.get(unit):  # If the user already specified this unit before, just sum (5s + 5s)
-                            units[unit] += amount
-                        else:  # Else just add to our dict
-                            units[unit] = amount
+                    if time.isnumeric():
+                        mute_time = relativedelta(minutes=int(time))
+                    else:
+                        parsed = re.findall(TIME_SPLIT_REGEX, time, flags=re.RegexFlag.I | re.RegexFlag.X)
+                        units = dict()
+                        # Here we separate each part of time - ["5 years", "5 seconds"] - to add to our delta
+                        for part in parsed:
+                            p_match = re.fullmatch(TIME_MATCH, part,
+                                                   flags=re.RegexFlag.I)  # Now let's separate "5" from "years"
+                            num_str, time_str = (p_match.group("number"), p_match.group("unit"))  # ^
+                            amount = float(num_str)  # Convert to float, or error if too big (see try/except)
+                            unit = TIME_ALIASES[time_str.lower()]  # Unit using
+                            if unit in ("years", "months"):  # On 'years' and 'months', can only use int, not float
+                                amount = math.floor(amount)  # On the rest we can use floats tho so it's ok
+                            if units.get(unit):  # If the user already specified this unit before, just sum (5s + 5s)
+                                units[unit] += amount
+                            else:  # Else just add to our dict
+                                units[unit] = amount
 
-                    mute_time = relativedelta(**units)  # Using the units parsed, we are good to go.
+                        mute_time = relativedelta(**units)  # Using the units parsed, we are good to go.
+
+                    if not test_delta(mute_time):
+                        await ctx.send("You specified a number (in mute duration) that is too big!")
+                        return
+
                 except (OverflowError, OSError, ValueError):  # Oh no, num too big
                     await ctx.send("You specified a number (in mute duration) that is too big!")
                     return
