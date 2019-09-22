@@ -42,6 +42,7 @@ class Salt(commands.Bot):
     def __init__(self):
         set_bot(self)
         super().__init__(command_prefix=self.prefix, description=description, case_insensitive=True)
+        self.uptime: datetime.datetime = None
         self.saved_permissions: List[Tuple[str, ...]] = []  # List of permissions that are being checked by commands.
         self.config: dict = dict()
         self.make_config()
@@ -116,6 +117,12 @@ class Salt(commands.Bot):
         """|coro|
         """
         return super().get_context(msg, cls=SContext)
+
+    async def on_ready(self):
+        if not self.uptime:
+            self.uptime = datetime.datetime.utcnow()
+
+        print("Salt is ready!")
 
     async def on_message(self, message: discord.Message):
         if message.author.bot or message.author == self.user:

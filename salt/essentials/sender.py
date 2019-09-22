@@ -107,7 +107,11 @@ async def send(
       The message that was sent.
     """
     sender = sender or ctx.send
-    if content and not allow_everyone:
+    if isinstance(content, discord.Embed):
+        kwargs["embed"] = content
+        content = None
+
+    elif content and not allow_everyone:
         content = content.replace("@everyone", "@\u200beveryone").replace("@here", "@\u200bhere")
     msg: discord.Message = await sender(content, **kwargs)
     myperms: discord.Permissions = ctx.guild.me.permissions_in(ctx.channel) if ctx.guild is not None else None

@@ -260,6 +260,45 @@ class Information(commands.Cog):
 
         return await ctx.send(embed=embed, deletable=True)
 
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("info bot", default=True)
+    @info.command(name='bot', aliases=['stats'], description="View info about the bot.")
+    async def info_bot(self, ctx: SContext):
+        bot = ctx.bot
+        me = bot.user
+        created_at = me.created_at  # When guild was created, in UTC
+        formatted_created_at = created_at.strftime(DATETIME_DEFAULT_FORMAT) + " UTC"
+        desc = "Created at {0}\n({1} ago)".format(  # format it in our embed desc
+            formatted_created_at,
+            humanize_delta(relativedelta(datetime.datetime.utcnow(), created_at), scale=True)  # human-friendly diff.
+        )
+
+        uptime_delta = relativedelta(datetime.datetime.utcnow(), bot.uptime)
+        h_uptime_delta = humanize_delta(uptime_delta)
+
+        text_chans = sum(map(lambda g: len(g.text_channels), bot.guilds))
+        voice_chans = sum(map(lambda g: len(g.voice_channels), bot.guilds))
+        chans = text_chans + voice_chans
+
+        embed = discord.Embed(description=desc)                \
+            .set_author(name=f"About me, {bot.user}", url=me.avatar_url, icon_url=me.avatar_url) \
+            .set_thumbnail(url=me.avatar_url)                                                    \
+            .add_field(name="Developers", value=bot.config['devs'], inline=False)                \
+            .add_field(name="With help from", value=bot.config['help_from'], inline=False)       \
+            .add_field(name="Uptime", value=h_uptime_delta)                                      \
+            .add_field(name="Programmed in", value="Python 3.8")                                 \
+            .add_field(name='Library', value="discord.py")                                       \
+            .add_field(name="Servers", value=len(bot.guilds))                                    \
+            .add_field(name="Users", value=len(bot.users))                                       \
+            .add_field(name="Total Channels", value=chans)                                       \
+            .add_field(name="Text Channels", value=text_chans)                                   \
+            .add_field(name="Voice Channels", value=voice_chans)                                 \
+            .set_footer(
+                text=f"Click the title for avatar URL | My ID: {me.id} | Happy to be alive! ^-^"
+            )
+
+        await ctx.send(embed=embed)
+
 
 def setup(bot: commands.bot):
     bot.add_cog(Information(bot))
