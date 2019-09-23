@@ -217,6 +217,79 @@ class AmbiguityRoleConverter(commands.RoleConverter):
         return return_or_raise()
 
 
+class AmbiguityChannelConverter(commands.RoleConverter):
+    """
+    Search for a channel in a guild, allowing an ambiguity solve.
+    """
+    def __init__(
+        self, *, default: Optional[Union[discord.Role, GetSContextAttr]] = None,
+        return_ambig_cancel: bool = False,
+        return_convert_failed: bool = False,
+        channel_types: Optional[Union[typing.Iterable[str], str]] = None
+    ):
+        """
+        :param default: A default value to return if converting failed; 'None' makes it raise.
+        :param return_ambig_cancel: Whether to return AMBIG_CANCELLED constant if ambiguity was cancelled. Default:
+            False.
+        :param return_convert_failed: Whether to reutrn CONVERT_FAILED constant if converting failed. Default: False.
+        :param channel_type: (Optional Iterable[str]) Channel types to look for ("text"/"voice"/"category"),
+            or None for all.
+        """
+        super().__init__()
+        self.default = default
+        if return_convert_failed:
+            self.default = CONVERT_FAILED
+        self.return_ambig_cancel = return_ambig_cancel
+        self.channel_types = list(channel_types) if type(channel_types) == str else channel_types
+
+    async def convert(self, ctx: SContext, argument: str):
+        group = []
+        if not self.channel_types:
+            group = ctx.guild.channels
+        else:
+            associate = dict(
+                text=ctx.guild.text_channels, voice=ctx.guild.voice_channels,
+                category=ctx.guild.categories, categories=ctx.guild.categories
+            )
+            for chan_type in self.channel_types:
+                if (g_to_add := associate.get(chan_type)) is not None:
+                    group += g_to_add
+
+        results = search_channel(argument, group)
+        fmt = 'Channel "{}" not found.'
+        text = fmt.format("<too big to display>" if 2000-len(fmt)-len(argument)+2 < 0 else argument)
+
+        def return_or_raise():  # if there is a default, return it, otherwise throw role not found error
+            if self.default is not None:
+                if isinstance(self.default, GetSContextAttr):
+                    return self.default.get_from_context(ctx)
+                else:
+                    return self.default
+            else:
+                raise commands.BadArgument(text)
+
+        if results is None or len(results) == 0:
+            return return_or_raise()  # no channel was found
+        if len(results) == 1:
+            return results[0]
+        if len(results) > 1:
+            if len(results) > 11:
+                raise commands.BadArgument("Too many possibilities of channels (>11), be more specific.")
+            result, cancelled = await ambiguity_solve(
+                ctx=ctx, subjects=results, type_name="channel"
+            )
+            if cancelled:
+                if self.return_ambig_cancel:
+                    return AMBIG_CANCELLED
+                elif self.default is not None:
+                    return return_or_raise()
+                else:
+                    raise AutoCancelledException(converter=self.__class__, original=None)
+            return result
+        # if we reached this point, means no channel was found.
+        return return_or_raise()
+
+
 class CustomIntConverter(commands.Converter):
     def __init__(self, condition: typing.Callable[[int], bool], range_str: Optional[str] = None):
         """

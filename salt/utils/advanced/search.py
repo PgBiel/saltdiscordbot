@@ -11,9 +11,16 @@ ChannelType = Union[
     discord.TextChannel, discord.DMChannel, discord.GroupChannel, discord.VoiceChannel, discord.CategoryChannel
 ]
 
+# class SearchOpType:
+#     pass
+#
+#
+# OP_OR = SearchOpType()
+# OP_AND = SearchOpType()
+
 
 def match_id(
-        text: str, *, mention_regex: Optional[Union[Pattern[str], str]] = re.compile(ANY_MENTION)
+    text: str, *, mention_regex: Optional[Union[Pattern[str], str]] = re.compile(ANY_MENTION)
 ) -> Optional[int]:
     match: Match[str] = re.match(ID_MATCH, text) or re.match(mention_regex, text)
     if match:
@@ -21,7 +28,7 @@ def match_id(
 
 
 def search_id(
-        text: str, group: Iterable[G], *, mention_regex: Optional[Union[Pattern[str], str]] = re.compile(ANY_MENTION)
+    text: str, group: Iterable[G], *, mention_regex: Optional[Union[Pattern[str], str]] = re.compile(ANY_MENTION)
 ) -> Optional[G]:
     matched_id: int = match_id(text, mention_regex=mention_regex)
     if matched_id:
@@ -29,7 +36,7 @@ def search_id(
 
 
 def search_name_and_discrim(
-        text: str, group: Iterable[N]
+    text: str, group: Iterable[N]
 ) -> Optional[N]:
     # if len(text) > 5 and text[-5] == '#':  # check if a name and discrim was specified
     if re.match(TEST_NAME_AND_DISCRIM, text):
@@ -49,7 +56,7 @@ def search_name_and_discrim(
 
 
 def search_in_group(
-        text: str, group: Iterable[T], *attrs, **kwargs: [Callable[[str, str], bool], int]
+    text: str, group: Iterable[T], *attrs, **kwargs: [Callable[[str, str], bool], int]
 ) -> Tuple[T]:
     """
     Search an element in a group of same type elements.
@@ -71,8 +78,6 @@ def search_in_group(
     for el in group:
         for attr in attrs:
             val: str = getattr(el, attr)
-#             print(f"(CHECKING) val: {val} | text: {text} | operation: {operation_to_use.__name__} | {bool(val)} and \
-# {bool(operation_to_use(val, text))}")
             if val and operation_to_use(val, text):
                 found.append(el)
                 break

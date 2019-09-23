@@ -8,11 +8,12 @@ from utils.funcs import humanize_delta, humanize_list, humanize_voice_region, hu
 from utils.advanced import sguild_only, require_salt_permission
 from classes import (
     scommand, sgroup, SContext, AmbiguityUserOrMemberConverter, AmbiguityRoleConverter, CONVERT_FAILED,
-    GetSContextAttr
+    GetSContextAttr, AmbiguityChannelConverter
 )
 from constants import (
     DATETIME_DEFAULT_FORMAT, PAIR_STATUS_EMOJI, EMBED_FIELD_VALUE_LIMIT,
-    INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE
+    INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, INFO_TEXT_THUMB_URL, INFO_TEXT_NSFW_THUMB_URL,
+    INFO_VOICE_THUMB_URL, INFO_CATEGORY_THUMB_URL
 )
 from typing import List, Union, Optional, cast
 
@@ -162,7 +163,7 @@ class Information(commands.Cog):
         )
 
         members = role.members                          # List of members in this role
-        sorted(members, key=lambda m: m.display_name)   # Sort by name/nickname
+        members.sort(key=lambda m: m.display_name)   # Sort by name/nickname
         member_count = len(members)
         member_mentions = [member.mention for member in members]  # @pal's
         extra_members: int = 0  # Amount of members we can't display cuz val too big
@@ -228,7 +229,7 @@ class Information(commands.Cog):
             guild.members
         ))
         total_members = guild.member_count   # Also get member amount whether offline or not
-        members_val = f"{len(online_members)} online, {guild.member_count} total"  # X Online / Y Total
+        members_val = f"{len(online_members)} online, {total_members} total"  # X Online / Y Total
 
         verifications = ["none", "low", "medium", "high", "extreme"]  # Different levels of verification.
         verif_val = "{0} ({1}/{2})".format(  # Get the current level, in comparison with how high it can be.
@@ -266,7 +267,7 @@ class Information(commands.Cog):
     async def info_bot(self, ctx: SContext):
         bot = ctx.bot
         me = bot.user
-        created_at = me.created_at  # When guild was created, in UTC
+        created_at = me.created_at  # When I was created, in UTC
         formatted_created_at = created_at.strftime(DATETIME_DEFAULT_FORMAT) + " UTC"
         desc = "Created at {0}\n({1} ago)".format(  # format it in our embed desc
             formatted_created_at,
@@ -274,28 +275,228 @@ class Information(commands.Cog):
         )
 
         uptime_delta = relativedelta(datetime.datetime.utcnow(), bot.uptime)
-        h_uptime_delta = humanize_delta(uptime_delta)
+        h_uptime_delta = humanize_delta(uptime_delta, scale=True)
 
-        text_chans = sum(map(lambda g: len(g.text_channels), bot.guilds))
-        voice_chans = sum(map(lambda g: len(g.voice_channels), bot.guilds))
+        text_voice_chans = map(lambda g: (len(g.text_channels), len(g.voice_channels)), bot.guilds)
+        text_chans_z, voice_chans_z = zip(*text_voice_chans)
+        text_chans = sum(text_chans_z)
+        voice_chans = sum(voice_chans_z)
         chans = text_chans + voice_chans
 
-        embed = discord.Embed(description=desc)                \
-            .set_author(name=f"About me, {bot.user}", url=me.avatar_url, icon_url=me.avatar_url) \
-            .set_thumbnail(url=me.avatar_url)                                                    \
-            .add_field(name="Developers", value=bot.config['devs'], inline=False)                \
-            .add_field(name="With help from", value=bot.config['help_from'], inline=False)       \
-            .add_field(name="Uptime", value=h_uptime_delta)                                      \
-            .add_field(name="Programmed in", value="Python 3.8")                                 \
-            .add_field(name='Library', value="discord.py")                                       \
-            .add_field(name="Servers", value=len(bot.guilds))                                    \
-            .add_field(name="Users", value=len(bot.users))                                       \
-            .add_field(name="Total Channels", value=chans)                                       \
-            .add_field(name="Text Channels", value=text_chans)                                   \
-            .add_field(name="Voice Channels", value=voice_chans)                                 \
-            .set_footer(
-                text=f"Click the title for avatar URL | My ID: {me.id} | Happy to be alive! ^-^"
-            )
+        embed = (discord.Embed(description=desc)
+                        .set_author(name=f"About me, {bot.user}", url=me.avatar_url, icon_url=me.avatar_url)
+                        .set_thumbnail(url=me.avatar_url)
+                        .add_field(name="Developers", value=bot.config['devs'], inline=False)
+                        .add_field(name="With help from", value=bot.config['help_from'], inline=False)
+                        .add_field(name="Uptime", value=h_uptime_delta)
+                        .add_field(name="Programmed in", value="Python (3.8)")
+                        .add_field(name='Library', value="discord.py")
+                        .add_field(name="Servers", value=len(bot.guilds))
+                        .add_field(name="Users", value=len(bot.users))
+                        .add_field(name="Total Channels", value=chans)
+                        .add_field(name="Text Channels", value=text_chans)
+                        .add_field(name="Voice Channels", value=voice_chans)
+                        .set_footer(text=f"Click the title for avatar URL | My ID: {me.id} | Happy to be alive! ^-^"))
+
+        await ctx.send(embed=embed)
+
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("info channel", default=True)
+    @info.command(
+        name='channel', aliases=['textchannel', 'text'], description="View info about a text channel.",
+        example=(
+            "{p}info channel\n"
+            "{p}info channel #text-channel"
+        )
+    )
+    async def info_channel(
+        self, ctx: SContext,
+        channel: AmbiguityChannelConverter(channel_types=["text"]) = GetSContextAttr("channel")
+    ):
+        channel: discord.TextChannel = channel.get_from_context(ctx) if isinstance(channel, GetSContextAttr) \
+            else channel
+
+        created_at = channel.created_at  # When channel was created, in UTC
+        formatted_created_at = created_at.strftime(DATETIME_DEFAULT_FORMAT) + " UTC"
+        desc = "Created at {0}\n({1} ago)".format(  # format it in our embed desc
+            formatted_created_at,
+            humanize_delta(relativedelta(datetime.datetime.utcnow(), created_at), scale=True)  # human-friendly diff.
+        )
+
+        is_nsfw = channel.is_nsfw()
+        thumb = INFO_TEXT_NSFW_THUMB_URL if is_nsfw else INFO_TEXT_THUMB_URL
+        title = f"Info about Text Channel #{channel.name}{' (NSFW)' if is_nsfw else ''}"
+        ctg = discord_sanitize(channel.category.name) if channel.category else "None"
+
+        webhooks = len(await channel.webhooks()) if channel.permissions_for(ctx.me).manage_webhooks \
+            else "(I cannot view)"
+
+        members = channel.members  # List of members who can view this channel
+        members.sort(key=lambda m: m.display_name)  # Sort by name/nickname
+        member_count = len(members)
+        member_mentions = [member.mention for member in members]  # @pal's
+        extra_members: int = 0  # Amount of members we can't display cuz val too big
+        extra_str = "...(+{})"  # <- but formatted
+        is_all_members = member_count == ctx.guild.member_count                   # v If we trespassed field val limit:
+        if not is_all_members and len(", ".join(member_mentions)) > EMBED_FIELD_VALUE_LIMIT:
+            while len(", ".join(member_mentions)) > (EMBED_FIELD_VALUE_LIMIT + len(extra_str) + 1):  # (Gotta fit '...')
+                member_mentions.pop()  # Let's keep removing members from list until it fits
+                extra_members += 1  # But also display how many we removed
+
+        extra_str = extra_str.format(extra_members)
+        members_title = f"Members who can read this channel ({member_count})"
+        members_value = "All members" if is_all_members else (  # Final field value.
+            ", ".join(member_mentions) + (extra_str if extra_members else "")
+        ) if member_count > 0 else "None"
+
+        slowmode = humanize_delta(relativedelta(seconds=channel.slowmode_delay)) if channel.slowmode_delay else "None"
+
+        embed = (discord.Embed(description=desc)
+                        .set_author(name=title, icon_url=thumb)
+                        .set_thumbnail(url=thumb)
+                        .add_field(name="Relative Position", value=str(channel.position))
+                        .add_field(name="Permission Overwrites", value=str(len(channel.overwrites)))
+                        .add_field(name="Category", value=ctg)
+                        .add_field(name="Slowmode", value=slowmode)
+                        .add_field(name="Webhook Amount", value=str(webhooks))
+                        .add_field(name="Topic", value=discord_sanitize(str(channel.topic)) or "None")
+                        .add_field(name=members_title, value=members_value, inline=False)
+                        .set_footer(text=f"Channel ID: {channel.id}")
+                 )
+
+        await ctx.send(embed=embed)
+
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("info channel", default=True)
+    @info.command(
+        name='voicechannel', aliases=['voice'], description="View info about a voice channel.",
+        example="{p}info voicechannel Music"
+    )
+    async def info_voicechannel(
+            self, ctx: SContext,
+            channel: AmbiguityChannelConverter(channel_types=["voice"])
+    ):
+        channel: discord.VoiceChannel = channel
+
+        created_at = channel.created_at  # When channel was created, in UTC
+        formatted_created_at = created_at.strftime(DATETIME_DEFAULT_FORMAT) + " UTC"
+        desc = "Created at {0}\n({1} ago)".format(  # format it in our embed desc
+            formatted_created_at,
+            humanize_delta(relativedelta(datetime.datetime.utcnow(), created_at), scale=True)  # human-friendly diff.
+        )
+
+        thumb = INFO_VOICE_THUMB_URL
+        title = f'Info about Voice Channel "{channel.name}"'
+        ctg = discord_sanitize(channel.category.name) if channel.category else "None"
+
+        members = channel.members  # List of members who are connected to this channel
+        members.sort(key=lambda m: m.display_name)  # Sort by name/nickname
+        member_count = len(members)
+        member_mentions = [member.mention for member in members]  # @pal's
+        extra_members: int = 0  # Amount of members we can't display cuz val too big
+        extra_str = "...(+{})"  # <- but formatted
+        is_all_members = member_count == ctx.guild.member_count  # v If we trespassed field val limit:
+        if not is_all_members and len(", ".join(member_mentions)) > EMBED_FIELD_VALUE_LIMIT:
+            while len(", ".join(member_mentions)) > (EMBED_FIELD_VALUE_LIMIT + len(extra_str) + 1):  # (Gotta fit '...')
+                member_mentions.pop()  # Let's keep removing members from list until it fits
+                extra_members += 1  # But also display how many we removed
+
+        extra_str = extra_str.format(extra_members)
+        members_title = f"Members Connected ({member_count})"
+        members_value = "All members" if is_all_members else (  # Final field value.
+                ", ".join(member_mentions) + (extra_str if extra_members else "")
+        ) if member_count > 0 else "None"
+
+        bitrate = f"{channel.bitrate // 1000} kbps" if channel.bitrate > 1000 else f"{channel.bitrate} bps"
+        user_limit = channel.user_limit
+
+        embed = (discord.Embed(description=desc)
+                 .set_author(name=title, icon_url=thumb)
+                 .set_thumbnail(url=thumb)
+                 .add_field(name="Relative Position", value=str(channel.position))
+                 .add_field(name="Permission Overwrites", value=str(len(channel.overwrites)))
+                 .add_field(name="Category", value=ctg)
+                 .add_field(name="Bitrate", value=bitrate)
+                 .add_field(name="User Limit", value=user_limit or "Unlimited")
+                 .add_field(name="Is full", value="Yes" if user_limit and member_count >= user_limit else "No")
+                 .add_field(name=members_title, value=members_value, inline=False)
+                 .set_footer(text=f"Channel ID: {channel.id}")
+                 )
+
+        await ctx.send(embed=embed)
+
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("info channel", default=True)
+    @info.command(
+        name='category', aliases=['ctg', 'categorychannel'], description="View info about a category.",
+        example="{p}info category Channels"
+    )
+    async def info_category(
+            self, ctx: SContext,
+            category: AmbiguityChannelConverter(channel_types=["category"]) = None
+    ):
+        ctg: discord.CategoryChannel = category
+        if not ctg:
+            ctg = cast(discord.TextChannel, ctx.channel).category
+            if not ctg:
+                await ctx.send("This channel is not in any category, so please specify one!")
+                return
+
+        created_at = ctg.created_at  # When channel was created, in UTC
+        formatted_created_at = created_at.strftime(DATETIME_DEFAULT_FORMAT) + " UTC"
+        desc = "Created at {0}\n({1} ago)".format(  # format it in our embed desc
+            formatted_created_at,
+            humanize_delta(relativedelta(datetime.datetime.utcnow(), created_at), scale=True)  # human-friendly diff.
+        )
+
+        thumb = INFO_CATEGORY_THUMB_URL
+        title = f'Info about Category "{ctg.name}"{" (NSFW)" if ctg.is_nsfw() else ""}'
+
+        t_channels_in = ctg.text_channels  # List of channels in this category
+        t_channels_in.sort(key=lambda m: m.name)  # Sort by name/nickname
+        t_channel_count = len(t_channels_in)
+        t_chan_mentions = [channel_in.mention for channel_in in t_channels_in]  # @pal's
+        extra_t_channels: int = 0  # Amount of members we can't display cuz val too big
+        extra_t_str = "...(+{})"  # <- but formatted
+        is_all_t_channels = t_channel_count == len(ctx.guild.text_channels)  # v If we trespassed field val limit:
+        if not is_all_t_channels and len(", ".join(t_chan_mentions)) > EMBED_FIELD_VALUE_LIMIT:
+            while len(", ".join(t_chan_mentions)) > (EMBED_FIELD_VALUE_LIMIT + len(extra_t_str) + 1):
+                t_chan_mentions.pop()  # Let's keep removing members from list until it fits    # ^ (Gotta fit '...')
+                extra_t_channels += 1  # But also display how many we removed
+
+        extra_t_str = extra_t_str.format(extra_t_channels)
+        t_channels_title = f"Text Channels Within ({t_channel_count})"
+        t_channels_value = "All text channels" if is_all_t_channels else (  # Final field value.
+                ", ".join(t_chan_mentions) + (extra_t_str if extra_t_channels else "")
+        ) if t_channel_count > 0 else "None"
+
+        v_channels_in = ctg.voice_channels  # List of channels in this category
+        v_channels_in.sort(key=lambda m: m.name)  # Sort by name/nickname
+        v_channel_count = len(v_channels_in)
+        v_chan_mentions = [channel_in.mention for channel_in in v_channels_in]  # @pal's
+        extra_v_channels: int = 0  # Amount of members we can't display cuz val too big
+        extra_t_str = "...(+{})"  # <- but formatted
+        is_all_v_channels = v_channel_count == len(ctx.guild.voice_channels)  # v If we trespassed field val limit:
+        if not is_all_v_channels and len(", ".join(v_chan_mentions)) > EMBED_FIELD_VALUE_LIMIT:
+            while len(", ".join(v_chan_mentions)) > (EMBED_FIELD_VALUE_LIMIT + len(extra_t_str) + 1):
+                v_chan_mentions.pop()  # Let's keep removing members from list until it fits    # ^ (Gotta fit '...')
+                extra_v_channels += 1  # But also display how many we removed
+
+        extra_t_str = extra_t_str.format(extra_v_channels)
+        v_channels_title = f"Voice Channels Within ({v_channel_count})"
+        v_channels_value = "All voice channels" if is_all_v_channels else (  # Final field value.
+                ", ".join(v_chan_mentions) + (extra_t_str if extra_v_channels else "")
+        ) if v_channel_count > 0 else "None"
+
+        embed = (discord.Embed(description=desc)
+                 .set_author(name=title, icon_url=thumb)
+                 .set_thumbnail(url=thumb)
+                 .add_field(name="Position", value=str(ctg.position))
+                 .add_field(name="Permission Overwrites", value=str(len(ctg.overwrites)))
+                 .add_field(name=t_channels_title, value=t_channels_value, inline=False)
+                 .add_field(name=v_channels_title, value=v_channels_value, inline=False)
+                 .set_footer(text=f"Category ID: {ctg.id}")
+                 )
 
         await ctx.send(embed=embed)
 
