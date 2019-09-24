@@ -1,14 +1,18 @@
 import re
 import discord
 import datetime
+from essentials.sender import PaginateOptions
 from discord.ext import commands
 from discord.ext.commands.converter import _get_from_guilds
 from dateutil.relativedelta import relativedelta
-from utils.funcs import humanize_delta, humanize_list, humanize_voice_region, humanize_discord_syntax, discord_sanitize
+from utils.funcs import (
+    humanize_delta, humanize_list, humanize_voice_region, humanize_discord_syntax, discord_sanitize,
+    pagify_list, i_pagify_list, normalize_caseless
+)
 from utils.advanced import sguild_only, require_salt_permission
 from classes import (
     scommand, sgroup, SContext, AmbiguityUserOrMemberConverter, AmbiguityRoleConverter, CONVERT_FAILED,
-    GetSContextAttr, AmbiguityChannelConverter
+    GetSContextAttr, AmbiguityChannelConverter, AmbiguityMemberConverter, PositiveIntConverter
 )
 from constants import (
     DATETIME_DEFAULT_FORMAT, PAIR_STATUS_EMOJI, EMBED_FIELD_VALUE_LIMIT,
@@ -51,8 +55,14 @@ class Information(commands.Cog):
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @commands.bot_has_permissions(embed_links=True)
-    @require_salt_permission("info user", default=True)
-    @info.command(name="user", description="View info about an user.")  # User or member. Defaults to author
+    @require_salt_permission("info user", default=True)  # v User or member. Defaults to author
+    @info.command(
+        name="user", description="View info about an user, or, if not specified, yourself.",
+        example=(
+            "{p}info user\n"
+            "{p}info user Member"
+        )
+    )
     async def info_user(self, ctx: SContext, *, member: AmbiguityUserOrMemberConverter = None):
         memb_or_user = cast(Union[discord.Member, discord.User], member) or ctx.author  # Typing purposes, or default
         is_member = isinstance(memb_or_user, discord.Member) and ctx.guild and ctx.guild.get_member(memb_or_user.id)
@@ -151,7 +161,7 @@ class Information(commands.Cog):
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @require_salt_permission("info role", default=True)
     @sguild_only()
-    @info.command(name='role', description='View info about a role.')
+    @info.command(name='role', description='View info about a role.', example="{p}info role My Role")
     async def info_role(self, ctx: SContext, *, role_name: AmbiguityRoleConverter):
         role: discord.Role = cast(discord.Role, role_name)  # Typing purposes
 
@@ -207,7 +217,10 @@ class Information(commands.Cog):
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @require_salt_permission("info server", default=True)
     @sguild_only()
-    @info.command(name='server', aliases=['guild'], description="View info about the current server.")
+    @info.command(
+        name='server', aliases=['guild'], description="View info about the current server.",
+        example="{p}info server"
+    )
     async def info_server(self, ctx: SContext):
         guild = ctx.guild  # Get this guild
 
@@ -263,7 +276,7 @@ class Information(commands.Cog):
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @require_salt_permission("info bot", default=True)
-    @info.command(name='bot', aliases=['stats'], description="View info about the bot.")
+    @info.command(name='bot', aliases=['stats'], description="View info about the bot.", example="{p}info bot")
     async def info_bot(self, ctx: SContext):
         bot = ctx.bot
         me = bot.user
@@ -298,7 +311,7 @@ class Information(commands.Cog):
                         .add_field(name="Voice Channels", value=voice_chans)
                         .set_footer(text=f"Click the title for avatar URL | My ID: {me.id} | Happy to be alive! ^-^"))
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, deletable=True)
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @require_salt_permission("info channel", default=True)
@@ -364,7 +377,7 @@ class Information(commands.Cog):
                         .set_footer(text=f"Channel ID: {channel.id}")
                  )
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, deletable=True)
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @require_salt_permission("info channel", default=True)
@@ -423,7 +436,7 @@ class Information(commands.Cog):
                  .set_footer(text=f"Channel ID: {channel.id}")
                  )
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, deletable=True)
 
     @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
     @require_salt_permission("info channel", default=True)
@@ -498,7 +511,158 @@ class Information(commands.Cog):
                  .set_footer(text=f"Category ID: {ctg.id}")
                  )
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, deletable=True)
+
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("info roles", default=True)
+    @info.command(
+        name='roles',
+        description="View the list of roles in the server or, if specified, of a member. Note that specifying \
+a number under 1000 after `info roles` indicates the page you are seeing (otherwise it searches for member). \
+See examples for reference - first example is all roles in server; second example is page 2 of that; third example \
+lists roles that Member has; and fourth example shows the 3rd page of that Member's role list.",
+        example=(
+            "{p}info roles\n"
+            "{p}info roles 2\n"
+            "{p}info roles Member\n"
+            "{p}info roles Member 3"
+        )
+    )
+    async def info_roles(
+        self, ctx: SContext,
+        member: Optional[str] = None,
+        page: PositiveIntConverter = None
+    ):
+        if member and not page:
+            if member.isnumeric() and len(member) <= 3:
+                page: int = int(cast(str, member))
+                member = cast(discord.Member, None)
+            else:
+                member: discord.Member = await AmbiguityMemberConverter().convert(ctx, member)
+                page = 1
+        elif not member:
+            page = 1
+
+        roles: List[discord.Role] = list(sorted(
+            cast(discord.Member, member).roles if member else ctx.guild.roles, key=lambda r: r.position,
+            reverse=True
+        ))
+        roles = roles[:-1]  # exclude @everyone role
+        if not roles:
+            await ctx.send(f"{'That member' if member else 'The server'} has no roles (other than the default)!")
+            return
+
+        ii = 0
+        pages = pagify_list(
+            [
+                f"**`{r.position}.`\
+{' Highest:' if (ii := ii + 1) == 1 else (' Lowest:' if ii == len(roles) else '')}** {r.mention} (ID: {r.id})"
+                for r in roles
+            ]
+        )
+        p_amnt = len(pages)
+
+        if page > p_amnt:
+            await ctx.send(f"Invalid page! Minimum is 1 and maximum is {p_amnt}.")
+
+        origin_title = (f"{member}'s" if member else "All") + f" Roles"
+        title = f"{origin_title}{f' (Page {page}/{p_amnt})' if p_amnt > 1 else ''}"
+        embed = discord.Embed(title=title, description="\n".join(pages[page - 1]))
+
+        if p_amnt > 1:
+            embed.set_footer(text=f"To change pages, you can use {ctx.prefix}info roles <?> <page here>.")
+
+        async def update_page(pag: PaginateOptions, msg: discord.Message, _e, _c, _r):
+            if (curr_page := pag.current_page) <= p_amnt:
+                embed.description = "\n".join(pages[curr_page - 1])
+                embed.title = f"{origin_title} (Page {curr_page}/{p_amnt})"
+
+                await msg.edit(embed=embed)
+
+        p_options = PaginateOptions(
+            update_page, page, max_page=p_amnt
+        )
+
+        await ctx.send(f"{origin_title} ({len(roles)})", embed=embed, paginate=p_options)
+
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("info members", default=True)
+    @info.command(
+        name='members',
+        description="View the list of members in the server or, if specified, of a role. Note that specifying \
+a number under 1000 after `info members` indicates the page you are seeing (otherwise it searches for role). \
+See examples for reference - first example is all members in server; second example is page 2 of that; third example \
+lists members that Role has; and fourth example shows the 3rd page of that Role's member list.",
+        example=(
+            "{p}info members\n"
+            "{p}info members 2\n"
+            "{p}info members Role\n"
+            "{p}info members Role 3"
+        )
+    )
+    async def info_members(
+        self, ctx: SContext,
+        role: Optional[str] = None,
+        page: PositiveIntConverter = None
+    ):
+        if role and not page:
+            if role.isnumeric() and len(role) <= 3:
+                page: int = int(cast(str, role))
+                role = cast(discord.Member, None)
+            else:
+                role: discord.Member = await AmbiguityRoleConverter().convert(ctx, role)
+                page = 1
+        elif not role:
+            page = 1
+
+        def key_sort(member: discord.Member):
+            memb_hoisted = list(reversed([r for r in member.roles if r.hoist or r.position == 0]))
+            online_sort = 1 if str(member.status) == "offline" else 0
+            position_rev_sort = (len(ctx.guild.roles) - memb_hoisted[0].position) if not role and not online_sort else 0
+            name_sort = normalize_caseless(member.display_name)
+
+            return online_sort, position_rev_sort, name_sort
+
+        members: List[discord.Member] = list(sorted(
+            cast(discord.Role, role).members if role else ctx.guild.members,
+            key=key_sort,
+            reverse=False
+        ))
+        if not members:
+            await ctx.send(f"{'That role' if role else 'The server'} has no members!")
+            return
+
+        ii = 0
+        pages = pagify_list(
+            [
+                f"• {m.mention} (ID: {m.id})"
+                for m in members
+            ]
+        )
+        p_amnt = len(pages)
+
+        if page > p_amnt:
+            await ctx.send(f"Invalid page! Minimum is 1 and maximum is {p_amnt}.")
+
+        origin_title = (f"{role}'s" if role else "All") + f" Members"
+        title = f"{origin_title}{f' (Page {page}/{p_amnt})' if p_amnt > 1 else ''}"
+        embed = discord.Embed(title=title, description="\n".join(pages[page - 1]))
+
+        if p_amnt > 1:
+            embed.set_footer(text=f"To change pages, you can use {ctx.prefix}info members <?> <page here>.")
+
+        async def update_page(pag: PaginateOptions, msg: discord.Message, _e, _c, _r):
+            if (curr_page := pag.current_page) <= p_amnt:
+                embed.description = "\n".join(pages[curr_page - 1])
+                embed.title = f"{origin_title} (Page {curr_page}/{p_amnt})"
+
+                await msg.edit(embed=embed)
+
+        p_options = PaginateOptions(
+            update_page, page, max_page=p_amnt
+        )
+
+        await ctx.send(f"{origin_title} ({len(members)})", embed=embed, paginate=p_options)
 
 
 def setup(bot: commands.bot):

@@ -1,5 +1,5 @@
 import itertools
-from typing import TypeVar, Sequence, Union, Optional, List, Tuple, overload
+from typing import TypeVar, Sequence, Union, Optional, List, Tuple, overload, Iterator, Iterable
 
 V = TypeVar("V")
 
@@ -65,6 +65,25 @@ def pagify_list(l: Sequence[L], max_per_page: int = 10) -> Sequence[Sequence[L]]
         return res
 
     return type(l)([type(l)(el[1]) for el in itertools.groupby(l, key=key_func)])
+
+
+def i_pagify_list(l: Iterable[L], max_per_page: int = 10) -> Iterator[Sequence[L]]:
+    """
+    Pagify an iterable, returning an iterator.
+
+    :param l: Any iterable.
+    :param max_per_page: Max amount per page.
+    :return: The pagified iterable.
+    """
+    i = 0
+
+    def key_func(x: L):
+        nonlocal i
+        res = i // max_per_page
+        i += 1
+        return res
+
+    return (list(el[1]) for el in itertools.groupby(l, key=key_func))
 
 
 @overload
