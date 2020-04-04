@@ -633,33 +633,61 @@ lists members that Role has; and fourth example shows the 3rd page of that Role'
             return
 
         ii = 0
+        line_format = "• {0.mention} (ID: {0.id})"
         pages = pagify_list(
-            [
-                f"• {m.mention} (ID: {m.id})"
-                for m in members
-            ]
+            members
         )
+
         p_amnt = len(pages)
+
+        def make_page(c_page: int):
+            lines = []
+            current: Optional[int] = None
+            for member in pages[c_page - 1]:
+                if not role:
+                    if str(member.status) == "offline":
+                        if current != 0:
+                            current = 0
+                            lines.append("**Offline**")
+                    else:
+                        memb_hoisted: List[discord.Role] = list(
+                            reversed([r for r in member.roles if r.hoist or r.position == 0])
+                        )
+                        highest_hoisted = memb_hoisted[0]
+                        if current != (hh_id := highest_hoisted.id):
+                            current = hh_id
+                            if highest_hoisted.position == 0:  # @everyone role
+                                lines.append("**Online**")
+                            else:
+                                lines.append(f"**{discord_sanitize(highest_hoisted.name)}**")
+
+                lines.append(line_format.format(member))
+
+            return "\n".join(lines)
 
         if page > p_amnt:
             await ctx.send(f"Invalid page! Minimum is 1 and maximum is {p_amnt}.")
+            return
 
         origin_title = (f"{role}'s" if role else "All") + f" Members"
         title = f"{origin_title}{f' (Page {page}/{p_amnt})' if p_amnt > 1 else ''}"
-        embed = discord.Embed(title=title, description="\n".join(pages[page - 1]))
+        embed = discord.Embed(title=title, description=make_page(page))
 
         if p_amnt > 1:
             embed.set_footer(text=f"To change pages, you can use {ctx.prefix}info members <?> <page here>.")
 
         async def update_page(pag: PaginateOptions, msg: discord.Message, _e, _c, _r):
             if (curr_page := pag.current_page) <= p_amnt:
-                embed.description = "\n".join(pages[curr_page - 1])
+                if curr_cache := pag.cache.get(curr_page - 1):
+                    embed.description = curr_cache
+                else:
+                    embed.description = pag.cache[curr_page - 1] = make_page(curr_page)
                 embed.title = f"{origin_title} (Page {curr_page}/{p_amnt})"
 
                 await msg.edit(embed=embed)
 
         p_options = PaginateOptions(
-            update_page, page, max_page=p_amnt
+            update_page, page, max_page=p_amnt, cache={}
         )
 
         await ctx.send(f"{origin_title} ({len(members)})", embed=embed, paginate=p_options)

@@ -97,6 +97,12 @@ class Utility(commands.Cog):
         ctx._is_ws = True
         await ctx.invoke(self.ping)
 
+    # @commands.cooldown(UTILITY_DEFAULT_COOLDOWN_PER, UTILITY_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    # @require_salt_permission("ping", default=True)
+    # @sgroup(name="ping", description="Check the bot's connection to Discord.", invoke_without_command=True)
+    # async def calc(self, ctx: SContext):
+    #
+
     @require_salt_permission("qr", default=True)
     @commands.cooldown(QR_COOLDOWN_PER, QR_COOLDOWN_RATE, commands.BucketType.user)
     @scommand(name="qr", description=f"Make a QR code image. (Supports up to {QR_CHAR_LIMIT} characters)")

@@ -46,12 +46,13 @@ class Help(commands.Cog):
             desc = f"{ctx.bot.description}\n\nList of categories available (see `{self.clean_prefix}help <category>` \
 for a list of commands in it):\n\n"
             for category, cmds in categories.items():
-                if len(cmds) > 0:
-                    desc += f"**{category}**: **{len(cmds)}** commands\n"
+                if (c_length := len(cmds)) > 0:
+                    desc += f"**{category}**: **{c_length}** commands\n"
 
             desc = desc.strip("\n")
 
-            footer = f"To view all {len(mapping.values())} commands, type `{self.clean_prefix}help all`."
+            footer = f"To view all \
+{sum(map(len, categories.values()))} commands, type `{self.clean_prefix}help all`."
 
             emb = discord.Embed(title="Help", description=desc) \
                 .set_footer(text=footer)
@@ -69,7 +70,7 @@ for a list of commands in it):\n\n"
  to view info on a command.'
 
             elif isinstance(cog, HelpCogNone):
-                cmds = list(filter(lambda x: x.cog is None, ctx.bot.commands))
+                cmds = filter(lambda x: x.cog is None, ctx.bot.commands)
 
                 embed.title = f'List of commands in category "Others"'
                 embed.description = f'All commands available in that category. Type `{self.clean_prefix}help <command>`\
@@ -81,6 +82,8 @@ for a list of commands in it):\n\n"
                 embed.title = "List of commands"
                 embed.description = f"All commands available. Type `{self.clean_prefix}help <command>` to view info \
 on a command."
+
+            cmds = list(filter(lambda x: not x.hidden, cmds))
 
             cmds.sort(key=lambda x: x.name)
             pages = pagify_list(cmds)

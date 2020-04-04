@@ -5,6 +5,7 @@ import math
 import discord
 import sys
 from discord.ext import commands
+from collections import deque
 from typing import Optional
 from classes import scommand, SContext, CustomIntConverter
 from constants import (
@@ -40,7 +41,7 @@ class Fun(commands.Cog):
     @require_salt_permission("rearrange", default=True)
     @scommand(name='rearrange', description="Rearrange a text's words' letters.")
     async def rearrange(self, ctx: SContext, *, text: str):
-        arrs = [list(part) for part in re.split(r'\s+', text)]  # list with each of the words in the string.
+        arrs = deque(list(part) for part in re.split(r'\s+', text))  # list with each of the words in the string.
         for i in range(len(arrs)):
             random.shuffle(arrs[i])  # we shuffle the words in place.
 
@@ -48,7 +49,7 @@ class Fun(commands.Cog):
         for i in range(len(text)):
             char = text[i]
             if (match := re.fullmatch(r'\s', char)) or i == len(text) - 1:
-                new_text += "".join(arrs.pop(0))
+                new_text += "".join(arrs.popleft())
                 if match:
                     new_text += char
 

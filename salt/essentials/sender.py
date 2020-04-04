@@ -20,6 +20,27 @@ if typing.TYPE_CHECKING:
 
 @attr.s(auto_attribs=True)
 class PaginateOptions:
+    """
+    Options for pagination.
+
+    Attributes...
+
+        do_message_edit: Async function that edits the message for every page change.
+
+        current_page: (Optional=1) The current page, which is changed when the user clicks the reaction to change pages.
+
+        min_page: (Optional=1) Smallest page number, default of 1.
+
+        max_page: (Optional=None) Maximum page, or None for unlimited pages.
+
+        deletable: (Optional bool=True) Whether or not the user should be able to delete the message on button click.
+
+        auto_empty_cache: (Optional bool=True) Whether or not the cache should be automatically cleared when pagination
+            is over.
+
+        cache: A list that can cache anything that is needed only for the duration of pagination. Can also be set to
+            a dict.
+    """
     do_message_edit: typing.Callable[
         ["PaginateOptions", discord.Message, typing.Sequence[discord.Emoji], "SContext", discord.Reaction],
         typing.Coroutine
@@ -33,6 +54,9 @@ class PaginateOptions:
     cache: typing.Union[list, dict] = attr.ib(factory=list)  # this shouldn't be set
 
     def empty_cache(self):
+        """
+        Empties the cache.
+        """
         self.cache = type(self.cache)()
 
 
