@@ -9,8 +9,8 @@ class SaltPermission:
     """
 
     def __init__(
-            self, permission: Union[Iterable[str], str],
-            *, is_cog: bool = False, is_custom: bool = False, is_negated: bool = False
+        self, permission: Union[Iterable[str], str],
+        *, is_cog: bool = False, is_custom: bool = False, is_negated: bool = False
     ):
         """
         Init the salt permission.
@@ -28,7 +28,11 @@ class SaltPermission:
             else tuple(permission)
 
     @property
-    def literal(self):
+    def literal(self) -> str:
+        """Returns this salt permission as a literal string.
+
+        :rtype: str
+        """
         if self._literal:
             return self._literal
 
@@ -42,7 +46,11 @@ class SaltPermission:
         self._tuple = permission_literal_to_tuple(new_val)
 
     @property
-    def tuple(self):
+    def tuple(self) -> tuple:
+        """Returns this permission as a tuple of parts.
+
+        :rtype: tuple
+        """
         if self._tuple:
             return self._tuple
 
@@ -50,9 +58,15 @@ class SaltPermission:
 
     @tuple.setter
     def tuple(self, new_val: Iterable[str]):
+        """Set this permission using a tuple.
+
+        :param new_val: The new values for the permission.
+        :type new_val: Iterable[str]
+        """
         self._tuple = tuple(new_val)
 
     def clean_literal(self):
+        """Returns the clean literal, without cog/custom/negation."""
         return permission_tuple_to_literal(self.tuple, is_cog=False, is_custom=False, is_negated=False)
 
     def __repr__(self):

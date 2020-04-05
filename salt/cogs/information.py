@@ -28,8 +28,8 @@ class Information(commands.Cog):
     @require_salt_permission("avatar", default=True)
     @scommand(name="avatar", description="Get an user's avatar.")
     async def avatar(
-            self, ctx: SContext, *,
-            user: AmbiguityUserOrMemberConverter = None
+        self, ctx: SContext, *,
+        user: AmbiguityUserOrMemberConverter = None
     ):
         user = user or ctx.author
         usr: discord.User = cast(discord.User, user)
@@ -68,7 +68,7 @@ class Information(commands.Cog):
         is_member = isinstance(memb_or_user, discord.Member) and ctx.guild and ctx.guild.get_member(memb_or_user.id)
         # ^ Check if we're in a guild and checking a member in that guild
         role_color = memb_or_user.colour if is_member else None  # Color of the member's highest role, if any.
-        
+ 
         created_at = memb_or_user.created_at  # When the member/user joined Discord.
         formatted_created_at = created_at.strftime(DATETIME_DEFAULT_FORMAT) + " UTC"  # Format it, + add UTC
         desc = "Joined Discord at {0}\n({1} ago)".format(  # Embed desc, saying when the user joined Discord.
@@ -386,8 +386,8 @@ class Information(commands.Cog):
         example="{p}info voicechannel Music"
     )
     async def info_voicechannel(
-            self, ctx: SContext,
-            channel: AmbiguityChannelConverter(channel_types=["voice"])
+        self, ctx: SContext,
+        channel: AmbiguityChannelConverter(channel_types=["voice"])
     ):
         channel: discord.VoiceChannel = channel
 

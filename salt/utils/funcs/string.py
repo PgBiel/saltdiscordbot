@@ -241,7 +241,7 @@ def privacy_sanitize(text: str, ctx: "SContext") -> str:
 
 
 def tag(
-        subject: Union[discord.abc.User, discord.abc.GuildChannel, discord.abc.PrivateChannel, discord.Role]
+    subject: Union[discord.abc.User, discord.abc.GuildChannel, discord.abc.PrivateChannel, discord.Role]
 ) -> str:
     """
     Get the appearance of the subject (member/user/channel/role) when shown.
@@ -312,8 +312,8 @@ def permission_literal_to_tuple(literal: str, separator: Optional[Union[str, re.
 
 
 def permission_tuple_to_literal(
-        tup: Iterable[str],
-        *, separator: Optional[str] = " ", is_cog: bool = False, is_custom: bool = False, is_negated: bool = False
+    tup: Iterable[str],
+    *, separator: Optional[str] = " ", is_cog: bool = False, is_custom: bool = False, is_negated: bool = False
 ) -> str:
     res = (separator or " ").join(tup).lower()
     if is_cog:
