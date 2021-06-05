@@ -46,7 +46,7 @@ class SaltPermission:
         self._tuple = permission_literal_to_tuple(new_val)
 
     @property
-    def tuple(self) -> tuple:
+    def tuple(self) -> Tuple[str, ...]:
         """Returns this permission as a tuple of parts.
 
         :rtype: tuple

@@ -608,9 +608,9 @@ lists members that Role has; and fourth example shows the 3rd page of that Role'
         if role and not page:
             if role.isnumeric() and len(role) <= 3:
                 page: int = int(cast(str, role))
-                role = cast(discord.Member, None)
+                role = cast(discord.Role, None)
             else:
-                role: discord.Member = await AmbiguityRoleConverter().convert(ctx, role)
+                role: discord.Role = await AmbiguityRoleConverter().convert(ctx, role)
                 page = 1
         elif not role:
             page = 1
@@ -692,6 +692,118 @@ lists members that Role has; and fourth example shows the 3rd page of that Role'
 
         await ctx.send(f"{origin_title} ({len(members)})", embed=embed, paginate=p_options)
 
+    @commands.cooldown(INFO_DEFAULT_COOLDOWN_PER, INFO_DEFAULT_COOLDOWN_RATE, commands.BucketType.member)
+    @require_salt_permission("info channels", default=True)
+    @info.command(
+        name='channels',
+        description="View the list of all channels in the server or, if specified, in a category. Note that specifying \
+    a number under 1000 after `info channels` indicates the page you are seeing (otherwise it searches for a category).\
+    See examples for reference - first example is all channels in the server; second example is page 2 of that; \
+    third example lists channels in the category named 'Category'; and fourth example shows the 3rd page of that \
+    category's channel list.",
+        example=(
+                "{p}info channels\n"
+                "{p}info channels 2\n"
+                "{p}info channels Category\n"
+                "{p}info channels Category 3"
+        )
+    )
+    async def info_channels(
+            self, ctx: SContext,
+            ctg: Optional[str] = None,
+            page: PositiveIntConverter = None
+    ):
+        if ctg and not page:
+            if ctg.isnumeric() and len(ctg) <= 3:
+                page: int = int(cast(str, ctg))
+                ctg: discord.CategoryChannel = cast(discord.CategoryChannel, None)
+            else:
+                ctg: discord.CategoryChannel = await AmbiguityChannelConverter(
+                        channel_types=["category"]
+                    ).convert(ctx, ctg)
+                page = 1
+        elif not ctg:
+            page = 1
+
+        def key_sort(channel: Union[discord.TextChannel, discord.VoiceChannel]):
+            # higher categories go first, uncategorized go before categorized
+            ctg_sort = channel.category.position if channel.category else -1
+
+            # text above voice
+            type_sort = 0 if str(channel.type) == "text" else 1
+
+            # higher channels first
+            pos_sort = channel.position
+
+            return ctg_sort, type_sort, pos_sort
+
+        channels: List[Union[discord.TextChannel, discord.VoiceChannel]] = list(sorted(
+            cast(discord.CategoryChannel, ctg).channels if ctg else ctx.guild.channels,
+            key=key_sort,
+            reverse=False
+        ))
+        if not channels:
+            await ctx.send(f"{'That category' if ctg else 'The server (???)'} has no channels!")
+            return
+
+        ii = 0
+        line_format = "• {isvoice}{0.mention} (ID: {0.id})"
+        pages = pagify_list(
+            channels,
+            max_per_page=10
+        )
+
+        p_amnt = len(pages)
+
+        def make_page(c_page: int):
+            lines = []
+            current: Optional[int] = None
+            for channel in pages[c_page - 1]:  # type: Union[discord.TextChannel, discord.VoiceChannel]
+                if str(channel.type) == "category":
+                    continue
+                if not ctg:
+                    if not channel.category:
+                        if current != -1:
+                            current = -1
+                            lines.append("***(Uncategorized)***")
+                    else:
+                        ch_ctg_pos = channel.category.position
+                        if current != ch_ctg_pos:
+                            current = ch_ctg_pos
+                            lines.append(f"**{discord_sanitize(channel.category.name)}**")
+
+                lines.append(line_format.format(
+                    channel, isvoice="\N{SPEAKER}" if str(channel.type) == "voice" else ""
+                ))
+
+            return "\n".join(lines)
+
+        if page > p_amnt:
+            await ctx.send(f"Invalid page! Minimum is 1 and maximum is {p_amnt}.")
+            return
+
+        origin_title = f"Channels{f' in {ctg}' if ctg else ''}"
+        title = f"{origin_title}{f' (Page {page}/{p_amnt})' if p_amnt > 1 else ''}"
+        embed = discord.Embed(title=title, description=make_page(page))
+
+        if p_amnt > 1:
+            embed.set_footer(text=f"To change pages, you can use {ctx.prefix}info channels <?> <page here>.")
+
+        async def update_page(pag: PaginateOptions, msg: discord.Message, _e, _c, _r):
+            if (curr_page := pag.current_page) <= p_amnt:
+                if curr_cache := pag.cache.get(curr_page - 1):
+                    embed.description = curr_cache
+                else:
+                    embed.description = pag.cache[curr_page - 1] = make_page(curr_page)
+                embed.title = f"{origin_title} (Page {curr_page}/{p_amnt})"
+
+                await msg.edit(embed=embed)
+
+        p_options = PaginateOptions(
+            update_page, page, max_page=p_amnt, cache={}
+        )
+
+        await ctx.send(f"{origin_title} ({len(channels)})", embed=embed, paginate=p_options)
 
 def setup(bot: commands.bot):
     bot.add_cog(Information(bot))

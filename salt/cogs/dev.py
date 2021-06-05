@@ -312,6 +312,16 @@ class Dev(commands.Cog):
         ctx.bot.debug = on_or_off
         await ctx.send(f"Successfully toggled debug to '{'on' if on_or_off else 'off'}'!")
 
+    @sdev_only()
+    @sgroup(name='manage', description="Manage the bot; see subcommands.", aliases=["mng"])
+    async def manage(self, *args, **kwargs):
+        pass
+
+    @sdev_only()
+    @manage.command(name="reloadconfig", description="Reloads config.")
+    async def mngrelconfig(self, ctx: SContext):
+        ctx.bot.load_config()
+        await ctx.send("Configuration reloaded.")
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Dev(bot))

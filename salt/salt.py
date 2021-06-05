@@ -36,16 +36,24 @@ cogs_ext_list = (
     "cogs.help"
 )
 
+intents = discord.Intents.default()
+intents.typing = False
+intents.presences = True  # False - set to False on prod
+intents.members = True
 
 class Salt(commands.Bot):
 
     def __init__(self):
         set_bot(self)
-        super().__init__(command_prefix=self.prefix, description=description, case_insensitive=True)
+
+        super().__init__(
+            command_prefix=self.prefix, description=description, case_insensitive=True,
+            intents=intents
+        )
         self.uptime: datetime.datetime = None
         self.saved_permissions: List[Tuple[str, ...]] = []  # List of permissions that are being checked by commands.
         self.config: dict = dict()
-        self.make_config()
+        self.load_config()
 
         for cog_ext in cogs_ext_list:
             print(cog_ext)
@@ -109,7 +117,7 @@ class Salt(commands.Bot):
         finally:
             salt_loop.close()
 
-    def make_config(self) -> None:
+    def load_config(self) -> None:
         parsed_config = json_load("../config.json")
         self.config = parsed_config
 

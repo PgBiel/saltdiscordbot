@@ -1,3 +1,4 @@
-motor==2.0.0
-discord.py==1.2.3
+motor==2.3.0
+discord.py==1.5.1
+# discord.py==1.2.3
 qrcode==6.1

@@ -240,7 +240,7 @@ class AmbiguityChannelConverter(commands.RoleConverter):
         if return_convert_failed:
             self.default = CONVERT_FAILED
         self.return_ambig_cancel = return_ambig_cancel
-        self.channel_types = list(channel_types) if type(channel_types) == str else channel_types
+        self.channel_types = [channel_types] if type(channel_types) == str else channel_types
 
     async def convert(self, ctx: SContext, argument: str):
         group = []
