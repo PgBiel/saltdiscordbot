@@ -6,6 +6,7 @@ import motor.motor_asyncio
 import typing
 import datetime
 import re
+from discord_components import DiscordComponents, InteractionEventType
 from typing import List, Tuple
 from discord.ext import commands
 from utils.funcs.jsonwork import load as json_load
@@ -67,6 +68,7 @@ class Salt(commands.Bot):
         self.monclient: motor.motor_asyncio.AsyncIOMotorClient = monclient
         self.mondb: motor.motor_asyncio.AsyncIOMotorDatabase = self.monclient.salt
         self.debug = False
+        self.comps_instance: DiscordComponents = None
 
     async def prefix(self, _bot, msg: discord.Message) -> List[str]:
         """
@@ -130,7 +132,22 @@ class Salt(commands.Bot):
         if not self.uptime:
             self.uptime = datetime.datetime.utcnow()
 
+        self.comps_instance = DiscordComponents(self, change_discord_methods=False)
+        self.add_component_listener()
         print("Salt is ready!")
+    
+    def add_component_listener(self):
+        async def on_socket_response(res):
+            if (res["t"] != "INTERACTION_CREATE") or (res["d"]["type"] != 3):
+                return
+
+            ctx = self.comps_instance._get_interaction(res)
+            for key, value in InteractionEventType.items():
+                if value == res["d"]["data"]["component_type"]:
+                    self.dispatch(key, ctx)
+                    break
+        
+        self.add_listener(on_socket_response, name="on_socket_response")
 
     async def on_message(self, message: discord.Message):
         if message.author.bot or message.author == self.user:

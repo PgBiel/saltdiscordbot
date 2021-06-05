@@ -13,6 +13,7 @@ from constants.emoji.default_emoji import (
 )
 from utils.funcs import clamp
 from essentials.collectreact import collect_react
+from discord_components import Component
 
 if typing.TYPE_CHECKING:
     from classes import SContext  # for typing purposes, but this isn't actually imported
@@ -66,6 +67,7 @@ async def send(
     sender: typing.Callable[
         ..., typing.Coroutine[typing.Any, typing.Any, discord.Message]
     ] = None,
+    components: typing.List[typing.Union[Component, typing.List[Component]]] = None,
     **kwargs
 ) -> discord.Message:
     """|coro|
@@ -130,13 +132,22 @@ async def send(
     :class:`~discord.Message`
       The message that was sent.
     """
-    sender = sender or ctx.send
+    # sender = sender or ctx.send
+    if not sender:
+        def artificial_sender(content, **kwargs):
+            return ctx.bot.comps_instance.send_component_msg(ctx.channel, content, **kwargs)
+        sender = artificial_sender
+    
     if isinstance(content, discord.Embed):
         kwargs["embed"] = content
         content = None
 
     elif content and not allow_everyone:
         content = content.replace("@everyone", "@\u200beveryone").replace("@here", "@\u200bhere")
+    
+    if components:
+        kwargs["components"] = components
+
     msg: discord.Message = await sender(content, **kwargs)
     myperms: discord.Permissions = ctx.guild.me.permissions_in(ctx.channel) if ctx.guild is not None else None
     if (
