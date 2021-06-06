@@ -6,15 +6,16 @@ import typing
 import discord
 import attr
 from discord_components.button import Button, ButtonStyle
+from discord_components.interaction import Interaction, InteractionType
 from constants.numbers.delays import (
     DELETABLE_REACTWAIT_TIMEOUT as DELE_TIMEOUT, PAGINATE_REACTWAIT_TIMEOUT as PAGE_TIMEOUT
 )
 from constants.emoji.default_emoji import (
-    WASTEBASKET, DEL_PAGINATE_EMOJIS, PAGINATE_EMOJIS, RED_X, TRACK_PREVIOUS, TRACK_NEXT, ARROW_FORWARD, ARROW_BACKWARD
+    WASTEBASKET, DEL_PAGINATE_EMOJIS, PAGINATE_EMOJIS, RED_X, TRACK_PREVIOUS, TRACK_NEXT,
+    ARROW_FORWARD, ARROW_BACKWARD
 )
-from essentials.collectinteract import default_interact_predicate_gen, collect_interact
+from essentials.collectinteract import default_interact_predicate_gen, collect_interact, default_on_timeout
 from utils.funcs import clamp
-from essentials.collectreact import collect_react
 from discord_components import Component
 
 if typing.TYPE_CHECKING:
@@ -43,9 +44,11 @@ class PaginateOptions:
 
         cache: A list that can cache anything that is needed only for the duration of pagination. Can also be set to
             a dict.
+        
+        page_component_ids: The list of IDs of the pagination buttons.
     """
     do_message_edit: typing.Callable[
-        ["PaginateOptions", discord.Message, typing.Sequence[discord.Emoji], "SContext", discord.Reaction],
+        ["PaginateOptions", discord.Message, "SContext", Interaction],
         typing.Coroutine
     ]
     current_page: int = 1
@@ -55,12 +58,45 @@ class PaginateOptions:
     auto_empty_cache: bool = True
     old_page: int = 1                    # this shouldn't be set
     cache: typing.Union[list, dict] = attr.ib(factory=list)  # this shouldn't be set
+    page_component_ids: typing.List[str] = attr.ib(factory=list)  # this shouldn't be set
+
+    async def respond(self, *, interaction: Interaction, **kwargs):
+        del_emj, relevant_emjs = self.emojis_considering_page()
+        
+        comps = ([Button(emoji=del_emj, style=ButtonStyle.red)] if del_emj else []) + [
+            Button(emoji=emj, style=ButtonStyle.gray) for emj in relevant_emjs
+        ]
+        self.page_component_ids.clear()
+        self.page_component_ids.extend(map(lambda b: b.id, comps))  # for collect_interact to detect
+
+        kwargs["components"] = [comps] + (kwargs.get("components", None) or [])
+        return await interaction.respond(type=InteractionType.UpdateMessage, **kwargs)
+    
+    def emojis_considering_page(self):
+        page_emjs = self.page_emojis
+        del_emj = self.page_emojis[0] if self.deletable else None
+        relevant_emjs = page_emjs[1:] if self.deletable else page_emjs[:]
+        if self.current_page >= self.max_page:
+            relevant_emjs = relevant_emjs[:2]
+        elif self.current_page <= self.min_page:
+            relevant_emjs = relevant_emjs[2:]
+        else:
+            if self.current_page == self.max_page - 1:
+                relevant_emjs = relevant_emjs[:3]
+            if self.current_page == self.min_page + 1:
+                relevant_emjs = relevant_emjs[1:]
+
+        return (del_emj, relevant_emjs)
 
     def empty_cache(self):
         """
         Empties the cache.
         """
         self.cache = type(self.cache)()
+    
+    @property
+    def page_emojis(self):
+        return DEL_PAGINATE_EMOJIS if self.deletable else PAGINATE_EMOJIS
 
 
 async def send(
@@ -149,59 +185,69 @@ async def send(
     
     myperms: discord.Permissions = ctx.guild.me.permissions_in(ctx.channel) if ctx.guild is not None else None
     delete_comp: Button = None
-    if deletable and (True if ctx.guild is None else (myperms.read_message_history)):
+    pag_comps: typing.List[Button] = []
+    if (
+        paginate and (True if ctx.guild is None else (myperms.add_reactions and myperms.read_message_history))
+        and paginate.max_page != paginate.min_page  # must have at least two pages
+    ):
+        del_pag_emj, relevant_pag_emjs = paginate.emojis_considering_page()
+        
+        pag_comps = ([Button(emoji=del_pag_emj, style=ButtonStyle.red)] if del_pag_emj else []) + [
+            Button(emoji=emj, style=ButtonStyle.gray) for emj in relevant_pag_emjs
+        ]
+        components = [pag_comps] + (components or [])  # note: pag_comps has to go inside a [] for the buttons to be aligned in a single row
+    elif deletable and (True if ctx.guild is None else (myperms.read_message_history)):
         components = [delete_comp := Button(emoji=WASTEBASKET, style=ButtonStyle.red)] + (components or [])
     if components:
         kwargs["components"] = components
 
     
     msg: discord.Message = await sender(content, **kwargs)
-    if (
-        paginate and (True if ctx.guild is None else (myperms.add_reactions and myperms.read_message_history))
-        and paginate.max_page != paginate.min_page  # must have at least two pages
-    ):
-        reac_emojis = DEL_PAGINATE_EMOJIS if paginate.deletable else PAGINATE_EMOJIS
-
+    if pag_comps:
         async def on_success(
-            messg: discord.Message, emj: typing.Sequence[discord.Emoji], ctx: "SContext", react: discord.Reaction
+            messg: discord.Message, ctx: "SContext", interaction: Interaction
         ):
-            if not react:
+            if not interaction or not isinstance(interaction.component, Button):
                 return
-            if str(react.emoji) in (RED_X, WASTEBASKET):
+            chosen_emj = interaction.component.emoji
+            if str(chosen_emj) in (RED_X, WASTEBASKET):
                 await messg.delete()
                 if paginate.auto_empty_cache:
                     paginate.empty_cache()
                 raise asyncio.TimeoutError()
 
             new_page: int = paginate.current_page
-            if str(react.emoji) == TRACK_PREVIOUS:
+            if str(chosen_emj) == TRACK_PREVIOUS:
                 new_page = paginate.min_page
-            elif str(react.emoji) == ARROW_BACKWARD:
+            elif str(chosen_emj) == ARROW_BACKWARD:
                 new_page -= 1
-            elif str(react.emoji) == ARROW_FORWARD:
+            elif str(chosen_emj) == ARROW_FORWARD:
                 new_page += 1
-            elif str(react.emoji) == TRACK_NEXT:
+            elif str(chosen_emj) == TRACK_NEXT:
                 new_page = paginate.max_page
 
             new_page = clamp(new_page, paginate.min_page, paginate.max_page)
             if new_page is not None and paginate.current_page != new_page:
                 paginate.old_page = paginate.current_page
                 paginate.current_page = new_page
-                await paginate.do_message_edit(paginate, messg, emj, ctx, react)
+                await paginate.do_message_edit(paginate, messg, ctx, interaction)
 
-        async def on_timeout(messg: discord.Message, emj, _c):
+        async def on_timeout(messg: discord.Message, c):
             if paginate.auto_empty_cache:
                 paginate.empty_cache()
-            try:
-                await messg.clear_reactions()
-            except discord.Forbidden:
-                for em in emj:
-                    await messg.remove_reaction(em, ctx.bot.user)
+            return await default_on_timeout(messg, c)
+            # try:
+            #     await messg.clear_reactions()
+            # except discord.Forbidden:
+            #     for em in emj:
+            #         await messg.remove_reaction(em, ctx.bot.user)
 
+        paginate.page_component_ids = list(map(lambda b: b.id, pag_comps))
         try:
-            await collect_react(
-                msg, reac_emojis, ctx, timeout=PAGE_TIMEOUT, on_success=on_success, on_timeout=on_timeout,
-                make_awaitable=False, wait_for_remove=True, keep_going=True
+            await collect_interact(
+                msg, paginate.page_component_ids, ctx, interaction_event="button_click",
+                timeout=PAGE_TIMEOUT, on_success=on_success, on_timeout=on_timeout,
+                make_awaitable=False, keep_going=True
             )
         except (discord.Forbidden, asyncio.TimeoutError):
             return msg

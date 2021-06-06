@@ -572,12 +572,12 @@ lists roles that Member has; and fourth example shows the 3rd page of that Membe
         if p_amnt > 1:
             embed.set_footer(text=f"To change pages, you can use {ctx.prefix}info roles <?> <page here>.")
 
-        async def update_page(pag: PaginateOptions, msg: discord.Message, _e, _c, _r):
+        async def update_page(pag: PaginateOptions, msg: discord.Message, _c, intr):
             if (curr_page := pag.current_page) <= p_amnt:
                 embed.description = "\n".join(pages[curr_page - 1])
                 embed.title = f"{origin_title} (Page {curr_page}/{p_amnt})"
 
-                await msg.edit(embed=embed)
+                await pag.respond(interaction=intr, embed=embed)
 
         p_options = PaginateOptions(
             update_page, page, max_page=p_amnt
@@ -676,7 +676,7 @@ lists members that Role has; and fourth example shows the 3rd page of that Role'
         if p_amnt > 1:
             embed.set_footer(text=f"To change pages, you can use {ctx.prefix}info members <?> <page here>.")
 
-        async def update_page(pag: PaginateOptions, msg: discord.Message, _e, _c, _r):
+        async def update_page(pag: PaginateOptions, msg: discord.Message, _c, intr):
             if (curr_page := pag.current_page) <= p_amnt:
                 if curr_cache := pag.cache.get(curr_page - 1):
                     embed.description = curr_cache
@@ -684,7 +684,7 @@ lists members that Role has; and fourth example shows the 3rd page of that Role'
                     embed.description = pag.cache[curr_page - 1] = make_page(curr_page)
                 embed.title = f"{origin_title} (Page {curr_page}/{p_amnt})"
 
-                await msg.edit(embed=embed)
+                await pag.respond(interaction=intr, embed=embed)
 
         p_options = PaginateOptions(
             update_page, page, max_page=p_amnt, cache={}
@@ -789,7 +789,7 @@ lists members that Role has; and fourth example shows the 3rd page of that Role'
         if p_amnt > 1:
             embed.set_footer(text=f"To change pages, you can use {ctx.prefix}info channels <?> <page here>.")
 
-        async def update_page(pag: PaginateOptions, msg: discord.Message, _e, _c, _r):
+        async def update_page(pag: PaginateOptions, msg: discord.Message, _c, intr):
             if (curr_page := pag.current_page) <= p_amnt:
                 if curr_cache := pag.cache.get(curr_page - 1):
                     embed.description = curr_cache
@@ -797,7 +797,7 @@ lists members that Role has; and fourth example shows the 3rd page of that Role'
                     embed.description = pag.cache[curr_page - 1] = make_page(curr_page)
                 embed.title = f"{origin_title} (Page {curr_page}/{p_amnt})"
 
-                await msg.edit(embed=embed)
+                await pag.respond(interaction=intr, embed=embed)
 
         p_options = PaginateOptions(
             update_page, page, max_page=p_amnt, cache={}

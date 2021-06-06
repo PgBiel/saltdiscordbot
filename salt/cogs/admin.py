@@ -474,10 +474,10 @@ towards warn limits).', example="{p}warnexpire\n{p}warnexpire 2 weeks\n{p}warnex
 
         embed = discord.Embed(title=title, description=desc)
 
-        async def update_page(pag: PaginateOptions, msg: discord.Message, _emj, _ctx, _rec):
+        async def update_page(pag: PaginateOptions, msg: discord.Message, _ctx, intr):
             embed.description = origin_desc + '\n'.join(pages[pag.current_page-1])
             embed.title = f"{origin_title} (Page {pag.current_page}/{len(pages)})"
-            await msg.edit(embed=embed)
+            await pag.respond(interaction=intr, embed=embed)
 
         await ctx.send(embed=embed, paginate=PaginateOptions(update_page, page, max_page=len(pages)))
 

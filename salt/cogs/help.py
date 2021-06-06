@@ -104,14 +104,14 @@ on a command."
 
             # original_embed = embed.copy()
 
-            async def update_page(pag: PaginateOptions, msg: discord.Message, _emj, _ctx, _rec):
+            async def update_page(pag: PaginateOptions, msg: discord.Message, _ctx, intr):
                 embed.set_field_at(
                     -1,
                     name="Commands", value="• {}".format('\n• '.join(cmd.name for cmd in pages[pag.current_page - 1])),
                     inline=False
                 )
                 embed.title = f"{origin_title} (Page {pag.current_page}/{len(pages)})"
-                await msg.edit(embed=embed)
+                await pag.respond(interaction=intr, embed=embed)
 
             await ctx.send(embed=embed, paginate=PaginateOptions(update_page, page, max_page=len(pages)))
 

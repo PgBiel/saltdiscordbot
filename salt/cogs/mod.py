@@ -2,8 +2,10 @@ import discord
 import datetime
 import re
 import math
+from discord_components.button import Button
 import motor.motor_asyncio
 import inspect
+from discord_components import Interaction
 from dataclasses import asdict
 from pymongo import ASCENDING, DESCENDING
 from dateutil.relativedelta import relativedelta
@@ -785,15 +787,18 @@ be punished.")
         min_case = oldest_case['case']
         max_case = latest_case['case']
 
-        async def paginate(pag: PaginateOptions, msg: discord.Message, _emj, _ctx, rec: discord.Reaction):
+        async def paginate(pag: PaginateOptions, msg: discord.Message, _ctx, intr: Interaction):
             nonlocal latest_case, oldest_case
             diff = pag.current_page - pag.old_page
             if pag.current_page > max_case or pag.current_page < min_case or not diff:
                 return  # bruh
             max_to_use: int = pag.old_page if diff > 0 else pag.old_page + diff - 1  # account for negative diff
             diff_to_use: int = diff - 1 if diff > 0 else 0
-            next_case = latest_case if str(rec.emoji) == TRACK_NEXT else (
-                oldest_case if str(rec.emoji) == TRACK_PREVIOUS else await ctx.db['punishments'].find_one(
+            if not isinstance(intr.component, Button):
+                return
+            chosen_emj = str(intr.component.emoji)
+            next_case = latest_case if chosen_emj == TRACK_NEXT else (
+                oldest_case if chosen_emj == TRACK_PREVIOUS else await ctx.db['punishments'].find_one(
                     PartialPunishmentsModel(guild_id=str(ctx.guild.id), deleted=False).as_dict(),
                     sort=[('case', ASCENDING)], max={'case': max_to_use},
                     skip=diff_to_use  # "max" already skips 1 by default
@@ -804,7 +809,8 @@ be punished.")
                 pag.current_page = new_case_num
                 try:
                     embed = await generate_actionlog_embed_from_entry(ctx, next_case, attempt_to_fetch=False)
-                    await msg.edit(
+                    await pag.respond(
+                        interaction=intr,
                         embed=embed
                     )
                 except discord.NotFound:
