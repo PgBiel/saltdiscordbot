@@ -8,7 +8,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.8"
 qrcode = "^6.1"
-"discord.py" = "^1.5.1"
+"discord.py" = "1.7.2"
 motor = "^2.3.0"
 Unidecode = "^1.1.1"
 python-dateutil = "^2.8.1"
