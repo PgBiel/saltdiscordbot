@@ -1,7 +1,9 @@
 import discord
 import typing
+from discord.message import Message
 import motor.motor_asyncio
 from discord_components import Component
+from discord_components.message import ComponentMessage
 from essentials.sender import send as csend
 from discord.ext import commands
 from constants import HELP_COG_SHORTCUTS
@@ -92,6 +94,16 @@ class SContext(commands.Context):
             components=components,
             **kwargs
         )
+    
+    async def edit(  # with components
+        self, message: typing.Union[Message, ComponentMessage],
+        content: str = None, *,
+        components: typing.List[typing.Union[Component, typing.List[Component]]] = None,
+        **kwargs
+    ):
+        if components:
+            kwargs["components"] = components
+        return await self.bot.comps_instance.edit_component_msg(message, content, **kwargs)
 
     @property
     def db(self) -> motor.motor_asyncio.AsyncIOMotorDatabase:

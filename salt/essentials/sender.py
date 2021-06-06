@@ -24,7 +24,7 @@ class PaginateOptions:
     """
     Options for pagination.
 
-    Attributes...
+    Attributes:
 
         do_message_edit: Async function that edits the message for every page change.
 
