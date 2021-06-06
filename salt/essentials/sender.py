@@ -61,32 +61,37 @@ class PaginateOptions:
     page_component_ids: typing.List[str] = attr.ib(factory=list)  # this shouldn't be set
 
     async def respond(self, *, interaction: Interaction, **kwargs):
-        del_emj, relevant_emjs = self.emojis_considering_page()
-        
-        comps = ([Button(emoji=del_emj, style=ButtonStyle.red)] if del_emj else []) + [
-            Button(emoji=emj, style=ButtonStyle.gray) for emj in relevant_emjs
-        ]
+        comps = self.comps_considering_page()
         self.page_component_ids.clear()
         self.page_component_ids.extend(map(lambda b: b.id, comps))  # for collect_interact to detect
 
         kwargs["components"] = [comps] + (kwargs.get("components", None) or [])
         return await interaction.respond(type=InteractionType.UpdateMessage, **kwargs)
     
-    def emojis_considering_page(self):
+    def comps_considering_page(self):  # disable buttons depending on where we are
         page_emjs = self.page_emojis
         del_emj = self.page_emojis[0] if self.deletable else None
         relevant_emjs = page_emjs[1:] if self.deletable else page_emjs[:]
-        if self.current_page >= self.max_page:
-            relevant_emjs = relevant_emjs[:2]
-        elif self.current_page <= self.min_page:
-            relevant_emjs = relevant_emjs[2:]
-        else:
-            if self.current_page == self.max_page - 1:
-                relevant_emjs = relevant_emjs[:3]
-            if self.current_page == self.min_page + 1:
-                relevant_emjs = relevant_emjs[1:]
+        comps = ([Button(emoji=del_emj, style=ButtonStyle.red)] if del_emj else []) + [
+            Button(emoji=emj, style=ButtonStyle.gray) for emj in relevant_emjs
+        ]
+        rel_comps = comps[1:] if self.deletable else comps[:]
 
-        return (del_emj, relevant_emjs)
+        disabled_map = [False, False, False, False]
+        if self.current_page >= self.max_page:
+            disabled_map[2:] = [True, True]
+        if self.current_page <= self.min_page:
+            disabled_map[:2] = [True, True]
+        # else:  # meh, unnecessary to clear just one
+        #     if self.current_page == self.max_page - 1:
+        #         disabled_map[-1] = True
+        #     if self.current_page == self.min_page + 1:
+        #         disabled_map[0] = True
+
+        for button, is_disabled in zip(rel_comps, disabled_map):
+            button.disabled = is_disabled or False
+
+        return comps
 
     def empty_cache(self):
         """
@@ -190,11 +195,7 @@ async def send(
         paginate and (True if ctx.guild is None else (myperms.add_reactions and myperms.read_message_history))
         and paginate.max_page != paginate.min_page  # must have at least two pages
     ):
-        del_pag_emj, relevant_pag_emjs = paginate.emojis_considering_page()
-        
-        pag_comps = ([Button(emoji=del_pag_emj, style=ButtonStyle.red)] if del_pag_emj else []) + [
-            Button(emoji=emj, style=ButtonStyle.gray) for emj in relevant_pag_emjs
-        ]
+        pag_comps = paginate.comps_considering_page()
         components = [pag_comps] + (components or [])  # note: pag_comps has to go inside a [] for the buttons to be aligned in a single row
     elif deletable and (True if ctx.guild is None else (myperms.read_message_history)):
         components = [delete_comp := Button(emoji=WASTEBASKET, style=ButtonStyle.red)] + (components or [])
