@@ -5,12 +5,14 @@ import asyncio
 import typing
 import discord
 import attr
+from discord_components.button import Button, ButtonStyle
 from constants.numbers.delays import (
     DELETABLE_REACTWAIT_TIMEOUT as DELE_TIMEOUT, PAGINATE_REACTWAIT_TIMEOUT as PAGE_TIMEOUT
 )
 from constants.emoji.default_emoji import (
     WASTEBASKET, DEL_PAGINATE_EMOJIS, PAGINATE_EMOJIS, RED_X, TRACK_PREVIOUS, TRACK_NEXT, ARROW_FORWARD, ARROW_BACKWARD
 )
+from essentials.collectinteract import default_interact_predicate_gen, collect_interact
 from utils.funcs import clamp
 from essentials.collectreact import collect_react
 from discord_components import Component
@@ -145,11 +147,15 @@ async def send(
     elif content and not allow_everyone:
         content = content.replace("@everyone", "@\u200beveryone").replace("@here", "@\u200bhere")
     
+    myperms: discord.Permissions = ctx.guild.me.permissions_in(ctx.channel) if ctx.guild is not None else None
+    delete_comp: Button = None
+    if deletable and (True if ctx.guild is None else (myperms.read_message_history)):
+        components = [delete_comp := Button(emoji=WASTEBASKET, style=ButtonStyle.red)] + (components or [])
     if components:
         kwargs["components"] = components
 
+    
     msg: discord.Message = await sender(content, **kwargs)
-    myperms: discord.Permissions = ctx.guild.me.permissions_in(ctx.channel) if ctx.guild is not None else None
     if (
         paginate and (True if ctx.guild is None else (myperms.add_reactions and myperms.read_message_history))
         and paginate.max_page != paginate.min_page  # must have at least two pages
@@ -200,21 +206,14 @@ async def send(
         except (discord.Forbidden, asyncio.TimeoutError):
             return msg
 
-    elif deletable and (True if ctx.guild is None else (myperms.add_reactions and myperms.read_message_history)):
-
-        def delcheck(reaction: discord.Reaction, member: typing.Union[discord.Member, discord.User]):
-            return member.id != ctx.bot.user.id \
-                   and msg.id == reaction.message.id \
-                   and msg.channel == reaction.message.channel \
-                   and (
-                               member == ctx.author or
-                               (member.permissions_in(ctx.channel).manage_messages if ctx.guild is not None else False)
-                       ) \
-                   and str(reaction.emoji) == WASTEBASKET
+    elif delete_comp: # deletable and (True if ctx.guild is None else (myperms.read_message_history)):
+        
+        delcheck = default_interact_predicate_gen(msg, [delete_comp.id], ctx)
 
         try:
-            await collect_react(
-                msg, (WASTEBASKET,), ctx, timeout=DELE_TIMEOUT, predicate=delcheck, on_success=msg.delete,
+            await collect_interact(
+                msg, (delete_comp.id,), ctx, timeout=DELE_TIMEOUT, predicate=delcheck,
+                on_success=msg.delete,
                 make_awaitable=False
             )
         except discord.Forbidden as _e:

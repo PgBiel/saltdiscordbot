@@ -101,7 +101,7 @@ class SContext(commands.Context):
         components: typing.List[typing.Union[Component, typing.List[Component]]] = None,
         **kwargs
     ):
-        if components:
+        if components is not None:
             kwargs["components"] = components
         return await self.bot.comps_instance.edit_component_msg(message, content, **kwargs)
 

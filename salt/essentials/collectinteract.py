@@ -60,7 +60,7 @@ def default_interact_predicate_gen(
         user = interaction.user
         if ctx.guild:
             user = ctx.guild.get_member(interaction.user.id) or interaction.user
-            
+        
         cond = user.id != ctx.bot.user.id \
                 and message.id == interaction.message.id \
                 and message.channel == interaction.message.channel \
@@ -76,7 +76,6 @@ def default_interact_predicate_gen(
             id_or_value = str(interaction.component.value)
         else:
             raise TypeError(f"Invalid interaction type received: {type(interaction)}")
-
         for id in check_ids:
             if id == id_or_value:
                 cond = cond and True
