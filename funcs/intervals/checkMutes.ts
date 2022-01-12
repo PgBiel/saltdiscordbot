@@ -14,33 +14,33 @@ export default async function checkMutes() {
   if (!bot.readyTimestamp) return;
   const awaited = await (db.table("activemutes").storage());
   const mutesForShard = awaited
-    .filter((mute, guildId: string) => bot.guilds.has(guildId.toString())); // only mutes that are in common guilds
+    .filter((mute, guildId: string) => bot.guilds.cache.has(guildId.toString())); // only mutes that are in common guilds
   for (const [guildId, mutes] of mutesForShard) {
-    const guild = bot.guilds.get(guildId);
+    const guild = bot.guilds.resolve(guildId);
     if (!guild) continue;
     const mutesForGuild = await (db.table("mutes").get(guildId)); // mute config
     if (!mutesForGuild) continue;
-    const muteRole = guild.roles.get(uncompress(mutesForGuild.muteRoleID));
+    const muteRole = guild.roles.resolve(uncompress(mutesForGuild.muteRoleID));
     if (!muteRole) continue;
     for (const mute of mutes) {
-      const member = guild.members.get(uncompress(mute.userid));
+      const member = guild.members.resolve(uncompress(mute.userid));
       if (!member) continue;
       const timestamp = (dateuncomp(mute.timestamp) || { getTime: () => NaN }).getTime();
       if (
         mute.permanent
         || timestamp == null
         || isNaN(timestamp)) continue;
-      const botmember = guild.members.get(bot.user.id);
+      const botmember = guild.members.resolve(bot.user.id);
       const now: number = Date.now();
       const escapedName: string = escMarkdown(guild.name);
       if (now >= timestamp) { // if now > time the member would be unmuted then we must unmute
         db.table("activemutes").remArr(guild.id, mute);
-        if (member.roles.has(muteRole.id)) {
+        if (member.roles.cache.has(muteRole.id)) {
           member.roles.remove(muteRole).then(() => {
             member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
               .catch(rejctF("[AUTO-MUTE-REMOVE-ROLE-MSG SEND]"));
           }).catch(err => {
-            if (!botmember.hasPermission(["MANAGE_ROLES"])) {
+            if (!botmember.permissions.has("MANAGE_ROLES")) {
               member.send(`Your mute in the server **${escapedName}** has been automatically lifted. \
   However, I was unable to take the role away from you due to having no \`Manage Roles\` permission. :frowning:`)
                 .catch(rejctF("[AUTO-MUTE-REMOVE-ROLE-NO MANAGE ROLES-MSG]"));
@@ -64,7 +64,7 @@ export default async function checkMutes() {
           member.send(`Your mute in the server **${escapedName}** has been automatically lifted.`)
             .catch(rejctF("[AUTO-MUTE-REMOVE-ROLE-NORMAL-MSG]"));
         }
-      } else if (!member.roles.has(muteRole.id)) {
+      } else if (!member.roles.cache.has(muteRole.id)) {
         member.roles.add(muteRole)
           .catch(rejctF("[AUTO-MUTE-ADD-ROLE]"));
       }

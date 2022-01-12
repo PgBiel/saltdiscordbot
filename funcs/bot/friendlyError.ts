@@ -7,7 +7,7 @@ export default function friendlyError(err: any): MessageEmbed {
       .setTitle("Discord Error!")
       .setDescription(err.message)
       .setColor("RED")
-      .setFooter(`Error code: ${err.code}`);
+      .setFooter({ text: `Error code: ${err.code}` });
     return embed;
   } else {
     return null;

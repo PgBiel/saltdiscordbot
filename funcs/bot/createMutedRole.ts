@@ -1,5 +1,5 @@
 import rejctF from "../util/rejctF";
-import { Guild } from "discord.js";
+import { Guild, ThreadChannel } from "discord.js";
 
 /**
  * Make a mute role.
@@ -8,14 +8,12 @@ import { Guild } from "discord.js";
  */
 export default async function createMutedRole(guild: Guild) {
   const newRole = await guild.roles.create({
-    data: {
-      name: "SaltMuted",
-      permissions: []
-    },
+    name: "SaltMuted",
+    permissions: [],
     reason: "[Creating mute role]"
   });
-  for (const [id, channel] of guild.channels) {
-    channel.overwritePermissions(newRole, { SEND_MESSAGES: false }).catch(rejctF(`[CREATE MUTED ROLE-${id}]`));
+  for (const [id, channel] of guild.channels.cache) {
+    if (!(channel instanceof ThreadChannel)) channel.permissionOverwrites.create(newRole, { SEND_MESSAGES: false }).catch(rejctF(`[CREATE MUTED ROLE-${id}]`));
   }
   return newRole;
 }

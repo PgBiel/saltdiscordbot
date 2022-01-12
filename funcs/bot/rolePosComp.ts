@@ -4,13 +4,13 @@ export default function rolePosComp(initA: Role | GuildMember, initB: Role | Gui
   let a: Role;
   let b: Role;
   if (initA instanceof GuildMember) {
-    if (initA.id === initA.guild.ownerID && (initB instanceof GuildMember ? initA.guild.id === initB.guild.id : true)) return -1;
+    if (initA.id === initA.guild.ownerId && (initB instanceof GuildMember ? initA.guild.id === initB.guild.id : true)) return -1;
     a = initA.roles.highest;
   } else {
     a = initA;
   }
   if (initB instanceof GuildMember) {
-    if (initB.id === initB.guild.ownerID && (initA instanceof GuildMember ? initB.guild.id === initA.guild.id : true)) return 1;
+    if (initB.id === initB.guild.ownerId && (initA instanceof GuildMember ? initB.guild.id === initA.guild.id : true)) return 1;
     b = initB.roles.highest;
   } else {
     b = initB;
