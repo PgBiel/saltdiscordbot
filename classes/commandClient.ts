@@ -7,7 +7,7 @@ class CommandClient extends Discord.Client {
   public bot?: this;
 
   // prop - public commands: {[commandName: string]: Command};
-  constructor(options = {}) {
+  constructor(options: Discord.ClientOptions) {
     super(options);
     this.commands = {};
   }
