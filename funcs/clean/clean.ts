@@ -1,3 +1,6 @@
+/**
+ * Functions related to converting Discord complex objects into raw objects and vice-versa. ("Clean" => convert to raw object; "Unclean" => convert to complex Discord object)
+ */
 export { default as cleanActivity } from "./cleanActivity";
 export { default as uncleanActivity } from "./uncleanActivity";
 
@@ -17,7 +20,7 @@ export { default as cleanPresence } from "./cleanPresence";
 export { default as uncleanPresence } from "./uncleanPresence";
 
 export { default as cleanReaction } from "./cleanReaction";
-export { default as uncleanReaction } from "./uncleanReaction";
+// export { default as uncleanReaction } from "./uncleanReaction";
 
 export { default as cleanRole } from "./cleanRole";
 export { default as uncleanRole } from "./uncleanRole";

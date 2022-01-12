@@ -26,7 +26,7 @@ export interface ICleanGuild {
   name?: string;
   icon?: string;
   splash?: string;
-  region?: string;
+  // region?: string;
   member_count?: number;
   large?: boolean;
   features?: GuildFeatures[];
@@ -34,7 +34,7 @@ export interface ICleanGuild {
   afk_timeout?: number;
   afk_channel_id?: string;
   system_channel_id?: string;
-  embed_enabled?: boolean;
+  // embed_enabled?: boolean;
   verification_level?: number;
   explicit_content_filter?: number;
   joined_at?: number;
@@ -55,34 +55,32 @@ export default function cleanGuild(guild: Guild): ICleanGuild {
   };
   if (available) {
     const {
-      name, icon, splash, region, memberCount, large, features, applicationID, afkTimeout, afkChannelID,
-      systemChannelID, embedEnabled, verificationLevel, explicitContentFilter, joinedTimestamp, channels,
-      roles, ownerID, emojis, members
+      name, icon, splash, memberCount, large, features, applicationId, afkTimeout, afkChannelId,
+      systemChannelId, verificationLevel, explicitContentFilter, joinedTimestamp, channels,
+      roles, ownerId, emojis, members
     } = guild;
     const { voiceStates }: { voiceStates: Collection<string, IVoiceState> } = (guild as any); // not typed for some reason
     Object.assign(obj, {
-      name,
+      name,  // TODO: Add other properties
       icon,
       splash,
-      region,
       member_count: memberCount,
       large,
       features,
-      application_id: applicationID,
+      application_id: applicationId,
       afk_timeout: afkTimeout,
-      afk_channel_id: afkChannelID,
-      system_channel_id: systemChannelID,
-      embed_enabled: embedEnabled,
+      afk_channel_id: afkChannelId,
+      system_channel_id: systemChannelId,
       verification_level: verificationLevel,
       explicit_content_filter: explicitContentFilter,
       joined_at: joinedTimestamp,
-      owner_id: ownerID,
+      owner_id: ownerId,
 
-      channels: channels.map(c => cleanChannel(c, id)),
-      roles: roles.map(r => cleanRole(r, id)),
-      emojis: emojis.map(e => cleanEmoji(e, id)),
-      members: members.map(m => cleanGuildMember(m, id)),
-      voice_states: voiceStates ? voiceStates.array() : null
+      channels: channels.cache.map(c => cleanChannel(c, id)),
+      roles: roles.cache.map(r => cleanRole(r, id)),
+      emojis: emojis.cache.map(e => cleanEmoji(e, id)),
+      members: members.cache.map(m => cleanGuildMember(m, id)),
+      voice_states: voiceStates ? Array.from(voiceStates) : null
     });
   }
   return obj;

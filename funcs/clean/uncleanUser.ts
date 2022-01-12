@@ -10,10 +10,11 @@ import uncleanPresence from "./uncleanPresence";
  */
 export default function uncleanUser(user: ICleanUser) {
   if (user == null || typeof user !== "object") return user as never;
-  const { presence } = user;
-  const genUser = new User(bot, user);
-  if (presence) {
-    bot.presences.set(user.id, uncleanPresence(presence));
-  }
-  return genUser;
+  return bot.users.resolve(user.id);
+  // const { presence } = user;
+  // const genUser = new User(bot, user);
+  // if (presence) {
+  //   bot.presences.set(user.id, uncleanPresence(presence));
+  // }
+  // return genUser;
 }

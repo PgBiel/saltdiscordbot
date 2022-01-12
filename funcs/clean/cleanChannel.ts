@@ -34,20 +34,20 @@ export interface ICleanChannel {
   recipients?: ICleanUser[];
 
   // for GroupDMChannels
-  icon?: string;
-  owner_id?: string;
-  managed?: boolean;
-  application_id?: string;
-  nicks?: Array<{
-      id: string;
-      nick: string;
-  }>;
+  // icon?: string;
+  // owner_id?: string;
+  // managed?: boolean;
+  // application_id?: string;
+  // nicks?: Array<{
+  //     id: string;
+  //     nick: string;
+  // }>;
 }
 
-function isInTextOrGroup(chan): chan is Discord.TextChannel | Discord.GroupDMChannel {
-  return chan instanceof Discord.TextChannel || chan instanceof Discord.GroupDMChannel;
+function isInTextOrGroup(chan): chan is Discord.TextChannel {
+  return chan instanceof Discord.TextChannel;
 }
-function hasName(chan): chan is Discord.TextChannel | Discord.GroupDMChannel | Discord.VoiceChannel {
+function hasName(chan): chan is Discord.TextChannel | Discord.VoiceChannel {
   return chan instanceof Discord.VoiceChannel || isInTextOrGroup(chan);
 }
 
@@ -69,12 +69,12 @@ export default function cleanChannel(
     obj.name = channel.name;
   }
   if (channel instanceof Discord.GuildChannel) {
-    const { rawPosition, parentID, permissionOverwrites } = channel;
+    const { rawPosition, parentId, permissionOverwrites } = channel;
     Object.assign(obj, {
       position: rawPosition,
-      parent_id: parentID,
-      permission_overwrites: permissionOverwrites.map(
-        (po) => ({ allow: po.allowed.bitfield, deny: po.denied.bitfield, type: po.type, id: po.id })
+      parent_id: parentId,
+      permission_overwrites: permissionOverwrites.cache.map(
+        (po) => ({ allow: po.allow.bitfield, deny: po.deny.bitfield, type: po.type, id: po.id })
       )
     });
   }
@@ -82,25 +82,25 @@ export default function cleanChannel(
     channel instanceof Discord.DMChannel ||
     isInTextOrGroup(channel)
   ) {
-    Object.assign(obj, { last_message_id: channel.lastMessageID });
+    Object.assign(obj, { last_message_id: channel.lastMessageId });
     if (channel instanceof Discord.TextChannel) {
       const { topic, nsfw } = channel;
       Object.assign(obj, { topic, nsfw });
     } else if (channel instanceof Discord.DMChannel) {
       obj.recipients = [cleanUser(channel.recipient)];
-    } else if (channel instanceof Discord.GroupDMChannel) {
-      const { recipients, icon, ownerID, managed, applicationID, nicks } = channel;
-      Object.assign(
-        obj,
-        {
-          recipients: recipients.map((u) => cleanUser(u)),
-          icon,
-          owner_id: ownerID,
-          managed,
-          application_id: applicationID,
-          nicks: nicks.map((nick, id) => ({ id, nick }))
-        },
-      );
+    // } else if (channel instanceof Discord.GroupDMChannel) {
+    //   const { recipients, icon, ownerID, managed, applicationID, nicks } = channel;
+    //   Object.assign(
+    //     obj,
+    //     {
+    //       recipients: recipients.map((u) => cleanUser(u)),
+    //       icon,
+    //       owner_id: ownerID,
+    //       managed,
+    //       application_id: applicationID,
+    //       nicks: nicks.map((nick, id) => ({ id, nick }))
+    //     },
+    //   );
     }
   } else if (channel instanceof Discord.VoiceChannel) {
     const { bitrate, userLimit } = channel;

@@ -28,7 +28,7 @@ export default function cleanEmoji(emoji: Emoji, guildId = (emoji as GuildEmoji)
       guildId,
       require_colons: requiresColons,
       managed,
-      roles: roles.map(r => r.id)
+      roles: roles.cache.map(r => r.id)
     });
   } else if (emoji instanceof ReactionEmoji) { // is ReactionEmoji
     obj.reaction = cleanReaction(emoji.reaction);

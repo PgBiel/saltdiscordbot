@@ -5,6 +5,7 @@ const { ActivityTypes } = (Discord as any).Constants; // it's not typed for some
 export interface ICleanActivity {
   type: number;
   name: string;
+  id: string;
   url: string;
   details: string;
   state: string;
@@ -30,7 +31,7 @@ export interface ICleanActivity {
 export default function cleanActivity(activity: Discord.Activity): ICleanActivity {
   if (activity == null || typeof activity !== "object") return (activity as never); // prob not gonna happen, but
   const {
-    type: _type, name, url, details, state, applicationID, timestamps, party, assets
+    type: _type, name, url, details, state, applicationId, timestamps, party, assets, id
   } = activity;
   const { syncID, _flags }: { syncID: string, _flags: string[] } = (activity as any); // not typed for some reason
   const typeV = Object.values(ActivityTypes);
@@ -38,11 +39,12 @@ export default function cleanActivity(activity: Discord.Activity): ICleanActivit
 
   return {
     type,
+    id,
     name,
     url,
     details,
     state,
-    application_id: applicationID,
+    application_id: applicationId,
     timestamps: timestamps && timestamps.start && timestamps.end ?
       { start: timestamps.start.getTime(), end: timestamps.end.getTime() } :
       null,

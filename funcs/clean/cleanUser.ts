@@ -7,18 +7,17 @@ export interface ICleanUser {
   username: string;
   discriminator: string;
   avatar: string;
-  presence: ICleanPresence;
 }
 
 export default function cleanUser(user: User): ICleanUser {
   if (user == null || typeof user !== "object") return user as never;
-  const { id, username, discriminator, bot, avatar, presence } = user;
+  const { id, username, discriminator, bot, avatar } = user;
   return {
     id,
     bot,
     username,
     discriminator,
-    avatar,
-    presence: cleanPresence(presence)
+    avatar
+    // presence: cleanPresence(presence)
   };
 }

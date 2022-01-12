@@ -22,6 +22,6 @@ export default function cleanReaction(reaction: MessageReaction): ICleanReaction
     count,
     me,
     message: message.id,
-    users: users.map(u => cleanUser(u))
+    users: users.cache.map(u => cleanUser(u))
   };
 }
