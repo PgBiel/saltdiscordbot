@@ -1,9 +1,8 @@
 import { bot, Discord, Guild } from "../../util/deps";
 import { ChannelTypes, ICleanChannel } from "./cleanChannel";
-const { DMChannel, GroupDMChannel, TextChannel, VoiceChannel, CategoryChannel, GuildChannel, Channel } = Discord;
+const { DMChannel, TextChannel, VoiceChannel, CategoryChannel, GuildChannel, Channel } = Discord;
 
 export type AnyChannel = Discord.DMChannel |
-  Discord.GroupDMChannel  |
   Discord.TextChannel     |
   Discord.VoiceChannel    |
   Discord.CategoryChannel |
@@ -17,8 +16,8 @@ export default function uncleanChannel(channel: ICleanChannel, guild?: Discord.G
   switch (type) {
     case "dm":
       return new DMChannel(bot, channel);
-    case "group":
-      return new GroupDMChannel(bot, channel);
+    // case "group":
+    //   return new GroupDMChannel(bot, channel);
     case "text":
       return new TextChannel(useG, channel);
     case "voice":

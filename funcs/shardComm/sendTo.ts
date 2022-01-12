@@ -2,7 +2,7 @@ import bot from "../../util/bot";
 import cross from "../../classes/cross";
 import send from "../../handlerfuncs/senders/send";
 import reply from "../../handlerfuncs/senders/reply";
-import { MessageOptions, Message, User, Guild, DMChannel, GroupDMChannel, TextChannel } from "discord.js";
+import { MessageOptions, Message, User, Guild, DMChannel, TextChannel } from "discord.js";
 import { GuildChannel } from "../../util/deps";
 
 export type SendToOptions = MessageOptions & {
@@ -27,7 +27,7 @@ export default async function sendTo(
   if (!(await (cross.channels.has(id)))) return null;
   const channel = await (cross.channels.get(id));
   if (
-    !(channel instanceof DMChannel || channel instanceof GroupDMChannel || channel instanceof TextChannel)
+    !(channel instanceof DMChannel || channel instanceof TextChannel)
   ) return null;
   const obj = {
     author: opts.author, guild: opts.guild || (channel instanceof GuildChannel ? channel.guild : {} as never), channel

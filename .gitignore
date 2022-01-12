@@ -3,6 +3,11 @@ logs
 *.log
 npm-debug.log*
 
+# Stuff
+config.json
+tags
+salt
+
 # Runtime data
 pids
 *.pid

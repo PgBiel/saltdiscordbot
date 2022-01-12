@@ -4,7 +4,7 @@ import {
 import Searcher from "../classes/searcher";
 import { HandlerFuncs } from "../handlerfuncs/commandHandlerFuncs";
 
-export type DjsChannel = DMChannel | GroupDMChannel | TextChannel;
+export type DjsChannel = DMChannel | TextChannel;
 
 interface IBaseContext<ChannelType> {
   args?: string;
