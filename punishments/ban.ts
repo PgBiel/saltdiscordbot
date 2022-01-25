@@ -36,8 +36,8 @@ class Ban extends Punishment {
     const id: string = typeof member === "string" ? member : null; // TODO: Merge +ban and +idban to use search()
     const user: User = member instanceof GuildMember ? member.user : (member instanceof User ? member : null);
     const botmember = guild.me;
-    const def = (...args) => Promise.resolve(null); // default func
-    const { reply = def as never, send = def as never, actionLog = def as never, prompt } = context;
+    const def = (...args) => Promise.resolve<void>(null); // default func
+    const { reply = def, send = def, actionLog = def, prompt } = context;
     if (author && member instanceof GuildMember) {
       let rply = "";
       if (member.roles.highest.position > botmember.roles.highest.position) {
@@ -48,11 +48,11 @@ class Ban extends Punishment {
         rply = "Don't ban yourself! :frowning:";
       } else if (member.roles.highest.position === botmember.roles.highest.position) {
         rply = "That member's highest role is the same in position as mine!";
-      } else if (member.roles.highest.position > author.roles.highest.position && author.id !== guild.owner.id) {
+      } else if (member.roles.highest.position > author.roles.highest.position && author.id !== guild.ownerId) {
         rply = "That member's highest role is higher in position than yours!";
-      } else if (member.roles.highest.position === author.roles.highest.position && author.id !== guild.owner.id) {
+      } else if (member.roles.highest.position === author.roles.highest.position && author.id !== guild.ownerId) {
         rply = "That member's highest role is the same in position as yours!";
-      } else if (member.id === guild.owner.id) {
+      } else if (member.id === guild.ownerId) {
         rply = "That member is the owner!";
       } else if (!member.bannable) {
         rply = "That member is not bannable (being generic here). \
@@ -64,7 +64,7 @@ Check the conditions for being banned (e.g. must not be owner, etc)!";
     if (usePrompt) {
       const embed = new MessageEmbed();
       embed
-        .setAuthor(`${actions[3]} confirmation - ${id || user.tag}`, id ? undefined : user.displayAvatarURL())
+        .setAuthor({ name: `${actions[3]} confirmation - ${id || user.tag}`, iconURL: id ? undefined : user.displayAvatarURL() })
         .setColor("RED")
         .setDescription(reason || "No reason")
         .setTimestamp(new Date());
@@ -77,7 +77,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         },
         timeout: Time.seconds(15),
         cancel: false,
-        options: { embed }
+        options: { embeds: [embed] }
       });
       if (!result) {
         return;
@@ -87,7 +87,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         return;
       }
     }
-    const sentBanMsg: Message = await send(`${actions[0]} ${id || user.tag}... (${id ?
+    const sentBanMsg: void | Message = await send(`${actions[0]} ${id || user.tag}... (${id ?
     "Swinging ban hammer..." :
     "Sending DM..."})`);
     const reasonEmbed = new MessageEmbed();
@@ -98,12 +98,11 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     const finishAsync = async (target: string | GuildMember | User) => {
       let targetToUse: typeof target;
       if (typeof target === "string") {
-        sentBanMsg
-        .edit(`${actions[0]} ${id || user.tag}... (${actions[1]} successfully. Fetching username...)`)
-        .catch(rejctF("[BAN-FETCH USER-MSG]"));
+        if (sentBanMsg) sentBanMsg
+          .edit(`${actions[0]} ${id || user.tag}... (${actions[1]} successfully. Fetching username...)`)
+          .catch(rejctF("[BAN-FETCH USER-MSG]"));
         try {
-          const bans = await guild.fetchBans();
-          targetToUse = (bans.get(target) || { user: target }).user;
+          targetToUse = ((await guild.bans.fetch(target)) || { user: target }).user;
         } catch (err) {
           targetToUse = target;
         }
@@ -115,7 +114,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
           targetToUse instanceof User ?
           targetToUse.tag :
           targetToUse;
-      sentBanMsg.edit(`${actions[1]} ${name} successfully.`).catch(rejctF("[BAN-SUCCESSFUL-MSG]"));
+      if (sentBanMsg) sentBanMsg.edit(`${actions[1]} ${name} successfully.`).catch(rejctF("[BAN-SUCCESSFUL-MSG]"));
       const userTarget: User = targetToUse instanceof GuildMember ? targetToUse.user : targetToUse as User;
       const logObj: ILogOption = {
         type: isSoft ? "s" : "b",
@@ -131,10 +130,10 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     };
     const fail = err => {
       if (/Unknown ?User/i.test(err.toString()) && id) {
-        sentBanMsg.edit(`A user with that ID does not exist!`).catch(rejctF("[BAN-NO ID-EDIT-MSG]"));
+        if (sentBanMsg) sentBanMsg.edit(`A user with that ID does not exist!`).catch(rejctF("[BAN-NO ID-EDIT-MSG]"));
       } else {
         rejct(err, "[BAN-FAIL]");
-        sentBanMsg.edit(`The ${actions[4]} failed! :frowning:`).catch(rejctF("[BAN-FAIL-EDIT MSG]"));
+        if (sentBanMsg) sentBanMsg.edit(`The ${actions[4]} failed! :frowning:`).catch(rejctF("[BAN-FAIL-EDIT MSG]"));
       }
     };
     const executeBan = () => {
@@ -145,7 +144,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
         { days: days == null ? 1 : days, reason: compressedText },
       ).then(result => {
           if (isSoft) {
-            sentBanMsg.edit(`${actions[0]} ${user.tag}... (Waiting for unban...)`).catch(rejctF("[SOFTBAN-EDIT-MSG]"));
+            if (sentBanMsg) sentBanMsg.edit(`${actions[0]} ${user.tag}... (Waiting for unban...)`).catch(rejctF("[SOFTBAN-EDIT-MSG]"));
             guild.members.unban(user, "[Softban's Unban]").then(finish).catch(fail);
           } else {
             finish(result);
@@ -156,13 +155,13 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
     let timeoutRan = false;
     if (typeof member !== "string") {
       member.send(
-        `You were ${actions[2]} at the server **${escMarkdown(guild.name)}** for the reason of:`, { embed: reasonEmbed },
+        { content: `You were ${actions[2]} at the server **${escMarkdown(guild.name)}** for the reason of:`, embeds: [reasonEmbed] },
       ).then(() => {
         if (timeoutRan) {
           return;
         }
         sent = true;
-        sentBanMsg.edit(
+        if (sentBanMsg) sentBanMsg.edit(
           `${actions[0]} ${user.tag}... (DM Sent. Swinging ban hammer...)`,
         ).catch(rejctF("[BAN-DM SENT-EDIT-MSG]"));
         executeBan();
@@ -172,7 +171,7 @@ This will expire in 15 seconds. Type __y__es or __n__o.`,
           return;
         }
         sent = true;
-        sentBanMsg.edit(`${actions[0]} ${user.tag}... (DM Failed. Swinging ban hammer anyway...)`)
+        if (sentBanMsg) sentBanMsg.edit(`${actions[0]} ${user.tag}... (DM Failed. Swinging ban hammer anyway...)`)
           .catch(rejctF("[BAN-DM FAIL-EDIT-MSG]"));
         executeBan();
       });

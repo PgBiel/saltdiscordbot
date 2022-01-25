@@ -1,5 +1,5 @@
 import {
-  Channel, Collection, DMChannel, GroupDMChannel, GuildMember, Message, MessageOptions, StringResolvable,
+  Channel, Collection, DMChannel, GuildMember, Message, MessageOptions,
   TextChannel, User
 } from "discord.js";
 import * as _ from "lodash";
@@ -38,7 +38,7 @@ export default async (msg: Message) => {
     guild: msg.guild, dummy: {}, content: msg.content,
 
     hasPermissions: cmdFuncs.hasPermission,
-    botmember: msg.guild ? msg.guild.member(bot.user) : null,
+    botmember: msg.guild ? msg.guild.members.resolve(bot.user) : null,
     searcher: msg.guild ? new Searcher({ guild: msg.guild }) : null
   }, cmdFuncs);
   // fetch prefix from db
@@ -153,7 +153,7 @@ export default async (msg: Message) => {
         logger.error(`At Execution: ${err.stack}`);
         return userError("AT EXECUTION");
       }
-      if (channel.typing) channel.stopTyping();
+      // if (channel.typing) channel.stopTyping();
       commandExed = true;
       break;
     }

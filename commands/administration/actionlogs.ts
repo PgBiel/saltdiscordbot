@@ -14,7 +14,7 @@ const func: TcmdFunc<{}> = async function(
   const logsOn: boolean = await (db.table("mods").prop(guildId, "logsOn"));
   const isOn = logsOn || logsOn == null;
   if (!args) {
-    if (!logs || !guild.channels.has(logs)) {
+    if (!logs || !guild.channels.cache.has(logs)) {
       return reply(`There is no set action logs channel at the moment! (To manage, see help command.)`);
     }
     return reply(`The current action logs channel is set to <#${logs}>, and action logs are currently \
@@ -22,7 +22,7 @@ ${isOn ? "enabled" : "disabled"}! (To manage, see help command.)`);
   }
   const { channels: preChannels } = guild;
   const channels: Collection<string, TextChannel> = preChannels
-    .filter(c => c.type === "text") as Collection<string, TextChannel>;
+    .cache.filter(c => c.type === "GUILD_TEXT") as Collection<string, TextChannel>;
   const action = arrArgs[0].toLowerCase();
   if (["set", "unset", "enable", "disable", "toggle"].includes(action)) {
     if (!seePerm("actionlogs", perms, setPerms, { srole: "admin", hperms: "MANAGE_GUILD" })) {
@@ -48,7 +48,7 @@ ${isOn ? "enabled" : "disabled"}! (To manage, see help command.)`);
         if (result.length < 2) {
           cToUse = result[0];
         } else if (result.length > 1 && result.length < 10) {
-          const cResult = await promptAmbig(result, "channels", { type: "channel", channelType: "text" });
+          const cResult = await promptAmbig(result, "channels", { type: "channel", channelType: "text" });  // TODO: new channel types
           if (cResult.cancelled) return;
           cToUse = cResult.subject;
         }
@@ -60,7 +60,7 @@ ${isOn ? "enabled" : "disabled"}! (To manage, see help command.)`);
       ));
       reply(`Successfully set the action logging channel to ${cToUse}!`);
     } else if (["enable", "disable", "unset", "toggle"].includes(action)) {
-      if (!logs || !guild.channels.has(logs)) return reply(`Action logs must be set to a channel first! To do so, use \
+      if (!logs || !guild.channels.cache.has(logs)) return reply(`Action logs must be set to a channel first! To do so, use \
 \`${p}actionlogs set #channel\`, where \`#channel\` is the channel you want to set it to.`);
       if (["enable", "disable", "unset"].includes(action)) { // note: unset === disable
         if ((action === "enable" && logsOn) || (action !== "enable" && !logsOn)) {

@@ -35,8 +35,8 @@ export default function masterMsg(
       let maxNum: number = null;
       const handler = response => {
         if (
-          response.shard === bot.shard.id && response.resID === resID && (awaitType ? response.type === awaitType : true)
-        ) {
+          /*response.shard === bot.shard.id && */response.resID === resID && (awaitType ? response.type === awaitType : true)
+        ) {   // ^ seems like we can no longer get current shard ID
           if (receiveMultiple) {
             responses.push(response);
             if (responses.length < 2) {
@@ -64,6 +64,6 @@ export default function masterMsg(
         }, timeout);
       }
     }
-    bot.shard.send({ type, shard: bot.shard.id, resID, data });
+    bot.shard.send({ type, resID, data });
   });
 }

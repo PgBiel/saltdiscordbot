@@ -5,6 +5,7 @@
  */
 
 import { Message, MessageEmbed } from "discord.js";
+import { SlashCommandBuilder } from "@discordjs/builders";
 import { Constants, _, logger, Guild } from "../util/deps";
 
 import cloneObject from "../funcs/util/cloneObject";
@@ -88,6 +89,7 @@ function debug(...text: string[]): void {
   return logger.debug(...text);
 }
 
+
 /**
  * A command
  * @template D Dummy type
@@ -109,17 +111,24 @@ export class Command<D = object, C extends Context = Context> {
    */
   public name: string;
   /**
-   * The command function.
+   * The command function (when run normally).
    * @type {Function}
    */
   public func: (message: Message, context: C & { dummy?: D }) => any;
+
+  /**
+   * The command's function (when run as a slash command).
+   * @type {Function}
+   */
+   public slashFunc: (message: Message, context: C & { dummy?: D }) => any;
   /**
    * The command permissions.
    * @type {?string|Object}
    */
   public perms?: string | {[perm: string]: CommandSetPerm};
+
   /**
-   * Aliases for the command.
+   * Aliases for the command (when run normally).
    * @type {?Object<string, CommandOrString>}
    */
   public aliases?: { [alias: string]: Command<D> | D } | string[];
@@ -160,10 +169,15 @@ export class Command<D = object, C extends Context = Context> {
   public example?: string;
 
   /**
-   * Arguments on the command.
+   * Arguments on the command (to display on help command)
    * @type {?Object<boolean | CommandArgument>}
    */
   public args?: {[prop: string]: boolean | IArgument};
+
+  /**
+   * Slash Command data.
+   */
+  public slashData?: SlashCommandBuilder;
   /**
    * The category this command fits in.
    * @type {?string}
@@ -180,7 +194,7 @@ export class Command<D = object, C extends Context = Context> {
    */
   public guildOnly: C extends TContext ? true : boolean;
   /**
-   * If this command has a set custom prefix to be used.
+   * If this command has a set custom prefix to be used (when run normally).
    * @type {?string}
    */
   public customPrefix?: string;
@@ -333,7 +347,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
         textAbstract(
           this.description
             .replace(
-              /{maxcases}/ig, String(Constants.numbers.max.CASES((guild || { members: { size: 0 } }).members.size))
+              /{maxcases}/ig, String(Constants.numbers.max.CASES((guild || { memberCount: 0 }).memberCount))
             )
             .replace(
               /{name}/ig, this.name
@@ -444,7 +458,7 @@ Usage: ${this.customPrefix || p}${this.name}${usedargs}${this.example ?
         textAbstract(
           obj.description
             .replace(
-              /{maxcases}/ig, String(Constants.numbers.max.CASES((guild || { members: { size: 0 } }).members.size))
+              /{maxcases}/ig, String(Constants.numbers.max.CASES((guild || { memberCount: 0 }).memberCount))
             )
             .replace(
               /{name}/ig, sub
