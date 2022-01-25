@@ -13,9 +13,7 @@ import java.io.InputStream;
 public final class SaltBot {
     public static void main(final String[] args) {
 //        final String token = args[0];
-        Yaml yaml = new Yaml();
-        InputStream inputStream = SaltBot.class.getClassLoader().getResourceAsStream("config.yaml");
-        Config config = yaml.load(inputStream);
+        Config config = Config.getInstance();
         final DiscordClient client = DiscordClient.create(config.getToken());
         final GatewayDiscordClient gateway = client.login().block();
 
