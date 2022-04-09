@@ -30,3 +30,5 @@ src/test/
 
 # Config
 config.yaml
+config.json
+KeepUpService*

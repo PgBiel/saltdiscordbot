@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Main" type="Application" factoryName="Application">
+    <option name="ALTERNATIVE_JRE_PATH" value="17" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+    <option name="MAIN_CLASS_NAME" value="io.github.PgBiel.saltdiscordbot.SaltDiscordBot" />
+    <module name="saltdiscordbot-app" />
+    <option name="VM_PARAMETERS" value="--add-modules=ALL-MODULE-PATH -cp . -p $MODULE_DIR$/target/dependency:$MODULE_DIR$/target/classes" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../../saltconfig" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+      <option name="Maven.BeforeRunTask" enabled="true" file="$PROJECT_DIR$/app/pom.xml" goal="clean" />
+      <option name="Maven.BeforeRunTask" enabled="true" file="$PROJECT_DIR$/app/pom.xml" goal="package" />
+    </method>
+  </configuration>
+</component>

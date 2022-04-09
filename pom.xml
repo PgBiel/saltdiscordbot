@@ -1,156 +1,163 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>io.github.PgBiel</groupId>
     <artifactId>saltdiscordbot</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>app</module>
+        <module>delivery</module>
+        <module>launcher</module>
+    </modules>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <java.version>11</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <botrino.version>1.0.3</botrino.version>
+        <delivery.name>${project.parent.artifactId}-${project.version}</delivery.name>
+        <delivery.directory>${project.build.directory}/${delivery.name}</delivery.directory>
+        <app.build.directory>${project.basedir}/../app/target</app.build.directory>
+        <jlink.jdk>${java.home}</jlink.jdk>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.discord4j</groupId>
-            <artifactId>discord4j-core</artifactId>
-            <version>3.2.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>1.30</version>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-resolver-dns-native-macos</artifactId>
-            <version>4.1.73.Final</version>
-            <classifier>osx-x86_64</classifier>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.10</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.33</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.33</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <version>3.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>net.exploitables</groupId>
-            <artifactId>slashlib</artifactId>
-            <version>1.1.0</version>
-        </dependency>
-    </dependencies>
-
-    <repositories>
-        <repository>
-            <id>local-maven-repo</id>
-            <url>file:///${project.basedir}/local-maven-repo</url>
-        </repository>
-    </repositories>
-
     <build>
-        <plugins>
-            <plugin>
-                <!-- Build an executable JAR -->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.2.2</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <!-- here we specify that we want to use the main method within the App class -->
-                            <mainClass>io.github.PgBiel.saltdiscordbot.SaltBot</mainClass>
-                        </manifest>
-                    </archive>
-                    <includes>
-                        <include>**/*.class</include>
-                        <include>**/*.yaml</include>
-                        <include>**/*.xml</include>
-                    </includes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <finalName>uber-${project.artifactId}-${project.version}</finalName>
-                </configuration>
-            </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-assembly-plugin</artifactId>-->
-<!--                <configuration>-->
-<!--                    <archive>-->
-<!--                        <manifest>-->
-<!--                            <mainClass>io.github.PgBiel.saltdiscordbot.SaltBot</mainClass>-->
-<!--                        </manifest>-->
-<!--                    </archive>-->
-<!--                    <descriptorRefs>-->
-<!--                        <descriptorRef>jar-with-dependencies</descriptorRef>-->
-<!--                    </descriptorRefs>-->
-<!--                    <appendAssemblyId>false</appendAssemblyId>-->
-<!--                </configuration>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <phase>package</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>single</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
-            <plugin>  <!-- for installing local jars -->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <version>2.5.2</version>
-                <executions>
-                    <execution>
-                        <id>inst_1</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <configuration> <!-- refer to https://stackoverflow.com/a/48670812 -->
-                            <file>${project.basedir}/libs/slashlib-1.1.0.jar</file>
-                            <repositoryLayout>default</repositoryLayout>
-
-                            <!-- match the dependency declaration for this artifact -->
-                            <groupId>net.exploitables</groupId>
-                            <artifactId>slashlib</artifactId>
-                            <version>1.1.0</version>
-                            <packaging>jar</packaging>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.8.1</version>
+                    <configuration>
+                        <release>${java.version}</release>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>3.0.0-M1</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>3.0.0-M1</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-jlink-plugin</artifactId>
+                    <version>3.0.0</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <launcher>${project.parent.artifactId}=io.github.PgBiel.launcher/io.github.PgBiel.Launcher</launcher>
+                        <addModules>
+                            <addModule>java.logging</addModule>
+                            <addModule>jdk.unsupported</addModule>
+                            <addModule>java.xml</addModule>
+                            <addModule>java.naming</addModule>
+                            <addModule>java.desktop</addModule>
+                            <addModule>jdk.crypto.ec</addModule>
+                        </addModules>
+                        <sourceJdkModules>${jlink.jdk}</sourceJdkModules>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.2.0</version>
+                    <executions>
+                        <execution>
+                            <id>copy-resources</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/resources</outputDirectory>
+                                <propertiesEncoding>ISO-8859-1</propertiesEncoding>
+                                <resources>
+                                    <resource>
+                                        <directory>src/main/external-resources</directory>
+                                        <filtering>true</filtering>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.1.2</version>
+                    <executions>
+                        <execution>
+                            <id>copy-dependencies</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>3.0.0</version>
+                    <executions>
+                        <execution>
+                            <id>antrun-archive</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <delete dir="${delivery.directory}" />
+                                    <delete file="${project.build.directory}/${project.build.finalName}.zip" />
+                                    <move file="${project.build.directory}/maven-jlink" tofile="${delivery.directory}" force="true" />
+                                    <copy todir="${delivery.directory}/modules">
+                                        <fileset dir="${app.build.directory}/dependency" />
+                                        <fileset file="${app.build.directory}/*.jar" />
+                                    </copy>
+                                    <copy todir="${delivery.directory}">
+                                        <fileset dir="${app.build.directory}/resources" />
+                                    </copy>
+                                    <zip basedir="${delivery.directory}/.." includes="${delivery.name}/**/*" destfile="${delivery.directory}.zip" />
+                                </target>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.alex1304.botrino</groupId>
+                <artifactId>botrino-api</artifactId>
+                <version>${botrino.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alex1304.botrino</groupId>
+                <artifactId>botrino-interaction</artifactId>
+                <version>${botrino.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.discord4j</groupId>
+                <artifactId>discord4j-core</artifactId>
+                <version>3.2.1</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.2.10</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>1.7.33</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>1.7.33</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>
